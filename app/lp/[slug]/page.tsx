@@ -23,7 +23,7 @@ export default async function LandingPageView({
       srcDoc={page.html_content}
       title={page.title}
       className="w-full h-full min-h-full border-0 block"
-      sandbox="allow-scripts allow-same-origin"
+      sandbox="allow-scripts allow-same-origin allow-modals"
     />
   );
 }

@@ -53,14 +53,14 @@ export function UploadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md space-y-4">
+    <form onSubmit={handleSubmit} className="max-w-md space-y-5">
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-md">
-          {error}
-        </p>
+        <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3">
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        </div>
       )}
       <div>
-        <label htmlFor="file" className="block text-sm font-medium mb-1">
+        <label htmlFor="file" className="block text-sm font-medium text-foreground mb-1.5">
           HTML file
         </label>
         <input
@@ -69,11 +69,11 @@ export function UploadForm() {
           type="file"
           accept=".html,text/html"
           required
-          className="w-full px-3 py-2 border border-foreground/20 rounded-md bg-background text-foreground file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:bg-foreground/10 file:text-foreground"
+          className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-[var(--primary)] file:text-[var(--primary-foreground)] file:font-medium"
         />
       </div>
       <div>
-        <label htmlFor="title" className="block text-sm font-medium mb-1">
+        <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1.5">
           Title
         </label>
         <input
@@ -81,11 +81,11 @@ export function UploadForm() {
           name="title"
           type="text"
           placeholder="My landing page"
-          className="w-full px-3 py-2 border border-foreground/20 rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/30"
+          className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
       </div>
       <div>
-        <label htmlFor="slug" className="block text-sm font-medium mb-1">
+        <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-1.5">
           Slug (URL path)
         </label>
         <input
@@ -93,16 +93,16 @@ export function UploadForm() {
           name="slug"
           type="text"
           placeholder="my-landing-page"
-          className="w-full px-3 py-2 border border-foreground/20 rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/30 font-mono text-sm"
+          className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground font-mono text-sm focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
-        <p className="mt-1 text-xs text-foreground/60">
+        <p className="mt-1 text-xs text-[var(--muted)]">
           Lowercase letters, numbers, hyphens. Used in /lp/[slug]
         </p>
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="px-4 py-2 bg-foreground text-background rounded-md font-medium hover:opacity-90 disabled:opacity-50"
+        className="px-4 py-3 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg font-medium hover:opacity-95 disabled:opacity-50 transition-opacity shadow-sm"
       >
         {loading ? "Uploading…" : "Upload"}
       </button>

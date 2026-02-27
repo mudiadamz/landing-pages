@@ -12,7 +12,7 @@ export function DeleteButton({ id }: { id: string }) {
     <button
       type="button"
       onClick={handleDelete}
-      className="text-sm text-red-600 dark:text-red-400 hover:underline"
+      className="text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
     >
       Delete
     </button>

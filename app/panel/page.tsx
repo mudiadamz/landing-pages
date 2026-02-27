@@ -14,57 +14,77 @@ export default async function PanelPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Landing pages</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Landing pages</h1>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border border-foreground/10 rounded-md overflow-hidden">
-          <thead>
-            <tr className="bg-foreground/5 text-left">
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Slug</th>
-              <th className="px-4 py-3 font-medium">Updated</th>
-              <th className="px-4 py-3 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pages.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-foreground/60">
-                  No landing pages yet. Upload an HTML file or create a new page.
-                </td>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[var(--border)] bg-[var(--background)]/50">
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">
+                  Title
+                </th>
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">
+                  Slug
+                </th>
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">
+                  Updated
+                </th>
+                <th className="px-4 py-3.5 text-right text-sm font-medium text-foreground">
+                  Actions
+                </th>
               </tr>
-            ) : (
-              pages.map((p) => (
-                <tr key={p.id} className="border-t border-foreground/10">
-                  <td className="px-4 py-3">{p.title}</td>
-                  <td className="px-4 py-3 font-mono text-sm">{p.slug}</td>
-                  <td className="px-4 py-3 text-foreground/80 text-sm">
-                    {formatDate(p.updated_at)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="inline-flex gap-2">
-                      <Link
-                        href={`/panel/landing-pages/${p.id}/edit`}
-                        className="text-sm text-foreground/80 hover:underline"
-                      >
-                        Edit
-                      </Link>
-                      <Link
-                        href={`/lp/${p.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-foreground/80 hover:underline"
-                      >
-                        View
-                      </Link>
-                      <DeleteButton id={p.id} />
-                    </span>
+            </thead>
+            <tbody>
+              {pages.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-4 py-12 text-center text-sm text-[var(--muted)]"
+                  >
+                    No landing pages yet. Upload an HTML file or create a new page.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                pages.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--background)]/30 transition-colors"
+                  >
+                    <td className="px-4 py-3.5 font-medium text-foreground">
+                      {p.title}
+                    </td>
+                    <td className="px-4 py-3.5 font-mono text-sm text-[var(--muted)]">
+                      {p.slug}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-[var(--muted)]">
+                      {formatDate(p.updated_at)}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <span className="inline-flex items-center gap-2">
+                        <Link
+                          href={`/panel/landing-pages/${p.id}/edit`}
+                          className="text-sm font-medium text-[var(--primary)] hover:underline"
+                        >
+                          Edit
+                        </Link>
+                        <Link
+                          href={`/lp/${p.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-[var(--primary)] hover:underline"
+                        >
+                          View
+                        </Link>
+                        <DeleteButton id={p.id} />
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

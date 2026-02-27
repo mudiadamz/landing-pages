@@ -18,25 +18,29 @@ export default async function EditPage({
         <div className="flex items-center gap-4">
           <Link
             href="/panel"
-            className="text-foreground/70 hover:text-foreground text-sm"
+            className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
           >
             ← Back
           </Link>
-          <h1 className="text-xl font-semibold">Edit: {page.title}</h1>
-          <span className="font-mono text-sm text-foreground/60">{page.slug}</span>
+          <h1 className="text-xl font-semibold tracking-tight">
+            Edit: {page.title}
+          </h1>
+          <span className="font-mono text-sm text-[var(--muted)] bg-[var(--background)] px-2 py-1 rounded">
+            {page.slug}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={`/lp/${page.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-foreground/80 hover:underline"
-          >
-            Preview
-          </a>
-        </div>
+        <a
+          href={`/lp/${page.slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium text-[var(--primary)] hover:underline"
+        >
+          Preview
+        </a>
       </div>
-      <Editor id={id} slug={page.slug} initialHtml={page.html_content} />
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+        <Editor id={id} slug={page.slug} initialHtml={page.html_content} />
+      </div>
     </div>
   );
 }

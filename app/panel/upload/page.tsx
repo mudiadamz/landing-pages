@@ -7,13 +7,17 @@ export default function UploadPage() {
       <div className="flex items-center gap-4">
         <Link
           href="/panel"
-          className="text-foreground/70 hover:text-foreground text-sm"
+          className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
           ← Back
         </Link>
-        <h1 className="text-xl font-semibold">Upload HTML landing page</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          Upload HTML landing page
+        </h1>
       </div>
-      <UploadForm />
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+        <UploadForm />
+      </div>
     </div>
   );
 }
