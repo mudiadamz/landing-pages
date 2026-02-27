@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { saveVersion } from "./versions";
 import { isValidSlug } from "@/lib/slug";
 
 export type LandingPageRow = {
@@ -12,6 +13,24 @@ export type LandingPageRow = {
   created_at: string;
   updated_at: string;
   user_id: string;
+  price?: number | null;
+  price_discount?: number | null;
+  is_free?: boolean;
+  purchase_link?: string | null;
+  featured?: boolean;
+  thumbnail_url?: string | null;
+};
+
+export type LandingPagePublic = {
+  id: string;
+  title: string;
+  slug: string;
+  html_content: string;
+  price?: number | null;
+  price_discount?: number | null;
+  is_free?: boolean;
+  purchase_link?: string | null;
+  thumbnail_url?: string | null;
 };
 
 export async function getLandingPagesForUser() {
@@ -23,7 +42,7 @@ export async function getLandingPagesForUser() {
 
   const { data, error } = await supabase
     .from("landing_pages")
-    .select("id, title, slug, created_at, updated_at")
+    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, featured")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -102,8 +121,52 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
     .eq("user_id", user.id);
 
   if (error) throw error;
+
+  await saveVersion(id, html_content);
+
   revalidatePath("/panel");
   revalidatePath(`/panel/landing-pages/${id}/edit`);
+}
+
+export async function getLandingPagesForHomepage() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .select("id, title, slug, html_content, price, price_discount, is_free, purchase_link, thumbnail_url")
+    .order("updated_at", { ascending: false })
+    .limit(24);
+
+  if (error) return [];
+  return (data ?? []) as LandingPagePublic[];
+}
+
+export async function updateLandingPagePricing(
+  id: string,
+  opts: {
+    price?: number | null;
+    price_discount?: number | null;
+    is_free?: boolean;
+    purchase_link?: string | null;
+    featured?: boolean;
+    thumbnail_url?: string | null;
+  }
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("landing_pages")
+    .update(opts)
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw error;
+  revalidatePath("/panel");
+  revalidatePath(`/panel/landing-pages/${id}/edit`);
+  revalidatePath("/");
 }
 
 export async function deleteLandingPage(id: string) {

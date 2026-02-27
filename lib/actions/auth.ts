@@ -21,14 +21,34 @@ export async function signup(formData: FormData) {
   const supabase = await createClient();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const fullName = (formData.get("full_name") as string)?.trim() ?? "";
 
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName },
+    },
+  });
 
   if (error) {
     redirect(`/signup?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/panel");
+  if (data.session) {
+    redirect("/panel");
+  }
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (!signInError) {
+    redirect("/panel");
+  }
+
+  redirect("/signup?message=check_email");
 }
 
 export async function signOut() {

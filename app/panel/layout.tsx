@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { signOut } from "@/lib/actions/auth";
+import { getProfile } from "@/lib/actions/profiles";
 
-export default function PanelLayout({
+export default async function PanelLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const profile = await getProfile();
+  const isAdmin = profile?.role === "admin" || !profile;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/80">
@@ -15,20 +19,30 @@ export default function PanelLayout({
               href="/panel"
               className="px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-[var(--background)] transition-colors"
             >
-              Landing pages
+              {isAdmin ? "Landing pages" : "My purchases"}
             </Link>
-            <Link
-              href="/panel/upload"
-              className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
-            >
-              Upload HTML
-            </Link>
-            <Link
-              href="/panel/landing-pages/new"
-              className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
-            >
-              New page
-            </Link>
+            {isAdmin && (
+              <>
+                <Link
+                  href="/panel/dashboard"
+                  className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/panel/upload"
+                  className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+                >
+                  Upload HTML
+                </Link>
+                <Link
+                  href="/panel/landing-pages/new"
+                  className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+                >
+                  New page
+                </Link>
+              </>
+            )}
           </nav>
           <form action={signOut}>
             <button

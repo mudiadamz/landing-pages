@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Landing Page Manager",
-  description: "Manage and publish HTML landing pages",
+  title: "ADM.UIUX",
+  description: "Landing page template gratis dan berbayar oleh Adam Mudianto. Software developer 15+ tahun.",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="id">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

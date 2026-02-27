@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { signup } from "@/lib/actions/auth";
+import { SubmitButton } from "./submit-button";
 
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
   const params = await searchParams;
   return (
@@ -13,10 +14,10 @@ export default async function SignupPage({
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Sign up
+              Daftar
             </h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Create an account to manage landing pages
+              Buat akun sebagai pelanggan
             </p>
           </div>
           {params.error && (
@@ -24,7 +25,31 @@ export default async function SignupPage({
               <p className="text-sm text-red-700 dark:text-red-300">{params.error}</p>
             </div>
           )}
+          {params.message === "check_email" && (
+            <div className="mb-4 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 px-4 py-3">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                Check your email to confirm your account, then sign in.
+              </p>
+            </div>
+          )}
           <form action={signup} className="space-y-5">
+            <div>
+              <label
+                htmlFor="full_name"
+                className="block text-sm font-medium text-foreground mb-1.5"
+              >
+                Nama lengkap
+              </label>
+              <input
+                id="full_name"
+                name="full_name"
+                type="text"
+                autoComplete="name"
+                required
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground transition-all duration-200 focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent hover:border-[var(--muted)]/50"
+                placeholder="John Doe"
+              />
+            </div>
             <div>
               <label
                 htmlFor="email"
@@ -38,7 +63,7 @@ export default async function SignupPage({
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-shadow"
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground transition-all duration-200 focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent hover:border-[var(--muted)]/50"
                 placeholder="you@example.com"
               />
             </div>
@@ -56,21 +81,19 @@ export default async function SignupPage({
                 autoComplete="new-password"
                 required
                 minLength={6}
-                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-shadow"
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground transition-all duration-200 focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent hover:border-[var(--muted)]/50"
               />
-              <p className="mt-1 text-xs text-[var(--muted)]">At least 6 characters</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">Minimal 6 karakter</p>
             </div>
-            <button
-              type="submit"
-              className="w-full py-3 px-4 bg-[var(--primary)] text-[var(--primary-foreground)] font-medium rounded-lg hover:opacity-95 active:opacity-90 transition-opacity shadow-sm"
-            >
-              Sign up
-            </button>
+            <SubmitButton />
           </form>
-          <p className="mt-6 text-center text-sm text-[var(--muted)]">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-[var(--primary)] hover:underline">
-              Sign in
+            <p className="mt-6 text-center text-sm text-[var(--muted)]">
+            Sudah punya akun?{" "}
+            <Link
+              href="/login"
+              className="font-medium text-[var(--primary)] hover:underline underline-offset-2 transition-colors duration-200 hover:opacity-90"
+            >
+              Masuk
             </Link>
           </p>
         </div>

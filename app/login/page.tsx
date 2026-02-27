@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { login } from "@/lib/actions/auth";
+import { SubmitButton } from "./submit-button";
 
 export default async function LoginPage({
   searchParams,
@@ -13,10 +14,10 @@ export default async function LoginPage({
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Sign in
+              Masuk
             </h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Landing page manager
+              ADM.UIUX
             </p>
           </div>
           {params.error && (
@@ -38,7 +39,7 @@ export default async function LoginPage({
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-shadow"
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground transition-all duration-200 focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent hover:border-[var(--muted)]/50"
                 placeholder="you@example.com"
               />
             </div>
@@ -55,20 +56,18 @@ export default async function LoginPage({
                 type="password"
                 autoComplete="current-password"
                 required
-                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent transition-shadow"
+                className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground transition-all duration-200 focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent hover:border-[var(--muted)]/50"
               />
             </div>
-            <button
-              type="submit"
-              className="w-full py-3 px-4 bg-[var(--primary)] text-[var(--primary-foreground)] font-medium rounded-lg hover:opacity-95 active:opacity-90 transition-opacity shadow-sm"
-            >
-              Sign in
-            </button>
+            <SubmitButton />
           </form>
-          <p className="mt-6 text-center text-sm text-[var(--muted)]">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-medium text-[var(--primary)] hover:underline">
-              Sign up
+            <p className="mt-6 text-center text-sm text-[var(--muted)]">
+            Belum punya akun?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-[var(--primary)] hover:underline underline-offset-2 transition-colors duration-200 hover:opacity-90"
+            >
+              Daftar
             </Link>
           </p>
         </div>

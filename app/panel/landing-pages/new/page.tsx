@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/actions/profiles";
 import { NewPageForm } from "./new-page-form";
 
-export default function NewPagePage() {
+export default async function NewPagePage() {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) redirect("/panel");
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">

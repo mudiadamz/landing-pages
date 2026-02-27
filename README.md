@@ -52,7 +52,8 @@ Next.js + Supabase app to manage and publish HTML landing pages. Authenticated p
 
 ## Features
 
+- **Homepage**: Browse landing pages with preview cards, pricing (normal, discount, free), and purchase links to payment gateways.
 - **Auth**: Email/password login and signup; session refresh via middleware; `/panel` protected.
-- **Panel**: List landing pages (edit, view, delete), upload HTML file, create new page, edit in HTML/CSS/JS tabbed Monaco editor (Save / Cmd+S), upload assets (images, videos), preview via `/lp/[slug]`.
-- **Editor**: Monaco editor with HTML, CSS, and JavaScript tabs; assets panel to upload images/videos and copy URLs for use in your HTML.
+- **Panel**: List landing pages (edit, view, delete), upload HTML file, create new page, edit in HTML/CSS/JS tabbed Monaco editor (Save / Cmd+S), upload assets (images, videos), set pricing and purchase link, preview via `/lp/[slug]`.
+- **Editor**: Monaco editor with HTML, CSS, and JavaScript tabs; assets panel; pricing form (normal/discount/free, purchase link, show on homepage).
 - **Public**: Full-page HTML view at `/lp/[slug]` (iframe); metadata title from page title.

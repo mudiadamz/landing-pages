@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { updateLandingPageHtml } from "@/lib/actions/landing-pages";
 import { parseHtmlContent, mergeHtmlContent } from "@/lib/editor-utils";
 import { AssetUpload } from "./asset-upload";
+import { EditorHistory } from "./editor-history";
+
+const AUTOSAVE_DELAY_MS = 2000;
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -35,19 +38,22 @@ export function Editor({
   const [activeTab, setActiveTab] = useState<Tab>("html");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
-  const monacoRef = useRef<{ html: string; css: string; js: string }>({ html: parsed.html, css: parsed.css, js: parsed.js });
+  const lastSavedRef = useRef<string>(mergeHtmlContent(parsed.html, parsed.css, parsed.js));
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getMergedHtml = useCallback(() => {
     return mergeHtmlContent(html, css, js);
   }, [html, css, js]);
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (isAutosave = false) => {
     const merged = getMergedHtml();
+    if (merged === lastSavedRef.current) return;
     setSaving(true);
     setMessage(null);
     try {
       await updateLandingPageHtml(id, merged);
-      setMessage({ type: "ok", text: "Saved." });
+      lastSavedRef.current = merged;
+      setMessage({ type: "ok", text: isAutosave ? "Autosaved." : "Saved." });
       router.refresh();
     } catch (err) {
       setMessage({
@@ -59,11 +65,33 @@ export function Editor({
     }
   }, [id, getMergedHtml, router]);
 
+  // Autosave: debounce 2s after last change
+  useEffect(() => {
+    const merged = getMergedHtml();
+    if (merged === lastSavedRef.current) return;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      autosaveTimerRef.current = null;
+      save(true);
+    }, AUTOSAVE_DELAY_MS);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [html, css, js, getMergedHtml, save]);
+
+  const handleRestore = useCallback((restoredHtml: string, restoredCss: string, restoredJs: string) => {
+    setHtml(restoredHtml);
+    setCss(restoredCss);
+    setJs(restoredJs);
+    lastSavedRef.current = mergeHtmlContent(restoredHtml, restoredCss, restoredJs);
+    setMessage({ type: "ok", text: "Restored." });
+  }, []);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
-        save();
+        save(false);
       }
     },
     [save]
@@ -99,14 +127,14 @@ export function Editor({
           </div>
           <button
             type="button"
-            onClick={save}
+            onClick={() => save(false)}
             disabled={saving}
             className="px-4 py-2.5 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg font-medium text-sm hover:opacity-95 disabled:opacity-50 transition-opacity shadow-sm"
           >
             {saving ? "Saving…" : "Save"}
           </button>
           <span className="text-xs text-[var(--muted)] hidden sm:inline">
-            Cmd/Ctrl+S to save
+            Autosave • Cmd/Ctrl+S to save
           </span>
           {message && (
             <span
@@ -146,6 +174,7 @@ export function Editor({
 
         <div className="space-y-4">
           <AssetUpload pageId={id} />
+          <EditorHistory pageId={id} onRestore={handleRestore} />
         </div>
       </div>
     </div>
