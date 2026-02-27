@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { signOut } from "@/lib/actions/auth";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 type Props = {
   isAdmin: boolean;
@@ -61,7 +62,9 @@ export function PanelHeader({ isAdmin }: Props) {
             )}
           </nav>
         </div>
-        <form action={signOut}>
+        <div className="flex items-center gap-2">
+          <ThemeSwitch />
+          <form action={signOut}>
           <button
             type="submit"
             className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
@@ -69,6 +72,7 @@ export function PanelHeader({ isAdmin }: Props) {
             Keluar
           </button>
         </form>
+        </div>
       </div>
 
       {mobileOpen && (

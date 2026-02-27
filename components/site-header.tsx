@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 type Props = { user: { id: string } | null };
 
@@ -31,7 +32,7 @@ export function SiteHeader({ user }: Props) {
             <Link
               key={href}
               href={href}
-              className="px-3 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] transition-colors"
+              className="px-3 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] transition-colors duration-200 hover:scale-[1.02]"
             >
               {label}
             </Link>
@@ -39,6 +40,7 @@ export function SiteHeader({ user }: Props) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeSwitch />
           {user ? (
             <Link
               href="/panel"
@@ -56,7 +58,7 @@ export function SiteHeader({ user }: Props) {
               </Link>
               <Link
                 href="/signup"
-                className="px-3 sm:px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all"
+                className="px-3 sm:px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-sm font-medium hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
                 Daftar
               </Link>

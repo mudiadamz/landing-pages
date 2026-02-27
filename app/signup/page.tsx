@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { signup } from "@/lib/actions/auth";
 import { SubmitButton } from "./submit-button";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 export default async function SignupPage({
   searchParams,
@@ -9,7 +10,10 @@ export default async function SignupPage({
 }) {
   const params = await searchParams;
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeSwitch />
+      </div>
       <div className="w-full max-w-[400px]">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
           <div className="text-center mb-8">

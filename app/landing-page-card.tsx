@@ -26,7 +26,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
   const purchaseUrl = page.purchase_link?.trim() || `/lp/${page.slug}`;
 
   return (
-    <article className="group rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 active:scale-[0.99]">
+    <article className="group rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[var(--primary)]/30 transition-all duration-300 ease-out active:scale-[0.99]">
       <Link href={`/lp/${page.slug}`} className="block">
         <div className="relative aspect-video bg-[var(--background)] overflow-hidden rounded-t-2xl">
           {page.thumbnail_url ? (

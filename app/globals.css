@@ -10,6 +10,26 @@
   --primary: #1a5f4a;
   --primary-foreground: #ffffff;
   --accent-subtle: #e8f0ee;
+  --accent-warm: #e8a87c;
+  --accent-cool: #41b3a3;
+  --accent-gold: #e8c547;
+  --accent-coral: #e27d60;
+}
+
+html.dark {
+  --background: #0d0d0f;
+  --foreground: #f5f5f7;
+  --card: #161618;
+  --muted: #86868b;
+  --border: #2d2d2f;
+  --ring: #3d8b6e;
+  --primary: #3d8b6e;
+  --primary-foreground: #ffffff;
+  --accent-subtle: #1a2e26;
+  --accent-warm: #d4956a;
+  --accent-cool: #38a396;
+  --accent-gold: #d4ad3d;
+  --accent-coral: #c96d52;
 }
 
 @theme inline {
@@ -31,4 +51,69 @@ input:focus, textarea:focus, button:focus-visible {
 }
 input, textarea, select {
   border-radius: 0.5rem;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.02); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.landing-grid > * {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.landing-grid > *:nth-child(1) { animation-delay: 0.1s; }
+.landing-grid > *:nth-child(2) { animation-delay: 0.2s; }
+.landing-grid > *:nth-child(3) { animation-delay: 0.3s; }
+.landing-grid > *:nth-child(4) { animation-delay: 0.4s; }
+.landing-grid > *:nth-child(5) { animation-delay: 0.5s; }
+.landing-grid > *:nth-child(6) { animation-delay: 0.6s; }
+.landing-grid > *:nth-child(7) { animation-delay: 0.7s; }
+.landing-grid > *:nth-child(8) { animation-delay: 0.8s; }
+.landing-grid > *:nth-child(9) { animation-delay: 0.9s; }
+
+/* Testimonials section fade-in */
+.testimonials-section {
+  animation: fadeInUp 0.6s ease-out 0.2s forwards;
+  opacity: 0;
 }

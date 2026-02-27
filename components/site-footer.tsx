@@ -2,8 +2,13 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-[var(--border)] py-12 sm:py-16 shrink-0">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+    <footer className="relative border-t border-[var(--border)] py-12 sm:py-16 shrink-0 overflow-hidden">
+      <div
+        className="absolute bottom-0 right-0 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle, var(--accent-cool) 0%, transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="space-y-4">
             <p className="text-sm text-[var(--muted)] max-w-md">
@@ -22,19 +27,19 @@ export function SiteFooter() {
             </a>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            <Link href="/" className="text-[var(--muted)] hover:text-foreground transition-colors">
+            <Link href="/" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
               Beranda
             </Link>
-            <Link href="/about" className="text-[var(--muted)] hover:text-foreground transition-colors">
+            <Link href="/about" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
               Tentang
             </Link>
-            <Link href="/contact" className="text-[var(--muted)] hover:text-foreground transition-colors">
+            <Link href="/contact" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
               Kontak
             </Link>
-            <Link href="/privacy" className="text-[var(--muted)] hover:text-foreground transition-colors">
+            <Link href="/privacy" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
               Kebijakan Privasi
             </Link>
-            <Link href="/terms" className="text-[var(--muted)] hover:text-foreground transition-colors">
+            <Link href="/terms" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
               Ketentuan Layanan
             </Link>
           </nav>
