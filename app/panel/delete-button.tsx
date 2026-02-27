@@ -4,7 +4,7 @@ import { deleteLandingPage } from "@/lib/actions/landing-pages";
 
 export function DeleteButton({ id }: { id: string }) {
   async function handleDelete() {
-    if (!confirm("Delete this landing page?")) return;
+    if (!confirm("Hapus landing page ini?")) return;
     await deleteLandingPage(id);
   }
 
@@ -12,9 +12,9 @@ export function DeleteButton({ id }: { id: string }) {
     <button
       type="button"
       onClick={handleDelete}
-      className="text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
+      className="text-sm font-medium text-red-600 hover:underline"
     >
-      Delete
+      Hapus
     </button>
   );
 }

@@ -19,8 +19,8 @@ export default async function EditPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0">
           <Link
             href="/panel"
             className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
@@ -43,7 +43,7 @@ export default async function EditPage({
           Preview
         </a>
       </div>
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4 shadow-sm overflow-hidden">
         <Editor id={id} slug={page.slug} initialHtml={page.html_content} />
       </div>
       <PricingForm

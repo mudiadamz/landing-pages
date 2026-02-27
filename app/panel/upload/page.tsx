@@ -8,7 +8,7 @@ export default async function UploadPage() {
   if (!isAdmin) redirect("/panel");
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <Link
           href="/panel"
           className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
@@ -19,7 +19,7 @@ export default async function UploadPage() {
           Upload HTML landing page
         </h1>
       </div>
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-6 shadow-sm">
         <UploadForm />
       </div>
     </div>
