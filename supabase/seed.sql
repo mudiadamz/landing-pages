@@ -1,0 +1,2 @@
+-- Optional seed data. Runs after migrations during `supabase db reset`.
+-- Add sample data here if needed.

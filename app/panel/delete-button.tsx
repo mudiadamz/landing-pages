@@ -1,0 +1,20 @@
+"use client";
+
+import { deleteLandingPage } from "@/lib/actions/landing-pages";
+
+export function DeleteButton({ id }: { id: string }) {
+  async function handleDelete() {
+    if (!confirm("Delete this landing page?")) return;
+    await deleteLandingPage(id);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleDelete}
+      className="text-sm text-red-600 dark:text-red-400 hover:underline"
+    >
+      Delete
+    </button>
+  );
+}

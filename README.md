@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Landing Page Manager
 
-## Getting Started
+Next.js + Supabase app to manage and publish HTML landing pages. Authenticated panel for listing, uploading, and editing HTML; public routes for viewing landing pages by slug.
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Install dependencies**
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   ```bash
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Environment**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   Copy `.env.example` to `.env.local` and set your Supabase project URL and anon key:
 
-## Learn More
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Database**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   **Option A – Supabase CLI (local):**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   npm run supabase:start   # Start local Supabase (Docker required)
+   npm run db:reset         # Apply migrations
+   ```
 
-## Deploy on Vercel
+   Local URL: `http://localhost:54321` (from `supabase status`). Use local project URL and anon key in `.env.local`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   **Option B – Remote project:**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref <your-project-id>
+   npm run db:push          # Push migrations to remote
+   ```
+
+   Or run `supabase/migrations/20250228000000_landing_pages.sql` manually in the Supabase SQL Editor.
+
+4. **Run**
+
+   ```bash
+   npm run dev
+   ```
+
+   - Home `/` redirects to `/panel` (if logged in) or `/login`.
+   - Sign up or log in, then use the panel to create, upload, or edit landing pages.
+   - Public URLs: `/lp/[slug]` (e.g. `/lp/my-page`).
+
+## Features
+
+- **Auth**: Email/password login and signup; session refresh via middleware; `/panel` protected.
+- **Panel**: List landing pages (edit, view, delete), upload HTML file, create new page, edit HTML in code editor (Save / Cmd+S), preview via `/lp/[slug]`.
+- **Public**: Full-page HTML view at `/lp/[slug]` (iframe); metadata title from page title.
