@@ -23,11 +23,12 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-type Props = { label?: string };
+type Props = { label?: string; next?: string };
 
-export function GoogleSignInButton({ label = "Lanjutkan dengan Google" }: Props) {
+export function GoogleSignInButton({ label = "Lanjutkan dengan Google", next }: Props) {
   return (
     <form action={signInWithGoogle}>
+      {next && <input type="hidden" name="next" value={next} />}
       <button
         type="submit"
         className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-[var(--border)] rounded-lg bg-background text-foreground font-medium

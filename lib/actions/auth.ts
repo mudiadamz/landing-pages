@@ -7,14 +7,17 @@ export async function login(formData: FormData) {
   const supabase = await createClient();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const next = (formData.get("next") as string)?.trim();
+  const redirectTo = next && next.startsWith("/") ? next : "/panel";
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    const url = next ? `/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}` : `/login?error=${encodeURIComponent(error.message)}`;
+    redirect(url);
   }
 
-  redirect("/panel");
+  redirect(redirectTo);
 }
 
 export async function signup(formData: FormData) {
@@ -59,13 +62,17 @@ export async function signOut() {
   redirect("/login");
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(formData?: FormData) {
   const supabase = await createClient();
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const next = (formData?.get("next") as string)?.trim();
+  const redirectTo = next && next.startsWith("/")
+    ? `${baseUrl}/auth/callback?next=${encodeURIComponent(next)}`
+    : `${baseUrl}/auth/callback`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${baseUrl}/auth/callback`,
+      redirectTo,
       queryParams: { access_type: "offline", prompt: "consent" },
     },
   });

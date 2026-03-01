@@ -7,9 +7,10 @@ import { GoogleSignInButton } from "@/components/google-signin-button";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
+  const next = params.next && params.next.startsWith("/") ? params.next : undefined;
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative">
       <Link
@@ -39,7 +40,7 @@ export default async function LoginPage({
               <p className="text-sm text-red-700 dark:text-red-300">{params.error}</p>
             </div>
           )}
-          <GoogleSignInButton label="Masuk dengan Google" />
+          <GoogleSignInButton label="Masuk dengan Google" next={next} />
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[var(--border)]" />
@@ -49,6 +50,7 @@ export default async function LoginPage({
             </div>
           </div>
           <form action={login} className="space-y-5">
+            {next && <input type="hidden" name="next" value={next} />}
             <div>
               <label
                 htmlFor="email"
