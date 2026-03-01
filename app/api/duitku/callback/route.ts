@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateDuitkuCallback } from "@/lib/duitku";
+import { sendPurchaseConfirmationEmail } from "@/lib/email";
+import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,12 +41,14 @@ export async function POST(req: NextRequest) {
 
     let landingPageId: string | null = null;
     let userId: string | null = null;
+    let email: string | null = null;
 
     try {
       const parsed = additionalParam ? JSON.parse(additionalParam) : null;
       if (parsed?.lp && parsed?.u) {
         landingPageId = parsed.lp;
         userId = parsed.u;
+        email = parsed.e ?? null;
       }
     } catch {
       const parts = merchantOrderId.split("-");
@@ -70,6 +74,26 @@ export async function POST(req: NextRequest) {
           return new NextResponse("OK", { status: 200 });
         }
         console.error("Duitku callback purchase insert error:", error);
+      } else if (email) {
+        const { data: page } = await supabase
+          .from("landing_pages")
+          .select("title, slug, zip_url")
+          .eq("id", landingPageId)
+          .single();
+
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+        let downloadUrl = `${baseUrl}/panel`;
+        if (page?.zip_url && page?.slug) {
+          const signedUrl = await getSignedDownloadUrl(page.zip_url);
+          if (signedUrl) {
+            downloadUrl = `${baseUrl}/api/download/${page.slug}`;
+          }
+        }
+        await sendPurchaseConfirmationEmail({
+          to: email,
+          title: page?.title ?? "Landing Page",
+          downloadUrl,
+        });
       }
     } catch (adminErr) {
       console.error("Duitku callback admin client error:", adminErr);

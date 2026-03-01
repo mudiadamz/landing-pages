@@ -10,6 +10,7 @@ export type PurchaseWithPage = {
   purchased_at: string;
   title: string;
   slug: string;
+  zip_url?: string | null;
 };
 
 export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
@@ -25,7 +26,7 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       id,
       landing_page_id,
       purchased_at,
-      landing_pages (title, slug)
+      landing_pages (title, slug, zip_url)
     `)
     .eq("user_id", user.id)
     .order("purchased_at", { ascending: false });
@@ -36,7 +37,10 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
     id: string;
     landing_page_id: string;
     purchased_at: string;
-    landing_pages: { title: string; slug: string } | { title: string; slug: string }[] | null;
+    landing_pages:
+      | { title: string; slug: string; zip_url?: string | null }
+      | { title: string; slug: string; zip_url?: string | null }[]
+      | null;
   };
 
   return (data ?? []).map((p: Row) => {
@@ -47,6 +51,7 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       purchased_at: p.purchased_at,
       title: lp?.title ?? "Unknown",
       slug: lp?.slug ?? "",
+      zip_url: lp?.zip_url ?? null,
     };
   });
 }

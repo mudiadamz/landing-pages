@@ -20,6 +20,7 @@ export type LandingPageRow = {
   purchase_type?: "external" | "internal";
   featured?: boolean;
   thumbnail_url?: string | null;
+  zip_url?: string | null;
 };
 
 export type LandingPagePublic = {
@@ -43,7 +44,9 @@ export type LandingPageCheckout = {
   price_discount: number | null;
   is_free: boolean;
   purchase_link: string | null;
+  purchase_type?: "external" | "internal";
   thumbnail_url: string | null;
+  zip_url: string | null;
 };
 
 export async function getLandingPagesForUser() {
@@ -55,7 +58,7 @@ export async function getLandingPagesForUser() {
 
   const { data, error } = await supabase
     .from("landing_pages")
-    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured")
+    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, zip_url")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -157,7 +160,7 @@ export async function getLandingPageForCheckout(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, thumbnail_url")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url")
     .eq("slug", slug)
     .single();
 
@@ -175,6 +178,7 @@ export async function updateLandingPagePricing(
     purchase_type?: "external" | "internal";
     featured?: boolean;
     thumbnail_url?: string | null;
+    zip_url?: string | null;
   }
 ) {
   const supabase = await createClient();

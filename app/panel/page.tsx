@@ -54,14 +54,26 @@ async function CustomerPanel() {
               >
                 <p className="font-medium text-foreground truncate">{p.title}</p>
                 <p className="mt-1 text-sm text-[var(--muted)]">{formatDate(p.purchased_at)}</p>
-                <Link
-                  href={`/lp/${p.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-block text-sm font-medium text-[var(--primary)] hover:underline"
-                >
-                  Lihat →
-                </Link>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={`/lp/${p.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-[var(--primary)] hover:underline"
+                  >
+                    Lihat
+                  </Link>
+                  {p.zip_url && (
+                    <Link
+                      href={`/api/download/${p.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-[var(--primary)] hover:underline"
+                    >
+                      Download ZIP
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -85,14 +97,26 @@ async function CustomerPanel() {
                       <td className="px-4 py-3.5 font-medium text-foreground">{p.title}</td>
                       <td className="px-4 py-3.5 text-sm text-[var(--muted)]">{formatDate(p.purchased_at)}</td>
                       <td className="px-4 py-3.5 text-right">
-                        <Link
-                          href={`/lp/${p.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-[var(--primary)] hover:underline"
-                        >
-                          Lihat
-                        </Link>
+                        <span className="inline-flex gap-3">
+                          <Link
+                            href={`/lp/${p.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-[var(--primary)] hover:underline"
+                          >
+                            Lihat
+                          </Link>
+                          {p.zip_url && (
+                            <Link
+                              href={`/api/download/${p.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-[var(--primary)] hover:underline"
+                            >
+                              Download
+                            </Link>
+                          )}
+                        </span>
                       </td>
                     </tr>
                   ))}

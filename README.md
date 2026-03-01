@@ -29,6 +29,13 @@ Next.js + Supabase app to manage and publish HTML landing pages. Authenticated p
    DUITKU_SANDBOX=true   # Set false for production
    ```
 
+   **Email (Resend):** For purchase confirmation emails:
+
+   ```
+   RESEND_API_KEY=re_xxxxx
+   RESEND_FROM=onboarding@resend.dev  # Or verified domain
+   ```
+
 3. **Database**
 
    **Option A – Supabase CLI (local):**

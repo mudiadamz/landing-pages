@@ -56,6 +56,7 @@ export default async function EditPage({
           purchase_type: (page as { purchase_type?: "external" | "internal" }).purchase_type ?? "internal",
           featured: page.featured,
           thumbnail_url: page.thumbnail_url,
+          zip_url: (page as { zip_url?: string | null }).zip_url ?? null,
         }}
       />
     </div>

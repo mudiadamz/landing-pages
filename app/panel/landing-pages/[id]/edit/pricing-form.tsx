@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateLandingPagePricing } from "@/lib/actions/landing-pages";
+import { uploadZip } from "@/lib/actions/downloads";
 
 type Props = {
   pageId: string;
@@ -14,6 +15,7 @@ type Props = {
     purchase_type?: "external" | "internal";
     featured?: boolean;
     thumbnail_url?: string | null;
+    zip_url?: string | null;
   };
 };
 
@@ -30,6 +32,9 @@ export function PricingForm({ pageId, initial }: Props) {
   );
   const [featured, setFeatured] = useState(!!initial.featured);
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
+  const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
+  const [zipUploading, setZipUploading] = useState(false);
+  const [zipError, setZipError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -41,7 +46,32 @@ export function PricingForm({ pageId, initial }: Props) {
     setPurchaseType(initial.purchase_type ?? "internal");
     setFeatured(!!initial.featured);
     setThumbnailUrl(initial.thumbnail_url ?? "");
+    setZipUrl(initial.zip_url ?? "");
   }, [initial]);
+
+  async function handleZipUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setZipUploading(true);
+    setZipError(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const res = await uploadZip(pageId, formData);
+      if ("error" in res) {
+        setZipError(res.error);
+        return;
+      }
+      setZipUrl(res.url);
+      await updateLandingPagePricing(pageId, { zip_url: res.url });
+      router.refresh();
+    } catch (err) {
+      setZipError(err instanceof Error ? err.message : "Upload gagal");
+    } finally {
+      setZipUploading(false);
+      e.target.value = "";
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -55,6 +85,7 @@ export function PricingForm({ pageId, initial }: Props) {
         purchase_type: purchaseType,
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
+        zip_url: zipUrl.trim() || null,
       });
       setMessage("Pricing saved.");
       router.refresh();
@@ -157,6 +188,28 @@ export function PricingForm({ pageId, initial }: Props) {
           />
         </div>
       )}
+
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">
+          File ZIP (untuk download setelah pembayaran)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="file"
+            accept=".zip,application/zip,application/x-zip-compressed"
+            onChange={handleZipUpload}
+            disabled={zipUploading}
+            className="block w-full text-sm text-foreground file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-[var(--border)] file:bg-[var(--background)] file:text-sm file:font-medium"
+          />
+        </div>
+        {zipUploading && <p className="mt-1 text-xs text-[var(--muted)]">Mengunggah…</p>}
+        {zipError && <p className="mt-1 text-xs text-red-500">{zipError}</p>}
+        {zipUrl && (
+          <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+            ZIP terpasang. Akan tersedia untuk download setelah pembayaran.
+          </p>
+        )}
+      </div>
 
       <div>
         <label className="block text-xs font-medium text-[var(--muted)] mb-1">

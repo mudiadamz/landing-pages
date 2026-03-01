@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     const additionalParam = JSON.stringify({
       lp: page.id,
       u: user.id,
+      e: email.trim(),
     }).slice(0, 255);
 
     const fullName = user.user_metadata?.full_name ?? user.email ?? "Customer";
