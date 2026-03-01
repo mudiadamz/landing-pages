@@ -57,6 +57,7 @@ export default async function EditPage({
           featured: page.featured,
           thumbnail_url: page.thumbnail_url,
           zip_url: (page as { zip_url?: string | null }).zip_url ?? null,
+          rating: (page as { rating?: number | null }).rating ?? null,
         }}
       />
     </div>

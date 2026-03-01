@@ -16,6 +16,7 @@ type Props = {
     featured?: boolean;
     thumbnail_url?: string | null;
     zip_url?: string | null;
+    rating?: number | null;
   };
 };
 
@@ -33,6 +34,7 @@ export function PricingForm({ pageId, initial }: Props) {
   const [featured, setFeatured] = useState(!!initial.featured);
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
+  const [rating, setRating] = useState<string>(initial.rating != null ? String(initial.rating) : "");
   const [zipUploading, setZipUploading] = useState(false);
   const [zipError, setZipError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -47,6 +49,7 @@ export function PricingForm({ pageId, initial }: Props) {
     setFeatured(!!initial.featured);
     setThumbnailUrl(initial.thumbnail_url ?? "");
     setZipUrl(initial.zip_url ?? "");
+    setRating(initial.rating != null ? String(initial.rating) : "");
   }, [initial]);
 
   async function handleZipUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -86,6 +89,7 @@ export function PricingForm({ pageId, initial }: Props) {
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
         zip_url: zipUrl.trim() || null,
+        rating: rating ? parseFloat(rating) : null,
       });
       setMessage("Pricing saved.");
       router.refresh();
@@ -235,6 +239,22 @@ export function PricingForm({ pageId, initial }: Props) {
         <label htmlFor="featured" className="text-sm text-foreground">
           Show on homepage
         </label>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">
+          Rating (0–5, tampil di homepage)
+        </label>
+        <input
+          type="number"
+          min="0"
+          max="5"
+          step="0.1"
+          value={rating}
+          onChange={(e) => setRating(e.target.value)}
+          placeholder="4.5"
+          className="w-24 px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
+        />
       </div>
 
       <button

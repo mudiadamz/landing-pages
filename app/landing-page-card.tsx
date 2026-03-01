@@ -69,6 +69,15 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
             </>
           )}
         </div>
+        <div className="mt-2 flex items-center gap-3 text-xs text-[var(--muted)]">
+          <span>{page.sold_count ?? 0} terjual</span>
+          {page.rating != null && page.rating > 0 ? (
+            <span className="flex items-center gap-1">
+              <span className="text-amber-500" aria-hidden>★</span>
+              {Number(page.rating).toFixed(1)}
+            </span>
+          ) : null}
+        </div>
         <div className="mt-3 flex gap-2 sm:gap-3">
           <Link
             href={`/lp/${page.slug}`}

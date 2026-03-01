@@ -1,10 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { signOut } from "@/lib/actions/auth";
 
-type Props = { user: { id: string } | null };
+type User = {
+  id: string;
+  email?: string | null;
+  user_metadata?: { full_name?: string | null } | null;
+};
+type Props = { user: User | null };
+
+function displayName(user: User): string {
+  const name = user.user_metadata?.full_name?.trim();
+  if (name) return name;
+  const email = user.email?.trim();
+  if (email) return email.split("@")[0];
+  return "User";
+}
 
 const navLinks = [
   { href: "/", label: "Beranda" },
@@ -16,6 +30,19 @@ const navLinks = [
 
 export function SiteHeader({ user }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [userMenuOpen]);
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--card)]/80">
@@ -42,12 +69,39 @@ export function SiteHeader({ user }: Props) {
         <div className="flex items-center gap-2">
           <ThemeSwitch />
           {user ? (
-            <Link
-              href="/panel"
-              className="px-3 sm:px-4 py-2 text-sm font-medium text-[var(--primary)] rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150"
-            >
-              Panel
-            </Link>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((o) => !o)}
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true"
+                className="px-3 sm:px-4 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150 flex items-center gap-1.5"
+              >
+                <span className="max-w-[120px] truncate">{displayName(user)}</span>
+                <svg className="w-4 h-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 py-1 min-w-[160px] rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg z-30">
+                  <Link
+                    href="/panel"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-foreground hover:bg-[var(--accent-subtle)]"
+                  >
+                    Go to panel
+                  </Link>
+                  <form action={signOut} className="block">
+                    <button
+                      type="submit"
+                      className="w-full text-left px-4 py-2.5 text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
           ) : (
             <Link
               href="/login"
@@ -87,7 +141,25 @@ export function SiteHeader({ user }: Props) {
                 {label}
               </Link>
             ))}
-            {!user && (
+            {user ? (
+              <div className="mt-2 pt-4 border-t border-[var(--border)] flex flex-col gap-0.5">
+                <Link
+                  href="/panel"
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-3 py-2.5 text-sm text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
+                >
+                  Go to panel
+                </Link>
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    className="block w-full text-left px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </div>
+            ) : (
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
