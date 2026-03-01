@@ -80,7 +80,10 @@ export async function signInWithGoogle() {
 
 export async function resendVerification(_formData?: FormData) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return;
   await supabase.auth.resend({
     type: "signup",
+    email: user.email,
   });
 }
