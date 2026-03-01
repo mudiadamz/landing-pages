@@ -12,6 +12,15 @@ export default async function SignupPage({
   const params = await searchParams;
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative">
+      <Link
+        href="/"
+        className="absolute top-4 left-4 flex items-center gap-2 text-sm text-[var(--muted)] hover:text-foreground transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back home
+      </Link>
       <div className="absolute top-4 right-4">
         <ThemeSwitch />
       </div>
