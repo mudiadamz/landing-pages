@@ -78,13 +78,9 @@ export async function signInWithGoogle() {
   redirect("/login?error=Could not initiate Google sign in");
 }
 
-export async function resendVerification() {
+export async function resendVerification(_formData?: FormData) {
   const supabase = await createClient();
-  const { error } = await supabase.auth.resend({
+  await supabase.auth.resend({
     type: "signup",
   });
-  if (error) {
-    return { ok: false, error: error.message };
-  }
-  return { ok: true };
 }
