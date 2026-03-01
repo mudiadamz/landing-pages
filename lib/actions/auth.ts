@@ -58,3 +58,14 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+export async function resendVerification() {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+  });
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}

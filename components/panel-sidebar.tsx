@@ -6,7 +6,7 @@ import { useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
 
-type Props = { isAdmin: boolean };
+type Props = { isAdmin: boolean; displayName?: string };
 
 const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean; external?: boolean }[] }[] = [
   {
@@ -16,7 +16,6 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
   {
     label: "Lainnya",
     items: [
-      { href: "/", label: "View home", icon: HomeIcon, external: true },
       { href: "/panel/dashboard", label: "Dashboard", icon: ChartIcon, adminOnly: true },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
     ],
@@ -48,6 +47,13 @@ function MailIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  );
+}
+function BellIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
     </svg>
   );
 }
@@ -111,6 +117,16 @@ function NavContent({ isAdmin, onItemClick }: { isAdmin: boolean; onItemClick?: 
         })}
       </nav>
       <div className="mt-auto pt-4 border-t border-[var(--border)]">
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onItemClick}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+        >
+          <HomeIcon className="w-5 h-5 shrink-0" />
+          <span>View home</span>
+        </a>
         <div className="flex items-center gap-3 px-3 py-2.5">
           <ThemeSwitch />
         </div>
@@ -128,7 +144,7 @@ function NavContent({ isAdmin, onItemClick }: { isAdmin: boolean; onItemClick?: 
   );
 }
 
-export function PanelSidebar({ isAdmin }: Props) {
+export function PanelSidebar({ isAdmin, displayName }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -150,8 +166,16 @@ export function PanelSidebar({ isAdmin }: Props) {
             )}
           </svg>
         </button>
-        <span className="text-sm font-medium text-foreground">Panel</span>
-        <div className="w-9" />
+        <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
+          {displayName || "Panel"}
+        </span>
+        <button
+          type="button"
+          aria-label="Notifikasi"
+          className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+        >
+          <BellIcon className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Mobile overlay */}
@@ -169,11 +193,23 @@ export function PanelSidebar({ isAdmin }: Props) {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-14 items-center px-4 border-b border-[var(--border)] md:border-0">
+        <div className="flex h-14 items-center justify-between px-4 border-b border-[var(--border)] md:border-0">
           <Link href="/panel" className="text-base font-semibold text-foreground" onClick={() => setMobileOpen(false)}>
             ADM.UIUX
           </Link>
+          <button
+            type="button"
+            aria-label="Notifikasi"
+            className="hidden md:block p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+          >
+            <BellIcon className="w-5 h-5" />
+          </button>
         </div>
+        {displayName && (
+          <div className="px-4 pb-2">
+            <p className="text-xs text-[var(--muted)]">Halo, <span className="font-medium text-foreground">{displayName}</span></p>
+          </div>
+        )}
         <div className="flex flex-1 flex-col overflow-y-auto px-3">
           <NavContent isAdmin={isAdmin} onItemClick={() => setMobileOpen(false)} />
         </div>
