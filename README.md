@@ -49,6 +49,8 @@ Next.js + Supabase app to manage and publish HTML landing pages. Authenticated p
 
    **Email verification on signup:** Untuk Supabase cloud, aktifkan "Confirm email" di Dashboard → Authentication → Providers → Email.
 
+   **Google OAuth:** Aktifkan provider Google di Supabase Dashboard → Auth → Providers → Google, isi Client ID dan Secret dari [Google Cloud Console](https://console.cloud.google.com/apis/credentials). Tambahkan `NEXT_PUBLIC_SITE_URL/auth/callback` ke Redirect URLs di Supabase Auth settings (mis. `http://localhost:3000/auth/callback`).
+
    **Option B – Remote project:**
 
    ```bash

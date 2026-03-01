@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 
 const EVENT_NAME = "next-route-progress-start";
@@ -17,6 +17,7 @@ function isSameOrigin(href: string): boolean {
 
 export function RouteProgress() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const startedRef = useRef(false);
@@ -64,7 +65,7 @@ export function RouteProgress() {
     return () => window.removeEventListener(EVENT_NAME, onStart);
   }, []);
 
-  // 3) When pathname changes: ensure min step1 time, then complete and hide
+  // 3) When pathname or searchParams changes: ensure min step1 time, then complete and hide
   useEffect(() => {
     if (!pathname) return;
     if (!startedRef.current) return;
@@ -79,7 +80,7 @@ export function RouteProgress() {
       }, 200);
     }, wait);
     return () => clearTimeout(t);
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   if (!visible) return null;
 

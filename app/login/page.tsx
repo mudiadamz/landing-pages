@@ -2,6 +2,7 @@ import Link from "next/link";
 import { login } from "@/lib/actions/auth";
 import { SubmitButton } from "./submit-button";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { GoogleSignInButton } from "@/components/google-signin-button";
 
 export default async function LoginPage({
   searchParams,
@@ -29,6 +30,15 @@ export default async function LoginPage({
               <p className="text-sm text-red-700 dark:text-red-300">{params.error}</p>
             </div>
           )}
+          <GoogleSignInButton label="Masuk dengan Google" />
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--border)]" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-2 bg-[var(--card)] text-[var(--muted)]">atau</span>
+            </div>
+          </div>
           <form action={login} className="space-y-5">
             <div>
               <label

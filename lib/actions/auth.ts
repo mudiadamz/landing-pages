@@ -59,6 +59,25 @@ export async function signOut() {
   redirect("/login");
 }
 
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${baseUrl}/auth/callback`,
+      queryParams: { access_type: "offline", prompt: "consent" },
+    },
+  });
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
+  if (data.url) {
+    redirect(data.url);
+  }
+  redirect("/login?error=Could not initiate Google sign in");
+}
+
 export async function resendVerification() {
   const supabase = await createClient();
   const { error } = await supabase.auth.resend({
