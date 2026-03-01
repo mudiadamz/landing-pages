@@ -14,18 +14,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { slug, email, phoneNumber } = body as {
-      slug: string;
-      email: string;
-      phoneNumber?: string;
-    };
+    const { slug } = body as { slug: string };
 
-    if (!slug || !email?.trim()) {
+    if (!slug) {
       return NextResponse.json(
-        { error: "slug dan email wajib diisi" },
+        { error: "slug wajib diisi" },
         { status: 400 }
       );
     }
+
+    const email = user.email?.trim();
+    if (!email) {
+      return NextResponse.json(
+        { error: "Akun belum memiliki email. Perbarui profil Anda." },
+        { status: 400 }
+      );
+    }
+
+    const phoneNumber = (user.user_metadata?.phone as string)?.trim() ?? undefined;
 
     const page = await getLandingPageForCheckout(slug);
     if (!page) {
@@ -63,8 +69,8 @@ export async function POST(req: NextRequest) {
       paymentAmount,
       merchantOrderId,
       productDetails: page.title,
-      email: email.trim(),
-      phoneNumber: phoneNumber?.trim(),
+      email,
+      phoneNumber: phoneNumber ?? "",
       customerVaName: fullName,
       itemDetails: [
         {
@@ -76,15 +82,15 @@ export async function POST(req: NextRequest) {
       customerDetail: {
         firstName,
         lastName,
-        email: email.trim(),
-        phoneNumber: phoneNumber?.trim() ?? "",
+        email,
+        phoneNumber: phoneNumber ?? "",
         billingAddress: {
           firstName,
           lastName,
           address,
           city: "Jakarta",
           postalCode: "00000",
-          phone: phoneNumber?.trim() ?? "",
+          phone: phoneNumber ?? "",
           countryCode: "ID",
         },
         shippingAddress: {
@@ -93,7 +99,7 @@ export async function POST(req: NextRequest) {
           address,
           city: "Jakarta",
           postalCode: "00000",
-          phone: phoneNumber?.trim() ?? "",
+          phone: phoneNumber ?? "",
           countryCode: "ID",
         },
       },

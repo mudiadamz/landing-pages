@@ -32,7 +32,7 @@ export default async function SignupPage({
           {params.message === "check_email" && (
             <div className="mb-4 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 px-4 py-3">
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                Check your email to confirm your account, then sign in.
+                Cek email Anda untuk verifikasi akun, lalu masuk.
               </p>
             </div>
           )}

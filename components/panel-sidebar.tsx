@@ -8,7 +8,7 @@ import { ThemeSwitch } from "@/components/theme-switch";
 
 type Props = { isAdmin: boolean };
 
-const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean }[] }[] = [
+const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean; external?: boolean }[] }[] = [
   {
     label: "Landing page",
     items: [{ href: "/panel", label: "Landing pages", icon: LayoutIcon }],
@@ -16,6 +16,7 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
   {
     label: "Lainnya",
     items: [
+      { href: "/", label: "View home", icon: HomeIcon, external: true },
       { href: "/panel/dashboard", label: "Dashboard", icon: ChartIcon, adminOnly: true },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
     ],
@@ -33,6 +34,13 @@ function ChartIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  );
+}
+function HomeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
   );
 }
@@ -67,21 +75,33 @@ function NavContent({ isAdmin, onItemClick }: { isAdmin: boolean; onItemClick?: 
               </p>
               <div className="flex flex-col gap-0.5">
                 {visibleItems.map((item) => {
-                  const active = pathname === item.href || (item.href !== "/panel" && pathname.startsWith(item.href));
+                  const active = !item.external && (pathname === item.href || (item.href !== "/panel" && item.href !== "/" && pathname.startsWith(item.href)));
                   const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onItemClick}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                        active
-                          ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
-                          : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
-                      }`}
-                    >
+                  const linkClass = `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    active
+                      ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
+                      : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+                  }`;
+                  const content = (
+                    <>
                       <Icon className="w-5 h-5 shrink-0" />
                       <span>{item.href === "/panel" ? (isAdmin ? "Landing pages" : "Pembelian saya") : item.label}</span>
+                    </>
+                  );
+                  return item.external ? (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={onItemClick}
+                      className={linkClass}
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    <Link key={item.href} href={item.href} onClick={onItemClick} className={linkClass}>
+                      {content}
                     </Link>
                   );
                 })}

@@ -8,7 +8,7 @@ import { SocialLinks } from "@/components/social-links";
 export const metadata: Metadata = {
   title: "Tentang",
   description:
-    "Tentang ADM.UIUX dan Adam Mudianto. Template landing page HTML siap pakai, software developer 15+ tahun.",
+    "Tentang ADM.UIUX dan Adam Mudianto. Landing page & digital assets siap pakai, software developer 15+ tahun.",
 };
 
 export default async function AboutPage() {
@@ -56,7 +56,7 @@ export default async function AboutPage() {
             </div>
             <div className="space-y-4 text-[var(--muted)] leading-relaxed">
               <p>
-                ADM.UIUX membantumu menemukan, melihat preview, dan membeli HTML landing page siap pakai. Mau template gratis atau desain premium, jelajahi koleksi kami dan mulai dalam hitungan menit.
+                ADM.UIUX membantumu menemukan, melihat preview, dan membeli landing page serta digital assets siap pakai. Mau template gratis atau desain premium, jelajahi koleksi kami dan mulai dalam hitungan menit.
               </p>
               <p>
                 Buat akun untuk menyimpan pembelian dan mengakses panel untuk mengelola kontenmu. Kami fokus pada kesederhanaan dan kualitas.
@@ -64,7 +64,7 @@ export default async function AboutPage() {
               <div className="pt-6 border-t border-[var(--border)]">
                 <h2 className="text-base font-semibold text-foreground mb-2">Tentang penulis</h2>
                 <p>
-                  Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun landing page template dan tools untuk memudahkan proyek web Anda.
+                  Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun landing page & digital assets untuk memudahkan proyek web Anda.
                 </p>
                 <div className="mt-6">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Media sosial</h3>

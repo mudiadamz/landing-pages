@@ -49,7 +49,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
       </Link>
       <div className="p-4">
         <h2 className="font-semibold text-foreground truncate group-hover:text-[var(--primary)] transition-colors">
-          <Link href={`/lp/${page.slug}`}>{page.title}</Link>
+          <Link href={`/lp/${page.slug}`} className="active:opacity-80 transition-opacity duration-150">{page.title}</Link>
         </h2>
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           {showAsFree ? (
@@ -74,7 +74,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
             href={`/lp/${page.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-                className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-[var(--border)] hover:bg-[var(--background)] transition-colors"
+            className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-[var(--border)] hover:bg-[var(--background)] active:scale-[0.98] active:opacity-90 transition-all duration-150"
           >
             Lihat
           </Link>
@@ -84,7 +84,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
                 <input type="hidden" name="landing_page_id" value={page.id} />
                 <button
                   type="submit"
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+                  className="w-full px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
                 >
                   Ambil gratis
                 </button>
@@ -94,7 +94,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
                 href="/login"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+                className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
               >
                 Ambil gratis (masuk)
               </Link>
@@ -102,7 +102,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
           ) : isInternal ? (
             <Link
               href={`/checkout/${page.slug}`}
-              className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+              className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
             >
               Beli
             </Link>
@@ -111,7 +111,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
               href={externalUrl || `/lp/${page.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+              className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
             >
               {externalUrl ? "Beli" : "Lihat"}
             </a>

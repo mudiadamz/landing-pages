@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 export const metadata: Metadata = {
   title: "Ketentuan Layanan",
   description:
-    "Ketentuan layanan ADM.UIUX. Syarat dan ketentuan penggunaan landing page template.",
+    "Ketentuan layanan ADM.UIUX. Syarat dan ketentuan penggunaan landing page & digital assets.",
 };
 
 export default async function TermsPage() {
@@ -33,7 +33,7 @@ export default async function TermsPage() {
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Penggunaan Layanan</h2>
               <p>
-                Anda setuju menggunakan platform landing page kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.
+                Anda setuju menggunakan platform landing page & digital assets kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Akun</h2>
               <p>

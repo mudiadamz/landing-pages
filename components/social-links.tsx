@@ -82,7 +82,7 @@ export function SocialLinks({ className = "", variant = "row" }: Props) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 text-sm text-[var(--muted)] hover:text-[var(--primary)] transition-colors duration-200"
+            className="inline-flex items-center gap-2.5 text-sm text-[var(--muted)] hover:text-[var(--primary)] active:scale-[0.98] active:opacity-80 transition-all duration-150"
             aria-label={`${name}: ${href}`}
           >
             <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--accent-subtle)] text-[var(--primary)] shrink-0">

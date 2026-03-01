@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 
 const EVENT_NAME = "next-route-progress-start";
+const MIN_STEP1_MS = 400; // Minimum visible time for step 1 (0→25%)
 
 function isSameOrigin(href: string): boolean {
   if (href.startsWith("/")) return true;
@@ -19,6 +20,7 @@ export function RouteProgress() {
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const startedRef = useRef(false);
+  const startTimeRef = useRef<number>(0);
 
   // 1) Show bar immediately on link click or form submit (capture phase)
   useEffect(() => {
@@ -49,29 +51,34 @@ export function RouteProgress() {
     };
   }, [pathname]);
 
-  // 2) On "start" event: show bar and set initial progress
+  // 2) On "start" event: show bar and animate to 25% (slower step 1)
   useEffect(() => {
     function onStart() {
       startedRef.current = true;
+      startTimeRef.current = Date.now();
       setVisible(true);
-      setProgress(25);
+      setProgress(0);
+      setTimeout(() => setProgress(25), 80);
     }
     window.addEventListener(EVENT_NAME, onStart);
     return () => window.removeEventListener(EVENT_NAME, onStart);
   }, []);
 
-  // 3) When pathname changes: complete progress then hide
+  // 3) When pathname changes: ensure min step1 time, then complete and hide
   useEffect(() => {
     if (!pathname) return;
-    if (startedRef.current) {
+    if (!startedRef.current) return;
+    const elapsed = Date.now() - startTimeRef.current;
+    const wait = Math.max(0, MIN_STEP1_MS - elapsed);
+    const t = setTimeout(() => {
       setProgress(100);
-      const t = setTimeout(() => {
+      setTimeout(() => {
         setVisible(false);
         setProgress(0);
         startedRef.current = false;
       }, 200);
-      return () => clearTimeout(t);
-    }
+    }, wait);
+    return () => clearTimeout(t);
   }, [pathname]);
 
   if (!visible) return null;
@@ -86,7 +93,7 @@ export function RouteProgress() {
       aria-label="Memuat halaman"
     >
       <div
-        className="h-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)] transition-[width] duration-200 ease-out"
+        className="h-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)] transition-[width] duration-300 ease-out"
         style={{ width: `${progress}%` }}
       />
     </div>

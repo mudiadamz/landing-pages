@@ -18,8 +18,6 @@ export function CheckoutForm({
   showAsFree,
   purchaseLink,
 }: Props) {
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,11 +29,7 @@ export function CheckoutForm({
       const res = await fetch("/api/duitku/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: page.slug,
-          email: email.trim(),
-          phoneNumber: phone.trim() || undefined,
-        }),
+        body: JSON.stringify({ slug: page.slug }),
       });
       const data = await res.json();
 
@@ -105,41 +99,9 @@ export function CheckoutForm({
     );
   }
 
+  // Logged in: no email/phone fields, API uses session user
   return (
     <form onSubmit={handleDuitku} className="space-y-4">
-      <div>
-        <label
-          htmlFor="duitku-email"
-          className="block text-xs font-medium text-[var(--muted)] mb-1"
-        >
-          Email <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="duitku-email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="email@example.com"
-          className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
-        />
-      </div>
-      <div>
-        <label
-          htmlFor="duitku-phone"
-          className="block text-xs font-medium text-[var(--muted)] mb-1"
-        >
-          Nomor telepon (opsional)
-        </label>
-        <input
-          id="duitku-phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="08123456789"
-          className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
-        />
-      </div>
       {error && (
         <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
       )}

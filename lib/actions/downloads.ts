@@ -25,7 +25,8 @@ export async function uploadZip(
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${user.id}/${pageId}/${Date.now()}-${sanitized}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from(BUCKET).upload(path, file, {
     contentType: "application/zip",
     upsert: true,
   });
@@ -36,8 +37,8 @@ export async function uploadZip(
 }
 
 export async function getSignedDownloadUrl(storagePath: string): Promise<string | null> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.storage
+  const admin = createAdminClient();
+  const { data, error } = await admin.storage
     .from(BUCKET)
     .createSignedUrl(storagePath, 3600);
 

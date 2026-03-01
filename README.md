@@ -47,6 +47,8 @@ Next.js + Supabase app to manage and publish HTML landing pages. Authenticated p
 
    Local URL: `http://localhost:54321` (from `supabase status`). Use local project URL and anon key in `.env.local`.
 
+   **Email verification on signup:** Untuk Supabase cloud, aktifkan "Confirm email" di Dashboard → Authentication → Providers → Email.
+
    **Option B – Remote project:**
 
    ```bash

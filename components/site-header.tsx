@@ -32,7 +32,7 @@ export function SiteHeader({ user }: Props) {
             <Link
               key={href}
               href={href}
-              className="px-3 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] transition-colors duration-200 hover:scale-[1.02]"
+              className="px-3 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150"
             >
               {label}
             </Link>
@@ -44,14 +44,14 @@ export function SiteHeader({ user }: Props) {
           {user ? (
             <Link
               href="/panel"
-              className="px-3 sm:px-4 py-2 text-sm font-medium text-[var(--primary)] rounded-lg hover:bg-[var(--accent-subtle)] transition-colors"
+              className="px-3 sm:px-4 py-2 text-sm font-medium text-[var(--primary)] rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150"
             >
               Panel
             </Link>
           ) : (
             <Link
               href="/login"
-              className="px-3 sm:px-4 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] transition-colors duration-200 hover:scale-[1.02]"
+              className="px-3 sm:px-4 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150"
             >
               Masuk
             </Link>
@@ -61,7 +61,7 @@ export function SiteHeader({ user }: Props) {
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 -mr-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+            className="md:hidden p-2 -mr-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:scale-[0.95] active:opacity-80 transition-all duration-150"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {mobileOpen ? (
@@ -82,7 +82,7 @@ export function SiteHeader({ user }: Props) {
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
-                className="px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
+                className="block px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:bg-[var(--accent-subtle)] active:opacity-90 transition-all duration-150"
               >
                 {label}
               </Link>
@@ -91,7 +91,7 @@ export function SiteHeader({ user }: Props) {
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="px-3 py-2.5 mt-2 pt-4 border-t border-[var(--border)] text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
+                className="block px-3 py-2.5 mt-2 pt-4 border-t border-[var(--border)] text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:bg-[var(--accent-subtle)] active:opacity-90 transition-all duration-150"
               >
                 Masuk
               </Link>

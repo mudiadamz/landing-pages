@@ -18,13 +18,14 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://your-domain.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "ADM.UIUX — Landing Page Template",
+    default: "ADM.UIUX — Landing Page & Digital Assets",
     template: "%s | ADM.UIUX",
   },
   description:
-    "Template landing page HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.",
+    "Landing page dan digital assets siap pakai. Template HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.",
   keywords: [
     "landing page",
+    "digital assets",
     "template HTML",
     "landing page template",
     "HTML template",
@@ -37,15 +38,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     siteName: "ADM.UIUX",
-    title: "ADM.UIUX — Landing Page Template",
+    title: "ADM.UIUX — Landing Page & Digital Assets",
     description:
-      "Template landing page HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
+      "Landing page dan digital assets siap pakai. Template HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ADM.UIUX — Landing Page Template",
+    title: "ADM.UIUX — Landing Page & Digital Assets",
     description:
-      "Template landing page HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
+      "Landing page dan digital assets siap pakai. Template HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
   },
   robots: {
     index: true,

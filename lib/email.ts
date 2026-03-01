@@ -27,7 +27,7 @@ export async function sendPurchaseConfirmationEmail(opts: {
         <p><a href="${opts.downloadUrl}">Download sekarang</a></p>
         <p>Atau masuk ke panel untuk mendownload kapan saja.</p>
         <hr>
-        <p style="color:#666;font-size:12px">ADM.UIUX — Landing Page Template</p>
+        <p style="color:#666;font-size:12px">ADM.UIUX — Landing Page & Digital Assets</p>
       `,
     });
   } catch (err) {

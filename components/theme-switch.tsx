@@ -24,7 +24,7 @@ export function ThemeSwitch() {
       <button
         type="button"
         aria-label="Ubah tema"
-        className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] transition-colors"
+        className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:scale-[0.95] active:opacity-80 transition-all duration-150"
       >
         <span className="w-5 h-5 block" />
       </button>
@@ -36,7 +36,7 @@ export function ThemeSwitch() {
       type="button"
       aria-label={isDark ? "Mode gelap" : "Mode terang"}
       onClick={toggle}
-      className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] transition-colors"
+      className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:scale-[0.95] active:opacity-80 transition-all duration-150"
     >
       {isDark ? (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

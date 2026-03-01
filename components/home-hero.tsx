@@ -33,13 +33,13 @@ export function HomeHero() {
             className="w-2 h-2 rounded-full animate-pulse"
             style={{ backgroundColor: "var(--accent-warm)" }}
           />
-          Template landing page siap pakai
+          Landing page & digital assets
         </div>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-tight text-foreground">
-          Temukan landing page
+          Temukan landing page & digital assets
         </h1>
         <p className="text-base sm:text-lg text-[var(--muted)] leading-relaxed">
-          Jelajahi, lihat preview, dan beli HTML landing page siap pakai. Template gratis dan berbayar.
+          Jelajahi, lihat preview, dan beli landing page serta digital assets siap pakai. Template gratis dan berbayar.
         </p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <span

@@ -45,6 +45,12 @@ body {
   font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
 }
 
+/* Mobile microinteractions: tap feedback, remove default highlight */
+a, button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 /* Form controls - consistent focus and borders */
 input:focus, textarea:focus, button:focus-visible {
   outline: none;

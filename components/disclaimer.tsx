@@ -30,7 +30,7 @@ export function Disclaimer() {
           </h2>
           <div className="space-y-4 text-sm text-[var(--muted)] leading-relaxed">
             <p>
-              Produk yang dijual di sini adalah template HTML landing page. Anda membeli hak penggunaan template, bukan lisensi eksklusif. Template boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.
+              Produk yang dijual di sini adalah template HTML landing page dan digital assets. Anda membeli hak penggunaan template, bukan lisensi eksklusif. Template boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.
             </p>
             <p>
               Kami tidak menjamin template bebas dari bug. Kami melakukan testing dasar, tetapi penggunaan Anda mungkin berbeda. Dukungan teknis terbatas pada bantuan implementasi dan perbaikan bug selama periode garansi support 1 bulan.

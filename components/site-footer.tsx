@@ -13,7 +13,7 @@ export function SiteFooter() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="space-y-4">
             <p className="text-sm text-[var(--muted)] max-w-md">
-              ADM.UIUX — landing page template gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.
+              ADM.UIUX — landing page & digital assets. By Adam Mudianto, software developer 15+ tahun.
             </p>
             <div>
               <p className="text-xs font-medium text-foreground mb-2">Sosial media</p>
@@ -21,19 +21,19 @@ export function SiteFooter() {
             </div>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            <Link href="/" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
+            <Link href="/" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Beranda
             </Link>
-            <Link href="/about" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
+            <Link href="/about" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Tentang
             </Link>
-            <Link href="/contact" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
+            <Link href="/contact" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Kontak
             </Link>
-            <Link href="/privacy" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
+            <Link href="/privacy" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Kebijakan Privasi
             </Link>
-            <Link href="/terms" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">
+            <Link href="/terms" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Ketentuan Layanan
             </Link>
           </nav>
