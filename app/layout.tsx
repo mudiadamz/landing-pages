@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { RouteProgress } from "@/components/route-progress";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,9 +13,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://your-domain.com";
+
 export const metadata: Metadata = {
-  title: "ADM.UIUX",
-  description: "Landing page template gratis dan berbayar oleh Adam Mudianto. Software developer 15+ tahun.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "ADM.UIUX — Landing Page Template",
+    template: "%s | ADM.UIUX",
+  },
+  description:
+    "Template landing page HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.",
+  keywords: [
+    "landing page",
+    "template HTML",
+    "landing page template",
+    "HTML template",
+    "Adam Mudianto",
+    "ADM.UIUX",
+  ],
+  authors: [{ name: "Adam Mudianto", url: SITE_URL }],
+  creator: "Adam Mudianto",
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "ADM.UIUX",
+    title: "ADM.UIUX — Landing Page Template",
+    description:
+      "Template landing page HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ADM.UIUX — Landing Page Template",
+    description:
+      "Template landing page HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -34,6 +70,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <RouteProgress />
         {children}
       </body>
     </html>

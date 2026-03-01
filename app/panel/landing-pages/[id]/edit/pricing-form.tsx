@@ -11,6 +11,7 @@ type Props = {
     price_discount?: number | null;
     is_free?: boolean;
     purchase_link?: string | null;
+    purchase_type?: "external" | "internal";
     featured?: boolean;
     thumbnail_url?: string | null;
   };
@@ -24,6 +25,9 @@ export function PricingForm({ pageId, initial }: Props) {
   );
   const [isFree, setIsFree] = useState(!!initial.is_free);
   const [purchaseLink, setPurchaseLink] = useState(initial.purchase_link ?? "");
+  const [purchaseType, setPurchaseType] = useState<"external" | "internal">(
+    initial.purchase_type ?? "internal"
+  );
   const [featured, setFeatured] = useState(!!initial.featured);
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   const [saving, setSaving] = useState(false);
@@ -34,6 +38,7 @@ export function PricingForm({ pageId, initial }: Props) {
     setPriceDiscount(initial.price_discount != null ? String(initial.price_discount) : "");
     setIsFree(!!initial.is_free);
     setPurchaseLink(initial.purchase_link ?? "");
+    setPurchaseType(initial.purchase_type ?? "internal");
     setFeatured(!!initial.featured);
     setThumbnailUrl(initial.thumbnail_url ?? "");
   }, [initial]);
@@ -46,7 +51,8 @@ export function PricingForm({ pageId, initial }: Props) {
         price: isFree ? null : (price ? parseFloat(price) : null),
         price_discount: isFree || !priceDiscount ? null : parseFloat(priceDiscount),
         is_free: isFree,
-        purchase_link: purchaseLink.trim() || null,
+        purchase_link: purchaseType === "external" ? (purchaseLink.trim() || null) : null,
+        purchase_type: purchaseType,
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
       });
@@ -111,16 +117,46 @@ export function PricingForm({ pageId, initial }: Props) {
 
       <div>
         <label className="block text-xs font-medium text-[var(--muted)] mb-1">
-          Purchase link (payment gateway URL)
+          Tipe pembelian
         </label>
-        <input
-          type="url"
-          value={purchaseLink}
-          onChange={(e) => setPurchaseLink(e.target.value)}
-          placeholder="https://pay.example.com/..."
-          className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
-        />
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="purchase_type"
+              checked={purchaseType === "external"}
+              onChange={() => setPurchaseType("external")}
+              className="border-[var(--border)]"
+            />
+            External (link ke payment gateway)
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="purchase_type"
+              checked={purchaseType === "internal"}
+              onChange={() => setPurchaseType("internal")}
+              className="border-[var(--border)]"
+            />
+            Internal (checkout di situs ini)
+          </label>
+        </div>
       </div>
+
+      {purchaseType === "external" && (
+        <div>
+          <label className="block text-xs font-medium text-[var(--muted)] mb-1">
+            Purchase link (payment gateway URL)
+          </label>
+          <input
+            type="url"
+            value={purchaseLink}
+            onChange={(e) => setPurchaseLink(e.target.value)}
+            placeholder="https://pay.example.com/..."
+            className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
+          />
+        </div>
+      )}
 
       <div>
         <label className="block text-xs font-medium text-[var(--muted)] mb-1">

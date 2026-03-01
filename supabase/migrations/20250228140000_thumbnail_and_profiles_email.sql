@@ -8,6 +8,7 @@ alter table public.profiles
 
 
 -- Admin can read customer profiles for dashboard
+drop policy if exists "Admin can read customer profiles" on public.profiles;
 create policy "Admin can read customer profiles"
   on public.profiles for select
   using (

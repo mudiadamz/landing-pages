@@ -17,6 +17,7 @@ export type LandingPageRow = {
   price_discount?: number | null;
   is_free?: boolean;
   purchase_link?: string | null;
+  purchase_type?: "external" | "internal";
   featured?: boolean;
   thumbnail_url?: string | null;
 };
@@ -30,7 +31,19 @@ export type LandingPagePublic = {
   price_discount?: number | null;
   is_free?: boolean;
   purchase_link?: string | null;
+  purchase_type?: "external" | "internal";
   thumbnail_url?: string | null;
+};
+
+export type LandingPageCheckout = {
+  id: string;
+  title: string;
+  slug: string;
+  price: number | null;
+  price_discount: number | null;
+  is_free: boolean;
+  purchase_link: string | null;
+  thumbnail_url: string | null;
 };
 
 export async function getLandingPagesForUser() {
@@ -42,7 +55,7 @@ export async function getLandingPagesForUser() {
 
   const { data, error } = await supabase
     .from("landing_pages")
-    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, featured")
+    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -132,12 +145,24 @@ export async function getLandingPagesForHomepage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("landing_pages")
-    .select("id, title, slug, html_content, price, price_discount, is_free, purchase_link, thumbnail_url")
+    .select("id, title, slug, html_content, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url")
     .order("updated_at", { ascending: false })
     .limit(24);
 
   if (error) return [];
   return (data ?? []) as LandingPagePublic[];
+}
+
+export async function getLandingPageForCheckout(slug: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, thumbnail_url")
+    .eq("slug", slug)
+    .single();
+
+  if (error || !data) return null;
+  return data as LandingPageCheckout;
 }
 
 export async function updateLandingPagePricing(
@@ -147,6 +172,7 @@ export async function updateLandingPagePricing(
     price_discount?: number | null;
     is_free?: boolean;
     purchase_link?: string | null;
+    purchase_type?: "external" | "internal";
     featured?: boolean;
     thumbnail_url?: string | null;
   }

@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+
+export const metadata: Metadata = {
+  title: "Ketentuan Layanan",
+  description:
+    "Ketentuan layanan ADM.UIUX. Syarat dan ketentuan penggunaan landing page template.",
+};
 
 export default async function TermsPage() {
   const supabase = await createClient();

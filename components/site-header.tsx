@@ -49,20 +49,12 @@ export function SiteHeader({ user }: Props) {
               Panel
             </Link>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="hidden sm:inline-flex px-3 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] transition-colors"
-              >
-                Masuk
-              </Link>
-              <Link
-                href="/signup"
-                className="px-3 sm:px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-sm font-medium hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              >
-                Daftar
-              </Link>
-            </>
+            <Link
+              href="/login"
+              className="px-3 sm:px-4 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] transition-colors duration-200 hover:scale-[1.02]"
+            >
+              Masuk
+            </Link>
           )}
           <button
             type="button"
@@ -96,22 +88,13 @@ export function SiteHeader({ user }: Props) {
               </Link>
             ))}
             {!user && (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="px-3 py-2.5 mt-2 pt-4 border-t border-[var(--border)] text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
-                >
-                  Masuk
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setMobileOpen(false)}
-                  className="px-3 py-2.5 text-sm font-medium text-[var(--primary)] rounded-lg hover:bg-[var(--accent-subtle)]"
-                >
-                  Daftar
-                </Link>
-              </>
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="px-3 py-2.5 mt-2 pt-4 border-t border-[var(--border)] text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
+              >
+                Masuk
+              </Link>
             )}
           </nav>
         </div>

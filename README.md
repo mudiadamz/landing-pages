@@ -17,6 +17,16 @@ Next.js + Supabase app to manage and publish HTML landing pages. Authenticated p
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # For payment callbacks
+   NEXT_PUBLIC_SITE_URL=https://your-domain.com     # For Duitku callback/return URLs
+   ```
+
+   **Duitku (payment gateway):** For internal checkout, add:
+
+   ```
+   DUITKU_MERCHANT_CODE=your-merchant-code
+   DUITKU_API_KEY=your-api-key
+   DUITKU_SANDBOX=true   # Set false for production
    ```
 
 3. **Database**

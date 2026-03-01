@@ -23,7 +23,8 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
   const hasDiscount = !isFree && priceDiscount > 0;
   const displayPrice = hasDiscount ? priceDiscount : price;
   const showAsFree = isFree || displayPrice <= 0;
-  const purchaseUrl = page.purchase_link?.trim() || `/lp/${page.slug}`;
+  const isInternal = page.purchase_type !== "external";
+  const externalUrl = page.purchase_link?.trim() || null;
 
   return (
     <article className="group rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[var(--primary)]/30 transition-all duration-300 ease-out active:scale-[0.99]">
@@ -98,14 +99,21 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
                 Ambil gratis (masuk)
               </Link>
             )
+          ) : isInternal ? (
+            <Link
+              href={`/checkout/${page.slug}`}
+              className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+            >
+              Beli
+            </Link>
           ) : (
             <a
-              href={purchaseUrl}
+              href={externalUrl || `/lp/${page.slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
             >
-              {page.purchase_link ? "Beli" : "Lihat"}
+              {externalUrl ? "Beli" : "Lihat"}
             </a>
           )}
         </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SocialLinks } from "@/components/social-links";
 
 export function SiteFooter() {
   return (
@@ -14,17 +15,10 @@ export function SiteFooter() {
             <p className="text-sm text-[var(--muted)] max-w-md">
               ADM.UIUX — landing page template gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.
             </p>
-            <a
-              href="https://lynk.id/adm.uiux"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:opacity-80 transition-opacity"
-            >
-              lynk.id/adm.uiux
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
+            <div>
+              <p className="text-xs font-medium text-foreground mb-2">Sosial media</p>
+              <SocialLinks variant="row" className="gap-x-4 gap-y-2 text-xs" />
+            </div>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <Link href="/" className="inline-block text-[var(--muted)] hover:text-foreground transition-colors duration-200">

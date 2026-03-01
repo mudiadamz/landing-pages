@@ -53,6 +53,7 @@ export default async function EditPage({
           price_discount: page.price_discount,
           is_free: page.is_free,
           purchase_link: page.purchase_link,
+          purchase_type: (page as { purchase_type?: "external" | "internal" }).purchase_type ?? "internal",
           featured: page.featured,
           thumbnail_url: page.thumbnail_url,
         }}

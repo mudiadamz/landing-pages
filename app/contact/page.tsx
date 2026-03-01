@@ -1,6 +1,14 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SocialLinks } from "@/components/social-links";
+import { ContactForm } from "@/components/contact-form";
+
+export const metadata: Metadata = {
+  title: "Kontak",
+  description: "Hubungi ADM.UIUX. Form kontak dan media sosial untuk pertanyaan, masukan, atau kerja sama.",
+};
 
 export default async function ContactPage() {
   const supabase = await createClient();
@@ -18,19 +26,14 @@ export default async function ContactPage() {
               Kontak
             </h1>
             <p className="text-[var(--muted)] leading-relaxed mb-6">
-              Ada pertanyaan atau masukan? Hubungi kami lewat link di bawah.
+              Ada pertanyaan atau masukan? Isi form di bawah atau hubungi lewat media sosial.
             </p>
-            <a
-              href="https://lynk.id/adm.uiux"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-[var(--primary)] font-medium hover:opacity-80 transition-opacity"
-            >
-              lynk.id/adm.uiux
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-8 mb-10">
+              <h2 className="text-base font-semibold text-foreground mb-4">Kirim pesan</h2>
+              <ContactForm />
+            </div>
+            <h2 className="text-base font-semibold text-foreground mb-3">Media sosial</h2>
+            <SocialLinks variant="stack" />
           </div>
         </section>
       </main>

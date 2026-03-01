@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+
+export const metadata: Metadata = {
+  title: "Kebijakan Privasi",
+  description:
+    "Kebijakan privasi ADM.UIUX. Cara kami mengumpulkan, menggunakan, dan melindungi informasi Anda.",
+};
 
 export default async function PrivacyPage() {
   const supabase = await createClient();
