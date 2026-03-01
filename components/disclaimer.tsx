@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     q: "Bagaimana support 1 bulan itu?",
-    a: "Setelah pembelian, Anda punya hak support selama 1 bulan. Bisa tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
+    a: "Support 1 bulan diberikan untuk pembelian dengan total di atas Rp 2.000.000. Setelah pembelian memenuhi syarat, Anda punya hak support selama 1 bulan: tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
   },
 ];
 
@@ -33,7 +33,7 @@ export function Disclaimer() {
               Produk yang dijual di sini adalah template HTML landing page dan digital assets. Anda membeli hak penggunaan template, bukan lisensi eksklusif. Template boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.
             </p>
             <p>
-              Kami tidak menjamin template bebas dari bug. Kami melakukan testing dasar, tetapi penggunaan Anda mungkin berbeda. Dukungan teknis terbatas pada bantuan implementasi dan perbaikan bug selama periode garansi support 1 bulan.
+              Kami tidak menjamin template bebas dari bug. Kami melakukan testing dasar, tetapi penggunaan Anda mungkin berbeda. Dukungan teknis (support 1 bulan) berlaku untuk pembelian dengan total di atas Rp 2.000.000, terbatas pada bantuan implementasi dan perbaikan bug.
             </p>
             <p>
               Pembelian landing page berbayar memakai link pembayaran eksternal. Pastikan Anda membeli dari sumber resmi (halaman ini). Kami tidak bertanggung jawab atas transaksi di luar platform.
@@ -65,7 +65,7 @@ export function Disclaimer() {
             Jaminan support landing page 1 bulan
           </h2>
           <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
-            Setiap pembelian landing page berbayar dilengkapi dukungan teknis selama <strong className="text-foreground">1 bulan</strong> sejak tanggal pembelian. Yang termasuk:
+            Support 1 bulan diberikan untuk pembelian dengan <strong className="text-foreground">total di atas Rp 2.000.000</strong>. Dukungan teknis berlaku selama 1 bulan sejak tanggal pembelian yang memenuhi syarat. Yang termasuk:
           </p>
           <ul className="space-y-2 text-sm text-[var(--muted)] leading-relaxed list-disc list-inside">
             <li>Bantuan implementasi (cara upload, deploy, integrasi dasar)</li>

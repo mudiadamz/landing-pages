@@ -41,7 +41,7 @@ export default async function TermsPage() {
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Pembelian</h2>
               <p>
-                Pembelian landing page berbayar mengikuti ketentuan penjual. Pengembalian dana dan dukungan diatur menurut kebijakan kami.
+                Pembelian landing page berbayar mengikuti ketentuan penjual. Pengembalian dana diatur menurut kebijakan kami. Dukungan teknis (support 1 bulan) berlaku untuk pembelian dengan total di atas Rp 2.000.000.
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Perubahan</h2>
               <p>

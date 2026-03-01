@@ -61,10 +61,21 @@ export default async function AboutPage() {
                 Buat akun untuk menyimpan pembelian dan mengakses panel untuk mengelola kontenmu. Kami fokus pada kesederhanaan dan kualitas.
               </p>
               <div className="pt-6 border-t border-[var(--border)]">
-                <h2 className="text-base font-semibold text-foreground mb-2">Tentang penulis</h2>
-                <p>
-                  Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun landing page & digital assets untuk memudahkan proyek web Anda.
-                </p>
+                <h2 className="text-base font-semibold text-foreground mb-3">Tentang penulis</h2>
+                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card)]">
+                    <Image
+                      src="/pas_foto.png"
+                      alt="Adam Mudianto"
+                      width={112}
+                      height={112}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                  <p className="flex-1 mt-0">
+                    Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun landing page & digital assets untuk memudahkan proyek web Anda.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
