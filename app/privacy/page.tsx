@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getCategories } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -11,13 +12,17 @@ export const metadata: Metadata = {
 
 export default async function PrivacyPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    { data: { user } },
+    categories,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    getCategories(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} categories={categories} />
       <main className="flex-1">
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
           <div className="max-w-2xl mx-auto space-y-6">

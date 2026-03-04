@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { updateLandingPagePricing } from "@/lib/actions/landing-pages";
+import { updateLandingPagePricing, type LandingPageCategory } from "@/lib/actions/landing-pages";
 import { uploadZip } from "@/lib/actions/downloads";
 
 type Props = {
   pageId: string;
+  categories: LandingPageCategory[];
   initial: {
     price?: number | null;
     price_discount?: number | null;
@@ -17,10 +18,11 @@ type Props = {
     thumbnail_url?: string | null;
     zip_url?: string | null;
     rating?: number | null;
+    category_id?: string | null;
   };
 };
 
-export function PricingForm({ pageId, initial }: Props) {
+export function PricingForm({ pageId, categories, initial }: Props) {
   const router = useRouter();
   const [price, setPrice] = useState<string>(initial.price != null ? String(initial.price) : "");
   const [priceDiscount, setPriceDiscount] = useState<string>(
@@ -35,6 +37,7 @@ export function PricingForm({ pageId, initial }: Props) {
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
   const [rating, setRating] = useState<string>(initial.rating != null ? String(initial.rating) : "");
+  const [categoryId, setCategoryId] = useState<string>(initial.category_id ?? "");
   const [zipUploading, setZipUploading] = useState(false);
   const [zipError, setZipError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -50,6 +53,7 @@ export function PricingForm({ pageId, initial }: Props) {
     setThumbnailUrl(initial.thumbnail_url ?? "");
     setZipUrl(initial.zip_url ?? "");
     setRating(initial.rating != null ? String(initial.rating) : "");
+    setCategoryId(initial.category_id ?? "");
   }, [initial]);
 
   async function handleZipUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -90,6 +94,7 @@ export function PricingForm({ pageId, initial }: Props) {
         thumbnail_url: thumbnailUrl.trim() || null,
         zip_url: zipUrl.trim() || null,
         rating: rating ? parseFloat(rating) : null,
+        category_id: categoryId.trim() || null,
       });
       setMessage("Pricing saved.");
       router.refresh();
@@ -256,6 +261,26 @@ export function PricingForm({ pageId, initial }: Props) {
           className="w-24 px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
         />
       </div>
+
+      {categories.length > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-[var(--muted)] mb-1">
+            Kategori
+          </label>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="w-full max-w-xs px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
+          >
+            <option value="">— Pilih kategori —</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <button
         type="button"

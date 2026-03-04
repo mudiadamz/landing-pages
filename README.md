@@ -29,11 +29,12 @@ Next.js + Supabase app to manage and publish HTML landing pages. Authenticated p
    DUITKU_SANDBOX=true   # Set false for production
    ```
 
-   **Email (Resend):** For purchase confirmation emails:
+   **Email (Resend):** For purchase confirmation emails and receiving inbound mail:
 
    ```
    RESEND_API_KEY=re_xxxxx
    RESEND_FROM=onboarding@resend.dev  # Or verified domain
+   RESEND_WEBHOOK_SECRET=whsec_xxxxx  # For inbound webhook (admin@admuiux.com); from Resend → Webhooks → signing secret
    ```
 
 3. **Database**
@@ -78,3 +79,4 @@ Next.js + Supabase app to manage and publish HTML landing pages. Authenticated p
 - **Panel**: List landing pages (edit, view, delete), upload HTML file, create new page, edit in HTML/CSS/JS tabbed Monaco editor (Save / Cmd+S), upload assets (images, videos), set pricing and purchase link, preview via `/lp/[slug]`.
 - **Editor**: Monaco editor with HTML, CSS, and JavaScript tabs; assets panel; pricing form (normal/discount/free, purchase link, show on homepage).
 - **Public**: Full-page HTML view at `/lp/[slug]` (iframe); metadata title from page title.
+- **Inbound email**: Emails to admin@admuiux.com are received via Resend; webhook `POST /api/webhooks/resend/inbound` (event `email.received`). Configure the receiving address and webhook URL in Resend; panel → "Email masuk" (admin only) lists and shows received emails.

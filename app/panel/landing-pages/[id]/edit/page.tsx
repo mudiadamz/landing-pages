@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
-import { getLandingPageById } from "@/lib/actions/landing-pages";
+import { getLandingPageById, getCategories } from "@/lib/actions/landing-pages";
 import { Editor } from "./editor";
 import { PricingForm } from "./pricing-form";
 
@@ -14,7 +14,7 @@ export default async function EditPage({
   if (!isAdmin) redirect("/panel");
 
   const { id } = await params;
-  const page = await getLandingPageById(id);
+  const [page, categories] = await Promise.all([getLandingPageById(id), getCategories()]);
   if (!page) notFound();
 
   return (
@@ -58,7 +58,9 @@ export default async function EditPage({
           thumbnail_url: page.thumbnail_url,
           zip_url: (page as { zip_url?: string | null }).zip_url ?? null,
           rating: (page as { rating?: number | null }).rating ?? null,
+          category_id: (page as { category_id?: string | null }).category_id ?? null,
         }}
+        categories={categories}
       />
     </div>
   );

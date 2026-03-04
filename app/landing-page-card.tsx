@@ -4,6 +4,14 @@ import Link from "next/link";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
 import { addPurchaseAction } from "@/lib/actions/purchases";
 
+function CheckoutIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  );
+}
+
 type Props = { page: LandingPagePublic; isLoggedIn?: boolean };
 
 function formatPrice(value: number): string {
@@ -48,7 +56,14 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
         </div>
       </Link>
       <div className="p-4">
-        <h2 className="font-semibold text-foreground truncate group-hover:text-[var(--primary)] transition-colors">
+        <div className="flex items-center gap-2 flex-wrap">
+          {page.category && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-[var(--accent-subtle)] text-[var(--muted)]">
+              {page.category.name}
+            </span>
+          )}
+        </div>
+        <h2 className="font-semibold text-foreground truncate group-hover:text-[var(--primary)] transition-colors mt-1">
           <Link href={`/lp/${page.slug}`} className="active:opacity-80 transition-opacity duration-150">{page.title}</Link>
         </h2>
         <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -111,18 +126,28 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
           ) : isInternal ? (
             <Link
               href={`/checkout/${page.slug}`}
-              className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              className="flex-1 flex flex-col items-center gap-0.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              title="Lanjut ke halaman checkout untuk menyelesaikan pembayaran dan mengakses file"
             >
-              Beli
+              <span className="flex items-center gap-1.5">
+                <CheckoutIcon className="w-4 h-4" />
+                Checkout
+              </span>
+              <span className="text-xs font-normal opacity-90">Bayar aman, akses di panel</span>
             </Link>
           ) : (
             <a
               href={externalUrl || `/lp/${page.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              className="flex-1 flex flex-col items-center gap-0.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              title={externalUrl ? "Lanjut ke checkout di situs eksternal" : "Lihat detail"}
             >
-              {externalUrl ? "Beli" : "Lihat"}
+              <span className="flex items-center gap-1.5">
+                <CheckoutIcon className="w-4 h-4" />
+                {externalUrl ? "Checkout" : "Lihat"}
+              </span>
+              {externalUrl && <span className="text-xs font-normal opacity-90">Bayar di link eksternal</span>}
             </a>
           )}
         </div>

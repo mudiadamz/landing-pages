@@ -94,7 +94,7 @@ export function CheckoutForm({
         href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
         className="block w-full px-4 py-3 text-sm font-medium text-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
       >
-        Masuk untuk melanjutkan pembelian
+        Masuk untuk checkout
       </Link>
     );
   }

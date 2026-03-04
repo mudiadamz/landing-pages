@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+import { getLandingPageForCheckout, getCategories } from "@/lib/actions/landing-pages";
 import { CheckoutForm } from "./checkout-form";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -29,10 +29,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CheckoutPage({ params }: Props) {
   const { slug } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const page = await getLandingPageForCheckout(slug);
+  const [
+    { data: { user } },
+    page,
+    categories,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    getLandingPageForCheckout(slug),
+    getCategories(),
+  ]);
   if (!page) notFound();
 
   const isFree = page.is_free === true;
@@ -44,7 +49,7 @@ export default async function CheckoutPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} categories={categories} />
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getCategories } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SocialLinks } from "@/components/social-links";
 import { ContactForm } from "@/components/contact-form";
+import { SupportContactImages } from "@/components/support-contact-images";
 
 export const metadata: Metadata = {
   title: "Kontak",
@@ -12,13 +14,17 @@ export const metadata: Metadata = {
 
 export default async function ContactPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    { data: { user } },
+    categories,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    getCategories(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} categories={categories} />
       <main className="flex-1">
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
           <div className="max-w-2xl mx-auto">
@@ -32,7 +38,12 @@ export default async function ContactPage() {
               <h2 className="text-base font-semibold text-foreground mb-4">Kirim pesan</h2>
               <ContactForm />
             </div>
-            <h2 className="text-base font-semibold text-foreground mb-3">Media sosial</h2>
+            <h2 className="text-base font-semibold text-foreground mb-3">Kontak support</h2>
+            <p className="text-sm text-[var(--muted)] mb-4">
+              Untuk pertanyaan produk, pembelian, atau dukungan teknis, hubungi kami:
+            </p>
+            <SupportContactImages />
+            <h2 className="text-base font-semibold text-foreground mb-3 mt-10">Media sosial</h2>
             <SocialLinks variant="stack" />
           </div>
         </section>

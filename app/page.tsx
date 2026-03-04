@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPagesForHomepage } from "@/lib/actions/landing-pages";
+import { getLandingPagesForHomepage, getCategories } from "@/lib/actions/landing-pages";
 import { LandingPageCard } from "./landing-page-card";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -8,16 +8,25 @@ import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
 import { HomeHero } from "@/components/home-hero";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const pages = await getLandingPagesForHomepage();
+  const params = await searchParams;
+  const categorySlug = params.category?.trim() || null;
+  const [pages, categories] = await Promise.all([
+    getLandingPagesForHomepage(categorySlug),
+    getCategories(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} categories={categories} currentCategorySlug={categorySlug} />
 
       <main className="flex-1 relative">
         <HomeHero />

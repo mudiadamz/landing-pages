@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { saveVersion } from "./versions";
 import { isValidSlug } from "@/lib/slug";
 
+export type LandingPageCategory = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export type LandingPageRow = {
   id: string;
   title: string;
@@ -23,6 +29,7 @@ export type LandingPageRow = {
   zip_url?: string | null;
   sold_count?: number;
   rating?: number | null;
+  category_id?: string | null;
 };
 
 export type LandingPagePublic = {
@@ -38,6 +45,7 @@ export type LandingPagePublic = {
   thumbnail_url?: string | null;
   sold_count?: number;
   rating?: number | null;
+  category?: LandingPageCategory | null;
 };
 
 export type LandingPageCheckout = {
@@ -148,16 +156,42 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
   revalidatePath(`/panel/landing-pages/${id}/edit`);
 }
 
-export async function getLandingPagesForHomepage() {
+export async function getCategories(): Promise<LandingPageCategory[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
+    .from("landing_page_categories")
+    .select("id, name, slug")
+    .order("sort_order", { ascending: true });
+
+  if (error) return [];
+  return (data ?? []) as LandingPageCategory[];
+}
+
+export async function getLandingPagesForHomepage(categorySlug?: string | null) {
+  const supabase = await createClient();
+  const slug = categorySlug?.trim();
+  const select = `
+    id, title, slug, html_content, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating,
+    ${slug ? "landing_page_categories!inner(id, name, slug)" : "landing_page_categories(id, name, slug)"}
+  `;
+  let query = supabase
     .from("landing_pages")
-    .select("id, title, slug, html_content, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating")
+    .select(select)
     .order("updated_at", { ascending: false })
     .limit(24);
 
+  if (slug) {
+    query = query.eq("landing_page_categories.slug", slug);
+  }
+
+  const { data, error } = await query;
+
   if (error) return [];
-  return (data ?? []) as LandingPagePublic[];
+  const list = (data ?? []) as (Omit<LandingPagePublic, "category"> & { landing_page_categories: LandingPageCategory | null })[];
+  return list.map(({ landing_page_categories, ...p }) => ({
+    ...p,
+    category: landing_page_categories ?? null,
+  })) as LandingPagePublic[];
 }
 
 export async function getLandingPageForCheckout(slug: string) {
@@ -184,6 +218,7 @@ export async function updateLandingPagePricing(
     thumbnail_url?: string | null;
     zip_url?: string | null;
     rating?: number | null;
+    category_id?: string | null;
   }
 ) {
   const supabase = await createClient();

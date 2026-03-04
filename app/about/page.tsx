@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { getCategories } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SupportContactImages } from "@/components/support-contact-images";
 
 export const metadata: Metadata = {
   title: "Tentang",
@@ -12,13 +14,17 @@ export const metadata: Metadata = {
 
 export default async function AboutPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    { data: { user } },
+    categories,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    getCategories(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} />
+      <SiteHeader user={user} categories={categories} />
       <main className="flex-1">
         {/* Background 1920x1080 */}
         <section
@@ -76,6 +82,13 @@ export default async function AboutPage() {
                     Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun landing page & digital assets untuk memudahkan proyek web Anda.
                   </p>
                 </div>
+              </div>
+              <div className="pt-6 mt-6 border-t border-[var(--border)]">
+                <h2 className="text-base font-semibold text-foreground mb-3">Kontak support</h2>
+                <p className="text-sm text-[var(--muted)] mb-4">
+                  Untuk pertanyaan produk, pembelian, atau dukungan teknis, hubungi kami:
+                </p>
+                <SupportContactImages />
               </div>
             </div>
           </div>
