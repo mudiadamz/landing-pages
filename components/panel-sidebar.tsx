@@ -16,6 +16,7 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
   {
     label: "Lainnya",
     items: [
+      { href: "/panel/profile", label: "Profil", icon: UserIcon },
       { href: "/panel/dashboard", label: "Dashboard", icon: ChartIcon, adminOnly: true },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, adminOnly: true },
@@ -55,6 +56,13 @@ function InboxIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+    </svg>
+  );
+}
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
   );
 }
