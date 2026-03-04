@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function parseFrom(from: string): { email: string; name: string | null } {
   const match = from.match(/^(.+?)\s*<([^>]+)>$/);
   if (match) {
@@ -14,12 +12,15 @@ function parseFrom(from: string): { email: string; name: string | null } {
 
 export async function POST(req: NextRequest) {
   try {
-    const payload = await req.text();
+    const apiKey = process.env.RESEND_API_KEY;
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      console.error("RESEND_WEBHOOK_SECRET not set");
+    if (!apiKey || !webhookSecret) {
+      console.error("RESEND_API_KEY or RESEND_WEBHOOK_SECRET not set");
       return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
     }
+
+    const resend = new Resend(apiKey);
+    const payload = await req.text();
 
     const id = req.headers.get("svix-id") ?? undefined;
     const timestamp = req.headers.get("svix-timestamp") ?? undefined;
