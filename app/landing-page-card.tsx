@@ -4,10 +4,10 @@ import Link from "next/link";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
 import { addPurchaseAction } from "@/lib/actions/purchases";
 
-function CheckoutIcon({ className }: { className?: string }) {
+function BuyNowIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
   );
 }
@@ -78,9 +78,14 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
                   {formatPrice(price)}
                 </span>
               )}
-              <span className="text-sm font-medium text-foreground">
+              <span className={`text-sm font-medium ${hasDiscount ? "text-[var(--primary)]" : "text-foreground"}`}>
                 {formatPrice(displayPrice)}
               </span>
+              {hasDiscount && price > 0 && (
+                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-[var(--primary)]/15 text-[var(--primary)]">
+                  Diskon
+                </span>
+              )}
             </>
           )}
         </div>
@@ -126,28 +131,22 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
           ) : isInternal ? (
             <Link
               href={`/checkout/${page.slug}`}
-              className="flex-1 flex flex-col items-center gap-0.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
-              title="Lanjut ke halaman checkout untuk menyelesaikan pembayaran dan mengakses file"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              title="Beli sekarang"
             >
-              <span className="flex items-center gap-1.5">
-                <CheckoutIcon className="w-4 h-4" />
-                Checkout
-              </span>
-              <span className="text-xs font-normal opacity-90">Bayar aman, akses di panel</span>
+              <BuyNowIcon className="w-4 h-4" />
+              Beli sekarang
             </Link>
           ) : (
             <a
               href={externalUrl || `/lp/${page.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex flex-col items-center gap-0.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
-              title={externalUrl ? "Lanjut ke checkout di situs eksternal" : "Lihat detail"}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              title={externalUrl ? "Beli sekarang" : "Lihat"}
             >
-              <span className="flex items-center gap-1.5">
-                <CheckoutIcon className="w-4 h-4" />
-                {externalUrl ? "Checkout" : "Lihat"}
-              </span>
-              {externalUrl && <span className="text-xs font-normal opacity-90">Bayar di link eksternal</span>}
+              <BuyNowIcon className="w-4 h-4" />
+              {externalUrl ? "Beli sekarang" : "Lihat"}
             </a>
           )}
         </div>

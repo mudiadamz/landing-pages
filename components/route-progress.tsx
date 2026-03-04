@@ -32,13 +32,21 @@ export function RouteProgress() {
       const path = href.startsWith("/") ? href : new URL(href, window.location.origin).pathname;
       return path.split("?")[0].split("#")[0] || "/";
     }
+    function getSearchFromHref(href: string): string {
+      if (!href.includes("?")) return "";
+      const q = href.split("?")[1]?.split("#")[0] ?? "";
+      return q;
+    }
     function handleClick(e: MouseEvent) {
       const target = (e.target as Element).closest("a");
       if (!target || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const href = target.getAttribute("href");
       if (!href || target.target === "_blank" || target.hasAttribute("download")) return;
       if (!isSameOrigin(href)) return;
-      if (pathname && getPathFromHref(href) === pathname) return;
+      const targetPath = getPathFromHref(href);
+      const targetSearch = getSearchFromHref(href);
+      const currentSearch = typeof window !== "undefined" ? window.location.search.slice(1) : "";
+      if (pathname && targetPath === pathname && targetSearch === currentSearch) return;
       startProgress();
     }
     function handleSubmit() {

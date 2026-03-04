@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "theme";
+const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year
+
+function setThemeCookie(value: "dark" | "light") {
+  document.cookie = `theme=${value};path=/;max-age=${COOKIE_MAX_AGE};sameSite=Lax`;
+}
 
 export function ThemeSwitch() {
   const [isDark, setIsDark] = useState(false);
@@ -16,7 +21,9 @@ export function ThemeSwitch() {
   function toggle() {
     const isNowDark = document.documentElement.classList.toggle("dark");
     setIsDark(isNowDark);
-    localStorage.setItem(STORAGE_KEY, isNowDark ? "dark" : "light");
+    const value = isNowDark ? "dark" : "light";
+    localStorage.setItem(STORAGE_KEY, value);
+    setThemeCookie(value);
   }
 
   if (!mounted) {

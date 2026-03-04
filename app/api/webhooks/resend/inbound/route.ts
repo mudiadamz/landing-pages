@@ -10,12 +10,24 @@ function parseFrom(from: string): { email: string; name: string | null } {
   return { email: from.trim(), name: null };
 }
 
+/** GET: cek apakah endpoint jalan dan env terisi (untuk debug). Resend hanya memanggil POST. */
+export async function GET() {
+  const hasApiKey = !!process.env.RESEND_API_KEY;
+  const hasSecret = !!process.env.RESEND_WEBHOOK_SECRET;
+  return NextResponse.json({
+    ok: true,
+    message: "Webhook endpoint. Resend memanggil POST dengan event email.received.",
+    configured: hasApiKey && hasSecret,
+    env: { RESEND_API_KEY: hasApiKey, RESEND_WEBHOOK_SECRET: hasSecret },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const apiKey = process.env.RESEND_API_KEY;
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
     if (!apiKey || !webhookSecret) {
-      console.error("RESEND_API_KEY or RESEND_WEBHOOK_SECRET not set");
+      console.error("[resend-inbound] RESEND_API_KEY or RESEND_WEBHOOK_SECRET not set");
       return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
     }
 
@@ -26,6 +38,7 @@ export async function POST(req: NextRequest) {
     const timestamp = req.headers.get("svix-timestamp") ?? undefined;
     const signature = req.headers.get("svix-signature") ?? undefined;
     if (!id || !timestamp || !signature) {
+      console.error("[resend-inbound] Missing svix headers");
       return NextResponse.json({ error: "Missing webhook headers" }, { status: 400 });
     }
 
@@ -35,14 +48,21 @@ export async function POST(req: NextRequest) {
       webhookSecret,
     });
 
-    if (result.type !== "email.received") {
-      return NextResponse.json({ received: false });
+    const eventType = result.type as string;
+    if (eventType !== "email.received") {
+      console.info("[resend-inbound] Ignored event type:", eventType);
+      return NextResponse.json({ received: false, event: eventType });
     }
 
-    const emailId = result.data.email_id;
+    const data = result.data as { email_id?: string };
+    const emailId = data?.email_id;
+    if (!emailId) {
+      console.error("[resend-inbound] email.received payload missing data.email_id");
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
     const { data: email, error: getError } = await resend.emails.receiving.get(emailId);
     if (getError || !email) {
-      console.error("Resend get receiving email error:", getError);
+      console.error("[resend-inbound] Resend receiving.get error:", getError, "emailId:", emailId);
       return NextResponse.json({ error: "Failed to fetch email content" }, { status: 502 });
     }
 
@@ -65,13 +85,14 @@ export async function POST(req: NextRequest) {
       if (insertError.code === "23505") {
         return NextResponse.json({ received: true, duplicate: true });
       }
-      console.error("Insert received_emails error:", insertError);
+      console.error("[resend-inbound] Supabase insert error:", insertError);
       return NextResponse.json({ error: "Failed to store email" }, { status: 500 });
     }
 
+    console.info("[resend-inbound] Stored email:", emailId);
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error("Resend inbound webhook error:", err);
+    console.error("[resend-inbound] Error:", err);
     return NextResponse.json({ error: "Invalid webhook" }, { status: 400 });
   }
 }
