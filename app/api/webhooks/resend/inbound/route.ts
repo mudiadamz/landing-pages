@@ -27,8 +27,12 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.RESEND_API_KEY;
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
     if (!apiKey || !webhookSecret) {
-      console.error("[resend-inbound] RESEND_API_KEY or RESEND_WEBHOOK_SECRET not set");
-      return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
+      const missing = []; if (!apiKey) missing.push("RESEND_API_KEY"); if (!webhookSecret) missing.push("RESEND_WEBHOOK_SECRET");
+      console.error("[resend-inbound] Missing env:", missing.join(", "));
+      return NextResponse.json(
+        { error: "Webhook not configured", missing: missing },
+        { status: 500 }
+      );
     }
 
     const resend = new Resend(apiKey);
