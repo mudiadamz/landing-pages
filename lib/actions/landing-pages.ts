@@ -187,7 +187,8 @@ export async function getLandingPagesForHomepage(categorySlug?: string | null) {
   const { data, error } = await query;
 
   if (error) return [];
-  const list = (data ?? []) as (Omit<LandingPagePublic, "category"> & { landing_page_categories: LandingPageCategory | null })[];
+  type Row = Omit<LandingPagePublic, "category"> & { landing_page_categories: LandingPageCategory | null };
+  const list = (data ?? []) as unknown as Row[];
   return list.map(({ landing_page_categories, ...p }) => ({
     ...p,
     category: landing_page_categories ?? null,
