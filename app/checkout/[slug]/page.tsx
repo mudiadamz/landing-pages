@@ -92,6 +92,12 @@ export default async function CheckoutPage({ params }: Props) {
               )}
             </div>
 
+            {page.long_description && (
+              <p className="mt-4 text-sm text-[var(--muted)] whitespace-pre-wrap">
+                {page.long_description}
+              </p>
+            )}
+
             <div className="mt-6">
               <CheckoutForm
                 page={page}

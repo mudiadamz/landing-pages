@@ -66,6 +66,11 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
         <h2 className="font-semibold text-foreground truncate group-hover:text-[var(--primary)] transition-colors mt-1">
           <Link href={`/lp/${page.slug}`} className="active:opacity-80 transition-opacity duration-150">{page.title}</Link>
         </h2>
+        {page.long_description && (
+          <p className="mt-1.5 text-xs text-[var(--muted)] line-clamp-2">
+            {page.long_description}
+          </p>
+        )}
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           {showAsFree ? (
             <span className="text-sm font-medium text-[var(--primary)]">
@@ -105,7 +110,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
             rel="noopener noreferrer"
             className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-[var(--border)] hover:bg-[var(--background)] active:scale-[0.98] active:opacity-90 transition-all duration-150"
           >
-            Lihat
+            Lihat demo
           </Link>
           {showAsFree ? (
             isLoggedIn ? (
@@ -143,10 +148,10 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
-              title={externalUrl ? "Beli sekarang" : "Lihat"}
+              title={externalUrl ? "Beli sekarang" : "Lihat demo"}
             >
               <BuyNowIcon className="w-4 h-4" />
-              {externalUrl ? "Beli sekarang" : "Lihat"}
+              {externalUrl ? "Beli sekarang" : "Lihat demo"}
             </a>
           )}
         </div>

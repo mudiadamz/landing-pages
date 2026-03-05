@@ -30,6 +30,7 @@ export type LandingPageRow = {
   sold_count?: number;
   rating?: number | null;
   category_id?: string | null;
+  long_description?: string | null;
 };
 
 export type LandingPagePublic = {
@@ -46,6 +47,7 @@ export type LandingPagePublic = {
   sold_count?: number;
   rating?: number | null;
   category?: LandingPageCategory | null;
+  long_description?: string | null;
 };
 
 export type LandingPageCheckout = {
@@ -59,6 +61,7 @@ export type LandingPageCheckout = {
   purchase_type?: "external" | "internal";
   thumbnail_url: string | null;
   zip_url: string | null;
+  long_description?: string | null;
 };
 
 export async function getLandingPagesForUser() {
@@ -171,7 +174,7 @@ export async function getLandingPagesForHomepage(categorySlug?: string | null) {
   const supabase = await createClient();
   const slug = categorySlug?.trim();
   const select = `
-    id, title, slug, html_content, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating,
+    id, title, slug, html_content, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description,
     ${slug ? "landing_page_categories!inner(id, name, slug)" : "landing_page_categories(id, name, slug)"}
   `;
   let query = supabase
@@ -199,7 +202,7 @@ export async function getLandingPageForCheckout(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, long_description")
     .eq("slug", slug)
     .single();
 
@@ -220,6 +223,7 @@ export async function updateLandingPagePricing(
     zip_url?: string | null;
     rating?: number | null;
     category_id?: string | null;
+    long_description?: string | null;
   }
 ) {
   const supabase = await createClient();

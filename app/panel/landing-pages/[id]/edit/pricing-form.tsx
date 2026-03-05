@@ -19,6 +19,7 @@ type Props = {
     zip_url?: string | null;
     rating?: number | null;
     category_id?: string | null;
+    long_description?: string | null;
   };
 };
 
@@ -38,6 +39,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
   const [rating, setRating] = useState<string>(initial.rating != null ? String(initial.rating) : "");
   const [categoryId, setCategoryId] = useState<string>(initial.category_id ?? "");
+  const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
   const [zipUploading, setZipUploading] = useState(false);
   const [zipError, setZipError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -54,6 +56,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
     setZipUrl(initial.zip_url ?? "");
     setRating(initial.rating != null ? String(initial.rating) : "");
     setCategoryId(initial.category_id ?? "");
+    setLongDescription(initial.long_description ?? "");
   }, [initial]);
 
   async function handleZipUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -95,6 +98,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
         zip_url: zipUrl.trim() || null,
         rating: rating ? parseFloat(rating) : null,
         category_id: categoryId.trim() || null,
+        long_description: longDescription.trim() || null,
       });
       setMessage("Pricing saved.");
       router.refresh();
@@ -108,6 +112,19 @@ export function PricingForm({ pageId, categories, initial }: Props) {
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm space-y-4">
       <h3 className="text-sm font-semibold text-foreground">Pricing & Purchase</h3>
+
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">
+          Deskripsi panjang (tampil di kartu & checkout)
+        </label>
+        <textarea
+          value={longDescription}
+          onChange={(e) => setLongDescription(e.target.value)}
+          placeholder="Penjelasan produk, fitur, atau manfaat..."
+          rows={4}
+          className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm resize-y min-h-[80px]"
+        />
+      </div>
 
       <div className="flex items-center gap-2">
         <input

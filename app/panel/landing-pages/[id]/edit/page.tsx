@@ -59,6 +59,7 @@ export default async function EditPage({
           zip_url: (page as { zip_url?: string | null }).zip_url ?? null,
           rating: (page as { rating?: number | null }).rating ?? null,
           category_id: (page as { category_id?: string | null }).category_id ?? null,
+          long_description: (page as { long_description?: string | null }).long_description ?? null,
         }}
         categories={categories}
       />
