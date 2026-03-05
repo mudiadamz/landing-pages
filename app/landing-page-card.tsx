@@ -64,7 +64,7 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
           )}
         </div>
         <h2 className="font-semibold text-foreground truncate group-hover:text-[var(--primary)] transition-colors mt-1">
-          <Link href={`/lp/${page.slug}`} className="active:opacity-80 transition-opacity duration-150">{page.title}</Link>
+          <Link href={`/checkout/${page.slug}`} className="active:opacity-80 transition-opacity duration-150">{page.title}</Link>
         </h2>
         {page.long_description && (
           <p className="mt-1.5 text-xs text-[var(--muted)] line-clamp-2">
