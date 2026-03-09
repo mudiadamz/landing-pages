@@ -13,7 +13,7 @@ export default async function PanelLayout({
     data: { user },
   } = await supabase.auth.getUser();
   const profile = await getProfile();
-  const isAdmin = profile?.role === "admin" || !profile;
+  const isAdmin = profile?.role === "admin";
   const displayName = profile?.full_name?.trim() || user?.email?.split("@")[0] || "User";
   const emailConfirmed = !!user?.email_confirmed_at;
 

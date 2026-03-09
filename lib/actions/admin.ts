@@ -80,5 +80,5 @@ export async function getCustomers(): Promise<CustomerRow[]> {
 
 async function requireAdmin() {
   const profile = await getProfile();
-  return profile?.role === "admin" || !profile;
+  return profile?.role === "admin";
 }

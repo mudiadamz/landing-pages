@@ -7,7 +7,7 @@ import { DeleteButton } from "./delete-button";
 
 export default async function PanelPage() {
   const profile = await getProfile();
-  const isAdmin = profile?.role === "admin" || !profile;
+  const isAdmin = profile?.role === "admin";
 
   if (!isAdmin) {
     return <CustomerPanel />;

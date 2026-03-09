@@ -8,10 +8,10 @@ export type Profile = {
   role: "admin" | "customer";
 };
 
+/** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
 export async function requireAdmin() {
   const profile = await getProfile();
-  const isAdmin = profile?.role === "admin" || !profile;
-  return isAdmin;
+  return profile?.role === "admin";
 }
 
 export async function getProfile(): Promise<Profile | null> {
