@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export type Profile = {
@@ -8,6 +9,11 @@ export type Profile = {
   role: "admin" | "customer";
 };
 
+function normalizeRole(value: unknown): "admin" | "customer" {
+  const s = String(value ?? "").trim().toLowerCase();
+  return s === "admin" ? "admin" : "customer";
+}
+
 /** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
 export async function requireAdmin() {
   const profile = await getProfile();
@@ -15,6 +21,7 @@ export async function requireAdmin() {
 }
 
 export async function getProfile(): Promise<Profile | null> {
+  unstable_noStore();
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,7 +35,11 @@ export async function getProfile(): Promise<Profile | null> {
     .single();
 
   if (error || !data) return null;
-  return data as Profile;
+  return {
+    id: data.id,
+    full_name: data.full_name ?? null,
+    role: normalizeRole(data.role),
+  } as Profile;
 }
 
 export type ProfileWithUser = {
@@ -40,6 +51,7 @@ export type ProfileWithUser = {
 
 /** For profile page: profile + email from auth. Returns null if not logged in. */
 export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
+  unstable_noStore();
   const supabase = await createClient();
   const {
     data: { user },
@@ -71,7 +83,9 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
 
   if (error || !data) return null;
   return {
-    ...(data as Profile),
+    id: data.id,
+    full_name: data.full_name ?? null,
+    role: normalizeRole(data.role),
     email: user.email ?? null,
   };
 }
