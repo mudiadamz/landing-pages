@@ -7,6 +7,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { RouteProgress } from "@/components/route-progress";
+import { CustomJsInjector } from "@/components/custom-js-injector";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,11 +88,7 @@ export default async function RootLayout({
         {children}
         <Analytics />
         <SpeedInsights />
-        {customJs ? (
-          <script
-            dangerouslySetInnerHTML={{ __html: customJs }}
-          />
-        ) : null}
+        {customJs ? <CustomJsInjector script={customJs} /> : null}
       </body>
     </html>
   );
