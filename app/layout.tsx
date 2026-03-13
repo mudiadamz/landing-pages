@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
+import { getCustomJs } from "@/lib/actions/site-settings";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
@@ -66,6 +67,7 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme");
   const isDark = themeCookie?.value === "dark";
+  const customJs = await getCustomJs();
 
   return (
     <html lang="id" suppressHydrationWarning className={isDark ? "dark" : undefined}>
@@ -85,6 +87,11 @@ export default async function RootLayout({
         {children}
         <Analytics />
         <SpeedInsights />
+        {customJs ? (
+          <script
+            dangerouslySetInnerHTML={{ __html: customJs }}
+          />
+        ) : null}
       </body>
     </html>
   );
