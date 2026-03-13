@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getProfileWithUser } from "@/lib/actions/profiles";
+import { normalizeRole } from "@/lib/actions/profiles";
 import { ProfileForm } from "./profile-form";
 
 export default async function ProfilePage() {
@@ -9,15 +9,25 @@ export default async function ProfilePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  let profile = await getProfileWithUser();
-  if (!profile) {
-    profile = {
-      id: user.id,
-      full_name: (user.user_metadata?.full_name as string) ?? null,
-      role: "customer",
-      email: user.email ?? null,
-    };
-  }
+  const { data: row } = await supabase
+    .from("profiles")
+    .select("id, full_name, role")
+    .eq("id", user.id)
+    .single();
+
+  const profile = row
+    ? {
+        id: row.id,
+        full_name: row.full_name ?? null,
+        role: normalizeRole(row.role),
+        email: user.email ?? null,
+      }
+    : {
+        id: user.id,
+        full_name: (user.user_metadata?.full_name as string) ?? null,
+        role: "customer" as const,
+        email: user.email ?? null,
+      };
 
   const roleLabel = profile.role === "admin" ? "Admin" : "Customer";
 
