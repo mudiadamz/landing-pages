@@ -143,9 +143,6 @@ function NavContent({ isAdmin, onItemClick }: { isAdmin: boolean; onItemClick?: 
           <HomeIcon className="w-5 h-5 shrink-0" />
           <span>View home</span>
         </a>
-        <div className="flex items-center gap-3 px-3 py-2.5">
-          <ThemeSwitch />
-        </div>
         <form action={signOut}>
           <button
             type="submit"
@@ -185,13 +182,16 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
         <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
           {displayName || "Panel"}
         </span>
-        <button
-          type="button"
-          aria-label="Notifikasi"
-          className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
-        >
-          <BellIcon className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <ThemeSwitch />
+          <button
+            type="button"
+            aria-label="Notifikasi"
+            className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+          >
+            <BellIcon className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile overlay */}
@@ -213,13 +213,16 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
           <Link href="/panel" className="text-base font-semibold text-foreground" onClick={() => setMobileOpen(false)}>
             ADM.UIUX
           </Link>
-          <button
-            type="button"
-            aria-label="Notifikasi"
-            className="hidden md:block p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
-          >
-            <BellIcon className="w-5 h-5" />
-          </button>
+          <div className="hidden md:flex items-center gap-0.5">
+            <ThemeSwitch />
+            <button
+              type="button"
+              aria-label="Notifikasi"
+              className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+            >
+              <BellIcon className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         {displayName && (
           <div className="px-4 pb-2">
