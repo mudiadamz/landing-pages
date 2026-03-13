@@ -30,6 +30,15 @@ export async function getProfile(): Promise<Profile | null> {
     .eq("id", user.id)
     .single();
 
+  console.info("[getProfile] debug", {
+    user_id: user.id,
+    user_email: user.email,
+    row: data ?? null,
+    error: error ? { message: error.message, code: error.code } : null,
+    raw_role: data?.role,
+    normalized_role: data ? normalizeRole(data.role) : null,
+  });
+
   if (error || !data) return null;
   return {
     id: data.id,

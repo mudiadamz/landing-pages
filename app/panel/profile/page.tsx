@@ -9,17 +9,19 @@ export default async function ProfilePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: row } = await supabase
+  const { data: row, error: profileError } = await supabase
     .from("profiles")
     .select("id, full_name, role")
     .eq("id", user.id)
     .single();
 
+  const rawRole = row?.role;
+  const normalizedRole = row ? normalizeRole(rawRole) : "customer";
   const profile = row
     ? {
         id: row.id,
         full_name: row.full_name ?? null,
-        role: normalizeRole(row.role),
+        role: normalizedRole,
         email: user.email ?? null,
       }
     : {
@@ -28,6 +30,16 @@ export default async function ProfilePage() {
         role: "customer" as const,
         email: user.email ?? null,
       };
+
+  console.info("[profile-page] debug", {
+    user_id: user.id,
+    user_email: user.email,
+    profile_row: row ?? null,
+    profile_error: profileError ? { message: profileError.message, code: profileError.code } : null,
+    raw_role: rawRole,
+    normalized_role: normalizedRole,
+    final_role: profile.role,
+  });
 
   const roleLabel = profile.role === "admin" ? "Admin" : "Customer";
 
