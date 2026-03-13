@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeRole } from "@/lib/actions/profiles";
+import { normalizeRole } from "@/lib/profile-utils";
 import { ProfileForm } from "./profile-form";
 
 export default async function ProfilePage() {

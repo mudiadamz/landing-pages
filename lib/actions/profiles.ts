@@ -2,17 +2,13 @@
 
 import { unstable_noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeRole } from "@/lib/profile-utils";
 
 export type Profile = {
   id: string;
   full_name: string | null;
   role: "admin" | "customer";
 };
-
-export function normalizeRole(value: unknown): "admin" | "customer" {
-  const s = String(value ?? "").trim().toLowerCase();
-  return s === "admin" ? "admin" : "customer";
-}
 
 /** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
 export async function requireAdmin() {
