@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { RouteProgress } from "@/components/route-progress";
 
 const geistSans = Geist({
@@ -81,6 +82,7 @@ export default async function RootLayout({
           <RouteProgress />
         </Suspense>
         {children}
+        <Analytics />
       </body>
     </html>
   );
