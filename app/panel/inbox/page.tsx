@@ -49,7 +49,7 @@ export default async function InboxPage({ searchParams }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm max-h-[70vh] flex flex-col">
+          <div className={`lg:col-span-1 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm max-h-[70vh] flex flex-col ${detail ? "hidden lg:flex" : ""}`}>
             <div className="p-3 border-b border-[var(--border)] bg-[var(--background)]/50">
               <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">Daftar</p>
             </div>
@@ -75,6 +75,9 @@ export default async function InboxPage({ searchParams }: Props) {
             {detail ? (
               <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-[var(--border)] bg-[var(--background)]/50 space-y-1">
+                  <Link href="/panel/inbox" className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-foreground transition-colors lg:hidden mb-2">
+                    ← Kembali ke daftar
+                  </Link>
                   <p className="text-sm font-medium text-foreground">{detail.subject || "(Tanpa subjek)"}</p>
                   <p className="text-sm text-[var(--muted)]">Dari: {fromDisplay(detail)}</p>
                   <p className="text-xs text-[var(--muted)]">Kepada: {detail.to_addresses?.join(", ") || "—"}</p>
