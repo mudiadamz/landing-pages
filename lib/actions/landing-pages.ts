@@ -1,9 +1,17 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
+import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { saveVersion } from "./versions";
 import { isValidSlug } from "@/lib/slug";
+
+function createAnonClient() {
+  return createSupabaseJS(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}
 
 export type LandingPageCategory = {
   id: string;
@@ -37,7 +45,7 @@ export type LandingPagePublic = {
   id: string;
   title: string;
   slug: string;
-  html_content: string;
+  html_content?: string;
   price?: number | null;
   price_discount?: number | null;
   is_free?: boolean;
@@ -159,44 +167,56 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
   revalidatePath(`/panel/landing-pages/${id}/edit`);
 }
 
-export async function getCategories(): Promise<LandingPageCategory[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("landing_page_categories")
-    .select("id, name, slug")
-    .order("sort_order", { ascending: true });
+export const getCategories = unstable_cache(
+  async (): Promise<LandingPageCategory[]> => {
+    const supabase = createAnonClient();
+    const { data, error } = await supabase
+      .from("landing_page_categories")
+      .select("id, name, slug")
+      .order("sort_order", { ascending: true });
 
-  if (error) return [];
-  return (data ?? []) as LandingPageCategory[];
-}
+    if (error) return [];
+    return (data ?? []) as LandingPageCategory[];
+  },
+  ["categories"],
+  { revalidate: 60 },
+);
 
 export async function getLandingPagesForHomepage(categorySlug?: string | null) {
-  const supabase = await createClient();
-  const slug = categorySlug?.trim();
-  const select = `
-    id, title, slug, html_content, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description,
-    ${slug ? "landing_page_categories!inner(id, name, slug)" : "landing_page_categories(id, name, slug)"}
-  `;
-  let query = supabase
-    .from("landing_pages")
-    .select(select)
-    .order("updated_at", { ascending: false })
-    .limit(24);
-
-  if (slug) {
-    query = query.eq("landing_page_categories.slug", slug);
-  }
-
-  const { data, error } = await query;
-
-  if (error) return [];
-  type Row = Omit<LandingPagePublic, "category"> & { landing_page_categories: LandingPageCategory | null };
-  const list = (data ?? []) as unknown as Row[];
-  return list.map(({ landing_page_categories, ...p }) => ({
-    ...p,
-    category: landing_page_categories ?? null,
-  })) as LandingPagePublic[];
+  const slug = categorySlug?.trim() || "";
+  return getCachedHomepagePages(slug);
 }
+
+const getCachedHomepagePages = unstable_cache(
+  async (slug: string): Promise<LandingPagePublic[]> => {
+    const supabase = createAnonClient();
+    const select = `
+      id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description,
+      ${slug ? "landing_page_categories!inner(id, name, slug)" : "landing_page_categories(id, name, slug)"}
+    `;
+    let query = supabase
+      .from("landing_pages")
+      .select(select)
+      .order("updated_at", { ascending: false })
+      .limit(24);
+
+    if (slug) {
+      query = query.eq("landing_page_categories.slug", slug);
+    }
+
+    const { data, error } = await query;
+
+    if (error) return [];
+    type Row = Omit<LandingPagePublic, "category"> & { landing_page_categories: LandingPageCategory | null };
+    const list = (data ?? []) as unknown as Row[];
+    return list.map(({ landing_page_categories, ...p }) => ({
+      ...p,
+      category: landing_page_categories ?? null,
+    })) as LandingPagePublic[];
+  },
+  ["homepage-pages"],
+  { revalidate: 60 },
+);
 
 export async function getLandingPageForCheckout(slug: string) {
   const supabase = await createClient();

@@ -104,22 +104,14 @@ input, textarea, select {
 }
 
 .landing-grid > * {
-  opacity: 0;
-  animation: fadeInUp 0.6s ease-out forwards;
+  animation: fadeInUp 0.4s ease-out both;
 }
 
-.landing-grid > *:nth-child(1) { animation-delay: 0.1s; }
-.landing-grid > *:nth-child(2) { animation-delay: 0.2s; }
-.landing-grid > *:nth-child(3) { animation-delay: 0.3s; }
-.landing-grid > *:nth-child(4) { animation-delay: 0.4s; }
-.landing-grid > *:nth-child(5) { animation-delay: 0.5s; }
-.landing-grid > *:nth-child(6) { animation-delay: 0.6s; }
-.landing-grid > *:nth-child(7) { animation-delay: 0.7s; }
-.landing-grid > *:nth-child(8) { animation-delay: 0.8s; }
-.landing-grid > *:nth-child(9) { animation-delay: 0.9s; }
+.landing-grid > *:nth-child(1) { animation-delay: 0.05s; }
+.landing-grid > *:nth-child(2) { animation-delay: 0.1s; }
+.landing-grid > *:nth-child(3) { animation-delay: 0.15s; }
 
 /* Testimonials section fade-in */
 .testimonials-section {
-  animation: fadeInUp 0.6s ease-out 0.2s forwards;
-  opacity: 0;
+  animation: fadeInUp 0.4s ease-out 0.1s both;
 }

@@ -2,6 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isPanelRoute = pathname.startsWith("/panel");
+  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
+
+  if (!isPanelRoute && !isAuthRoute) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -32,11 +40,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const isPanelRoute = request.nextUrl.pathname.startsWith("/panel");
-  const isAuthRoute =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/signup");
 
   if (isPanelRoute && !user) {
     const url = request.nextUrl.clone();

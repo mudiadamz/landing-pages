@@ -1,5 +1,3 @@
-"use client";
-
 export function HomeHero() {
   return (
     <section className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20 lg:py-24 overflow-hidden">

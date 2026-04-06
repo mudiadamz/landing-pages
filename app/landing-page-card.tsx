@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
 import { addPurchaseAction } from "@/lib/actions/purchases";
@@ -39,18 +40,18 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
       <Link href={`/lp/${page.slug}`} className="block">
         <div className="relative aspect-video bg-[var(--background)] overflow-hidden rounded-t-2xl">
           {page.thumbnail_url ? (
-            <img
+            <Image
               src={page.thumbnail_url}
               alt={page.title}
-              className="absolute inset-0 w-full h-full object-cover"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover"
+              loading="lazy"
             />
           ) : (
-            <iframe
-              srcDoc={page.html_content}
-              title={page.title}
-              className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-              sandbox="allow-scripts allow-same-origin allow-modals"
-            />
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[var(--accent-subtle)] to-[var(--background)] p-4">
+              <span className="text-sm font-medium text-[var(--muted)] text-center line-clamp-2">{page.title}</span>
+            </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-transparent to-transparent pointer-events-none" />
         </div>
