@@ -70,6 +70,8 @@ export type LandingPageCheckout = {
   thumbnail_url: string | null;
   zip_url: string | null;
   long_description?: string | null;
+  sold_count?: number;
+  rating?: number | null;
 };
 
 export async function getLandingPagesForUser() {
@@ -222,7 +224,7 @@ export async function getLandingPageForCheckout(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, long_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, long_description, sold_count, rating")
     .eq("slug", slug)
     .single();
 

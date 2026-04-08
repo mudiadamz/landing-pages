@@ -52,7 +52,7 @@ export function CheckoutForm({
   if (showAsFree) {
     if (isLoggedIn) {
       return (
-        <form action={addPurchaseAction} className="space-y-3">
+        <form action={addPurchaseAction} className="space-y-3" data-checkout-form>
           <input type="hidden" name="landing_page_id" value={page.id} />
           <button
             type="submit"
@@ -64,44 +64,47 @@ export function CheckoutForm({
       );
     }
     return (
-      <Link
-        href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
-        className="block w-full px-4 py-3 text-sm font-medium text-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
-      >
-        Masuk untuk ambil gratis
-      </Link>
+      <div data-checkout-form>
+        <Link
+          href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
+          className="block w-full px-4 py-3 text-sm font-medium text-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+        >
+          Masuk untuk ambil gratis
+        </Link>
+      </div>
     );
   }
 
-  // Berbayar — external link
   if (purchaseLink) {
     return (
-      <a
-        href={purchaseLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block w-full px-4 py-3 text-sm font-medium text-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
-      >
-        Lanjutkan ke pembayaran
-      </a>
+      <div data-checkout-form>
+        <a
+          href={purchaseLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full px-4 py-3 text-sm font-medium text-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+        >
+          Lanjutkan ke pembayaran
+        </a>
+      </div>
     );
   }
 
-  // Berbayar — Duitku (internal checkout)
   if (!isLoggedIn) {
     return (
-      <Link
-        href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
-        className="block w-full px-4 py-3 text-sm font-medium text-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
-      >
-        Masuk untuk checkout
-      </Link>
+      <div data-checkout-form>
+        <Link
+          href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
+          className="block w-full px-4 py-3 text-sm font-medium text-center rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+        >
+          Masuk untuk checkout
+        </Link>
+      </div>
     );
   }
 
-  // Logged in: no email/phone fields, API uses session user
   return (
-    <form onSubmit={handleDuitku} className="space-y-4">
+    <form onSubmit={handleDuitku} className="space-y-4" data-checkout-form>
       {error && (
         <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
       )}

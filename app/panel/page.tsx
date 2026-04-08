@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/actions/profiles";
 import { getLandingPagesForUser } from "@/lib/actions/landing-pages";
 import { getPurchasesForUser, getInvoicesForUser } from "@/lib/actions/purchases";
+import { getReviewsByUser } from "@/lib/actions/reviews";
 import { DeleteButton } from "./delete-button";
 import { CustomerTabs } from "./customer-tabs";
 
@@ -18,15 +19,16 @@ export default async function PanelPage() {
 }
 
 async function CustomerPanel() {
-  const [purchases, invoices] = await Promise.all([
+  const [purchases, invoices, reviews] = await Promise.all([
     getPurchasesForUser(),
     getInvoicesForUser(),
+    getReviewsByUser(),
   ]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold tracking-tight">Pembelian saya</h1>
-      <CustomerTabs purchases={purchases} invoices={invoices} />
+      <CustomerTabs purchases={purchases} invoices={invoices} reviews={reviews} />
     </div>
   );
 }
