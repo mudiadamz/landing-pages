@@ -66,7 +66,7 @@ export default async function LandingPageView({ params }: Props) {
           target={isExternal ? "_blank" : undefined}
           rel={isExternal ? "noopener noreferrer" : undefined}
           title={buyDescription}
-          className="fixed bottom-4 right-4 z-50 flex flex-col items-center gap-0.5 px-4 py-3 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-medium text-sm shadow-lg hover:opacity-95 active:scale-[0.97] active:opacity-90 transition-all duration-150"
+          className="fixed top-4 right-4 z-50 flex flex-col items-center gap-0.5 px-4 py-3 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-medium text-sm shadow-lg hover:opacity-95 active:scale-[0.97] active:opacity-90 transition-all duration-150"
         >
           <span className="flex items-center gap-2">
             <CheckoutIcon className="w-5 h-5" />

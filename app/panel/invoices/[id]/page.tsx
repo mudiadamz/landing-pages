@@ -36,7 +36,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Link
-          href="/panel/invoices"
+          href="/panel"
           className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
           ← Kembali
