@@ -1,33 +1,32 @@
-"use server";
-
-import { redirect } from "next/navigation";
+import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { hiringQuestions } from "@/lib/hiring-questions";
 
-export async function submitHiringTest(formData: FormData) {
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+
   const name = (formData.get("name") as string)?.trim();
   const email = (formData.get("email") as string)?.trim();
   const cvFile = formData.get("cv") as File | null;
 
   if (!name || !email) {
-    throw new Error("Nama dan email wajib diisi.");
+    return NextResponse.json({ error: "Nama dan email wajib diisi." }, { status: 400 });
   }
 
   if (!cvFile || cvFile.size === 0) {
-    throw new Error("CV wajib diupload.");
+    return NextResponse.json({ error: "CV wajib diupload." }, { status: 400 });
   }
 
   if (cvFile.size > 5 * 1024 * 1024) {
-    throw new Error("Ukuran CV melebihi 5 MB.");
+    return NextResponse.json({ error: "Ukuran CV melebihi 5 MB." }, { status: 400 });
   }
 
-  const cvBuffer = Buffer.from(await cvFile.arrayBuffer());
+  const cvBase64 = Buffer.from(await cvFile.arrayBuffer()).toString("base64");
 
   const results = hiringQuestions.map((q) => {
     const raw = formData.get(`q${q.id}`);
     const selected = raw !== null ? Number(raw) : -1;
-    const correct = selected === q.answer;
-    return { question: q.question, selected, correctIndex: q.answer, correct };
+    return { question: q.question, selected, correctIndex: q.answer, correct: selected === q.answer };
   });
 
   const score = results.filter((r) => r.correct).length;
@@ -53,12 +52,11 @@ export async function submitHiringTest(formData: FormData) {
 
   const scoreColor = score >= total * 0.7 ? "#1a5f4a" : score >= total * 0.4 ? "#e8a87c" : "#e27d60";
 
-  const htmlBody = (forAdmin: boolean) => `
+  const adminHtml = `
     <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
-      <h2 style="margin-bottom:4px">Hasil Tes — Landing Page Creator</h2>
+      <h2 style="margin-bottom:4px">Hasil Tes Pelamar</h2>
       <p style="color:#666;margin-top:0">ADM.UIUX</p>
-      ${forAdmin ? `<p><strong>Nama:</strong> ${name}<br><strong>Email:</strong> ${email}</p>` : `<p>Halo <strong>${name}</strong>,</p>`}
-      <p>Skor kamu:</p>
+      <p><strong>Nama:</strong> ${name}<br><strong>Email:</strong> ${email}</p>
       <p style="font-size:32px;font-weight:700;color:${scoreColor};margin:8px 0">${score} / ${total}</p>
       <table style="width:100%;border-collapse:collapse;margin-top:16px">
         ${detailRows}
@@ -68,34 +66,53 @@ export async function submitHiringTest(formData: FormData) {
     </div>
   `;
 
+  const applicantHtml = `
+    <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
+      <h2 style="margin-bottom:4px">Lamaran Terkirim</h2>
+      <p style="color:#666;margin-top:0">ADM.UIUX</p>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p>Terima kasih sudah mengisi tes dan mengirimkan CV kamu untuk posisi <strong>Landing Page Creator</strong>.</p>
+      <p>Lamaran kamu sudah kami terima. Tim kami akan me-review dan menghubungi kamu jika sesuai.</p>
+      <hr style="margin-top:24px">
+      <p style="color:#666;font-size:12px">ADM.UIUX — Landing Page & Digital Assets</p>
+    </div>
+  `;
+
   const apiKey = process.env.RESEND_API_KEY;
   if (apiKey) {
     const from = process.env.RESEND_FROM ?? "onboarding@resend.dev";
     const resend = new Resend(apiKey);
+    const cvFilename = `CV_${name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
 
-    await Promise.all([
+    const [applicantRes, adminRes] = await Promise.all([
       resend.emails.send({
         from,
         to: email,
-        subject: `Hasil Tes — Landing Page Creator | ADM.UIUX`,
-        html: htmlBody(false),
+        subject: "Lamaran Terkirim — Landing Page Creator | ADM.UIUX",
+        html: applicantHtml,
       }),
       resend.emails.send({
         from,
         to: "admin@admuiux.com",
         subject: `Hasil Tes Pelamar — ${name} (${score}/${total})`,
-        html: htmlBody(true),
+        html: adminHtml,
         attachments: [
           {
-            filename: `CV_${name.replace(/\s+/g, "_")}.pdf`,
-            content: cvBuffer,
+            filename: cvFilename,
+            content: cvBase64,
           },
         ],
       }),
-    ]).catch((err) => {
-      console.error("Hiring test email error:", err);
-    });
+    ]);
+
+    if (applicantRes.error) {
+      console.error("Hiring test: applicant email error", applicantRes.error);
+    }
+    if (adminRes.error) {
+      console.error("Hiring test: admin email error", adminRes.error);
+    }
   }
 
-  redirect(`/hiring/test/result?score=${score}&total=${total}&name=${encodeURIComponent(name)}`);
+  const redirectUrl = `/hiring/test/result?name=${encodeURIComponent(name)}`;
+  return NextResponse.json({ redirectUrl });
 }

@@ -1,26 +1,18 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { hiringQuestions } from "@/lib/hiring-questions";
-import { submitHiringTest } from "@/lib/actions/hiring-test";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export function HiringTestForm() {
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-
-  const [error, formAction, isPending] = useActionState(
-    async (_prev: string | null, formData: FormData) => {
-      try {
-        await submitHiringTest(formData);
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : "Terjadi kesalahan.";
-      }
-    },
-    null,
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFileError(null);
@@ -38,8 +30,35 @@ export function HiringTestForm() {
     setFileName(file.name);
   }
 
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setIsPending(true);
+
+    try {
+      const formData = new FormData(formRef.current!);
+      const res = await fetch("/api/hiring-test", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Terjadi kesalahan.");
+        return;
+      }
+
+      router.push(data.redirectUrl);
+    } catch {
+      setError("Gagal mengirim. Coba lagi.");
+    } finally {
+      setIsPending(false);
+    }
+  }
+
   return (
-    <form action={formAction} className="space-y-8">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
       {error && (
         <div className="rounded-xl border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30 p-4">
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
