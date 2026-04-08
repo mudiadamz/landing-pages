@@ -14,12 +14,6 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
     items: [{ href: "/panel", label: "Landing pages", icon: LayoutIcon }],
   },
   {
-    label: "Transaksi",
-    items: [
-      { href: "/panel/invoices", label: "Riwayat Pembelian", icon: ReceiptIcon },
-    ],
-  },
-  {
     label: "Lainnya",
     items: [
       { href: "/panel/profile", label: "Profil", icon: UserIcon },
