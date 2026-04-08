@@ -4,14 +4,12 @@ import { getProfile } from "@/lib/actions/profiles";
 import { getStats, getCustomers } from "@/lib/actions/admin";
 
 export default async function DashboardPage() {
-  const profile = await getProfile();
-  const isAdmin = profile?.role === "admin";
-  if (!isAdmin) redirect("/panel");
-
-  const [stats, customers] = await Promise.all([
+  const [profile, stats, customers] = await Promise.all([
+    getProfile(),
     getStats(),
     getCustomers(),
   ]);
+  if (profile?.role !== "admin") redirect("/panel");
 
   if (!stats) return null;
 

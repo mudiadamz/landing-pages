@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { getProfile } from "@/lib/actions/profiles";
 import { getLandingPagesForUser } from "@/lib/actions/landing-pages";
 import { getPurchasesForUser, getInvoicesForUser } from "@/lib/actions/purchases";
 import { getReviewsByUser } from "@/lib/actions/reviews";
 import { DeleteButton } from "./delete-button";
-import { CustomerTabs } from "./customer-tabs";
+
+const CustomerTabs = dynamic(() =>
+  import("./customer-tabs").then((m) => m.CustomerTabs),
+);
 
 export default async function PanelPage() {
   const profile = await getProfile();

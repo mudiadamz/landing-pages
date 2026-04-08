@@ -8,11 +8,13 @@ export default async function PanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  const [supabase, profile] = await Promise.all([
+    createClient(),
+    getProfile(),
+  ]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const profile = await getProfile();
   const isAdmin = profile?.role === "admin";
   const displayName = profile?.full_name?.trim() || user?.email?.split("@")[0] || "User";
   const emailConfirmed = !!user?.email_confirmed_at;

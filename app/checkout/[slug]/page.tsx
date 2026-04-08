@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPageForCheckout, getCategories } from "@/lib/actions/landing-pages";
+import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { CheckoutForm } from "./checkout-form";
 import { StickyMobileCTA } from "./sticky-cta";
 import { SiteHeader } from "@/components/site-header";
@@ -37,17 +37,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CheckoutPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const [
-    { data: { user } },
-    page,
-    categories,
-  ] = await Promise.all([
-    supabase.auth.getUser(),
+  const [supabase, page] = await Promise.all([
+    createClient(),
     getLandingPageForCheckout(slug),
-    getCategories(),
   ]);
   if (!page) notFound();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const isFree = page.is_free === true;
   const price = page.price ?? 0;
@@ -61,7 +56,7 @@ export default async function CheckoutPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} />
+      <SiteHeader user={user} />
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-28 sm:pb-12">
         <Link
