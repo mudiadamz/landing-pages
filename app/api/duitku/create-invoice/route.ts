@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const shortId = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
-    const merchantOrderId = `LP-${shortId}`.slice(0, 50);
+    const noDash = (s: string) => s.replace(/-/g, "");
+    const merchantOrderId = `LP_${noDash(page.id)}_${noDash(user.id)}`.slice(0, 50);
     const additionalParam = JSON.stringify({
       lp: page.id,
       u: user.id,

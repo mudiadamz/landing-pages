@@ -43,22 +43,36 @@ export async function POST(req: NextRequest) {
     let userId: string | null = null;
     let email: string | null = null;
 
-    try {
-      const parsed = additionalParam ? JSON.parse(additionalParam) : null;
-      if (parsed?.lp && parsed?.u) {
-        landingPageId = parsed.lp;
-        userId = parsed.u;
-        email = parsed.e ?? null;
-      }
-    } catch {
-      const parts = merchantOrderId.split("-");
-      if (parts[0] === "LP" && parts.length >= 4) {
-        landingPageId = parts[1];
-        userId = parts[2];
+    if (additionalParam) {
+      try {
+        const parsed = JSON.parse(additionalParam);
+        if (parsed?.lp && parsed?.u) {
+          landingPageId = parsed.lp;
+          userId = parsed.u;
+          email = parsed.e ?? null;
+        }
+      } catch {
+        // additionalParam was not valid JSON, fall through to merchantOrderId parsing
       }
     }
 
     if (!landingPageId || !userId) {
+      const parts = merchantOrderId.split("_");
+      if (parts[0] === "LP" && parts.length >= 3 && parts[1]?.length === 32 && parts[2]?.length === 32) {
+        const toUuid = (hex: string) =>
+          `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
+        landingPageId = toUuid(parts[1]);
+        userId = toUuid(parts[2]);
+      }
+    }
+
+    if (!landingPageId || !userId) {
+      console.error("Duitku callback: could not extract IDs", {
+        merchantOrderId,
+        additionalParam,
+        landingPageId,
+        userId,
+      });
       return new NextResponse("OK", { status: 200 });
     }
 
