@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { validateDuitkuCallback } from "@/lib/duitku";
 import { sendPurchaseConfirmationEmail } from "@/lib/email";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
+import { generateInvoiceNumber } from "@/lib/invoice";
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,9 +79,13 @@ export async function POST(req: NextRequest) {
 
     try {
       const supabase = createAdminClient();
+      const paymentMethod = (formData.get("paymentCode") as string) ?? "duitku";
       const { error } = await supabase.from("purchases").insert({
         user_id: userId,
         landing_page_id: landingPageId,
+        amount: Number(amount) || 0,
+        payment_method: paymentMethod,
+        invoice_number: generateInvoiceNumber(),
       });
 
       if (error) {
