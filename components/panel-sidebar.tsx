@@ -17,7 +17,7 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
     label: "Lainnya",
     items: [
       { href: "/panel/profile", label: "Profil", icon: UserIcon },
-      { href: "/panel/dashboard", label: "Dashboard", icon: ChartIcon, adminOnly: true },
+      { href: "/panel/dashboard", label: "Stats", icon: ChartIcon, adminOnly: true },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, adminOnly: true },
       { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, adminOnly: true },
