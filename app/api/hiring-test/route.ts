@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hiringQuestions } from "@/lib/hiring-questions";
+
+const CV_BUCKET = "hiring-cv";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
@@ -21,8 +24,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ukuran CV melebihi 5 MB." }, { status: 400 });
   }
 
-  const cvBase64 = Buffer.from(await cvFile.arrayBuffer()).toString("base64");
+  // Upload CV to Supabase Storage
+  const supabase = createAdminClient();
+  const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
+  const storagePath = `${Date.now()}_${safeName}.pdf`;
 
+  const { error: uploadError } = await supabase.storage
+    .from(CV_BUCKET)
+    .upload(storagePath, cvFile, {
+      contentType: "application/pdf",
+      upsert: false,
+    });
+
+  if (uploadError) {
+    console.error("CV upload error:", uploadError);
+    return NextResponse.json({ error: "Gagal mengupload CV. Coba lagi." }, { status: 500 });
+  }
+
+  // Generate a signed URL valid for 30 days
+  const { data: signedData } = await supabase.storage
+    .from(CV_BUCKET)
+    .createSignedUrl(storagePath, 60 * 60 * 24 * 30);
+
+  const cvUrl = signedData?.signedUrl ?? null;
+
+  // Grade answers
   const results = hiringQuestions.map((q) => {
     const raw = formData.get(`q${q.id}`);
     const selected = raw !== null ? Number(raw) : -1;
@@ -52,12 +78,17 @@ export async function POST(request: NextRequest) {
 
   const scoreColor = score >= total * 0.7 ? "#1a5f4a" : score >= total * 0.4 ? "#e8a87c" : "#e27d60";
 
+  const cvSection = cvUrl
+    ? `<p style="margin-top:16px"><a href="${cvUrl}" style="display:inline-block;padding:10px 20px;background:#1a5f4a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Download CV</a></p>`
+    : `<p style="margin-top:16px;color:#e27d60">CV gagal diupload.</p>`;
+
   const adminHtml = `
     <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
       <h2 style="margin-bottom:4px">Hasil Tes Pelamar</h2>
       <p style="color:#666;margin-top:0">ADM.UIUX</p>
       <p><strong>Nama:</strong> ${name}<br><strong>Email:</strong> ${email}</p>
       <p style="font-size:32px;font-weight:700;color:${scoreColor};margin:8px 0">${score} / ${total}</p>
+      ${cvSection}
       <table style="width:100%;border-collapse:collapse;margin-top:16px">
         ${detailRows}
       </table>
@@ -82,7 +113,6 @@ export async function POST(request: NextRequest) {
   if (apiKey) {
     const from = process.env.RESEND_FROM ?? "onboarding@resend.dev";
     const resend = new Resend(apiKey);
-    const cvFilename = `CV_${name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
 
     const [applicantRes, adminRes] = await Promise.all([
       resend.emails.send({
@@ -96,12 +126,6 @@ export async function POST(request: NextRequest) {
         to: "admin@admuiux.com",
         subject: `Hasil Tes Pelamar — ${name} (${score}/${total})`,
         html: adminHtml,
-        attachments: [
-          {
-            filename: cvFilename,
-            content: cvBase64,
-          },
-        ],
       }),
     ]);
 
