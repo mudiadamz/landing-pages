@@ -1,34 +1,28 @@
 export function HomeHero() {
   return (
     <section className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20 lg:py-24 overflow-hidden">
-      {/* Ornamen gradient blobs */}
+      {/* Ornamen gradient blobs — static, no animation to reduce GPU cost */}
       <div
-        className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-30 blur-3xl animate-float"
+        className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-30 blur-2xl"
         style={{ background: "radial-gradient(circle, var(--accent-warm) 0%, transparent 70%)" }}
         aria-hidden
       />
       <div
-        className="absolute top-1/2 -left-16 w-48 h-48 rounded-full opacity-25 blur-3xl animate-float"
-        style={{
-          background: "radial-gradient(circle, var(--accent-cool) 0%, transparent 70%)",
-          animationDelay: "-3s",
-        }}
+        className="absolute top-1/2 -left-16 w-48 h-48 rounded-full opacity-25 blur-2xl"
+        style={{ background: "radial-gradient(circle, var(--accent-cool) 0%, transparent 70%)" }}
         aria-hidden
       />
       <div
-        className="absolute -bottom-16 right-1/4 w-40 h-40 rounded-full opacity-20 blur-3xl animate-float"
-        style={{
-          background: "radial-gradient(circle, var(--accent-gold) 0%, transparent 70%)",
-          animationDelay: "-1.5s",
-        }}
+        className="absolute -bottom-16 right-1/4 w-40 h-40 rounded-full opacity-20 blur-2xl"
+        style={{ background: "radial-gradient(circle, var(--accent-gold) 0%, transparent 70%)" }}
         aria-hidden
       />
 
       {/* Hero content */}
       <div className="relative text-center max-w-2xl mx-auto space-y-4 animate-fade-in-up">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--card)]/80 backdrop-blur-sm text-xs sm:text-sm text-[var(--muted)] mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] text-xs sm:text-sm text-[var(--muted)] mb-4">
           <span
-            className="w-2 h-2 rounded-full animate-pulse"
+            className="w-2 h-2 rounded-full"
             style={{ backgroundColor: "var(--accent-warm)" }}
           />
           Landing page & digital assets

@@ -1,7 +1,10 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getLandingPageBySlug, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+
+const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 
 function CheckoutIcon({ className }: { className?: string }) {
   return (
@@ -15,17 +18,18 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getLandingPageBySlug(slug);
+  const page = await getPageBySlug(slug);
   if (!page) return { title: "Not found" };
   return { title: page.title };
 }
 
 export default async function LandingPageView({ params }: Props) {
   const { slug } = await params;
-  const page = await getLandingPageBySlug(slug);
+  const [page, checkoutData] = await Promise.all([
+    getPageBySlug(slug),
+    getLandingPageForCheckout(slug),
+  ]);
   if (!page) notFound();
-
-  const checkoutData = await getLandingPageForCheckout(slug);
   const price = checkoutData?.price ?? 0;
   const priceDiscount = checkoutData?.price_discount ?? 0;
   const isFree = checkoutData?.is_free === true;

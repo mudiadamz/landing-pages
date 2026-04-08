@@ -16,18 +16,23 @@ export type ReceivedEmailRow = {
   created_at: string;
 };
 
-export async function getReceivedEmailsForAdmin(): Promise<ReceivedEmailRow[]> {
+export type ReceivedEmailListItem = Pick<
+  ReceivedEmailRow,
+  "id" | "from_address" | "from_name" | "subject" | "received_at"
+>;
+
+export async function getReceivedEmailsForAdmin(): Promise<ReceivedEmailListItem[]> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return [];
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("received_emails")
-    .select("*")
+    .select("id, from_address, from_name, subject, received_at")
     .order("received_at", { ascending: false });
 
   if (error) return [];
-  return (data ?? []) as ReceivedEmailRow[];
+  return (data ?? []) as ReceivedEmailListItem[];
 }
 
 export async function getReceivedEmailById(id: string): Promise<ReceivedEmailRow | null> {
