@@ -101,3 +101,33 @@ input, textarea, select {
 .testimonials-section {
   animation: fadeInUp 0.4s ease-out 0.1s both;
 }
+
+/* CTA button shine sweep */
+@keyframes shine {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+.btn-cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-cta-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  pointer-events: none;
+}
+
+.btn-cta-shine.is-shining::after {
+  animation: shine 0.7s ease-in-out;
+}

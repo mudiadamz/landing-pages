@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 type Props = {
   priceLabel: string;
   slug: string;
@@ -9,11 +7,14 @@ type Props = {
 };
 
 export function StickyMobileCTA({ priceLabel, slug, showAsFree }: Props) {
-  function scrollToCTA() {
+  function handleClick() {
     const form = document.querySelector<HTMLElement>("[data-checkout-form]");
     if (form) {
       form.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("checkout-shine"));
+    }, 400);
   }
 
   return (
@@ -21,8 +22,8 @@ export function StickyMobileCTA({ priceLabel, slug, showAsFree }: Props) {
       <span className="text-lg font-bold text-foreground truncate">{priceLabel}</span>
       <button
         type="button"
-        onClick={scrollToCTA}
-        className="shrink-0 px-5 py-2.5 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
+        onClick={handleClick}
+        className="shrink-0 px-5 py-2.5 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.97] transition-all"
       >
         {showAsFree ? "Ambil gratis" : "Bayar sekarang"}
       </button>
