@@ -36,6 +36,9 @@ export function SiteFooter() {
             <Link href="/terms" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Ketentuan Layanan
             </Link>
+            <Link href="/hiring" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
+              Hiring
+            </Link>
           </nav>
         </div>
         <div className="mt-8 pt-6 border-t border-[var(--border)] text-center text-sm text-[var(--muted)]">
