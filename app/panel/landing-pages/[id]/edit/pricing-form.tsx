@@ -30,14 +30,11 @@ export function PricingForm({ pageId, categories, initial }: Props) {
     initial.price_discount != null ? String(initial.price_discount) : ""
   );
   const [isFree, setIsFree] = useState(!!initial.is_free);
-  const [purchaseLink, setPurchaseLink] = useState(initial.purchase_link ?? "");
-  const [purchaseType, setPurchaseType] = useState<"external" | "internal">(
-    initial.purchase_type ?? "internal"
-  );
-  const [featured, setFeatured] = useState(!!initial.featured);
+  const purchaseType = "internal" as const;
+  const featured = !!initial.featured;
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
-  const [rating, setRating] = useState<string>(initial.rating != null ? String(initial.rating) : "");
+  const rating = initial.rating != null ? String(initial.rating) : "";
   const [categoryId, setCategoryId] = useState<string>(initial.category_id ?? "");
   const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
   const [zipUploading, setZipUploading] = useState(false);
@@ -49,12 +46,8 @@ export function PricingForm({ pageId, categories, initial }: Props) {
     setPrice(initial.price != null ? String(initial.price) : "");
     setPriceDiscount(initial.price_discount != null ? String(initial.price_discount) : "");
     setIsFree(!!initial.is_free);
-    setPurchaseLink(initial.purchase_link ?? "");
-    setPurchaseType(initial.purchase_type ?? "internal");
-    setFeatured(!!initial.featured);
     setThumbnailUrl(initial.thumbnail_url ?? "");
     setZipUrl(initial.zip_url ?? "");
-    setRating(initial.rating != null ? String(initial.rating) : "");
     setCategoryId(initial.category_id ?? "");
     setLongDescription(initial.long_description ?? "");
   }, [initial]);
@@ -91,8 +84,8 @@ export function PricingForm({ pageId, categories, initial }: Props) {
         price: isFree ? null : (price ? parseFloat(price) : null),
         price_discount: isFree || !priceDiscount ? null : parseFloat(priceDiscount),
         is_free: isFree,
-        purchase_link: purchaseType === "external" ? (purchaseLink.trim() || null) : null,
-        purchase_type: purchaseType,
+        purchase_link: null,
+        purchase_type: "internal",
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
         zip_url: zipUrl.trim() || null,
@@ -172,48 +165,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
         </div>
       )}
 
-      <div>
-        <label className="block text-xs font-medium text-[var(--muted)] mb-1">
-          Tipe pembelian
-        </label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="radio"
-              name="purchase_type"
-              checked={purchaseType === "external"}
-              onChange={() => setPurchaseType("external")}
-              className="border-[var(--border)]"
-            />
-            External (link ke payment gateway)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="radio"
-              name="purchase_type"
-              checked={purchaseType === "internal"}
-              onChange={() => setPurchaseType("internal")}
-              className="border-[var(--border)]"
-            />
-            Internal (checkout di situs ini)
-          </label>
-        </div>
-      </div>
-
-      {purchaseType === "external" && (
-        <div>
-          <label className="block text-xs font-medium text-[var(--muted)] mb-1">
-            Purchase link (payment gateway URL)
-          </label>
-          <input
-            type="url"
-            value={purchaseLink}
-            onChange={(e) => setPurchaseLink(e.target.value)}
-            placeholder="https://pay.example.com/..."
-            className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
-          />
-        </div>
-      )}
+      {/* Purchase type is always internal (Duitku checkout) */}
 
       <div>
         <label className="block text-xs font-medium text-[var(--muted)] mb-1">
@@ -231,9 +183,20 @@ export function PricingForm({ pageId, categories, initial }: Props) {
         {zipUploading && <p className="mt-1 text-xs text-[var(--muted)]">Mengunggah…</p>}
         {zipError && <p className="mt-1 text-xs text-red-500">{zipError}</p>}
         {zipUrl && (
-          <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-            ZIP terpasang. Akan tersedia untuk download setelah pembayaran.
-          </p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-xs text-green-600 dark:text-green-400">ZIP terpasang</span>
+            <a
+              href={zipUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-[var(--primary)] hover:underline"
+            >
+              Lihat file →
+            </a>
+          </div>
         )}
       </div>
 
@@ -247,35 +210,6 @@ export function PricingForm({ pageId, categories, initial }: Props) {
           onChange={(e) => setThumbnailUrl(e.target.value)}
           placeholder="https://..."
           className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="featured"
-          checked={featured}
-          onChange={(e) => setFeatured(e.target.checked)}
-          className="rounded border-[var(--border)]"
-        />
-        <label htmlFor="featured" className="text-sm text-foreground">
-          Show on homepage
-        </label>
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-[var(--muted)] mb-1">
-          Rating (0–5, tampil di homepage)
-        </label>
-        <input
-          type="number"
-          min="0"
-          max="5"
-          step="0.1"
-          value={rating}
-          onChange={(e) => setRating(e.target.value)}
-          placeholder="4.5"
-          className="w-24 px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
         />
       </div>
 

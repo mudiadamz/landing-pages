@@ -1,6 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "./profiles";
 
 export type ReceivedEmailRow = {
@@ -48,4 +50,20 @@ export async function getReceivedEmailById(id: string): Promise<ReceivedEmailRow
 
   if (error || !data) return null;
   return data as ReceivedEmailRow;
+}
+
+export async function deleteReceivedEmail(id: string) {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return { error: "Forbidden" };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("received_emails")
+    .delete()
+    .eq("id", id);
+
+  if (error) return { error: "Gagal menghapus email" };
+
+  revalidatePath("/panel/inbox");
+  return { success: true };
 }

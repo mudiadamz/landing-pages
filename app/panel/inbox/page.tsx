@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getReceivedEmailsForAdmin, getReceivedEmailById } from "@/lib/actions/received-emails";
+import { DeleteEmailButton } from "./delete-email-button";
 
 type Props = { searchParams: Promise<{ id?: string }> };
 
@@ -75,9 +76,12 @@ export default async function InboxPage({ searchParams }: Props) {
             {detail ? (
               <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-[var(--border)] bg-[var(--background)]/50 space-y-1">
-                  <Link href="/panel/inbox" className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-foreground transition-colors lg:hidden mb-2">
-                    ← Kembali ke daftar
-                  </Link>
+                  <div className="flex items-center justify-between gap-2">
+                    <Link href="/panel/inbox" className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-foreground transition-colors lg:hidden">
+                      ← Kembali ke daftar
+                    </Link>
+                    <DeleteEmailButton emailId={detail.id} />
+                  </div>
                   <p className="text-sm font-medium text-foreground">{detail.subject || "(Tanpa subjek)"}</p>
                   <p className="text-sm text-[var(--muted)]">Dari: {fromDisplay(detail)}</p>
                   <p className="text-xs text-[var(--muted)]">Kepada: {detail.to_addresses?.join(", ") || "—"}</p>
