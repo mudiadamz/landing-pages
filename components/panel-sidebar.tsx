@@ -16,7 +16,6 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
   {
     label: "Lainnya",
     items: [
-      { href: "/panel/profile", label: "Profil", icon: UserIcon },
       { href: "/panel/dashboard", label: "Stats", icon: ChartIcon, adminOnly: true },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, adminOnly: true },
@@ -202,9 +201,9 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
             )}
           </svg>
         </button>
-        <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
+        <Link href="/panel/profile" className="text-sm font-medium text-foreground hover:text-[var(--primary)] transition-colors truncate max-w-[140px]">
           {displayName || "Panel"}
-        </span>
+        </Link>
         <div className="flex items-center gap-0.5">
           <ThemeSwitch />
           <button
@@ -249,7 +248,7 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
         </div>
         {displayName && (
           <div className="px-4 pb-2">
-            <p className="text-xs text-[var(--muted)]">Halo, <span className="font-medium text-foreground">{displayName}</span></p>
+            <p className="text-xs text-[var(--muted)]">Halo, <Link href="/panel/profile" className="font-medium text-foreground hover:text-[var(--primary)] transition-colors">{displayName}</Link></p>
           </div>
         )}
         <div className="flex flex-1 flex-col overflow-y-auto px-3">

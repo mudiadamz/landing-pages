@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile } from "./profiles";
 
 export type Stats = {
@@ -22,7 +22,7 @@ export async function getStats(): Promise<Stats | null> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return null;
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const [pagesRes, purchasesRes, buyersRes] = await Promise.all([
     supabase.from("landing_pages").select("id", { count: "exact", head: true }),
@@ -43,7 +43,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return [];
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: purchases } = await supabase
     .from("purchases")
