@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { signOut } from "@/lib/actions/auth";
+import { CategoryIcon } from "@/lib/category-icons";
 
 type User = {
   id: string;
@@ -11,39 +12,9 @@ type User = {
   user_metadata?: { full_name?: string | null } | null;
 };
 
-export type HeaderCategory = { id: string; name: string; slug: string };
+export type HeaderCategory = { id: string; name: string; slug: string; icon: string };
 
 const iconClass = "w-4 h-4 shrink-0";
-
-function CategoryIcon({ slug }: { slug: string }) {
-  switch (slug) {
-    case "produk-launch":
-      return (
-        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-        </svg>
-      );
-    case "game":
-      return (
-        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      );
-    case "app":
-      return (
-        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      );
-    default:
-      return (
-        <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      );
-  }
-}
 
 type Props = {
   user: User | null;
@@ -121,7 +92,7 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                         : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:opacity-80"
                     }`}
                   >
-                    <CategoryIcon slug={cat.slug} />
+                    <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0" />
                     <span className="whitespace-nowrap">{cat.name}</span>
                   </Link>
                 ))}
@@ -228,7 +199,7 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                       currentCategorySlug === cat.slug ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
                     }`}
                   >
-                    <CategoryIcon slug={cat.slug} />
+                    <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0" />
                     {cat.name}
                   </Link>
                 ))}

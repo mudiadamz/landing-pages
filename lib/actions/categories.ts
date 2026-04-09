@@ -9,6 +9,7 @@ export type CategoryRow = {
   name: string;
   slug: string;
   sort_order: number;
+  icon: string;
 };
 
 export async function getAdminCategories(): Promise<CategoryRow[]> {
@@ -18,7 +19,7 @@ export async function getAdminCategories(): Promise<CategoryRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("landing_page_categories")
-    .select("id, name, slug, sort_order")
+    .select("id, name, slug, sort_order, icon")
     .order("sort_order", { ascending: true });
 
   if (error) return [];
@@ -29,6 +30,7 @@ export async function createCategory(
   name: string,
   slug: string,
   sort_order: number,
+  icon: string = "default",
 ): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
@@ -40,7 +42,7 @@ export async function createCategory(
   const supabase = await createClient();
   const { error } = await supabase
     .from("landing_page_categories")
-    .insert({ name: name.trim(), slug: normalizedSlug, sort_order });
+    .insert({ name: name.trim(), slug: normalizedSlug, sort_order, icon });
 
   if (error) {
     if (error.code === "23505") return { ok: false, error: "Slug sudah digunakan." };
@@ -56,6 +58,7 @@ export async function updateCategory(
   name: string,
   slug: string,
   sort_order: number,
+  icon: string = "default",
 ): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
@@ -67,7 +70,7 @@ export async function updateCategory(
   const supabase = await createClient();
   const { error } = await supabase
     .from("landing_page_categories")
-    .update({ name: name.trim(), slug: normalizedSlug, sort_order })
+    .update({ name: name.trim(), slug: normalizedSlug, sort_order, icon })
     .eq("id", id);
 
   if (error) {

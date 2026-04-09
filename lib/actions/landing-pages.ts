@@ -17,6 +17,7 @@ export type LandingPageCategory = {
   id: string;
   name: string;
   slug: string;
+  icon: string;
 };
 
 export type LandingPageRow = {
@@ -174,7 +175,7 @@ export const getCategories = unstable_cache(
     const supabase = createAnonClient();
     const { data, error } = await supabase
       .from("landing_page_categories")
-      .select("id, name, slug")
+      .select("id, name, slug, icon")
       .order("sort_order", { ascending: true });
 
     if (error) return [];
@@ -194,7 +195,7 @@ const getCachedHomepagePages = unstable_cache(
     const supabase = createAnonClient();
     const select = `
       id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description,
-      ${slug ? "landing_page_categories!inner(id, name, slug)" : "landing_page_categories(id, name, slug)"}
+      ${slug ? "landing_page_categories!inner(id, name, slug, icon)" : "landing_page_categories(id, name, slug, icon)"}
     `;
     let query = supabase
       .from("landing_pages")

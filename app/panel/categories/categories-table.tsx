@@ -7,6 +7,7 @@ import {
   updateCategory,
   deleteCategory,
 } from "@/lib/actions/categories";
+import { CategoryIcon, CATEGORY_ICONS, ICON_KEYS } from "@/lib/category-icons";
 
 type Props = { initialCategories: CategoryRow[] };
 
@@ -53,14 +54,14 @@ export function CategoriesTable({ initialCategories }: Props) {
 
       {creating && (
         <CategoryForm
-          onSubmit={async (name, slug, sort_order) => {
-            const res = await createCategory(name, slug, sort_order);
+          onSubmit={async (name, slug, sort_order, icon) => {
+            const res = await createCategory(name, slug, sort_order, icon);
             if (!res.ok) {
               setError(res.error ?? "Gagal.");
               return false;
             }
             setCategories((prev) =>
-              [...prev, { id: crypto.randomUUID(), name, slug, sort_order }].sort(
+              [...prev, { id: crypto.randomUUID(), name, slug, sort_order, icon }].sort(
                 (a, b) => a.sort_order - b.sort_order,
               ),
             );
@@ -81,15 +82,15 @@ export function CategoriesTable({ initialCategories }: Props) {
             <CategoryForm
               key={cat.id}
               initial={editing}
-              onSubmit={async (name, slug, sort_order) => {
-                const res = await updateCategory(cat.id, name, slug, sort_order);
+              onSubmit={async (name, slug, sort_order, icon) => {
+                const res = await updateCategory(cat.id, name, slug, sort_order, icon);
                 if (!res.ok) {
                   setError(res.error ?? "Gagal.");
                   return false;
                 }
                 setCategories((prev) =>
                   prev
-                    .map((c) => (c.id === cat.id ? { ...c, name, slug, sort_order } : c))
+                    .map((c) => (c.id === cat.id ? { ...c, name, slug, sort_order, icon } : c))
                     .sort((a, b) => a.sort_order - b.sort_order),
                 );
                 setEditing(null);
@@ -105,9 +106,12 @@ export function CategoriesTable({ initialCategories }: Props) {
               className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground truncate">{cat.name}</p>
-                  <p className="text-sm text-[var(--muted)] truncate">/{cat.slug}</p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0 text-[var(--muted)]" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate">{cat.name}</p>
+                    <p className="text-sm text-[var(--muted)] truncate">/{cat.slug}</p>
+                  </div>
                 </div>
                 <span className="text-xs text-[var(--muted)] tabular-nums shrink-0">
                   #{cat.sort_order}
@@ -149,6 +153,7 @@ export function CategoriesTable({ initialCategories }: Props) {
               <tr className="border-b border-[var(--border)] bg-[var(--background)]/50">
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Nama</th>
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Slug</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Icon</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Urutan</th>
                 <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Aksi</th>
               </tr>
@@ -157,19 +162,19 @@ export function CategoriesTable({ initialCategories }: Props) {
               {categories.map((cat) =>
                 editing?.id === cat.id ? (
                   <tr key={cat.id}>
-                    <td colSpan={4} className="px-4 py-3">
+                    <td colSpan={5} className="px-4 py-3">
                       <CategoryForm
                         initial={editing}
                         inline
-                        onSubmit={async (name, slug, sort_order) => {
-                          const res = await updateCategory(cat.id, name, slug, sort_order);
+                        onSubmit={async (name, slug, sort_order, icon) => {
+                          const res = await updateCategory(cat.id, name, slug, sort_order, icon);
                           if (!res.ok) {
                             setError(res.error ?? "Gagal.");
                             return false;
                           }
                           setCategories((prev) =>
                             prev
-                              .map((c) => (c.id === cat.id ? { ...c, name, slug, sort_order } : c))
+                              .map((c) => (c.id === cat.id ? { ...c, name, slug, sort_order, icon } : c))
                               .sort((a, b) => a.sort_order - b.sort_order),
                           );
                           setEditing(null);
@@ -188,6 +193,9 @@ export function CategoriesTable({ initialCategories }: Props) {
                   >
                     <td className="px-4 py-3 font-medium text-foreground">{cat.name}</td>
                     <td className="px-4 py-3 text-[var(--muted)]">/{cat.slug}</td>
+                    <td className="px-4 py-3 text-center">
+                      <CategoryIcon icon={cat.icon} className="w-4 h-4 inline-block text-[var(--muted)]" />
+                    </td>
                     <td className="px-4 py-3 text-center tabular-nums">{cat.sort_order}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-3">
@@ -219,7 +227,7 @@ export function CategoriesTable({ initialCategories }: Props) {
               )}
               {categories.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[var(--muted)]">
+                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">
                     Belum ada kategori.
                   </td>
                 </tr>
@@ -242,7 +250,7 @@ type FormProps = {
   initial?: CategoryRow;
   defaultSortOrder?: number;
   inline?: boolean;
-  onSubmit: (name: string, slug: string, sort_order: number) => Promise<boolean>;
+  onSubmit: (name: string, slug: string, sort_order: number, icon: string) => Promise<boolean>;
   onCancel: () => void;
   error: string | null;
 };
@@ -251,6 +259,8 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? defaultSortOrder ?? 0);
+  const [icon, setIcon] = useState(initial?.icon ?? "default");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [autoSlug, setAutoSlug] = useState(!initial);
 
@@ -270,7 +280,7 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await onSubmit(name, slug, sortOrder);
+      await onSubmit(name, slug, sortOrder, icon);
     });
   }
 
@@ -313,6 +323,44 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
           onChange={(e) => setSortOrder(Number(e.target.value))}
           className={inputClass}
         />
+      </div>
+      <div className={inline ? "" : ""}>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">Icon</label>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setPickerOpen((o) => !o)}
+            className="flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm hover:bg-[var(--background)] transition-colors"
+          >
+            <CategoryIcon icon={icon} className="w-4 h-4" />
+            <span className="text-[var(--muted)]">{CATEGORY_ICONS[icon]?.label ?? icon}</span>
+            <svg className="w-3 h-3 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {pickerOpen && (
+            <div className="absolute z-30 mt-1 p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg grid grid-cols-4 gap-1 w-max max-w-[240px]">
+              {ICON_KEYS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={CATEGORY_ICONS[key].label}
+                  onClick={() => {
+                    setIcon(key);
+                    setPickerOpen(false);
+                  }}
+                  className={`p-2 rounded-md transition-colors ${
+                    icon === key
+                      ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
+                      : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+                  }`}
+                >
+                  <CategoryIcon icon={key} className="w-5 h-5" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <div className={inline ? "flex items-center gap-2" : "flex items-center gap-2 pt-1"}>
         <button
