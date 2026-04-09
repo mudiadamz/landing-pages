@@ -132,6 +132,16 @@ input, textarea, select {
   animation: shine 0.7s ease-in-out;
 }
 
+/* Landing page preview: hide overlay buttons on toggle */
+body.lp-hide-overlays .lp-overlay {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.lp-overlay {
+  transition: opacity 0.2s ease;
+}
+
 /* Print: only show #invoice section */
 @media print {
   body * {

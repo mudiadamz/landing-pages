@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OverlayToggle } from "./overlay-toggle";
 
 export default function LpLayout({
   children,
@@ -10,7 +11,7 @@ export default function LpLayout({
       {children}
       <Link
         href="/"
-        className="fixed top-4 left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--card)]/95 backdrop-blur border border-[var(--border)] text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card)] active:scale-[0.98] active:opacity-90 shadow-lg transition-all duration-150"
+        className="lp-overlay fixed top-4 left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--card)]/95 backdrop-blur border border-[var(--border)] text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card)] active:scale-[0.98] active:opacity-90 shadow-lg transition-all duration-150"
         aria-label="Kembali ke beranda"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,6 +19,7 @@ export default function LpLayout({
         </svg>
         Kembali
       </Link>
+      <OverlayToggle />
     </div>
   );
 }
