@@ -3,6 +3,17 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  if (pathname === "/" && request.nextUrl.searchParams.has("category")) {
+    const slug = request.nextUrl.searchParams.get("category")?.trim();
+    if (slug) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/category/${slug}`;
+      url.searchParams.delete("category");
+      return NextResponse.redirect(url, 301);
+    }
+  }
+
   const isPanelRoute = pathname.startsWith("/panel");
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
 

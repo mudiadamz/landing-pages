@@ -85,7 +85,7 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                 {categories.map((cat) => (
                   <Link
                     key={cat.id}
-                    href={`/?category=${encodeURIComponent(cat.slug)}`}
+                    href={`/category/${cat.slug}`}
                     className={`flex items-center gap-2 px-2.5 py-2 text-sm rounded-lg transition-all duration-150 shrink-0 ${
                       currentCategorySlug === cat.slug
                         ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
@@ -193,7 +193,7 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                 {categories.map((cat) => (
                   <Link
                     key={cat.id}
-                    href={`/?category=${encodeURIComponent(cat.slug)}`}
+                    href={`/category/${cat.slug}`}
                     onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
                       currentCategorySlug === cat.slug ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
