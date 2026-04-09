@@ -1,0 +1,8 @@
+---
+description: Always commit and push after finishing a task
+alwaysApply: true
+---
+
+# Commit and Push
+
+After completing a task, always commit and push the changes to the remote repository. Do not wait for the user to ask.
