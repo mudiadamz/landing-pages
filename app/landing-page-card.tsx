@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
-import { addPurchaseAction } from "@/lib/actions/purchases";
 
 function BuyNowIcon({ className }: { className?: string }) {
   return (
@@ -25,7 +24,7 @@ function formatPrice(value: number): string {
   }).format(value);
 }
 
-export function LandingPageCard({ page, isLoggedIn }: Props) {
+export function LandingPageCard({ page }: Props) {
   const isFree = page.is_free === true;
   const price = page.price ?? 0;
   const priceDiscount = page.price_discount ?? 0;
@@ -114,26 +113,12 @@ export function LandingPageCard({ page, isLoggedIn }: Props) {
             Lihat demo
           </Link>
           {showAsFree ? (
-            isLoggedIn ? (
-              <form action={addPurchaseAction} className="flex-1" target="_blank">
-                <input type="hidden" name="landing_page_id" value={page.id} />
-                <button
-                  type="submit"
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
-                >
-                  Ambil gratis
-                </button>
-              </form>
-            ) : (
-              <Link
-                href="/login"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
-              >
-                Ambil gratis (masuk)
-              </Link>
-            )
+            <Link
+              href={`/checkout/${page.slug}`}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+            >
+              Ambil gratis
+            </Link>
           ) : isInternal ? (
             <Link
               href={`/checkout/${page.slug}`}
