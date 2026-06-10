@@ -2,7 +2,9 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getLandingPageBySlug, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+import { guardPreviewHtml } from "@/lib/preview-guard";
 import { PreviewBar } from "../preview-bar";
+import { PreviewGuardClient } from "../preview-guard-client";
 
 const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 
@@ -46,8 +48,9 @@ export default async function LandingPageView({ params }: Props) {
 
   return (
     <>
+      <PreviewGuardClient />
       <iframe
-        srcDoc={page.html_content}
+        srcDoc={guardPreviewHtml(page.html_content)}
         title={page.title}
         className="w-full h-full min-h-full border-0 block"
         sandbox="allow-scripts allow-same-origin allow-modals"
