@@ -10,7 +10,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: profile } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .select("role")
     .eq("id", user.id)
     .single();
@@ -20,7 +20,7 @@ export async function GET() {
 
   const admin = createAdminClient();
   const { data, error } = await admin
-    .from("profiles")
+    .from("lp_profiles")
     .select("id, full_name, email, role")
     .order("role", { ascending: true })
     .order("full_name", { ascending: true });
@@ -40,7 +40,7 @@ export async function PATCH(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: profile } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .select("role")
     .eq("id", user.id)
     .single();
@@ -61,7 +61,7 @@ export async function PATCH(req: Request) {
 
   const admin = createAdminClient();
   const { error } = await admin
-    .from("profiles")
+    .from("lp_profiles")
     .update({ role })
     .eq("id", userId);
 

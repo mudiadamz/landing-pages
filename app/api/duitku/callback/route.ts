@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     try {
       const supabase = createAdminClient();
       const paymentMethod = (formData.get("paymentCode") as string) ?? "duitku";
-      const { error } = await supabase.from("purchases").insert({
+      const { error } = await supabase.from("lp_purchases").insert({
         user_id: userId,
         landing_page_id: landingPageId,
         amount: Number(amount) || 0,
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         console.error("Duitku callback purchase insert error:", error);
       } else if (email) {
         const { data: page } = await supabase
-          .from("landing_pages")
+          .from("lp_landing_pages")
           .select("title, slug, zip_url")
           .eq("id", landingPageId)
           .single();

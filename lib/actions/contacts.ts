@@ -32,7 +32,7 @@ export async function submitContact(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("contacts").insert({
+  const { error } = await supabase.from("lp_contacts").insert({
     name,
     email,
     message,
@@ -52,7 +52,7 @@ export async function getContactsForAdmin(): Promise<ContactSubmission[]> {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("contacts")
+    .from("lp_contacts")
     .select("id, name, email, message, created_at")
     .order("created_at", { ascending: false });
 

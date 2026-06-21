@@ -22,12 +22,12 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from("purchases")
+    .from("lp_purchases")
     .select(`
       id,
       landing_page_id,
       purchased_at,
-      landing_pages (title, slug, zip_url)
+      landing_pages:lp_landing_pages (title, slug, zip_url)
     `)
     .eq("user_id", user.id)
     .order("purchased_at", { ascending: false });
@@ -64,7 +64,7 @@ export async function addPurchase(landingPageId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await supabase.from("purchases").insert({
+  const { error } = await supabase.from("lp_purchases").insert({
     user_id: user.id,
     landing_page_id: landingPageId,
     amount: 0,
@@ -108,14 +108,14 @@ export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from("purchases")
+    .from("lp_purchases")
     .select(`
       id,
       invoice_number,
       purchased_at,
       amount,
       payment_method,
-      landing_pages (title, slug)
+      landing_pages:lp_landing_pages (title, slug)
     `)
     .eq("user_id", user.id)
     .order("purchased_at", { ascending: false });
@@ -156,14 +156,14 @@ export async function getInvoiceById(id: string): Promise<(InvoiceRow & { user_n
   if (!user) return null;
 
   const { data, error } = await supabase
-    .from("purchases")
+    .from("lp_purchases")
     .select(`
       id,
       invoice_number,
       purchased_at,
       amount,
       payment_method,
-      landing_pages (title, slug)
+      landing_pages:lp_landing_pages (title, slug)
     `)
     .eq("id", id)
     .eq("user_id", user.id)
@@ -174,7 +174,7 @@ export async function getInvoiceById(id: string): Promise<(InvoiceRow & { user_n
   const lp = Array.isArray(data.landing_pages) ? data.landing_pages[0] : data.landing_pages;
 
   const { data: profile } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .select("full_name, email")
     .eq("id", user.id)
     .single();

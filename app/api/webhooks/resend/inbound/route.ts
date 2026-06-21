@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const toAddresses = Array.isArray(email.to) ? email.to : [email.to];
 
     const supabase = createAdminClient();
-    const { error: insertError } = await supabase.from("received_emails").insert({
+    const { error: insertError } = await supabase.from("lp_received_emails").insert({
       resend_email_id: emailId,
       from_address: fromEmail,
       from_name: fromName ?? null,

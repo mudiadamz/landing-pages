@@ -26,7 +26,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   if (!user) return null;
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .select("id, full_name, role")
     .eq("id", user.id)
     .single();
@@ -56,20 +56,20 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
   if (!user) return null;
 
   let { data, error } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .select("id, full_name, role")
     .eq("id", user.id)
     .single();
 
   if ((error || !data) && user) {
-    const { error: insertError } = await supabase.from("profiles").insert({
+    const { error: insertError } = await supabase.from("lp_profiles").insert({
       id: user.id,
       full_name: user.user_metadata?.full_name ?? null,
       role: "customer",
     });
     if (!insertError || insertError.code === "23505") {
       const ret = await supabase
-        .from("profiles")
+        .from("lp_profiles")
         .select("id, full_name, role")
         .eq("id", user.id)
         .single();
@@ -96,7 +96,7 @@ export async function updateProfile(formData: FormData) {
 
   const full_name = (formData.get("full_name") as string)?.trim() ?? "";
   const { error } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .update({ full_name: full_name || null })
     .eq("id", user.id);
 

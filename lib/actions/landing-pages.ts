@@ -83,7 +83,7 @@ export async function getLandingPagesForUser() {
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, zip_url")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
@@ -100,7 +100,7 @@ export async function getLandingPageById(id: string) {
   if (!user) return null;
 
   const { data, error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .select("*")
     .eq("id", id)
     .eq("user_id", user.id)
@@ -113,7 +113,7 @@ export async function getLandingPageById(id: string) {
 export async function getLandingPageBySlug(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .select("id, title, slug, html_content")
     .eq("slug", slug)
     .single();
@@ -139,7 +139,7 @@ export async function createLandingPage(
   if (!user) throw new Error("Unauthorized");
 
   const { data, error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .insert({ title, slug: normalizedSlug, html_content, user_id: user.id })
     .select("id")
     .single();
@@ -157,7 +157,7 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
   if (!user) throw new Error("Unauthorized");
 
   const { error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .update({ html_content })
     .eq("id", id)
     .eq("user_id", user.id);
@@ -174,7 +174,7 @@ export const getCategories = unstable_cache(
   async (): Promise<LandingPageCategory[]> => {
     const supabase = createAnonClient();
     const { data, error } = await supabase
-      .from("landing_page_categories")
+      .from("lp_landing_page_categories")
       .select("id, name, slug, icon")
       .order("sort_order", { ascending: true });
 
@@ -195,10 +195,10 @@ const getCachedHomepagePages = unstable_cache(
     const supabase = createAnonClient();
     const select = `
       id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description,
-      ${slug ? "landing_page_categories!inner(id, name, slug, icon)" : "landing_page_categories(id, name, slug, icon)"}
+      ${slug ? "landing_page_categories:lp_landing_page_categories!inner(id, name, slug, icon)" : "landing_page_categories:lp_landing_page_categories(id, name, slug, icon)"}
     `;
     let query = supabase
-      .from("landing_pages")
+      .from("lp_landing_pages")
       .select(select)
       .order("updated_at", { ascending: false })
       .limit(24);
@@ -224,7 +224,7 @@ const getCachedHomepagePages = unstable_cache(
 export async function getLandingPageForCheckout(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, long_description, sold_count, rating")
     .eq("slug", slug)
     .single();
@@ -256,7 +256,7 @@ export async function updateLandingPagePricing(
   if (!user) throw new Error("Unauthorized");
 
   const { error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .update(opts)
     .eq("id", id)
     .eq("user_id", user.id);
@@ -275,7 +275,7 @@ export async function deleteLandingPage(id: string) {
   if (!user) throw new Error("Unauthorized");
 
   const { error } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);

@@ -25,9 +25,9 @@ export async function getStats(): Promise<Stats | null> {
   const supabase = createAdminClient();
 
   const [pagesRes, purchasesRes, buyersRes] = await Promise.all([
-    supabase.from("landing_pages").select("id", { count: "exact", head: true }),
-    supabase.from("purchases").select("id", { count: "exact", head: true }),
-    supabase.from("purchases").select("user_id"),
+    supabase.from("lp_landing_pages").select("id", { count: "exact", head: true }),
+    supabase.from("lp_purchases").select("id", { count: "exact", head: true }),
+    supabase.from("lp_purchases").select("user_id"),
   ]);
 
   const uniqueBuyers = new Set((buyersRes.data ?? []).map((r) => r.user_id));
@@ -46,7 +46,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   const supabase = createAdminClient();
 
   const { data: purchases } = await supabase
-    .from("purchases")
+    .from("lp_purchases")
     .select("user_id, purchased_at")
     .order("purchased_at", { ascending: false });
 
@@ -62,7 +62,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
 
   const buyerIds = [...countMap.keys()];
   const { data: profiles } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .select("id, full_name, email, role")
     .in("id", buyerIds);
 

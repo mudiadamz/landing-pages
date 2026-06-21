@@ -18,7 +18,7 @@ export async function saveVersion(landingPageId: string, htmlContent: string) {
   if (!user) throw new Error("Unauthorized");
 
   const { error } = await supabase
-    .from("landing_page_versions")
+    .from("lp_landing_page_versions")
     .insert({ landing_page_id: landingPageId, html_content: htmlContent });
 
   if (error) throw error;
@@ -34,7 +34,7 @@ export async function getVersions(landingPageId: string): Promise<VersionRow[]> 
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from("landing_page_versions")
+    .from("lp_landing_page_versions")
     .select("id, landing_page_id, html_content, created_at")
     .eq("landing_page_id", landingPageId)
     .order("created_at", { ascending: false })
@@ -52,7 +52,7 @@ export async function restoreVersion(versionId: string) {
   if (!user) throw new Error("Unauthorized");
 
   const { data: version, error: fetchErr } = await supabase
-    .from("landing_page_versions")
+    .from("lp_landing_page_versions")
     .select("landing_page_id, html_content")
     .eq("id", versionId)
     .single();
@@ -60,7 +60,7 @@ export async function restoreVersion(versionId: string) {
   if (fetchErr || !version) throw new Error("Version not found");
 
   const { error: updateErr } = await supabase
-    .from("landing_pages")
+    .from("lp_landing_pages")
     .update({ html_content: version.html_content })
     .eq("id", version.landing_page_id)
     .eq("user_id", user.id);

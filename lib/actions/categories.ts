@@ -18,7 +18,7 @@ export async function getAdminCategories(): Promise<CategoryRow[]> {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("landing_page_categories")
+    .from("lp_landing_page_categories")
     .select("id, name, slug, sort_order, icon")
     .order("sort_order", { ascending: true });
 
@@ -41,7 +41,7 @@ export async function createCategory(
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("landing_page_categories")
+    .from("lp_landing_page_categories")
     .insert({ name: name.trim(), slug: normalizedSlug, sort_order, icon });
 
   if (error) {
@@ -69,7 +69,7 @@ export async function updateCategory(
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("landing_page_categories")
+    .from("lp_landing_page_categories")
     .update({ name: name.trim(), slug: normalizedSlug, sort_order, icon })
     .eq("id", id);
 
@@ -90,7 +90,7 @@ export async function deleteCategory(
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("landing_page_categories")
+    .from("lp_landing_page_categories")
     .delete()
     .eq("id", id);
 

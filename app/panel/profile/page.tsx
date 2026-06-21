@@ -10,7 +10,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   const { data: row, error: profileError } = await supabase
-    .from("profiles")
+    .from("lp_profiles")
     .select("id, full_name, role")
     .eq("id", user.id)
     .single();

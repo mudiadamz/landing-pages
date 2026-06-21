@@ -29,7 +29,7 @@ export async function getReceivedEmailsForAdmin(): Promise<ReceivedEmailListItem
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("received_emails")
+    .from("lp_received_emails")
     .select("id, from_address, from_name, subject, received_at")
     .order("received_at", { ascending: false });
 
@@ -43,7 +43,7 @@ export async function getReceivedEmailById(id: string): Promise<ReceivedEmailRow
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("received_emails")
+    .from("lp_received_emails")
     .select("*")
     .eq("id", id)
     .single();
@@ -58,7 +58,7 @@ export async function deleteReceivedEmail(id: string) {
 
   const supabase = createAdminClient();
   const { error } = await supabase
-    .from("received_emails")
+    .from("lp_received_emails")
     .delete()
     .eq("id", id);
 

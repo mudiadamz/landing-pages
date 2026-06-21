@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const { data: page } = await supabase
-      .from("landing_pages")
+      .from("lp_landing_pages")
       .select("id, zip_url, title")
       .eq("slug", slug)
       .single();
@@ -27,7 +27,7 @@ export async function GET(
     }
 
     const { data: purchase } = await supabase
-      .from("purchases")
+      .from("lp_purchases")
       .select("id")
       .eq("user_id", user.id)
       .eq("landing_page_id", page.id)

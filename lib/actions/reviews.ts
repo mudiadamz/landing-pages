@@ -20,7 +20,7 @@ export async function getReviewsByUser(): Promise<UserReview[]> {
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from("reviews")
+    .from("lp_reviews")
     .select("id, landing_page_id, rating, review_text, created_at, updated_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -43,7 +43,7 @@ export async function submitReview(
   if (rating < 1 || rating > 5) return { error: "Rating harus 1-5" };
 
   const { data: purchase } = await supabase
-    .from("purchases")
+    .from("lp_purchases")
     .select("id")
     .eq("user_id", user.id)
     .eq("landing_page_id", landingPageId)
@@ -52,7 +52,7 @@ export async function submitReview(
   if (!purchase) return { error: "Kamu belum membeli produk ini" };
 
   const { data: existing } = await supabase
-    .from("reviews")
+    .from("lp_reviews")
     .select("id")
     .eq("user_id", user.id)
     .eq("landing_page_id", landingPageId)
@@ -60,7 +60,7 @@ export async function submitReview(
 
   if (existing) {
     const { error } = await supabase
-      .from("reviews")
+      .from("lp_reviews")
       .update({
         rating,
         review_text: reviewText.trim() || null,
@@ -70,7 +70,7 @@ export async function submitReview(
 
     if (error) return { error: "Gagal mengupdate review" };
   } else {
-    const { error } = await supabase.from("reviews").insert({
+    const { error } = await supabase.from("lp_reviews").insert({
       user_id: user.id,
       landing_page_id: landingPageId,
       rating,

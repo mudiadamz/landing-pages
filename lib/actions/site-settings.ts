@@ -15,7 +15,7 @@ export const getCustomJs = unstable_cache(
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       );
       const { data } = await supabase
-        .from("site_settings")
+        .from("lp_site_settings")
         .select("value")
         .eq("key", CUSTOM_JS_KEY)
         .single();
@@ -34,7 +34,7 @@ export async function updateCustomJs(script: string): Promise<{ ok: boolean; err
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("site_settings")
+    .from("lp_site_settings")
     .upsert({ key: CUSTOM_JS_KEY, value: script.trim(), updated_at: new Date().toISOString() }, { onConflict: "key" });
 
   if (error) {
