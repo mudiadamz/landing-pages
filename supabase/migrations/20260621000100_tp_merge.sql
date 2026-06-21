@@ -196,6 +196,12 @@ $$;
 -- Single-session guard: claim this account for the calling device.
 -- SECURITY DEFINER so it can write the caller's own profile row (the
 -- self-read RLS policy has no UPDATE clause).
+--
+-- Upsert (not just update): texas-poker shares auth.users with the other
+-- merged apps, but tp_handle_new_user only fires on NEW signups — so users
+-- who already existed in auth.users before this merge have no tp_profiles
+-- row. claim_session runs on every texas sign-in (lib/useSession), so this
+-- is the natural hook to backfill the row for existing shared-auth users.
 create or replace function public.tp_claim_session(p_session_id text)
 returns void
 language plpgsql
@@ -208,9 +214,10 @@ begin
   if v_uid is null then
     raise exception 'auth required' using errcode = '42501';
   end if;
-  update public.tp_profiles
-     set current_session_id = p_session_id
-   where user_id = v_uid;
+  insert into public.tp_profiles (user_id, current_session_id)
+  values (v_uid, p_session_id)
+  on conflict (user_id) do update
+    set current_session_id = excluded.current_session_id;
 end;
 $$;
 
