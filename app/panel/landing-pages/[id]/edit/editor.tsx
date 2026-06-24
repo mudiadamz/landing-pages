@@ -87,6 +87,16 @@ export function Editor({
     setMessage({ type: "ok", text: "Restored." });
   }, []);
 
+  // A site ZIP upload replaces the page HTML server-side; mirror it into the editor.
+  const handleSiteUploaded = useCallback((fullHtml: string) => {
+    const p = parseHtmlContent(fullHtml);
+    setHtml(p.html);
+    setCss(p.css);
+    setJs(p.js);
+    lastSavedRef.current = mergeHtmlContent(p.html, p.css, p.js);
+    setMessage({ type: "ok", text: "Site ZIP uploaded — preview updated." });
+  }, []);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
@@ -173,7 +183,7 @@ export function Editor({
         </div>
 
         <div className="space-y-4">
-          <AssetUpload pageId={id} />
+          <AssetUpload pageId={id} onSiteUploaded={handleSiteUploaded} />
           <EditorHistory pageId={id} onRestore={handleRestore} />
         </div>
       </div>

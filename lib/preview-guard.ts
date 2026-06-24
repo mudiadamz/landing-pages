@@ -57,6 +57,27 @@ const GUARD_SCRIPT = `
       if (e.shiftKey && ["i", "j", "c"].indexOf(k) !== -1) return block(e);
     }
   }, true);
+
+  // When a <base href> points at storage (ZIP-uploaded sites), in-page anchor
+  // links like href="#section" would otherwise navigate to the base URL and
+  // break the preview. Intercept them and scroll within the document instead.
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    var a = t && t.closest ? t.closest('a[href^="#"]') : null;
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    if (href === "#" || href.charAt(0) !== "#") {
+      if (href === "#") { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+      return;
+    }
+    var id = href.slice(1);
+    var el = document.getElementById(id) ||
+      document.querySelector('[name="' + id.replace(/"/g, '\\"') + '"]');
+    if (el) {
+      e.preventDefault();
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, true);
 })();
 </script>
 `;

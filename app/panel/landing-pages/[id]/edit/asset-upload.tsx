@@ -2,14 +2,23 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { uploadAsset, listAssets } from "@/lib/actions/assets";
+import { uploadAsset, listAssets, uploadSiteZip } from "@/lib/actions/assets";
 
-export function AssetUpload({ pageId }: { pageId: string }) {
+export function AssetUpload({
+  pageId,
+  onSiteUploaded,
+}: {
+  pageId: string;
+  onSiteUploaded?: (html: string) => void;
+}) {
   const router = useRouter();
   const [assets, setAssets] = useState<{ name: string; url: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingList, setLoadingList] = useState(true);
+  const [zipLoading, setZipLoading] = useState(false);
+  const [zipError, setZipError] = useState<string | null>(null);
+  const [zipInfo, setZipInfo] = useState<string | null>(null);
 
   const loadAssets = useCallback(async () => {
     setLoadingList(true);
@@ -46,12 +55,67 @@ export function AssetUpload({ pageId }: { pageId: string }) {
     }
   };
 
+  const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setZipError(null);
+    setZipInfo(null);
+    setZipLoading(true);
+    const formData = new FormData();
+    formData.set("file", file);
+    try {
+      const result = await uploadSiteZip(pageId, formData);
+      if ("error" in result) {
+        setZipError(result.error);
+      } else {
+        setZipInfo(`${result.fileCount} file diupload • preview: ${result.indexPath}`);
+        onSiteUploaded?.(result.html);
+        router.refresh();
+      }
+    } catch (err) {
+      setZipError(err instanceof Error ? err.message : "Failed to upload ZIP.");
+    } finally {
+      setZipLoading(false);
+      e.target.value = "";
+    }
+  };
+
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
   };
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-foreground mb-3">Upload situs (.zip)</h3>
+      <p className="text-xs text-[var(--muted)] mb-3">
+        Berisi <code className="font-mono">index.html</code> beserta folder seperti{" "}
+        <code className="font-mono">images/</code> dan <code className="font-mono">fonts/</code>.
+        Semua file & folder otomatis terupload dan <code className="font-mono">index.html</code>{" "}
+        dipakai sebagai preview.
+      </p>
+
+      <label className="block">
+        <input
+          type="file"
+          accept=".zip,application/zip,application/x-zip-compressed"
+          onChange={handleZipUpload}
+          disabled={zipLoading}
+          className="hidden"
+        />
+        <span className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-[var(--border)] rounded-lg text-sm font-medium text-[var(--muted)] hover:border-[var(--primary)] hover:text-[var(--primary)] cursor-pointer transition-colors">
+          {zipLoading ? "Mengupload & mengekstrak…" : "Pilih file .zip"}
+        </span>
+      </label>
+
+      {zipError && (
+        <p className="mt-2 text-xs text-red-600 dark:text-red-400">{zipError}</p>
+      )}
+      {zipInfo && (
+        <p className="mt-2 text-xs text-green-600 dark:text-green-400">{zipInfo}</p>
+      )}
+
+      <div className="my-4 border-t border-[var(--border)]" />
+
       <h3 className="text-sm font-semibold text-foreground mb-3">Assets</h3>
       <p className="text-xs text-[var(--muted)] mb-3">
         Upload images or videos. Copy the URL and paste into your HTML.

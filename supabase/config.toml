@@ -111,11 +111,12 @@ enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
-# Storage bucket for landing page assets (images, videos)
+# Storage bucket for landing page assets (images, videos, and full site bundles
+# uploaded via ZIP — html/css/js/fonts). No MIME allow-list so arbitrary site
+# files can be served verbatim; writes are still scoped per-user via RLS.
 [storage.buckets.landing-assets]
 public = true
 file_size_limit = "50MiB"
-allowed_mime_types = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "video/mp4", "video/webm", "video/ogg"]
 # objects_path = "./images"
 
 # Allow connections via S3 compatible clients
