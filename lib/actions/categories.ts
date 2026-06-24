@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "./profiles";
 
@@ -10,6 +10,8 @@ export type CategoryRow = {
   slug: string;
   sort_order: number;
   icon: string;
+  /** NULL = top-level (parent) category; set = sub-category of that parent. */
+  parent_id: string | null;
 };
 
 export async function getAdminCategories(): Promise<CategoryRow[]> {
@@ -19,11 +21,45 @@ export async function getAdminCategories(): Promise<CategoryRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lp_landing_page_categories")
-    .select("id, name, slug, sort_order, icon")
+    .select("id, name, slug, sort_order, icon, parent_id")
     .order("sort_order", { ascending: true });
 
   if (error) return [];
   return (data ?? []) as CategoryRow[];
+}
+
+/**
+ * Enforce a clean 2-level hierarchy: a category's parent must exist, be
+ * top-level, not be itself, and the category must not already have children.
+ * Returns an error message, or null when valid.
+ */
+async function validateParent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  selfId: string | null,
+  parentId: string | null,
+): Promise<string | null> {
+  if (!parentId) return null; // top-level — always valid
+  if (selfId && parentId === selfId)
+    return "Kategori tidak bisa menjadi induk dirinya sendiri.";
+
+  const { data: parent } = await supabase
+    .from("lp_landing_page_categories")
+    .select("id, parent_id")
+    .eq("id", parentId)
+    .single();
+  if (!parent) return "Induk tidak ditemukan.";
+  if (parent.parent_id)
+    return "Induk harus kategori utama (maksimal 2 tingkat).";
+
+  if (selfId) {
+    const { count } = await supabase
+      .from("lp_landing_page_categories")
+      .select("id", { count: "exact", head: true })
+      .eq("parent_id", selfId);
+    if ((count ?? 0) > 0)
+      return "Kategori ini punya sub-kategori, pindahkan dulu sub-kategorinya.";
+  }
+  return null;
 }
 
 export async function createCategory(
@@ -31,7 +67,8 @@ export async function createCategory(
   slug: string,
   sort_order: number,
   icon: string = "default",
-): Promise<{ ok: boolean; error?: string }> {
+  parent_id: string | null = null,
+): Promise<{ ok: boolean; error?: string; id?: string }> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
@@ -40,9 +77,14 @@ export async function createCategory(
   if (!name.trim()) return { ok: false, error: "Nama tidak boleh kosong." };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const parentError = await validateParent(supabase, null, parent_id);
+  if (parentError) return { ok: false, error: parentError };
+
+  const { data, error } = await supabase
     .from("lp_landing_page_categories")
-    .insert({ name: name.trim(), slug: normalizedSlug, sort_order, icon });
+    .insert({ name: name.trim(), slug: normalizedSlug, sort_order, icon, parent_id })
+    .select("id")
+    .single();
 
   if (error) {
     if (error.code === "23505") return { ok: false, error: "Slug sudah digunakan." };
@@ -50,7 +92,7 @@ export async function createCategory(
   }
 
   revalidateAll();
-  return { ok: true };
+  return { ok: true, id: data.id };
 }
 
 export async function updateCategory(
@@ -59,6 +101,7 @@ export async function updateCategory(
   slug: string,
   sort_order: number,
   icon: string = "default",
+  parent_id: string | null = null,
 ): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
@@ -68,9 +111,12 @@ export async function updateCategory(
   if (!name.trim()) return { ok: false, error: "Nama tidak boleh kosong." };
 
   const supabase = await createClient();
+  const parentError = await validateParent(supabase, id, parent_id);
+  if (parentError) return { ok: false, error: parentError };
+
   const { error } = await supabase
     .from("lp_landing_page_categories")
-    .update({ name: name.trim(), slug: normalizedSlug, sort_order, icon })
+    .update({ name: name.trim(), slug: normalizedSlug, sort_order, icon, parent_id })
     .eq("id", id);
 
   if (error) {
@@ -101,6 +147,11 @@ export async function deleteCategory(
 }
 
 function revalidateAll() {
+  // Purge the tagged unstable_cache entries immediately — revalidatePath alone
+  // does NOT invalidate getCategories / getCachedHomepagePages, so without this
+  // the public nav + /category pages would serve stale structure for up to 60s.
+  updateTag("categories");
+  updateTag("homepage-pages");
   revalidatePath("/panel/categories");
   revalidatePath("/");
   revalidatePath("/panel");

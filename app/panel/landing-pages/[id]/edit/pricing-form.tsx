@@ -225,11 +225,28 @@ export function PricingForm({ pageId, categories, initial }: Props) {
             className="w-full max-w-xs px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm"
           >
             <option value="">— Pilih kategori —</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
+            {categories
+              .filter((c) => !c.parent_id)
+              .map((parent) => {
+                const children = categories.filter((c) => c.parent_id === parent.id);
+                if (children.length === 0) {
+                  return (
+                    <option key={parent.id} value={parent.id}>
+                      {parent.name}
+                    </option>
+                  );
+                }
+                return (
+                  <optgroup key={parent.id} label={parent.name}>
+                    <option value={parent.id}>{parent.name} — semua</option>
+                    {children.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
           </select>
         </div>
       )}

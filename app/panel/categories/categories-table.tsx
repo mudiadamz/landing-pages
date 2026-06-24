@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   type CategoryRow,
   createCategory,
@@ -12,12 +12,40 @@ import { Button } from "@/components/ui/button";
 
 type Props = { initialCategories: CategoryRow[] };
 
+/** Order rows as [parent, ...its children] groups, each sorted by sort_order. */
+function orderRows(categories: CategoryRow[]): { cat: CategoryRow; depth: number }[] {
+  const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+  const tops = sorted.filter((c) => !c.parent_id);
+  const rows: { cat: CategoryRow; depth: number }[] = [];
+  for (const top of tops) {
+    rows.push({ cat: top, depth: 0 });
+    for (const child of sorted.filter((c) => c.parent_id === top.id)) {
+      rows.push({ cat: child, depth: 1 });
+    }
+  }
+  // Any orphan (parent_id points at a missing/non-top category) shown flat.
+  const placed = new Set(rows.map((r) => r.cat.id));
+  for (const c of sorted) if (!placed.has(c.id)) rows.push({ cat: c, depth: 0 });
+  return rows;
+}
+
 export function CategoriesTable({ initialCategories }: Props) {
   const [categories, setCategories] = useState(initialCategories);
   const [editing, setEditing] = useState<CategoryRow | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const rows = useMemo(() => orderRows(categories), [categories]);
+  const nameById = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.name])),
+    [categories],
+  );
+  // Top-level categories are the only valid parents (2-level hierarchy).
+  const parentOptions = useMemo(
+    () => categories.filter((c) => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order),
+    [categories],
+  );
 
   function startEdit(cat: CategoryRow) {
     setCreating(false);
@@ -55,16 +83,18 @@ export function CategoriesTable({ initialCategories }: Props) {
 
       {creating && (
         <CategoryForm
-          onSubmit={async (name, slug, sort_order, icon) => {
-            const res = await createCategory(name, slug, sort_order, icon);
+          parents={parentOptions}
+          onSubmit={async (name, slug, sort_order, icon, parent_id) => {
+            const res = await createCategory(name, slug, sort_order, icon, parent_id);
             if (!res.ok) {
               setError(res.error ?? "Gagal.");
               return false;
             }
             setCategories((prev) =>
-              [...prev, { id: crypto.randomUUID(), name, slug, sort_order, icon }].sort(
-                (a, b) => a.sort_order - b.sort_order,
-              ),
+              [
+                ...prev,
+                { id: res.id ?? crypto.randomUUID(), name, slug, sort_order, icon, parent_id },
+              ].sort((a, b) => a.sort_order - b.sort_order),
             );
             setCreating(false);
             setError(null);
@@ -78,20 +108,23 @@ export function CategoriesTable({ initialCategories }: Props) {
 
       {/* Mobile cards */}
       <div className="sm:hidden space-y-3">
-        {categories.map((cat) =>
+        {rows.map(({ cat, depth }) =>
           editing?.id === cat.id ? (
             <CategoryForm
               key={cat.id}
               initial={editing}
-              onSubmit={async (name, slug, sort_order, icon) => {
-                const res = await updateCategory(cat.id, name, slug, sort_order, icon);
+              parents={parentOptions.filter((p) => p.id !== cat.id)}
+              onSubmit={async (name, slug, sort_order, icon, parent_id) => {
+                const res = await updateCategory(cat.id, name, slug, sort_order, icon, parent_id);
                 if (!res.ok) {
                   setError(res.error ?? "Gagal.");
                   return false;
                 }
                 setCategories((prev) =>
                   prev
-                    .map((c) => (c.id === cat.id ? { ...c, name, slug, sort_order, icon } : c))
+                    .map((c) =>
+                      c.id === cat.id ? { ...c, name, slug, sort_order, icon, parent_id } : c,
+                    )
                     .sort((a, b) => a.sort_order - b.sort_order),
                 );
                 setEditing(null);
@@ -104,14 +137,24 @@ export function CategoriesTable({ initialCategories }: Props) {
           ) : (
             <div
               key={cat.id}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm"
+              className={`rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm ${
+                depth > 0 ? "ml-4 border-l-2 border-l-[var(--primary)]/30" : ""
+              }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0 text-[var(--muted)]" />
                   <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate">{cat.name}</p>
-                    <p className="text-sm text-[var(--muted)] truncate">/{cat.slug}</p>
+                    <p className="font-medium text-foreground truncate">
+                      {depth > 0 && <span className="text-[var(--muted)]">↳ </span>}
+                      {cat.name}
+                    </p>
+                    <p className="text-sm text-[var(--muted)] truncate">
+                      /{cat.slug}
+                      {cat.parent_id && nameById.get(cat.parent_id)
+                        ? ` · induk: ${nameById.get(cat.parent_id)}`
+                        : " · kategori utama"}
+                    </p>
                   </div>
                 </div>
                 <span className="text-xs text-[var(--muted)] tabular-nums shrink-0">
@@ -133,7 +176,12 @@ export function CategoriesTable({ initialCategories }: Props) {
                     setDeleting(cat.id);
                     const res = await deleteCategory(cat.id);
                     if (res.ok) {
-                      setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+                      // Children of a deleted parent become top-level (DB on delete set null).
+                      setCategories((prev) =>
+                        prev
+                          .filter((c) => c.id !== cat.id)
+                          .map((c) => (c.parent_id === cat.id ? { ...c, parent_id: null } : c)),
+                      );
                     } else {
                       setError(res.error ?? "Gagal menghapus.");
                     }
@@ -154,28 +202,32 @@ export function CategoriesTable({ initialCategories }: Props) {
               <tr className="border-b border-[var(--border)] bg-[var(--background)]/50">
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Nama</th>
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Slug</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Induk</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Icon</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Urutan</th>
                 <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {categories.map((cat) =>
+              {rows.map(({ cat, depth }) =>
                 editing?.id === cat.id ? (
                   <tr key={cat.id}>
-                    <td colSpan={5} className="px-4 py-3">
+                    <td colSpan={6} className="px-4 py-3">
                       <CategoryForm
                         initial={editing}
                         inline
-                        onSubmit={async (name, slug, sort_order, icon) => {
-                          const res = await updateCategory(cat.id, name, slug, sort_order, icon);
+                        parents={parentOptions.filter((p) => p.id !== cat.id)}
+                        onSubmit={async (name, slug, sort_order, icon, parent_id) => {
+                          const res = await updateCategory(cat.id, name, slug, sort_order, icon, parent_id);
                           if (!res.ok) {
                             setError(res.error ?? "Gagal.");
                             return false;
                           }
                           setCategories((prev) =>
                             prev
-                              .map((c) => (c.id === cat.id ? { ...c, name, slug, sort_order, icon } : c))
+                              .map((c) =>
+                                c.id === cat.id ? { ...c, name, slug, sort_order, icon, parent_id } : c,
+                              )
                               .sort((a, b) => a.sort_order - b.sort_order),
                           );
                           setEditing(null);
@@ -192,8 +244,20 @@ export function CategoriesTable({ initialCategories }: Props) {
                     key={cat.id}
                     className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--background)]/30 transition-colors"
                   >
-                    <td className="px-4 py-3 font-medium text-foreground">{cat.name}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      <span className={depth > 0 ? "inline-flex items-center gap-1.5 pl-5" : ""}>
+                        {depth > 0 && <span className="text-[var(--muted)]">↳</span>}
+                        {cat.name}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-[var(--muted)]">/{cat.slug}</td>
+                    <td className="px-4 py-3 text-[var(--muted)]">
+                      {cat.parent_id && nameById.get(cat.parent_id) ? (
+                        nameById.get(cat.parent_id)
+                      ) : (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--accent-subtle)]">utama</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <CategoryIcon icon={cat.icon} className="w-4 h-4 inline-block text-[var(--muted)]" />
                     </td>
@@ -214,7 +278,11 @@ export function CategoriesTable({ initialCategories }: Props) {
                             setDeleting(cat.id);
                             const res = await deleteCategory(cat.id);
                             if (res.ok) {
-                              setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+                              setCategories((prev) =>
+                                prev
+                                  .filter((c) => c.id !== cat.id)
+                                  .map((c) => (c.parent_id === cat.id ? { ...c, parent_id: null } : c)),
+                              );
                             } else {
                               setError(res.error ?? "Gagal menghapus.");
                             }
@@ -228,7 +296,7 @@ export function CategoriesTable({ initialCategories }: Props) {
               )}
               {categories.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">
+                  <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
                     Belum ada kategori.
                   </td>
                 </tr>
@@ -249,18 +317,26 @@ export function CategoriesTable({ initialCategories }: Props) {
 
 type FormProps = {
   initial?: CategoryRow;
+  parents: CategoryRow[];
   defaultSortOrder?: number;
   inline?: boolean;
-  onSubmit: (name: string, slug: string, sort_order: number, icon: string) => Promise<boolean>;
+  onSubmit: (
+    name: string,
+    slug: string,
+    sort_order: number,
+    icon: string,
+    parent_id: string | null,
+  ) => Promise<boolean>;
   onCancel: () => void;
   error: string | null;
 };
 
-function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, error }: FormProps) {
+function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, onCancel, error }: FormProps) {
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? defaultSortOrder ?? 0);
   const [icon, setIcon] = useState(initial?.icon ?? "default");
+  const [parentId, setParentId] = useState<string>(initial?.parent_id ?? "");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [autoSlug, setAutoSlug] = useState(!initial);
@@ -281,7 +357,7 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await onSubmit(name, slug, sortOrder, icon);
+      await onSubmit(name, slug, sortOrder, icon, parentId.trim() || null);
     });
   }
 
@@ -316,6 +392,21 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
           required
         />
       </div>
+      <div className={inline ? "min-w-[150px]" : ""}>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">Induk</label>
+        <select
+          value={parentId}
+          onChange={(e) => setParentId(e.target.value)}
+          className={inputClass}
+        >
+          <option value="">— Kategori utama —</option>
+          {parents.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className={inline ? "w-24" : ""}>
         <label className="block text-xs font-medium text-[var(--muted)] mb-1">Urutan</label>
         <input
@@ -325,7 +416,7 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
           className={inputClass}
         />
       </div>
-      <div className={inline ? "" : ""}>
+      <div>
         <label className="block text-xs font-medium text-[var(--muted)] mb-1">Icon</label>
         <div className="relative">
           <Button

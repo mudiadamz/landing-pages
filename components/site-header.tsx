@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { signOut } from "@/lib/actions/auth";
 import { CategoryIcon } from "@/lib/category-icons";
@@ -12,7 +13,14 @@ type User = {
   user_metadata?: { full_name?: string | null } | null;
 };
 
-export type HeaderCategory = { id: string; name: string; slug: string; icon: string };
+export type HeaderCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  /** NULL = top-level (parent); set = sub-category of that parent. */
+  parent_id?: string | null;
+};
 
 const iconClass = "w-4 h-4 shrink-0";
 
@@ -38,11 +46,45 @@ const navLinks = [
   { href: "/terms", label: "Ketentuan" },
 ];
 
+function HomeIcon() {
+  return (
+    <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  );
+}
+
 export function SiteHeader({ user, categories = [], currentCategorySlug = null }: Props) {
-  const showCategories = categories.length > 0;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // ─── Build the 2-level tree from the flat list ───
+  const { parents, childrenOf, activeParent, activeChildSlug, subCats } = useMemo(() => {
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    const parents = categories.filter((c) => !c.parent_id);
+    const childrenOf = (id: string) => categories.filter((c) => c.parent_id === id);
+    const current = currentCategorySlug
+      ? categories.find((c) => c.slug === currentCategorySlug) ?? null
+      : null;
+    const activeParent = current
+      ? current.parent_id
+        ? byId.get(current.parent_id) ?? current
+        : current
+      : null;
+    const activeChildSlug = current && current.parent_id ? current.slug : null;
+    const subCats = activeParent ? childrenOf(activeParent.id) : [];
+    return { parents, childrenOf, activeParent, activeChildSlug, subCats };
+  }, [categories, currentCategorySlug]);
+
+  // "Home" is active only on the actual homepage — NOT merely when no category
+  // context exists (static pages like /about pass no currentCategorySlug too).
+  const pathname = usePathname();
+  const homeActive = pathname === "/";
+  const showCategories = parents.length > 0;
+  const activeParentId = activeParent?.id ?? null;
+  const isExpanded = (id: string) => openOverrides[id] ?? id === activeParentId;
 
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -55,6 +97,13 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
     return () => document.removeEventListener("click", handleClickOutside);
   }, [userMenuOpen]);
 
+  const parentChipClass = (active: boolean) =>
+    `flex items-center gap-2 px-2.5 py-2 text-sm rounded-lg transition-all duration-150 shrink-0 ${
+      active
+        ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
+        : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:opacity-80"
+    }`;
+
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--card)]/80">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
@@ -65,32 +114,20 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
           ADM.UIUX
         </Link>
 
+        {/* Desktop row 1: parent categories */}
         <nav className="hidden md:flex items-center min-w-0 flex-1 justify-center overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex items-center gap-1.5 flex-nowrap py-1">
             {showCategories ? (
               <>
-                <Link
-                  href="/"
-                  className={`flex items-center gap-2 px-2.5 py-2 text-sm rounded-lg transition-all duration-150 shrink-0 ${
-                    !currentCategorySlug
-                      ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
-                      : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:opacity-80"
-                  }`}
-                >
-                  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
+                <Link href="/" className={parentChipClass(homeActive)}>
+                  <HomeIcon />
                   <span className="whitespace-nowrap">Home</span>
                 </Link>
-                {categories.map((cat) => (
+                {parents.map((cat) => (
                   <Link
                     key={cat.id}
                     href={`/category/${cat.slug}`}
-                    className={`flex items-center gap-2 px-2.5 py-2 text-sm rounded-lg transition-all duration-150 shrink-0 ${
-                      currentCategorySlug === cat.slug
-                        ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
-                        : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:opacity-80"
-                    }`}
+                    className={parentChipClass(activeParentId === cat.id)}
                   >
                     <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0" />
                     <span className="whitespace-nowrap">{cat.name}</span>
@@ -173,8 +210,44 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
         </div>
       </div>
 
+      {/* Desktop row 2: sub-categories of the active parent */}
+      {showCategories && subCats.length > 0 && activeParent && (
+        <div className="hidden md:block border-t border-[var(--border)] bg-[var(--background)]/40">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center gap-1.5 flex-nowrap py-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <Link
+                href={`/category/${activeParent.slug}`}
+                className={`px-2.5 py-1 text-xs rounded-md transition-colors shrink-0 ${
+                  !activeChildSlug
+                    ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
+                    : "text-[var(--muted)] hover:text-foreground"
+                }`}
+              >
+                Semua {activeParent.name}
+              </Link>
+              <span className="text-[var(--border)] shrink-0" aria-hidden>·</span>
+              {subCats.map((sub) => (
+                <Link
+                  key={sub.id}
+                  href={`/category/${sub.slug}`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md transition-colors shrink-0 ${
+                    activeChildSlug === sub.slug
+                      ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
+                      : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                  }`}
+                >
+                  <CategoryIcon icon={sub.icon} className="w-3.5 h-3.5 shrink-0" />
+                  <span className="whitespace-nowrap">{sub.name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)]">
+        <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)] max-h-[70vh] overflow-y-auto">
           <nav className="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-0.5">
             {showCategories ? (
               <>
@@ -182,27 +255,87 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                   href="/"
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
-                    !currentCategorySlug ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                    homeActive ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
                   }`}
                 >
-                  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
+                  <HomeIcon />
                   Home
                 </Link>
-                {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/category/${cat.slug}`}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
-                      currentCategorySlug === cat.slug ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
-                    }`}
-                  >
-                    <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0" />
-                    {cat.name}
-                  </Link>
-                ))}
+                {parents.map((parent) => {
+                  const children = childrenOf(parent.id);
+                  const parentActive = activeParentId === parent.id;
+                  if (children.length === 0) {
+                    return (
+                      <Link
+                        key={parent.id}
+                        href={`/category/${parent.slug}`}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
+                          parentActive ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                        }`}
+                      >
+                        <CategoryIcon icon={parent.icon} className="w-4 h-4 shrink-0" />
+                        {parent.name}
+                      </Link>
+                    );
+                  }
+                  const open = isExpanded(parent.id);
+                  return (
+                    <div key={parent.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenOverrides((prev) => ({ ...prev, [parent.id]: !open }))
+                        }
+                        aria-expanded={open}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
+                          parentActive ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-foreground hover:bg-[var(--accent-subtle)]"
+                        }`}
+                      >
+                        <CategoryIcon icon={parent.icon} className="w-4 h-4 shrink-0" />
+                        <span className="flex-1 text-left">{parent.name}</span>
+                        <svg
+                          className={`w-4 h-4 shrink-0 opacity-70 transition-transform ${open ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {open && (
+                        <div className="ml-4 pl-3 border-l border-[var(--border)] flex flex-col gap-0.5 py-0.5">
+                          <Link
+                            href={`/category/${parent.slug}`}
+                            onClick={() => setMobileOpen(false)}
+                            className={`px-3 py-2 text-sm rounded-lg ${
+                              parentActive && !activeChildSlug
+                                ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]"
+                                : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                            }`}
+                          >
+                            Semua {parent.name}
+                          </Link>
+                          {children.map((sub) => (
+                            <Link
+                              key={sub.id}
+                              href={`/category/${sub.slug}`}
+                              onClick={() => setMobileOpen(false)}
+                              className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg ${
+                                activeChildSlug === sub.slug
+                                  ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]"
+                                  : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                              }`}
+                            >
+                              <CategoryIcon icon={sub.icon} className="w-4 h-4 shrink-0" />
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </>
             ) : (
               navLinks.map(({ href, label }) => (
@@ -223,14 +356,14 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                   onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2.5 text-sm text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
                 >
-                  Go to panel
+                  Pembelian saya
                 </Link>
                 <form action={signOut}>
                   <button
                     type="submit"
                     className="block w-full text-left px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
                   >
-                    Sign out
+                    Keluar
                   </button>
                 </form>
               </div>

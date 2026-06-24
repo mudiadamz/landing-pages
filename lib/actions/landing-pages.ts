@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, unstable_cache } from "next/cache";
+import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { saveVersion } from "./versions";
@@ -18,6 +18,8 @@ export type LandingPageCategory = {
   name: string;
   slug: string;
   icon: string;
+  /** NULL = top-level (parent) category; set = sub-category of that parent. */
+  parent_id?: string | null;
 };
 
 export type LandingPageRow = {
@@ -175,14 +177,14 @@ export const getCategories = unstable_cache(
     const supabase = createAnonClient();
     const { data, error } = await supabase
       .from("lp_landing_page_categories")
-      .select("id, name, slug, icon")
+      .select("id, name, slug, icon, parent_id")
       .order("sort_order", { ascending: true });
 
     if (error) return [];
     return (data ?? []) as LandingPageCategory[];
   },
   ["categories"],
-  { revalidate: 60 },
+  { revalidate: 60, tags: ["categories"] },
 );
 
 export async function getLandingPagesForHomepage(categorySlug?: string | null) {
@@ -193,18 +195,31 @@ export async function getLandingPagesForHomepage(categorySlug?: string | null) {
 const getCachedHomepagePages = unstable_cache(
   async (slug: string): Promise<LandingPagePublic[]> => {
     const supabase = createAnonClient();
-    const select = `
-      id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description,
-      ${slug ? "landing_page_categories:lp_landing_page_categories!inner(id, name, slug, icon)" : "landing_page_categories:lp_landing_page_categories(id, name, slug, icon)"}
-    `;
+
+    // Resolve the requested category slug to the set of category ids to include.
+    // For a PARENT category, aggregate its own pages + all of its sub-categories'
+    // pages. For a leaf/sub category, just that one. Unknown slug => no results.
+    let categoryIds: string[] | null = null;
+    if (slug) {
+      const cats = await getCategories();
+      const target = cats.find((c) => c.slug === slug);
+      if (!target) return [];
+      const childIds = cats
+        .filter((c) => c.parent_id === target.id)
+        .map((c) => c.id);
+      categoryIds = [target.id, ...childIds];
+    }
+
     let query = supabase
       .from("lp_landing_pages")
-      .select(select)
+      .select(
+        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
+      )
       .order("updated_at", { ascending: false })
       .limit(24);
 
-    if (slug) {
-      query = query.eq("landing_page_categories.slug", slug);
+    if (categoryIds) {
+      query = query.in("category_id", categoryIds);
     }
 
     const { data, error } = await query;
@@ -218,7 +233,7 @@ const getCachedHomepagePages = unstable_cache(
     })) as LandingPagePublic[];
   },
   ["homepage-pages"],
-  { revalidate: 60 },
+  { revalidate: 60, tags: ["categories", "homepage-pages"] },
 );
 
 export async function getLandingPageForCheckout(slug: string) {
@@ -262,6 +277,7 @@ export async function updateLandingPagePricing(
     .eq("user_id", user.id);
 
   if (error) throw error;
+  updateTag("homepage-pages");
   revalidatePath("/panel");
   revalidatePath(`/panel/landing-pages/${id}/edit`);
   revalidatePath("/");
@@ -281,5 +297,6 @@ export async function deleteLandingPage(id: string) {
     .eq("user_id", user.id);
 
   if (error) throw error;
+  updateTag("homepage-pages");
   revalidatePath("/panel");
 }
