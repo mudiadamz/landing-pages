@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
@@ -42,18 +42,21 @@ export default async function HiringTestResultPage({ searchParams }: Props) {
         </div>
 
         <div className="flex gap-3">
-          <Link
+          <Button
+            size="md"
             href="/hiring"
             className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
           >
             Kembali ke Hiring
-          </Link>
-          <Link
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
             href="/"
             className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] hover:bg-[var(--background)] transition-colors"
           >
             Beranda
-          </Link>
+          </Button>
         </div>
       </main>
 

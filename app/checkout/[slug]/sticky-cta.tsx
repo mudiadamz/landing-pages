@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 type Props = {
   priceLabel: string;
   slug: string;
@@ -20,13 +22,13 @@ export function StickyMobileCTA({ priceLabel, slug, showAsFree }: Props) {
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between gap-3">
       <span className="text-lg font-bold text-foreground truncate">{priceLabel}</span>
-      <button
-        type="button"
+      <Button
+        size="md"
         onClick={handleClick}
-        className="shrink-0 px-5 py-2.5 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.97] transition-all"
+        className="shrink-0 px-5 py-2.5 text-sm rounded-lg active:scale-[0.97]"
       >
         {showAsFree ? "Ambil gratis" : "Bayar sekarang"}
-      </button>
+      </Button>
     </div>
   );
 }

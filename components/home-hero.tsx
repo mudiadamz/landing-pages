@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 type HomeHeroProps = {
   /** Number of templates currently listed — drives the honest proof chip. */
   templateCount?: number;
@@ -41,15 +43,18 @@ export function HomeHero({ templateCount }: HomeHeroProps = {}) {
           Template HTML bersih untuk founder, marketer &amp; freelancer. Preview gratis, beli, edit, deploy.
         </p>
         <div className="pt-2">
-          <a
+          <Button
+            size="lg"
             href="#templates"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+            rightIcon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            }
+            className="px-6 py-3 text-sm gap-2 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99]"
           >
             Lihat template
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </a>
+          </Button>
         </div>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <span

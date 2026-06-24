@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createLandingPage } from "@/lib/actions/landing-pages";
 import { slugFromTitle, isValidSlug } from "@/lib/slug";
+import { Button } from "@/components/ui/button";
 
 export function UploadForm() {
   const router = useRouter();
@@ -99,13 +100,15 @@ export function UploadForm() {
           Lowercase letters, numbers, hyphens. Used in /lp/[slug]
         </p>
       </div>
-      <button
+      <Button
         type="submit"
+        size="md"
+        loading={loading}
         disabled={loading}
-        className="px-4 py-3 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg font-medium hover:opacity-95 disabled:opacity-50 transition-opacity shadow-sm"
+        className="py-3 shadow-sm"
       >
         {loading ? "Uploading…" : "Upload"}
-      </button>
+      </Button>
     </form>
   );
 }

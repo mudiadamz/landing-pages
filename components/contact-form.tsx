@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { submitContact } from "@/lib/actions/contacts";
+import { Button } from "@/components/ui/button";
 
 const HONEYPOT_NAME = "fax";
 
@@ -89,12 +90,13 @@ export function ContactForm() {
       {state?.ok && (
         <p className="text-sm text-[var(--primary)]">Pesan terkirim. Terima kasih.</p>
       )}
-      <button
+      <Button
         type="submit"
-        className="w-full sm:w-auto px-6 py-2.5 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+        size="md"
+        className="w-full sm:w-auto px-6 py-2.5 hover:opacity-90"
       >
         Kirim
-      </button>
+      </Button>
     </form>
   );
 }

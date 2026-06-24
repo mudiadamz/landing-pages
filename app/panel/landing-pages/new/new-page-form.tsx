@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createLandingPage } from "@/lib/actions/landing-pages";
 import { slugFromTitle, isValidSlug } from "@/lib/slug";
+import { Button } from "@/components/ui/button";
 
 const DEFAULT_HTML = `<!DOCTYPE html>
 <html lang="en">
@@ -91,13 +92,15 @@ export function NewPageForm() {
           Used in /lp/[slug]. Lowercase letters, numbers, hyphens.
         </p>
       </div>
-      <button
+      <Button
         type="submit"
+        size="md"
+        loading={loading}
         disabled={loading}
-        className="px-4 py-3 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg font-medium hover:opacity-95 disabled:opacity-50 transition-opacity shadow-sm"
+        className="py-3 shadow-sm"
       >
         {loading ? "Creating…" : "Create and edit"}
-      </button>
+      </Button>
     </form>
   );
 }

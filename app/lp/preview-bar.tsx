@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 type Props = {
   buyHref?: string;
   buyLabel?: string;
@@ -53,16 +55,16 @@ export function PreviewBar({ buyHref, buyLabel, buyDescription, isExternal }: Pr
       <div className="flex-1" />
 
       {buyHref && buyLabel && (
-        <Link
+        <Button
+          size="md"
           href={buyHref}
-          target={isExternal ? "_blank" : undefined}
-          rel={isExternal ? "noopener noreferrer" : undefined}
+          external={isExternal}
           title={buyDescription}
-          className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-medium text-sm shadow-lg hover:opacity-95 active:scale-[0.97] active:opacity-90 transition-all duration-150"
+          leftIcon={<CheckoutIcon className="w-4 h-4" />}
+          className="pointer-events-auto gap-2 rounded-xl px-4 py-2.5 shadow-lg active:scale-[0.97]"
         >
-          <CheckoutIcon className="w-4 h-4" />
           {buyLabel}
-        </Link>
+        </Button>
       )}
     </div>
   );

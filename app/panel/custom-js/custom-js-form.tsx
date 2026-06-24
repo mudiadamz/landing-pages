@@ -4,17 +4,20 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { updateCustomJs } from "@/lib/actions/site-settings";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
+    <Button
       type="submit"
+      size="md"
+      loading={pending}
       disabled={pending}
-      className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] font-medium text-sm hover:opacity-90 disabled:opacity-60 transition-opacity"
+      className="hover:opacity-90 disabled:opacity-60"
     >
       {pending ? "Menyimpan..." : "Simpan"}
-    </button>
+    </Button>
   );
 }
 

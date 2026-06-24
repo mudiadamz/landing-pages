@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { getCategories, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -98,18 +98,12 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
         )}
 
         <div className="flex gap-3">
-          <Link
-            href={success ? "/panel" : `/checkout/${slug}`}
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity"
-          >
+          <Button size="md" href={success ? "/panel" : `/checkout/${slug}`}>
             {success ? "Ke Panel" : "Coba lagi"}
-          </Link>
-          <Link
-            href="/"
-            className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] hover:bg-[var(--background)] transition-colors"
-          >
+          </Button>
+          <Button variant="secondary" size="md" href="/">
             Beranda
-          </Link>
+          </Button>
         </div>
       </main>
 

@@ -2,17 +2,21 @@
 
 import { useFormStatus } from "react-dom";
 import { resendVerification } from "@/lib/actions/auth";
+import { Button } from "@/components/ui/button";
 
 function ResendButton() {
   const { pending } = useFormStatus();
   return (
-    <button
+    <Button
       type="submit"
+      variant="secondary"
+      size="sm"
+      loading={pending}
       disabled={pending}
-      className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/20 dark:bg-amber-600/20 text-amber-800 dark:text-amber-200 font-medium hover:opacity-90 transition-opacity disabled:opacity-70"
+      className="shrink-0 px-3 text-sm border-0 bg-amber-500/20 dark:bg-amber-600/20 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 dark:hover:bg-amber-600/20 hover:opacity-90 disabled:opacity-70"
     >
       {pending ? "Mengirim…" : "Kirim ulang"}
-    </button>
+    </Button>
   );
 }
 

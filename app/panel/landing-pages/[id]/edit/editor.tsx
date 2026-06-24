@@ -7,6 +7,7 @@ import { updateLandingPageHtml } from "@/lib/actions/landing-pages";
 import { parseHtmlContent, mergeHtmlContent } from "@/lib/editor-utils";
 import { AssetUpload } from "./asset-upload";
 import { EditorHistory } from "./editor-history";
+import { Button } from "@/components/ui/button";
 
 const AUTOSAVE_DELAY_MS = 2000;
 
@@ -135,14 +136,16 @@ export function Editor({
               </button>
             ))}
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => save(false)}
+            size="md"
+            loading={saving}
             disabled={saving}
-            className="px-4 py-2.5 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg font-medium text-sm hover:opacity-95 disabled:opacity-50 transition-opacity shadow-sm"
+            className="py-2.5 shadow-sm hover:opacity-95"
           >
             {saving ? "Saving…" : "Save"}
-          </button>
+          </Button>
           <span className="text-xs text-[var(--muted)] hidden sm:inline">
             Autosave • Cmd/Ctrl+S to save
           </span>

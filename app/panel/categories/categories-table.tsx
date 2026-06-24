@@ -8,6 +8,7 @@ import {
   deleteCategory,
 } from "@/lib/actions/categories";
 import { CategoryIcon, CATEGORY_ICONS, ICON_KEYS } from "@/lib/category-icons";
+import { Button } from "@/components/ui/button";
 
 type Props = { initialCategories: CategoryRow[] };
 
@@ -42,14 +43,14 @@ export function CategoriesTable({ initialCategories }: Props) {
         <span className="text-xs text-[var(--muted)]">
           {categories.length} kategori
         </span>
-        <button
-          type="button"
+        <Button
+          size="md"
           onClick={startCreate}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-white hover:opacity-90 transition-opacity"
+          leftIcon={<PlusIcon className="w-4 h-4" />}
+          className="text-white hover:opacity-90"
         >
-          <PlusIcon className="w-4 h-4" />
           Tambah
-        </button>
+        </Button>
       </div>
 
       {creating && (
@@ -327,17 +328,20 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
       <div className={inline ? "" : ""}>
         <label className="block text-xs font-medium text-[var(--muted)] mb-1">Icon</label>
         <div className="relative">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="md"
             onClick={() => setPickerOpen((o) => !o)}
-            className="flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm hover:bg-[var(--background)] transition-colors"
+            leftIcon={<CategoryIcon icon={icon} className="w-4 h-4" />}
+            rightIcon={
+              <svg className="w-3 h-3 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            }
+            className="bg-background gap-2"
           >
-            <CategoryIcon icon={icon} className="w-4 h-4" />
             <span className="text-[var(--muted)]">{CATEGORY_ICONS[icon]?.label ?? icon}</span>
-            <svg className="w-3 h-3 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+          </Button>
           {pickerOpen && (
             <div className="absolute z-30 mt-1 p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg grid grid-cols-4 gap-1 w-max max-w-[240px]">
               {ICON_KEYS.map((key) => (
@@ -363,21 +367,24 @@ function CategoryForm({ initial, defaultSortOrder, inline, onSubmit, onCancel, e
         </div>
       </div>
       <div className={inline ? "flex items-center gap-2" : "flex items-center gap-2 pt-1"}>
-        <button
+        <Button
           type="submit"
+          size="md"
+          loading={isPending}
           disabled={isPending}
-          className="px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="text-white hover:opacity-90"
         >
           {isPending ? "Menyimpan…" : initial ? "Simpan" : "Tambah"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
           disabled={isPending}
-          className="px-3 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors disabled:opacity-50"
+          onClick={onCancel}
+          className="text-[var(--muted)] hover:text-foreground"
         >
           Batal
-        </button>
+        </Button>
       </div>
       {error && <p className="w-full text-sm text-red-600 dark:text-red-400">{error}</p>}
     </form>

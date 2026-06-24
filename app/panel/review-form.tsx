@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { submitReview } from "@/lib/actions/reviews";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   landingPageId: string;
@@ -93,20 +94,22 @@ export function ReviewForm({
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="submit"
+          size="md"
+          loading={loading}
           disabled={loading || rating < 1}
-          className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Menyimpan…" : existingRating > 0 ? "Update review" : "Kirim review"}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
           onClick={onDone}
-          className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-foreground transition-colors"
+          className="text-[var(--muted)] hover:text-foreground"
         >
           Batal
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateLandingPagePricing, type LandingPageCategory } from "@/lib/actions/landing-pages";
 import { uploadZip } from "@/lib/actions/downloads";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   pageId: string;
@@ -233,14 +234,16 @@ export function PricingForm({ pageId, categories, initial }: Props) {
         </div>
       )}
 
-      <button
+      <Button
         type="button"
+        variant="primary"
+        size="md"
         onClick={handleSave}
+        loading={saving}
         disabled={saving}
-        className="px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-sm font-medium hover:opacity-95 disabled:opacity-50"
       >
         {saving ? "Saving…" : "Save pricing"}
-      </button>
+      </Button>
 
       {message && (
         <p className="text-sm text-green-600 dark:text-green-400">{message}</p>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
 import { normalizeDescription } from "@/lib/seo";
 
@@ -127,41 +128,47 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
           </div>
         )}
         <div className="mt-3 flex gap-2 sm:gap-3">
-          <Link
+          <Button
+            variant="secondary"
+            size="md"
             href={`/lp/${page.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-[var(--border)] hover:bg-[var(--background)] active:scale-[0.98] active:opacity-90 transition-all duration-150"
+            external
+            fullWidth
+            className="flex-1 text-center"
           >
             Lihat demo
-          </Link>
+          </Button>
           {showAsFree ? (
-            <Link
+            <Button
+              size="md"
               href={`/checkout/${page.slug}`}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              fullWidth
+              className="flex-1"
             >
               Ambil gratis
-            </Link>
+            </Button>
           ) : isInternal ? (
-            <Link
+            <Button
+              size="md"
               href={`/checkout/${page.slug}`}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              fullWidth
+              leftIcon={<BuyNowIcon className="w-4 h-4" />}
               title="Beli sekarang"
+              className="flex-1"
             >
-              <BuyNowIcon className="w-4 h-4" />
               Beli sekarang
-            </Link>
+            </Button>
           ) : (
-            <a
+            <Button
+              size="md"
               href={externalUrl || `/lp/${page.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-95 active:scale-[0.98] active:opacity-90 transition-all duration-150"
+              external
+              leftIcon={<BuyNowIcon className="w-4 h-4" />}
               title={externalUrl ? "Beli sekarang" : "Lihat demo"}
+              className="flex-1"
             >
-              <BuyNowIcon className="w-4 h-4" />
               {externalUrl ? "Beli sekarang" : "Lihat demo"}
-            </a>
+            </Button>
           )}
         </div>
       </div>

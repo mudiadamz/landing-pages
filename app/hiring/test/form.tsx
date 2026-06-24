@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { hiringQuestions } from "@/lib/hiring-questions";
+import { Button } from "@/components/ui/button";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -172,13 +173,16 @@ export function HiringTestForm() {
         </p>
       </div>
 
-      <button
+      <Button
         type="submit"
+        size="md"
+        fullWidth
+        loading={isPending}
         disabled={isPending}
-        className="w-full px-5 py-3.5 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-95 active:scale-[0.99] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-5 py-3.5 text-sm rounded-xl active:scale-[0.99] hover:opacity-95"
       >
         {isPending ? "Mengirim..." : "Kirim jawaban"}
-      </button>
+      </Button>
     </form>
   );
 }

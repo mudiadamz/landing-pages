@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { addPurchaseAction } from "@/lib/actions/purchases";
+import { Button } from "@/components/ui/button";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { trackEvent } from "@/lib/analytics";
 import type { LandingPageCheckout } from "@/lib/actions/landing-pages";
@@ -91,21 +92,21 @@ export function CheckoutForm({
     }
   }
 
-  const ctaBtnClass =
-    "w-full px-5 py-4 text-base font-semibold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200";
-
   if (showAsFree) {
     if (isLoggedIn) {
       return (
         <form action={addPurchaseAction} className="space-y-3" data-checkout-form>
           <input type="hidden" name="landing_page_id" value={page.id} />
-          <button
+          <Button
             type="submit"
+            size="lg"
+            fullWidth
+            shine
             onClick={fireBeginCheckout}
-            className={`btn-cta-shine ${ctaBtnClass}`}
+            className="py-4 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
           >
             Ambil gratis
-          </button>
+          </Button>
         </form>
       );
     }
@@ -128,15 +129,16 @@ export function CheckoutForm({
   if (purchaseLink) {
     return (
       <div data-checkout-form>
-        <a
+        <Button
+          size="lg"
           href={purchaseLink}
-          target="_blank"
-          rel="noopener noreferrer"
+          external
           onClick={fireBeginCheckout}
-          className={`block text-center ${ctaBtnClass}`}
+          fullWidth
+          className="py-4 text-center shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
         >
           Lanjutkan ke pembayaran
-        </a>
+        </Button>
       </div>
     );
   }
@@ -163,11 +165,15 @@ export function CheckoutForm({
       {error && (
         <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
       )}
-      <button
+      <Button
         ref={btnRef}
         type="submit"
+        size="lg"
+        fullWidth
+        shine
+        loading={loading}
         disabled={loading}
-        className="btn-cta-shine w-full px-5 py-4 text-base font-semibold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+        className="py-4 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] disabled:shadow-none"
       >
         {loading ? (
           "Memproses…"
@@ -179,7 +185,7 @@ export function CheckoutForm({
             Bayar sekarang
           </span>
         )}
-      </button>
+      </Button>
     </form>
   );
 }

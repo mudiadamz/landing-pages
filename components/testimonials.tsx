@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import type { PublicReview } from "@/lib/actions/reviews";
 import { VerifiedBadge, formatReviewMonth } from "@/components/verified-reviews";
+import { Button } from "@/components/ui/button";
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -75,26 +76,28 @@ export function Testimonials({ reviews }: { reviews: PublicReview[] }) {
               ))}
             </div>
             <div className="flex gap-2">
-              <button
-                type="button"
-                aria-label="Sebelumnya"
+              <Button
+                variant="secondary"
+                size="icon"
                 onClick={goPrev}
-                className="p-2 rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] hover:scale-105 active:scale-95 transition-all duration-200"
+                aria-label="Sebelumnya"
+                className="text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] hover:scale-105 active:scale-95"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-              </button>
-              <button
-                type="button"
-                aria-label="Selanjutnya"
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
                 onClick={goNext}
-                className="p-2 rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] hover:scale-105 active:scale-95 transition-all duration-200"
+                aria-label="Selanjutnya"
+                className="text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] hover:scale-105 active:scale-95"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
         )}

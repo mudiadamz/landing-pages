@@ -1,5 +1,6 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
 import { getProfile } from "@/lib/actions/profiles";
 import { getLandingPagesForUser } from "@/lib/actions/landing-pages";
 import { getPurchasesForUser, getInvoicesForUser } from "@/lib/actions/purchases";
@@ -54,24 +55,31 @@ async function AdminPanel() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-xl font-semibold tracking-tight">Landing pages</h1>
         <div className="flex flex-wrap gap-2">
-          <Link
+          <Button
+            variant="secondary"
+            size="md"
             href="/panel/upload"
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--background)] transition-colors"
+            leftIcon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            }
+            className="gap-2"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
             Upload
-          </Link>
-          <Link
+          </Button>
+          <Button
+            size="md"
             href="/panel/landing-pages/new"
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition-opacity"
+            leftIcon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            }
+            className="gap-2 hover:opacity-90"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
             Buat baru
-          </Link>
+          </Button>
         </div>
       </div>
 
@@ -79,18 +87,21 @@ async function AdminPanel() {
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
           <p className="text-sm text-[var(--muted)]">Belum ada landing page.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Link
+            <Button
+              variant="secondary"
+              size="md"
               href="/panel/upload"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--background)] transition-colors"
+              className="gap-2"
             >
               Upload HTML
-            </Link>
-            <Link
+            </Button>
+            <Button
+              size="md"
               href="/panel/landing-pages/new"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition-opacity"
+              className="gap-2 hover:opacity-90"
             >
               Buat halaman baru
-            </Link>
+            </Button>
           </div>
         </div>
       ) : (

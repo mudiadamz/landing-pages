@@ -1,4 +1,5 @@
 import { signInWithGoogle } from "@/lib/actions/auth";
+import { Button } from "@/components/ui/button";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -29,15 +30,16 @@ export function GoogleSignInButton({ label = "Lanjutkan dengan Google", next }: 
   return (
     <form action={signInWithGoogle}>
       {next && <input type="hidden" name="next" value={next} />}
-      <button
+      <Button
         type="submit"
-        className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-[var(--border)] rounded-lg bg-background text-foreground font-medium
-          transition-all duration-200 hover:bg-[var(--muted)]/30 hover:border-[var(--muted)]
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2"
+        variant="secondary"
+        size="md"
+        fullWidth
+        leftIcon={<GoogleIcon className="w-5 h-5 shrink-0" />}
+        className="gap-3 py-3 px-4 text-base bg-background hover:bg-[var(--muted)]/30 hover:border-[var(--muted)]"
       >
-        <GoogleIcon className="w-5 h-5 shrink-0" />
         {label}
-      </button>
+      </Button>
     </form>
   );
 }
