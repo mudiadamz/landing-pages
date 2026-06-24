@@ -134,14 +134,14 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                     onClick={() => setUserMenuOpen(false)}
                     className="block px-4 py-2.5 text-sm text-foreground hover:bg-[var(--accent-subtle)]"
                   >
-                    Go to panel
+                    Pembelian saya
                   </Link>
                   <form action={signOut} className="block">
                     <button
                       type="submit"
                       className="w-full text-left px-4 py-2.5 text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
                     >
-                      Sign out
+                      Keluar
                     </button>
                   </form>
                 </div>

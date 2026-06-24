@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
@@ -46,7 +47,11 @@ export default async function TermsPage() {
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Pembelian</h2>
               <p>
-                Pembelian landing page berbayar mengikuti ketentuan penjual. Pengembalian dana diatur menurut kebijakan kami. Dukungan teknis (support 1 bulan) berlaku untuk pembelian dengan total di atas Rp 2.000.000.
+                Pembelian landing page berbayar mengikuti ketentuan penjual. Pengembalian dana diatur dalam{" "}
+                <Link href="/refund" className="text-[var(--primary)] hover:underline font-medium">
+                  Kebijakan Pengembalian Dana
+                </Link>{" "}
+                (garansi 7 hari untuk file rusak/tidak sesuai). Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar.
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Perubahan</h2>
               <p>

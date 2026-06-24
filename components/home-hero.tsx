@@ -1,4 +1,9 @@
-export function HomeHero() {
+type HomeHeroProps = {
+  /** Number of templates currently listed — drives the honest proof chip. */
+  templateCount?: number;
+};
+
+export function HomeHero({ templateCount }: HomeHeroProps = {}) {
   return (
     <section className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20 lg:py-24 overflow-hidden">
       {/* Ornamen gradient blobs — static, no animation to reduce GPU cost */}
@@ -25,14 +30,27 @@ export function HomeHero() {
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: "var(--accent-warm)" }}
           />
-          Landing page & digital assets
+          {templateCount && templateCount > 0
+            ? `${templateCount} template siap pakai · preview gratis`
+            : "Preview gratis sebelum beli"}
         </div>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-tight text-foreground">
-          Temukan landing page & digital assets
+          Landing page siap pakai, live hari ini.
         </h1>
         <p className="text-base sm:text-lg text-[var(--muted)] leading-relaxed">
-          Jelajahi, lihat preview, dan beli landing page serta digital assets siap pakai. Template gratis dan berbayar.
+          Template HTML bersih untuk founder, marketer &amp; freelancer. Preview gratis, beli, edit, deploy.
         </p>
+        <div className="pt-2">
+          <a
+            href="#templates"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+          >
+            Lihat template
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </a>
+        </div>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <span
             className="px-3 py-1 rounded-lg text-xs font-medium transition-transform duration-200 hover:scale-105"

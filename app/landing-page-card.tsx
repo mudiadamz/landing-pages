@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
+import { normalizeDescription } from "@/lib/seo";
 
 function BuyNowIcon({ className }: { className?: string }) {
   return (
@@ -12,7 +13,14 @@ function BuyNowIcon({ className }: { className?: string }) {
   );
 }
 
-type Props = { page: LandingPagePublic; isLoggedIn?: boolean };
+type Props = {
+  page: LandingPagePublic;
+  isLoggedIn?: boolean;
+  /** Eager-load + fetch-priority the image (use for the first few above-fold cards). */
+  priority?: boolean;
+  /** Total review count, for the rating denominator. */
+  reviewCount?: number;
+};
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -24,13 +32,17 @@ function formatPrice(value: number): string {
   }).format(value);
 }
 
-export function LandingPageCard({ page }: Props) {
+export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Props) {
   const isFree = page.is_free === true;
+  const description = normalizeDescription(page.long_description);
   const price = page.price ?? 0;
   const priceDiscount = page.price_discount ?? 0;
   const hasDiscount = !isFree && priceDiscount > 0;
   const displayPrice = hasDiscount ? priceDiscount : price;
   const showAsFree = isFree || displayPrice <= 0;
+  const discountPct = hasDiscount && price > 0 ? Math.round(((price - priceDiscount) / price) * 100) : 0;
+  const soldCount = page.sold_count ?? 0;
+  const rating = page.rating != null && page.rating > 0 ? Number(page.rating) : null;
   const isInternal = page.purchase_type !== "external";
   const externalUrl = page.purchase_link?.trim() || null;
 
@@ -44,8 +56,8 @@ export function LandingPageCard({ page }: Props) {
               alt={page.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover"
-              loading="lazy"
+              className="object-contain"
+              {...(priority ? { priority: true } : { loading: "lazy" as const })}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[var(--accent-subtle)] to-[var(--background)] p-4">
@@ -66,9 +78,9 @@ export function LandingPageCard({ page }: Props) {
         <h2 className="font-semibold text-foreground truncate group-hover:text-[var(--primary)] transition-colors mt-1">
           <Link href={`/checkout/${page.slug}`} className="active:opacity-80 transition-opacity duration-150">{page.title}</Link>
         </h2>
-        {page.long_description && (
+        {description && (
           <p className="mt-1.5 text-xs text-[var(--muted)] line-clamp-2">
-            {page.long_description}
+            {description}
           </p>
         )}
         <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -86,23 +98,34 @@ export function LandingPageCard({ page }: Props) {
               <span className={`text-sm font-medium ${hasDiscount ? "text-[var(--primary)]" : "text-foreground"}`}>
                 {formatPrice(displayPrice)}
               </span>
-              {hasDiscount && price > 0 && (
-                <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-[var(--primary)]/15 text-[var(--primary)]">
-                  Diskon
+              {hasDiscount && discountPct > 0 && (
+                <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-[var(--primary)]/15 text-[var(--primary)]">
+                  -{discountPct}%
                 </span>
               )}
             </>
           )}
         </div>
-        <div className="mt-2 flex items-center gap-3 text-xs text-[var(--muted)]">
-          <span>{page.sold_count ?? 0} terjual</span>
-          {page.rating != null && page.rating > 0 ? (
-            <span className="flex items-center gap-1">
-              <span className="text-amber-500" aria-hidden>★</span>
-              {Number(page.rating).toFixed(1)}
+        {soldCount > 0 || rating ? (
+          <div className="mt-2 flex items-center gap-3 text-xs text-[var(--muted)]">
+            {soldCount > 0 && <span>{soldCount} terjual</span>}
+            {rating ? (
+              <span className="flex items-center gap-1">
+                <span className="text-amber-500" aria-hidden>★</span>
+                {rating.toFixed(1)}
+                {reviewCount > 1 && (
+                  <span className="text-[var(--muted)]">({reviewCount} ulasan)</span>
+                )}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-2">
+            <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-[var(--accent-subtle)] text-[var(--muted)]">
+              Baru
             </span>
-          ) : null}
-        </div>
+          </div>
+        )}
         <div className="mt-3 flex gap-2 sm:gap-3">
           <Link
             href={`/lp/${page.slug}`}

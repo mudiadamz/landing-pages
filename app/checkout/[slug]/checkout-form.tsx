@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { addPurchaseAction } from "@/lib/actions/purchases";
+import { GoogleSignInButton } from "@/components/google-signin-button";
+import { trackEvent } from "@/lib/analytics";
 import type { LandingPageCheckout } from "@/lib/actions/landing-pages";
 
 type Props = {
@@ -22,6 +24,30 @@ export function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
+  const displayValue = showAsFree
+    ? 0
+    : page.price_discount && page.price_discount > 0
+      ? page.price_discount
+      : page.price ?? 0;
+
+  const analyticsItems = [
+    { item_id: page.slug, item_name: page.title, price: displayValue, quantity: 1 },
+  ];
+
+  // Fire view_item once when the checkout renders.
+  useEffect(() => {
+    trackEvent("view_item", { currency: "IDR", value: displayValue, items: analyticsItems });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fireBeginCheckout = useCallback(() => {
+    trackEvent("begin_checkout", {
+      currency: "IDR",
+      value: displayValue,
+      items: [{ item_id: page.slug, item_name: page.title, price: displayValue, quantity: 1 }],
+    });
+  }, [displayValue, page.slug, page.title]);
+
   const triggerShine = useCallback(() => {
     const el = btnRef.current;
     if (!el) return;
@@ -40,6 +66,7 @@ export function CheckoutForm({
     e.preventDefault();
     setError(null);
     setLoading(true);
+    fireBeginCheckout();
     try {
       const res = await fetch("/api/duitku/create-invoice", {
         method: "POST",
@@ -72,19 +99,27 @@ export function CheckoutForm({
       return (
         <form action={addPurchaseAction} className="space-y-3" data-checkout-form>
           <input type="hidden" name="landing_page_id" value={page.id} />
-          <button type="submit" className={`btn-cta-shine ${ctaBtnClass}`}>
+          <button
+            type="submit"
+            onClick={fireBeginCheckout}
+            className={`btn-cta-shine ${ctaBtnClass}`}
+          >
             Ambil gratis
           </button>
         </form>
       );
     }
     return (
-      <div data-checkout-form>
+      <div data-checkout-form className="space-y-3">
+        <GoogleSignInButton
+          next={`/checkout/${page.slug}`}
+          label="Lanjutkan dengan Google"
+        />
         <Link
           href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
-          className={`block text-center ${ctaBtnClass}`}
+          className="block text-center text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
-          Masuk untuk ambil gratis
+          atau masuk dengan email
         </Link>
       </div>
     );
@@ -97,6 +132,7 @@ export function CheckoutForm({
           href={purchaseLink}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={fireBeginCheckout}
           className={`block text-center ${ctaBtnClass}`}
         >
           Lanjutkan ke pembayaran
@@ -107,12 +143,16 @@ export function CheckoutForm({
 
   if (!isLoggedIn) {
     return (
-      <div data-checkout-form>
+      <div data-checkout-form className="space-y-3">
+        <GoogleSignInButton
+          next={`/checkout/${page.slug}`}
+          label="Lanjut dengan Google untuk checkout"
+        />
         <Link
           href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
-          className={`block text-center ${ctaBtnClass}`}
+          className="block text-center text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
-          Masuk untuk checkout
+          atau masuk dengan email
         </Link>
       </div>
     );

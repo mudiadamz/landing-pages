@@ -1,15 +1,24 @@
+import { cache } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+import { getPublicReviews, getReviewCount } from "@/lib/actions/reviews";
+import { VerifiedReviews } from "@/components/verified-reviews";
+import { FounderCredibility } from "@/components/founder-credibility";
+import { JsonLd } from "@/components/json-ld";
+import { SITE_URL, buildMetaDescription, normalizeDescription } from "@/lib/seo";
 import { CheckoutForm } from "./checkout-form";
 import { StickyMobileCTA } from "./sticky-cta";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** Dedupe the DB read across generateMetadata + the page render. */
+const getCheckoutPage = cache((slug: string) => getLandingPageForCheckout(slug));
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -30,19 +39,35 @@ const includes = [
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getLandingPageForCheckout(slug);
+  const page = await getCheckoutPage(slug);
   if (!page) return { title: "Checkout" };
-  return { title: `Checkout — ${page.title}` };
+  const description = buildMetaDescription(
+    page.long_description,
+    `${page.title} — template landing page siap pakai. Preview gratis, beli, edit, deploy.`,
+  );
+  const url = `/checkout/${slug}`;
+  const images = page.thumbnail_url ? [page.thumbnail_url] : undefined;
+  return {
+    title: `Checkout — ${page.title}`,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: page.title, description, url, images, type: "website" },
+    twitter: { card: "summary_large_image", title: page.title, description, images },
+  };
 }
 
 export default async function CheckoutPage({ params }: Props) {
   const { slug } = await params;
   const [supabase, page] = await Promise.all([
     createClient(),
-    getLandingPageForCheckout(slug),
+    getCheckoutPage(slug),
   ]);
   if (!page) notFound();
-  const { data: { user } } = await supabase.auth.getUser();
+  const [{ data: { user } }, reviews, reviewCount] = await Promise.all([
+    supabase.auth.getUser(),
+    getPublicReviews(page.id, 5),
+    getReviewCount(page.id),
+  ]);
 
   const isFree = page.is_free === true;
   const price = page.price ?? 0;
@@ -54,8 +79,42 @@ export default async function CheckoutPage({ params }: Props) {
   const soldCount = page.sold_count ?? 0;
   const rating = page.rating != null && page.rating > 0 ? Number(page.rating) : null;
 
+  const canonicalUrl = `${SITE_URL}/checkout/${page.slug}`;
+  const metaDescription = buildMetaDescription(
+    page.long_description,
+    `${page.title} — template landing page siap pakai.`,
+  );
+  // No aggregateRating yet — emitting one without a review count reads as
+  // manufactured and trips structured-data validators (see audit B6).
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: page.title,
+    description: metaDescription,
+    ...(page.thumbnail_url ? { image: [page.thumbnail_url] } : {}),
+    url: canonicalUrl,
+    brand: { "@type": "Brand", name: "ADM.UIUX" },
+    offers: {
+      "@type": "Offer",
+      price: showAsFree ? 0 : displayPrice,
+      priceCurrency: "IDR",
+      availability: "https://schema.org/InStock",
+      url: canonicalUrl,
+    },
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Beranda", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: page.title, item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <JsonLd data={productJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
       <SiteHeader user={user} />
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-28 sm:pb-12">
@@ -70,7 +129,7 @@ export default async function CheckoutPage({ params }: Props) {
           {/* Discount banner */}
           {hasDiscount && discountPct > 0 && (
             <div className="bg-[var(--primary)] text-[var(--primary-foreground)] text-center py-2 px-4 text-sm font-medium">
-              Hemat {discountPct}% — diskon terbatas!
+              Hemat {discountPct}% dari harga normal
             </div>
           )}
 
@@ -134,6 +193,7 @@ export default async function CheckoutPage({ params }: Props) {
                   <span className="flex items-center gap-1">
                     <span className="text-amber-500">★</span>
                     {rating.toFixed(1)}
+                    {reviewCount > 1 && <span>({reviewCount} ulasan)</span>}
                   </span>
                 )}
               </div>
@@ -142,7 +202,7 @@ export default async function CheckoutPage({ params }: Props) {
             {/* Description */}
             {page.long_description && (
               <p className="text-sm text-[var(--muted)] whitespace-pre-wrap leading-relaxed">
-                {page.long_description}
+                {normalizeDescription(page.long_description)}
               </p>
             )}
 
@@ -159,6 +219,9 @@ export default async function CheckoutPage({ params }: Props) {
               </svg>
               Lihat demo langsung
             </Link>
+
+            {/* Verified buyer reviews */}
+            <VerifiedReviews reviews={reviews} />
 
             {/* What you get */}
             <div className="border-t border-[var(--border)] pt-5">
@@ -181,6 +244,14 @@ export default async function CheckoutPage({ params }: Props) {
                 showAsFree={showAsFree}
                 purchaseLink={page.purchase_link?.trim() || null}
               />
+              {!showAsFree && (
+                <p className="mt-3 text-center text-xs text-[var(--muted)]">
+                  Garansi 7 hari — file rusak/tidak sesuai kami perbaiki atau kembalikan dana.{" "}
+                  <Link href="/refund" className="text-[var(--primary)] hover:underline">
+                    Selengkapnya
+                  </Link>
+                </p>
+              )}
             </div>
 
             {/* Trust signals */}
@@ -204,6 +275,9 @@ export default async function CheckoutPage({ params }: Props) {
                 Download langsung
               </div>
             </div>
+
+            {/* Maker proof */}
+            <FounderCredibility />
           </div>
         </div>
       </main>

@@ -8,6 +8,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { RouteProgress } from "@/components/route-progress";
 import { CustomJsInjector } from "@/components/custom-js-injector";
+import { JsonLd } from "@/components/json-ld";
+import { MarketingScripts } from "@/components/marketing-scripts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +21,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://your-domain.com";
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com").replace(/\/$/, "");
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "ADM.UIUX",
+  url: SITE_URL,
+  logo: `${SITE_URL}/logo-adm-100.jpg`,
+  email: "admin@admuiux.com",
+  founder: { "@type": "Person", name: "Adam Mudianto" },
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -82,6 +94,8 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <JsonLd data={organizationJsonLd} />
+        <MarketingScripts />
         <Suspense fallback={null}>
           <RouteProgress />
         </Suspense>

@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     q: "Bagaimana support 1 bulan itu?",
-    a: "Support 1 bulan diberikan untuk pembelian dengan total di atas Rp 2.000.000. Setelah pembelian memenuhi syarat, Anda punya hak support selama 1 bulan: tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
+    a: "Support 1 bulan diberikan untuk setiap pembelian berbayar. Anda punya hak support selama 1 bulan sejak pembelian: tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
   },
 ];
 
@@ -26,17 +26,17 @@ export function Disclaimer() {
         {/* Disclaimer panjang */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground mb-4">
-            Disclaimer
+            Ketentuan &amp; lisensi
           </h2>
           <div className="space-y-4 text-sm text-[var(--muted)] leading-relaxed">
             <p>
               Produk yang dijual di sini adalah template HTML landing page dan digital assets. Anda membeli hak penggunaan template, bukan lisensi eksklusif. Template boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.
             </p>
             <p>
-              Kami tidak menjamin template bebas dari bug. Kami melakukan testing dasar, tetapi penggunaan Anda mungkin berbeda. Dukungan teknis (support 1 bulan) berlaku untuk pembelian dengan total di atas Rp 2.000.000, terbatas pada bantuan implementasi dan perbaikan bug.
+              Setiap template kami test sebelum rilis. Kalau Anda menemukan bug, laporkan lewat halaman Kontak dan kami bantu perbaiki. Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar, mencakup bantuan implementasi dan perbaikan bug.
             </p>
             <p>
-              Pembelian landing page berbayar memakai link pembayaran eksternal. Pastikan Anda membeli dari sumber resmi (halaman ini). Kami tidak bertanggung jawab atas transaksi di luar platform.
+              Pembayaran diproses dengan aman lewat payment gateway resmi kami (Duitku) langsung di halaman ini. Untuk sebagian produk pihak ketiga, pembayaran bisa diarahkan ke link resmi penjual—pastikan Anda selalu membeli dari sumber resmi.
             </p>
             <p>
               Dengan membeli atau mengambil template gratis, Anda dianggap telah membaca dan menyetujui disclaimer serta ketentuan layanan kami.
@@ -65,7 +65,7 @@ export function Disclaimer() {
             Jaminan support landing page 1 bulan
           </h2>
           <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
-            Support 1 bulan diberikan untuk pembelian dengan <strong className="text-foreground">total di atas Rp 2.000.000</strong>. Dukungan teknis berlaku selama 1 bulan sejak tanggal pembelian yang memenuhi syarat. Yang termasuk:
+            Support 1 bulan diberikan untuk <strong className="text-foreground">setiap pembelian berbayar</strong>. Dukungan teknis berlaku selama 1 bulan sejak tanggal pembelian. Yang termasuk:
           </p>
           <ul className="space-y-2 text-sm text-[var(--muted)] leading-relaxed list-disc list-inside">
             <li>Bantuan implementasi (cara upload, deploy, integrasi dasar)</li>

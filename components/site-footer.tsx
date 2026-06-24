@@ -36,6 +36,9 @@ export function SiteFooter() {
             <Link href="/terms" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Ketentuan Layanan
             </Link>
+            <Link href="/refund" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
+              Pengembalian Dana
+            </Link>
             <Link href="/hiring" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Hiring
             </Link>

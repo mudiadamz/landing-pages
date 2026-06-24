@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCategories } from "@/lib/actions/landing-pages";
+import { getCategories, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { PurchaseTracker } from "@/components/purchase-tracker";
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ resultCode?: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ resultCode?: string; merchantOrderId?: string }>;
+};
 
 export default async function CheckoutDonePage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { resultCode } = await searchParams;
+  const { resultCode, merchantOrderId } = await searchParams;
   const supabase = await createClient();
   const [
     { data: { user } },
@@ -20,9 +24,27 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
 
   const success = resultCode === "00";
 
+  // Resolve the order value for the purchase event (success only).
+  const checkoutData = success ? await getLandingPageForCheckout(slug) : null;
+  const purchaseValue = (() => {
+    if (!checkoutData || checkoutData.is_free) return 0;
+    const price = checkoutData.price ?? 0;
+    const discount = checkoutData.price_discount ?? 0;
+    return discount > 0 ? discount : price;
+  })();
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SiteHeader user={user} categories={categories} />
+
+      {success && checkoutData && (
+        <PurchaseTracker
+          orderId={merchantOrderId || `${slug}-${resultCode}`}
+          value={purchaseValue}
+          slug={slug}
+          title={checkoutData.title}
+        />
+      )}
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-12 sm:py-20 flex flex-col items-center justify-center text-center">
         {success ? (

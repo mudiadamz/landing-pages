@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPagesForHomepage, getCategories } from "@/lib/actions/landing-pages";
+import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { LandingPageCard } from "./landing-page-card";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { FounderCredibility } from "@/components/founder-credibility";
 import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
 import { HomeHero } from "@/components/home-hero";
@@ -13,9 +15,11 @@ export default async function Home() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [pages, categories] = await Promise.all([
+  const [pages, categories, reviews, reviewCounts] = await Promise.all([
     getLandingPagesForHomepage(),
     getCategories(),
+    getPublicReviews(),
+    getReviewCounts(),
   ]);
 
   return (
@@ -23,7 +27,7 @@ export default async function Home() {
       <SiteHeader user={user} categories={categories} />
 
       <main className="flex-1 relative">
-        <HomeHero />
+        <HomeHero templateCount={pages.length} />
 
         {pages.length === 0 ? (
           <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
@@ -38,16 +42,27 @@ export default async function Home() {
             </div>
           </section>
         ) : (
-          <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
+          <section id="templates" className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24 scroll-mt-20">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 landing-grid">
-              {pages.map((page) => (
-                <LandingPageCard key={page.id} page={page} />
+              {pages.map((page, i) => (
+                <LandingPageCard
+                  key={page.id}
+                  page={page}
+                  priority={i < 3}
+                  reviewCount={reviewCounts[page.id] ?? 0}
+                />
               ))}
             </div>
           </section>
         )}
 
-        <Testimonials />
+        {pages.length > 0 && (
+          <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-4">
+            <FounderCredibility templateCount={pages.length} />
+          </section>
+        )}
+
+        <Testimonials reviews={reviews} />
         <Disclaimer />
       </main>
 
