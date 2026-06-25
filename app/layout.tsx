@@ -10,6 +10,7 @@ import { RouteProgress } from "@/components/route-progress";
 import { CustomJsInjector } from "@/components/custom-js-injector";
 import { JsonLd } from "@/components/json-ld";
 import { MarketingScripts } from "@/components/marketing-scripts";
+import { TawkChat } from "@/components/tawk-chat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -96,6 +97,7 @@ export default async function RootLayout({
       >
         <JsonLd data={organizationJsonLd} />
         <MarketingScripts />
+        <TawkChat />
         <Suspense fallback={null}>
           <RouteProgress />
         </Suspense>

@@ -57,7 +57,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
               alt={page.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-contain"
+              className="object-cover"
               {...(priority ? { priority: true } : { loading: "lazy" as const })}
             />
           ) : (

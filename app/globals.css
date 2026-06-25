@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  /* Declare a light scheme so browsers (e.g. Android auto-dark) don't follow
+     the device and force-darken the page. Dark is opt-in via html.dark only. */
+  color-scheme: light;
   --background: #fdfcfb;
   --foreground: #1d1d1f;
   --card: #ffffff;
@@ -17,6 +20,7 @@
 }
 
 html.dark {
+  color-scheme: dark;
   --background: #0d0d0f;
   --foreground: #f5f5f7;
   --card: #161618;

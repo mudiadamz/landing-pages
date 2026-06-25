@@ -37,10 +37,10 @@ export function HomeHero({ templateCount }: HomeHeroProps = {}) {
             : "Preview gratis sebelum beli"}
         </div>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-tight text-foreground">
-          Landing page siap pakai, live hari ini.
+          Landing page yang LIVE hari ini — bukan tema mentah, tanpa ngoding.
         </h1>
         <p className="text-base sm:text-lg text-[var(--muted)] leading-relaxed">
-          Template HTML bersih untuk founder, marketer &amp; freelancer. Preview gratis, beli, edit, deploy.
+          Coba demo aslinya gratis, tanpa daftar. Suka? Bayar via QRIS, download ZIP, deploy hari ini. Garansi 7 hari uang kembali — dijamin langsung oleh Adam.
         </p>
         <div className="pt-2">
           <Button
@@ -61,19 +61,25 @@ export function HomeHero({ templateCount }: HomeHeroProps = {}) {
             className="px-3 py-1 rounded-lg text-xs font-medium transition-transform duration-200 hover:scale-105"
             style={{ backgroundColor: "var(--accent-subtle)", color: "var(--foreground)", border: "1px solid var(--border)" }}
           >
-            HTML bersih
+            Garansi 7 hari uang kembali
           </span>
           <span
             className="px-3 py-1 rounded-lg text-xs font-medium transition-transform duration-200 hover:scale-105"
             style={{ backgroundColor: "var(--accent-subtle)", color: "var(--foreground)", border: "1px solid var(--border)" }}
           >
-            Support 1 bulan
+            Bayar QRIS / e-wallet
           </span>
           <span
             className="px-3 py-1 rounded-lg text-xs font-medium transition-transform duration-200 hover:scale-105"
             style={{ backgroundColor: "var(--accent-subtle)", color: "var(--foreground)", border: "1px solid var(--border)" }}
           >
-            Preview gratis
+            Akses selamanya
+          </span>
+          <span
+            className="px-3 py-1 rounded-lg text-xs font-medium transition-transform duration-200 hover:scale-105"
+            style={{ backgroundColor: "var(--accent-subtle)", color: "var(--foreground)", border: "1px solid var(--border)" }}
+          >
+            Dibuat sendiri oleh Adam
           </span>
         </div>
       </div>

@@ -14,8 +14,13 @@ import { CheckoutForm } from "./checkout-form";
 import { StickyMobileCTA } from "./sticky-cta";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { Button } from "@/components/ui/button";
+import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ h?: string | string[] }>;
+};
 
 /** Dedupe the DB read across generateMetadata + the page render. */
 const getCheckoutPage = cache((slug: string) => getLandingPageForCheckout(slug));
@@ -28,6 +33,25 @@ function formatPrice(value: number): string {
     maximumFractionDigits: 0,
     currencyDisplay: "symbol",
   }).format(value);
+}
+
+/**
+ * Echo the ad's headline (?h=) above the title for ad->landing message match.
+ * Plain text only (React escapes it), angle brackets stripped as defense in
+ * depth, whitespace collapsed, and clamped to 80 chars so a crafted URL can't
+ * inject long/abusive copy. The canonical URL omits the query, so ?h= variants
+ * are not indexed separately.
+ */
+function sanitizeAdHeadline(raw: string | string[] | undefined): string | null {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (!v) return null;
+  const cleaned = v
+    .replace(/</g, " ")
+    .replace(/>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleaned.length < 3) return null;
+  return cleaned.length > 80 ? `${cleaned.slice(0, 79).trimEnd()}…` : cleaned;
 }
 
 const includes = [
@@ -56,13 +80,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CheckoutPage({ params }: Props) {
+export default async function CheckoutPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const [supabase, page] = await Promise.all([
+  const [supabase, page, sp] = await Promise.all([
     createClient(),
     getCheckoutPage(slug),
+    searchParams,
   ]);
   if (!page) notFound();
+  const adHeadline = sanitizeAdHeadline(sp.h);
   const [{ data: { user } }, reviews, reviewCount] = await Promise.all([
     supabase.auth.getUser(),
     getPublicReviews(page.id, 5),
@@ -152,8 +178,13 @@ export default async function CheckoutPage({ params }: Props) {
           </div>
 
           <div className="p-5 sm:p-6 space-y-5">
-            {/* Title */}
-            <h1 className="text-xl font-semibold text-foreground">{page.title}</h1>
+            {/* Title (with optional ad-headline echo for ad->landing message match) */}
+            <div className="space-y-1">
+              {adHeadline && (
+                <p className="text-sm font-medium text-[var(--primary)]">{adHeadline}</p>
+              )}
+              <h1 className="text-xl font-semibold text-foreground">{page.title}</h1>
+            </div>
 
             {/* Price */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -199,26 +230,25 @@ export default async function CheckoutPage({ params }: Props) {
               </div>
             )}
 
+            {/* Live demo — the proof. Dominant action: let cold traffic touch the
+                real, public, no-login product before any wall. */}
+            <Button
+              variant="secondary"
+              size="lg"
+              href={`/lp/${page.slug}`}
+              external
+              fullWidth
+              leftIcon={<EyeIcon className="w-5 h-5" />}
+            >
+              Coba demo langsung — gratis, tanpa daftar
+            </Button>
+
             {/* Description */}
             {page.long_description && (
               <p className="text-sm text-[var(--muted)] whitespace-pre-wrap leading-relaxed">
                 {normalizeDescription(page.long_description)}
               </p>
             )}
-
-            {/* Preview link */}
-            <Link
-              href={`/lp/${page.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--primary)] hover:underline"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Lihat demo langsung
-            </Link>
 
             {/* Verified buyer reviews */}
             <VerifiedReviews reviews={reviews} />
@@ -236,22 +266,16 @@ export default async function CheckoutPage({ params }: Props) {
               </ul>
             </div>
 
-            {/* CTA */}
-            <div className="border-t border-[var(--border)] pt-5">
+            {/* CTA — guarantee surfaced at the hesitation point, payment methods below */}
+            <div className="border-t border-[var(--border)] pt-5 space-y-3">
+              {!showAsFree && <GuaranteeBadge />}
               <CheckoutForm
                 page={page}
                 isLoggedIn={!!user}
                 showAsFree={showAsFree}
                 purchaseLink={page.purchase_link?.trim() || null}
               />
-              {!showAsFree && (
-                <p className="mt-3 text-center text-xs text-[var(--muted)]">
-                  Garansi 7 hari — file rusak/tidak sesuai kami perbaiki atau kembalikan dana.{" "}
-                  <Link href="/refund" className="text-[var(--primary)] hover:underline">
-                    Selengkapnya
-                  </Link>
-                </p>
-              )}
+              {!showAsFree && <PaymentMethodsRow className="pt-1" />}
             </div>
 
             {/* Trust signals */}
@@ -319,6 +343,14 @@ function DownloadIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+  );
+}
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
     </svg>
   );
 }

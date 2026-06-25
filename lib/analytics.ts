@@ -12,6 +12,8 @@ export type AnalyticsParams = {
   currency?: string;
   transaction_id?: string;
   items?: AnalyticsItem[];
+  /** Shared dedup id for the Meta pixel (matches the server CAPI event_id). */
+  eventId?: string;
 };
 
 type GtagWindow = {
@@ -42,12 +44,18 @@ export function trackEvent(name: string, params: AnalyticsParams = {}): void {
   if (typeof w.fbq === "function") {
     const fbName = FB_EVENT_MAP[name];
     if (fbName) {
-      w.fbq("track", fbName, {
+      const fbParams = {
         value: params.value,
         currency: params.currency,
         content_ids: params.items?.map((i) => i.item_id),
         content_type: "product",
-      });
+      };
+      // Pass eventID so this browser event dedupes with the server CAPI event.
+      if (params.eventId) {
+        w.fbq("track", fbName, fbParams, { eventID: params.eventId });
+      } else {
+        w.fbq("track", fbName, fbParams);
+      }
     }
   }
 }

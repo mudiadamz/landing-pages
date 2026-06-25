@@ -4,6 +4,7 @@ import { validateDuitkuCallback } from "@/lib/duitku";
 import { sendPurchaseConfirmationEmail } from "@/lib/email";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { generateInvoiceNumber } from "@/lib/invoice";
+import { sendMetaPurchaseEvent } from "@/lib/meta-capi";
 
 export async function POST(req: NextRequest) {
   try {
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
           return new NextResponse("OK", { status: 200 });
         }
         console.error("Duitku callback purchase insert error:", error);
-      } else if (email) {
+      } else {
         const { data: page } = await supabase
           .from("lp_landing_pages")
           .select("title, slug, zip_url")
@@ -101,17 +102,34 @@ export async function POST(req: NextRequest) {
           .single();
 
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-        let downloadUrl = `${baseUrl}/panel`;
-        if (page?.zip_url && page?.slug) {
-          const signedUrl = await getSignedDownloadUrl(page.zip_url);
-          if (signedUrl) {
-            downloadUrl = `${baseUrl}/api/download/${page.slug}`;
+
+        if (email) {
+          let downloadUrl = `${baseUrl}/panel`;
+          if (page?.zip_url && page?.slug) {
+            const signedUrl = await getSignedDownloadUrl(page.zip_url);
+            if (signedUrl) {
+              downloadUrl = `${baseUrl}/api/download/${page.slug}`;
+            }
           }
+          await sendPurchaseConfirmationEmail({
+            to: email,
+            title: page?.title ?? "Landing Page",
+            downloadUrl,
+          });
         }
-        await sendPurchaseConfirmationEmail({
-          to: email,
-          title: page?.title ?? "Landing Page",
-          downloadUrl,
+
+        // Server-side Meta Purchase, deduped with the browser pixel via
+        // merchantOrderId. No-ops unless the CAPI env vars are configured.
+        await sendMetaPurchaseEvent({
+          eventId: merchantOrderId,
+          value: Number(amount) || 0,
+          currency: "IDR",
+          email,
+          contentId: page?.slug ?? null,
+          contentName: page?.title ?? null,
+          eventSourceUrl: page?.slug ? `${baseUrl}/checkout/${page.slug}/done` : undefined,
+          clientIp: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
+          userAgent: req.headers.get("user-agent"),
         });
       }
     } catch (adminErr) {

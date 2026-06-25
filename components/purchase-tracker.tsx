@@ -25,6 +25,9 @@ export function PurchaseTracker({ orderId, value, slug, title }: Props) {
     }
     trackEvent("purchase", {
       transaction_id: orderId,
+      // Same id the server CAPI uses (Duitku merchantOrderId) so Meta dedupes
+      // the browser + server Purchase into one conversion.
+      eventId: orderId,
       currency: "IDR",
       value,
       items: [{ item_id: slug, item_name: title, price: value, quantity: 1 }],

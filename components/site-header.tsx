@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { signOut } from "@/lib/actions/auth";
@@ -22,8 +21,6 @@ export type HeaderCategory = {
   parent_id?: string | null;
 };
 
-const iconClass = "w-4 h-4 shrink-0";
-
 type Props = {
   user: User | null;
   categories?: HeaderCategory[];
@@ -39,20 +36,11 @@ function displayName(user: User): string {
 }
 
 const navLinks = [
-  { href: "/", label: "Beranda" },
   { href: "/about", label: "Tentang" },
   { href: "/contact", label: "Kontak" },
   { href: "/privacy", label: "Kebijakan Privasi" },
   { href: "/terms", label: "Ketentuan" },
 ];
-
-function HomeIcon() {
-  return (
-    <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-  );
-}
 
 export function SiteHeader({ user, categories = [], currentCategorySlug = null }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -78,10 +66,6 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
     return { parents, childrenOf, activeParent, activeChildSlug, subCats };
   }, [categories, currentCategorySlug]);
 
-  // "Home" is active only on the actual homepage — NOT merely when no category
-  // context exists (static pages like /about pass no currentCategorySlug too).
-  const pathname = usePathname();
-  const homeActive = pathname === "/";
   const showCategories = parents.length > 0;
   const activeParentId = activeParent?.id ?? null;
   const isExpanded = (id: string) => openOverrides[id] ?? id === activeParentId;
@@ -119,10 +103,6 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
           <div className="flex items-center gap-1.5 flex-nowrap py-1">
             {showCategories ? (
               <>
-                <Link href="/" className={parentChipClass(homeActive)}>
-                  <HomeIcon />
-                  <span className="whitespace-nowrap">Home</span>
-                </Link>
                 {parents.map((cat) => (
                   <Link
                     key={cat.id}
@@ -251,16 +231,6 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
           <nav className="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-0.5">
             {showCategories ? (
               <>
-                <Link
-                  href="/"
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
-                    homeActive ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
-                  }`}
-                >
-                  <HomeIcon />
-                  Home
-                </Link>
                 {parents.map((parent) => {
                   const children = childrenOf(parent.id);
                   const parentActive = activeParentId === parent.id;

@@ -33,6 +33,20 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
     return discount > 0 ? discount : price;
   })();
 
+  // Only offer the direct download once the purchase row exists — the Duitku
+  // callback that records it may still be in flight, and /api/download would
+  // 403 until then. RLS lets a user read their own purchases.
+  let hasPurchase = false;
+  if (success && checkoutData && user) {
+    const { data: purchase } = await supabase
+      .from("lp_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("landing_page_id", checkoutData.id)
+      .maybeSingle();
+    hasPurchase = !!purchase;
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SiteHeader user={user} categories={categories} />
@@ -68,7 +82,9 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
               Pembayaran berhasil
             </h1>
             <p className="text-[var(--muted)] mb-6">
-              Terima kasih. Pembelian Anda telah tercatat. Silakan cek panel untuk mengakses landing page.
+              {hasPurchase
+                ? "Terima kasih! File kamu siap. Download sekarang, atau akses kapan saja di panel."
+                : "Terima kasih. Pembayaran sedang diproses — biasanya beberapa detik. Cek panel sebentar lagi untuk download."}
             </p>
           </>
         ) : (
@@ -97,17 +113,54 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
           </>
         )}
 
-        <div className="flex gap-3">
-          <Button size="md" href={success ? "/panel" : `/checkout/${slug}`}>
-            {success ? "Ke Panel" : "Coba lagi"}
-          </Button>
-          <Button variant="secondary" size="md" href="/">
-            Beranda
-          </Button>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {success ? (
+            hasPurchase ? (
+              <>
+                <Button
+                  size="md"
+                  href={`/api/download/${slug}`}
+                  external
+                  leftIcon={<DownloadIcon className="w-4 h-4" />}
+                >
+                  Download ZIP sekarang
+                </Button>
+                <Button variant="secondary" size="md" href="/panel">
+                  Ke Panel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button size="md" href="/panel">
+                  Ke Panel
+                </Button>
+                <Button variant="secondary" size="md" href="/">
+                  Beranda
+                </Button>
+              </>
+            )
+          ) : (
+            <>
+              <Button size="md" href={`/checkout/${slug}`}>
+                Coba lagi
+              </Button>
+              <Button variant="secondary" size="md" href="/">
+                Beranda
+              </Button>
+            </>
+          )}
         </div>
       </main>
 
       <SiteFooter />
     </div>
+  );
+}
+
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
   );
 }
