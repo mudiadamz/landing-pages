@@ -45,7 +45,7 @@ app/
   lp/[slug]/                     # render landing page terpublish (di dalam iframe)
   checkout/[slug]/               # halaman beli + done (sukses/gagal)
   panel/                         # area login (admin & customer)
-    landing-pages/[id]/edit/     # Monaco editor + asset + pricing + version history
+    landing-pages/[id]/edit/     # title + preview source + Monaco editor + asset + pricing
     dashboard|users|categories|contacts|inbox|custom-js|invoices|profile
   api/
     duitku/create-invoice        # buat invoice → redirect ke Duitku
@@ -77,18 +77,22 @@ middleware.ts                    # refresh sesi + proteksi /panel
 ## Flow: buat & edit landing page (admin)
 
 1. **Buat**: `/panel/landing-pages/new` (`createLandingPage`) atau upload file `.html` via `/panel/upload`.
-2. **Editor** (`app/panel/landing-pages/[id]/edit/editor.tsx`): Monaco tab HTML/CSS/JS, autosave debounce 2 detik, `Cmd/Ctrl+S` manual.
+2. **Pengaturan halaman** (`page-settings-form.tsx`): edit **title** + **sumber preview** (`updateLandingPageSettings`):
+   - `html` (default) — render konten editor di iframe `/lp/[slug]`.
+   - `pdf` — upload PDF (`uploadPreviewPdf` → bucket `landing-assets/{user}/{page}/preview/`), di-embed di `/lp/[slug]`.
+   - `link` — embed URL eksternal di `/lp/[slug]`.
+   Kolom DB: `preview_type ('html'|'pdf'|'link')`, `preview_url`.
+3. **Editor** (`editor.tsx`): Monaco tab HTML/CSS/JS, simpan **manual** (tombol Save / `Cmd/Ctrl+S`) → `updateLandingPageHtml()`. Tidak ada autosave maupun history/restore (fitur version dihapus Jun 2026).
    - `lib/editor-utils.ts`: `parseHtmlContent()` pisah `<style>`/`<script>`; `mergeHtmlContent()` gabung lagi sebelum simpan ke `html_content`.
-   - Setiap simpan → `updateLandingPageHtml()` + `saveVersion()` (snapshot ke `lp_landing_page_versions`, history sampai 50).
-3. **Assets** (`asset-upload.tsx`):
+4. **Assets** (`asset-upload.tsx`):
    - Gambar/video → Storage `landing-assets/{userId}/{pageId}/{ts}-{file}`, dapat public URL.
    - **ZIP site** → `uploadSiteZip()`: unzip (fflate), upload semua file ke `.../site/...`, inject `<base href>` ke direktori storage, cari `index.html` terdangkal, update `html_content`.
-4. **Pricing** (`pricing-form.tsx`): `price`, `price_discount`, `is_free`, `thumbnail_url`, `category_id` (hierarki parent→child), `long_description`, plus upload ZIP download (file yang diterima customer).
+5. **Pricing** (`pricing-form.tsx`): `price`, `price_discount`, `is_free`, `thumbnail_url`, `category_id` (hierarki parent→child), `long_description`, plus upload ZIP download (file yang diterima customer).
 
 ## Flow: render landing page publik (`/lp/[slug]`)
 
-- `getPageBySlug()` ambil `html_content` (di-`cache()`). `generateMetadata()` bangun OG/canonical.
-- HTML dirender di dalam `<iframe srcDoc={guardPreviewHtml(html)}>` sandbox `allow-scripts allow-same-origin allow-modals`.
+- `getPageBySlug()` ambil `html_content`, `preview_type`, `preview_url` (di-`cache()`). `generateMetadata()` bangun OG/canonical.
+- Berdasarkan `preview_type`: `pdf`/`link` → `<iframe src=…>` (PDF pakai `#toolbar=0`); selain itu HTML dirender di dalam `<iframe srcDoc={guardPreviewHtml(html)}>` sandbox `allow-scripts allow-same-origin allow-modals`.
 - `lib/preview-guard.ts` inject CSS+JS anti-copy (blok klik kanan, copy/cut/drag/select, F12, Ctrl+S/U/P/A/C/X, devtools). Anchor `#section` di-handle agar scroll in-page.
 - `preview-bar.tsx`: tombol "Kembali" + tombol Beli ("Ambil gratis" / "Checkout" / link eksternal).
 
