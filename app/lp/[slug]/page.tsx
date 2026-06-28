@@ -6,6 +6,7 @@ import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
 import { PreviewBar } from "../preview-bar";
 import { PreviewGuardClient } from "../preview-guard-client";
+import { PdfPreview } from "@/components/pdf-preview";
 
 const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 const getCheckoutData = cache((slug: string) => getLandingPageForCheckout(slug));
@@ -49,31 +50,9 @@ export default async function LandingPageView({ params }: Props) {
     <>
       <PreviewGuardClient />
       {embedPdf ? (
-        // <object> is the most reliable cross-browser PDF embed: it streams the
-        // whole document (not just page 1) and degrades to an iframe, then to a
-        // plain link, when the browser has no inline PDF viewer.
-        <object
-          data={`${previewUrl}#view=FitH&toolbar=0`}
-          type="application/pdf"
-          title={page.title}
-          className="w-full h-full min-h-full border-0 block"
-        >
-          <iframe
-            src={`${previewUrl}#view=FitH&toolbar=0`}
-            title={page.title}
-            className="w-full h-full min-h-full border-0 block"
-          />
-          <div className="flex h-full w-full items-center justify-center p-6 text-center">
-            <a
-              href={previewUrl ?? undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[var(--primary)] underline"
-            >
-              Buka PDF
-            </a>
-          </div>
-        </object>
+        // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
+        // streams in as the user scrolls instead of loading all at once.
+        <PdfPreview url={previewUrl as string} title={page.title} />
       ) : embedLink ? (
         <iframe
           src={previewUrl ?? undefined}
