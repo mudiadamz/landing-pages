@@ -63,15 +63,36 @@ export default async function LandingPageView({ params }: Props) {
       : "Lanjut ke pembayaran di link eksternal";
   const isExternal = !showAsFree && isInternal === false && !!externalUrl;
 
+  // Preview source: an uploaded PDF or external link is embedded directly;
+  // otherwise the inline HTML is rendered (with anti-copy guards).
+  const previewUrl = page.preview_url?.trim() || null;
+  const embedPdf = page.preview_type === "pdf" && !!previewUrl;
+  const embedLink = page.preview_type === "link" && !!previewUrl;
+
   return (
     <>
       <PreviewGuardClient />
-      <iframe
-        srcDoc={guardPreviewHtml(page.html_content)}
-        title={page.title}
-        className="w-full h-full min-h-full border-0 block"
-        sandbox="allow-scripts allow-same-origin allow-modals"
-      />
+      {embedPdf ? (
+        <iframe
+          src={`${previewUrl}#toolbar=0&navpanes=0`}
+          title={page.title}
+          className="w-full h-full min-h-full border-0 block"
+        />
+      ) : embedLink ? (
+        <iframe
+          src={previewUrl ?? undefined}
+          title={page.title}
+          className="w-full h-full min-h-full border-0 block"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
+        />
+      ) : (
+        <iframe
+          srcDoc={guardPreviewHtml(page.html_content)}
+          title={page.title}
+          className="w-full h-full min-h-full border-0 block"
+          sandbox="allow-scripts allow-same-origin allow-modals"
+        />
+      )}
       <PreviewBar
         buyHref={checkoutData ? buyHref : undefined}
         buyLabel={checkoutData ? buyLabel : undefined}

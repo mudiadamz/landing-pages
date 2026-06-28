@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/actions/profiles";
 import { getLandingPageById, getCategories } from "@/lib/actions/landing-pages";
 import { Editor } from "./editor";
 import { PricingForm } from "./pricing-form";
+import { PageSettingsForm } from "./page-settings-form";
+import type { PreviewType } from "@/lib/actions/landing-pages";
 
 export default async function EditPage({
   params,
@@ -27,9 +29,7 @@ export default async function EditPage({
           >
             ← Back
           </Link>
-          <h1 className="text-xl font-semibold tracking-tight">
-            Edit: {page.title}
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight">Edit landing page</h1>
           <span className="font-mono text-sm text-[var(--muted)] bg-[var(--background)] px-2 py-1 rounded">
             {page.slug}
           </span>
@@ -43,8 +43,17 @@ export default async function EditPage({
           Preview
         </a>
       </div>
+      <PageSettingsForm
+        pageId={id}
+        slug={page.slug}
+        initial={{
+          title: page.title,
+          preview_type: ((page as { preview_type?: PreviewType }).preview_type ?? "html"),
+          preview_url: (page as { preview_url?: string | null }).preview_url ?? null,
+        }}
+      />
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4 shadow-sm overflow-hidden">
-        <Editor id={id} slug={page.slug} initialHtml={page.html_content} />
+        <Editor id={id} initialHtml={page.html_content} />
       </div>
       <PricingForm
         pageId={id}

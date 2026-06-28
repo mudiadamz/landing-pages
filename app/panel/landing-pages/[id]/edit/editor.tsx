@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { updateLandingPageHtml } from "@/lib/actions/landing-pages";
 import { parseHtmlContent, mergeHtmlContent } from "@/lib/editor-utils";
 import { AssetUpload } from "./asset-upload";
-import { EditorHistory } from "./editor-history";
 import { Button } from "@/components/ui/button";
-
-const AUTOSAVE_DELAY_MS = 2000;
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -24,11 +21,9 @@ type Tab = "html" | "css" | "js";
 
 export function Editor({
   id,
-  slug,
   initialHtml,
 }: {
   id: string;
-  slug: string;
   initialHtml: string;
 }) {
   const router = useRouter();
@@ -40,21 +35,19 @@ export function Editor({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const lastSavedRef = useRef<string>(mergeHtmlContent(parsed.html, parsed.css, parsed.js));
-  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const getMergedHtml = useCallback(() => {
-    return mergeHtmlContent(html, css, js);
-  }, [html, css, js]);
-
-  const save = useCallback(async (isAutosave = false) => {
-    const merged = getMergedHtml();
-    if (merged === lastSavedRef.current) return;
+  const save = useCallback(async () => {
+    const merged = mergeHtmlContent(html, css, js);
+    if (merged === lastSavedRef.current) {
+      setMessage({ type: "ok", text: "No changes." });
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
       await updateLandingPageHtml(id, merged);
       lastSavedRef.current = merged;
-      setMessage({ type: "ok", text: isAutosave ? "Autosaved." : "Saved." });
+      setMessage({ type: "ok", text: "Saved." });
       router.refresh();
     } catch (err) {
       setMessage({
@@ -64,29 +57,7 @@ export function Editor({
     } finally {
       setSaving(false);
     }
-  }, [id, getMergedHtml, router]);
-
-  // Autosave: debounce 2s after last change
-  useEffect(() => {
-    const merged = getMergedHtml();
-    if (merged === lastSavedRef.current) return;
-    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
-    autosaveTimerRef.current = setTimeout(() => {
-      autosaveTimerRef.current = null;
-      save(true);
-    }, AUTOSAVE_DELAY_MS);
-    return () => {
-      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
-    };
-  }, [html, css, js, getMergedHtml, save]);
-
-  const handleRestore = useCallback((restoredHtml: string, restoredCss: string, restoredJs: string) => {
-    setHtml(restoredHtml);
-    setCss(restoredCss);
-    setJs(restoredJs);
-    lastSavedRef.current = mergeHtmlContent(restoredHtml, restoredCss, restoredJs);
-    setMessage({ type: "ok", text: "Restored." });
-  }, []);
+  }, [id, html, css, js, router]);
 
   // A site ZIP upload replaces the page HTML server-side; mirror it into the editor.
   const handleSiteUploaded = useCallback((fullHtml: string) => {
@@ -102,7 +73,7 @@ export function Editor({
     (e: React.KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
-        save(false);
+        save();
       }
     },
     [save]
@@ -138,7 +109,7 @@ export function Editor({
           </div>
           <Button
             type="button"
-            onClick={() => save(false)}
+            onClick={() => save()}
             size="md"
             loading={saving}
             disabled={saving}
@@ -147,7 +118,7 @@ export function Editor({
             {saving ? "Saving…" : "Save"}
           </Button>
           <span className="text-xs text-[var(--muted)] hidden sm:inline">
-            Autosave • Cmd/Ctrl+S to save
+            Cmd/Ctrl+S to save
           </span>
           {message && (
             <span
@@ -168,7 +139,6 @@ export function Editor({
           <div className="rounded-lg border border-[var(--border)] overflow-hidden">
             <MonacoEditor
               height="60vh"
-              min-height="280px"
               language={currentTab.language}
               value={currentTab.value}
               onChange={(v) => currentTab.onChange(v ?? "")}
@@ -187,7 +157,6 @@ export function Editor({
 
         <div className="space-y-4">
           <AssetUpload pageId={id} onSiteUploaded={handleSiteUploaded} />
-          <EditorHistory pageId={id} onRestore={handleRestore} />
         </div>
       </div>
     </div>

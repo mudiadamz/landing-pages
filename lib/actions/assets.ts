@@ -3,7 +3,6 @@
 import { unzipSync } from "fflate";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { saveVersion } from "./versions";
 
 const BUCKET = "landing-assets";
 
@@ -184,11 +183,47 @@ export async function uploadSiteZip(
     .eq("user_id", user.id);
   if (updErr) return { error: updErr.message };
 
-  await saveVersion(pageId, html);
   revalidatePath("/panel");
   revalidatePath(`/panel/landing-pages/${pageId}/edit`);
 
   return { html, fileCount: files.length, indexPath: indexFile.path };
+}
+
+/**
+ * Upload a PDF to use as the landing page preview. Stored under
+ * `<user>/<page>/preview/<file>` and returns its public URL — the caller
+ * persists it via updateLandingPageSettings(preview_type: 'pdf').
+ */
+export async function uploadPreviewPdf(
+  pageId: string,
+  formData: FormData,
+): Promise<{ url: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const file = formData.get("file") as File | null;
+  if (!file) return { error: "No file provided" };
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    return { error: "Hanya file PDF yang diperbolehkan." };
+  }
+  if (file.size > 25 * 1024 * 1024) {
+    return { error: "Ukuran PDF melebihi 25 MB." };
+  }
+
+  const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${user.id}/${pageId}/preview/${Date.now()}-${sanitized}`;
+
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    contentType: "application/pdf",
+    upsert: true,
+  });
+  if (error) return { error: error.message };
+
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return { url: urlData.publicUrl };
 }
 
 /** Insert (replacing any existing) a <base href> at the top of the document head. */

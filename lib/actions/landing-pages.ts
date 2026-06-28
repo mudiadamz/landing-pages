@@ -3,8 +3,9 @@
 import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { saveVersion } from "./versions";
 import { isValidSlug } from "@/lib/slug";
+
+export type PreviewType = "html" | "pdf" | "link";
 
 function createAnonClient() {
   return createSupabaseJS(
@@ -42,6 +43,8 @@ export type LandingPageRow = {
   rating?: number | null;
   category_id?: string | null;
   long_description?: string | null;
+  preview_type?: PreviewType;
+  preview_url?: string | null;
 };
 
 export type LandingPagePublic = {
@@ -116,12 +119,19 @@ export async function getLandingPageBySlug(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content")
+    .select("id, title, slug, html_content, preview_type, preview_url")
     .eq("slug", slug)
     .single();
 
   if (error || !data) return null;
-  return data;
+  return data as {
+    id: string;
+    title: string;
+    slug: string;
+    html_content: string;
+    preview_type?: PreviewType | null;
+    preview_url?: string | null;
+  };
 }
 
 export async function createLandingPage(
@@ -166,10 +176,60 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
 
   if (error) throw error;
 
-  await saveVersion(id, html_content);
-
   revalidatePath("/panel");
   revalidatePath(`/panel/landing-pages/${id}/edit`);
+}
+
+/**
+ * Update editable page settings: title and the preview source. The preview
+ * source controls what /lp/[slug] embeds — inline HTML (default), an uploaded
+ * PDF, or an external link.
+ */
+export async function updateLandingPageSettings(
+  id: string,
+  opts: { title?: string; preview_type?: PreviewType; preview_url?: string | null },
+  slug?: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const update: Record<string, unknown> = {};
+  if (opts.title !== undefined) {
+    const title = opts.title.trim();
+    if (!title) throw new Error("Title cannot be empty.");
+    update.title = title;
+  }
+  if (opts.preview_type !== undefined) update.preview_type = opts.preview_type;
+  if (opts.preview_url !== undefined) update.preview_url = opts.preview_url?.trim() || null;
+
+  // A non-HTML preview type requires a URL to embed.
+  if (
+    (update.preview_type === "pdf" || update.preview_type === "link") &&
+    !update.preview_url &&
+    opts.preview_url !== undefined
+  ) {
+    throw new Error("Preview PDF/link membutuhkan URL.");
+  }
+
+  const { error } = await supabase
+    .from("lp_landing_pages")
+    .update(update)
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw error;
+
+  updateTag("homepage-pages");
+  revalidatePath("/panel");
+  revalidatePath(`/panel/landing-pages/${id}/edit`);
+  if (slug) {
+    revalidatePath(`/lp/${slug}`);
+    revalidatePath(`/checkout/${slug}`);
+  }
+  revalidatePath("/");
 }
 
 export const getCategories = unstable_cache(
