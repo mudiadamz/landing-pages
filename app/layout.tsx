@@ -37,16 +37,17 @@ const organizationJsonLd = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "ADM.UIUX — Landing Page & Digital Assets",
+    default: "ADM.UIUX — Produk Digital Siap Pakai",
     template: "%s | ADM.UIUX",
   },
   description:
-    "Landing page dan digital assets siap pakai. Template HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.",
+    "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.",
   keywords: [
-    "landing page",
+    "produk digital",
+    "aset digital",
     "digital assets",
+    "landing page",
     "template HTML",
-    "landing page template",
     "HTML template",
     "Adam Mudianto",
     "ADM.UIUX",
@@ -57,15 +58,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     siteName: "ADM.UIUX",
-    title: "ADM.UIUX — Landing Page & Digital Assets",
+    title: "ADM.UIUX — Produk Digital Siap Pakai",
     description:
-      "Landing page dan digital assets siap pakai. Template HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
+      "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ADM.UIUX — Landing Page & Digital Assets",
+    title: "ADM.UIUX — Produk Digital Siap Pakai",
     description:
-      "Landing page dan digital assets siap pakai. Template HTML gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
+      "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
   },
   robots: {
     index: true,

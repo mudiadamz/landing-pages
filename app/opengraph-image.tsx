@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "ADM.UIUX — Landing Page & Digital Assets";
+export const alt = "ADM.UIUX — Produk Digital Siap Pakai";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -26,12 +26,12 @@ export default function OpengraphImage() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div style={{ display: "flex", fontSize: 68, fontWeight: 800, lineHeight: 1.1 }}>
-            Landing page siap pakai,
+            Produk digital siap pakai,
             <br />
             live hari ini.
           </div>
           <div style={{ display: "flex", fontSize: 32, color: "#cbd5e1" }}>
-            Template HTML bersih · preview gratis · beli, edit, deploy
+            Preview gratis · beli, download, pakai hari ini
           </div>
         </div>
         <div style={{ display: "flex", fontSize: 28, color: "#94a3b8" }}>admuiux.com</div>

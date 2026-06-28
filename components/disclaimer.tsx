@@ -2,8 +2,8 @@ import Link from "next/link";
 
 const faqs = [
   {
-    q: "Landing page itu apa?",
-    a: "Landing page adalah halaman web tunggal untuk kampanye atau produk tertentu. Biasanya digunakan untuk lead generation, penjualan, atau promosi. Template kami berbasis HTML siap pakai—tinggal edit konten sesuai kebutuhan.",
+    q: "Apa saja yang dijual di ADM.UIUX?",
+    a: "Produk digital siap pakai — mulai dari landing page dan template HTML, hingga aset digital lainnya. Semua bisa di-preview gratis sebelum beli, lalu langsung dipakai sesuai kebutuhan.",
   },
   {
     q: "Bagaimana cara preview sebelum beli?",
@@ -30,7 +30,7 @@ export function Disclaimer() {
           </h2>
           <div className="space-y-4 text-sm text-[var(--muted)] leading-relaxed">
             <p>
-              Produk yang dijual di sini adalah template HTML landing page dan digital assets. Anda membeli hak penggunaan template, bukan lisensi eksklusif. Template boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.
+              Produk yang dijual di sini adalah produk digital: landing page, template HTML, dan aset digital lainnya. Anda membeli hak penggunaan produk, bukan lisensi eksklusif. Produk boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.
             </p>
             <p>
               Setiap template kami test sebelum rilis. Kalau Anda menemukan bug, laporkan lewat halaman Kontak dan kami bantu perbaiki. Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar, mencakup bantuan implementasi dan perbaikan bug.
@@ -62,7 +62,7 @@ export function Disclaimer() {
         {/* Jaminan support */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground mb-4">
-            Jaminan support landing page 1 bulan
+            Jaminan support 1 bulan
           </h2>
           <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
             Support 1 bulan diberikan untuk <strong className="text-foreground">setiap pembelian berbayar</strong>. Dukungan teknis berlaku selama 1 bulan sejak tanggal pembelian. Yang termasuk:

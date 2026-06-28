@@ -33,14 +33,14 @@ export function HomeHero({ templateCount }: HomeHeroProps = {}) {
             style={{ backgroundColor: "var(--accent-warm)" }}
           />
           {templateCount && templateCount > 0
-            ? `${templateCount} template siap pakai · preview gratis`
+            ? `${templateCount} produk siap pakai · preview gratis`
             : "Preview gratis sebelum beli"}
         </div>
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-tight text-foreground">
-          Landing page yang LIVE hari ini — bukan tema mentah, tanpa ngoding.
+          Produk digital siap pakai, live hari ini — tanpa ngoding.
         </h1>
         <p className="text-base sm:text-lg text-[var(--muted)] leading-relaxed">
-          Coba demo aslinya gratis, tanpa daftar. Suka? Bayar via QRIS, download ZIP, deploy hari ini. Garansi 7 hari uang kembali — dijamin langsung oleh Adam.
+          Preview dulu gratis, tanpa daftar. Suka? Bayar via QRIS, langsung download dan pakai hari ini. Garansi 7 hari uang kembali — dijamin langsung oleh Adam.
         </p>
         <div className="pt-2">
           <Button
@@ -53,7 +53,7 @@ export function HomeHero({ templateCount }: HomeHeroProps = {}) {
             }
             className="px-6 py-3 text-sm gap-2 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99]"
           >
-            Lihat template
+            Lihat produk
           </Button>
         </div>
         <div className="flex flex-wrap justify-center gap-3 pt-2">

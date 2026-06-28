@@ -32,7 +32,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
   );
   const [isFree, setIsFree] = useState(!!initial.is_free);
   const purchaseType = "internal" as const;
-  const featured = !!initial.featured;
+  const [featured, setFeatured] = useState(!!initial.featured);
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
   const rating = initial.rating != null ? String(initial.rating) : "";
@@ -47,6 +47,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
     setPrice(initial.price != null ? String(initial.price) : "");
     setPriceDiscount(initial.price_discount != null ? String(initial.price_discount) : "");
     setIsFree(!!initial.is_free);
+    setFeatured(!!initial.featured);
     setThumbnailUrl(initial.thumbnail_url ?? "");
     setZipUrl(initial.zip_url ?? "");
     setCategoryId(initial.category_id ?? "");
@@ -130,6 +131,20 @@ export function PricingForm({ pageId, categories, initial }: Props) {
         />
         <label htmlFor="is_free" className="text-sm text-foreground">
           Free
+        </label>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="featured"
+          checked={featured}
+          onChange={(e) => setFeatured(e.target.checked)}
+          className="rounded border-[var(--border)]"
+        />
+        <label htmlFor="featured" className="text-sm text-foreground">
+          Pin produk{" "}
+          <span className="text-[var(--muted)]">(tampil paling depan di homepage)</span>
         </label>
       </div>
 

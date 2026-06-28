@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/site-footer";
 export const metadata: Metadata = {
   title: "Ketentuan Layanan",
   description:
-    "Ketentuan layanan ADM.UIUX. Syarat dan ketentuan penggunaan landing page & digital assets.",
+    "Ketentuan layanan ADM.UIUX. Syarat dan ketentuan penggunaan produk digital.",
 };
 
 export default async function TermsPage() {
@@ -39,7 +39,7 @@ export default async function TermsPage() {
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Penggunaan Layanan</h2>
               <p>
-                Anda setuju menggunakan platform landing page & digital assets kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.
+                Anda setuju menggunakan platform produk digital kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Akun</h2>
               <p>
@@ -47,7 +47,7 @@ export default async function TermsPage() {
               </p>
               <h2 className="text-foreground font-medium text-base pt-2">Pembelian</h2>
               <p>
-                Pembelian landing page berbayar mengikuti ketentuan penjual. Pengembalian dana diatur dalam{" "}
+                Pembelian produk digital berbayar mengikuti ketentuan penjual. Pengembalian dana diatur dalam{" "}
                 <Link href="/refund" className="text-[var(--primary)] hover:underline font-medium">
                   Kebijakan Pengembalian Dana
                 </Link>{" "}

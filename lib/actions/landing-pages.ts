@@ -62,6 +62,8 @@ export type LandingPagePublic = {
   rating?: number | null;
   category?: LandingPageCategory | null;
   long_description?: string | null;
+  /** Pinned products sort to the front of listings. */
+  featured?: boolean;
 };
 
 export type LandingPageCheckout = {
@@ -273,8 +275,10 @@ const getCachedHomepagePages = unstable_cache(
     let query = supabase
       .from("lp_landing_pages")
       .select(
-        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
+        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description, featured, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
       )
+      // Pinned (featured) products first, then most-recently updated.
+      .order("featured", { ascending: false })
       .order("updated_at", { ascending: false })
       .limit(24);
 

@@ -9,7 +9,7 @@ import { SupportContactImages } from "@/components/support-contact-images";
 export const metadata: Metadata = {
   title: "Tentang",
   description:
-    "Tentang ADM.UIUX dan Adam Mudianto. Landing page & digital assets siap pakai, software developer 15+ tahun.",
+    "Tentang ADM.UIUX dan Adam Mudianto. Produk digital siap pakai, software developer 15+ tahun.",
 };
 
 export default async function AboutPage() {
@@ -61,7 +61,7 @@ export default async function AboutPage() {
             </div>
             <div className="space-y-4 text-[var(--muted)] leading-relaxed">
               <p>
-                ADM.UIUX membantumu menemukan, melihat preview, dan membeli landing page serta digital assets siap pakai. Mau template gratis atau desain premium, jelajahi koleksi kami dan mulai dalam hitungan menit.
+                ADM.UIUX membantumu menemukan, melihat preview, dan membeli produk digital siap pakai — mulai dari landing page, template, hingga aset digital lainnya. Mau yang gratis atau premium, jelajahi koleksi kami dan mulai dalam hitungan menit.
               </p>
               <p>
                 Buat akun untuk menyimpan pembelian dan mengakses panel untuk mengelola kontenmu. Kami fokus pada kesederhanaan dan kualitas.
@@ -79,7 +79,7 @@ export default async function AboutPage() {
                     />
                   </div>
                   <p className="flex-1 mt-0">
-                    Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun landing page & digital assets untuk memudahkan proyek web Anda.
+                    Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun produk digital siap pakai untuk memudahkan proyek Anda.
                   </p>
                 </div>
               </div>

@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) return { title: "Checkout" };
   const description = buildMetaDescription(
     page.long_description,
-    `${page.title} — template landing page siap pakai. Preview gratis, beli, edit, deploy.`,
+    `${page.title} — produk digital siap pakai. Preview gratis, beli, download, pakai.`,
   );
   const url = `/checkout/${slug}`;
   const images = page.thumbnail_url ? [page.thumbnail_url] : undefined;
@@ -107,7 +107,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const canonicalUrl = `${SITE_URL}/checkout/${page.slug}`;
   const metaDescription = buildMetaDescription(
     page.long_description,
-    `${page.title} — template landing page siap pakai.`,
+    `${page.title} — produk digital siap pakai.`,
   );
   // No aggregateRating yet — emitting one without a review count reads as
   // manufactured and trips structured-data validators (see audit B6).

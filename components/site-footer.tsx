@@ -13,7 +13,7 @@ export function SiteFooter() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="space-y-4">
             <p className="text-sm text-[var(--muted)] max-w-md">
-              ADM.UIUX — landing page & digital assets. By Adam Mudianto, software developer 15+ tahun.
+              ADM.UIUX — produk digital siap pakai. By Adam Mudianto, software developer 15+ tahun.
             </p>
             <div>
               <p className="text-xs font-medium text-foreground mb-2">Sosial media</p>
