@@ -11,8 +11,8 @@ type Props = { isAdmin: boolean; displayName?: string };
 
 const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean; external?: boolean }[] }[] = [
   {
-    label: "Landing page",
-    items: [{ href: "/panel", label: "Landing pages", icon: LayoutIcon }],
+    label: "Produk",
+    items: [{ href: "/panel", label: "Produk digital", icon: LayoutIcon }],
   },
   {
     label: "Lainnya",
@@ -153,7 +153,7 @@ function NavContent({
                   const content = (
                     <>
                       <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.href === "/panel" ? (isAdmin ? "Landing pages" : "Pembelian saya") : item.label}</span>
+                      <span>{item.href === "/panel" ? (isAdmin ? "Produk digital" : "Pembelian saya") : item.label}</span>
                     </>
                   );
                   return item.external ? (

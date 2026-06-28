@@ -347,6 +347,26 @@ export async function updateLandingPagePricing(
   revalidatePath("/");
 }
 
+/** Pin/unpin a product so it sorts to the front of public listings. */
+export async function setLandingPageFeatured(id: string, featured: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("lp_landing_pages")
+    .update({ featured })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw error;
+  updateTag("homepage-pages");
+  revalidatePath("/panel");
+  revalidatePath("/");
+}
+
 export async function deleteLandingPage(id: string) {
   const supabase = await createClient();
   const {

@@ -6,6 +6,27 @@ import { getLandingPagesForUser } from "@/lib/actions/landing-pages";
 import { getPurchasesForUser, getInvoicesForUser } from "@/lib/actions/purchases";
 import { getReviewsByUser } from "@/lib/actions/reviews";
 import { DeleteButton } from "./delete-button";
+import { PinButton } from "./pin-button";
+
+const ACTION_LINK =
+  "inline-flex items-center justify-center p-2 rounded-lg text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--background)] transition-colors";
+
+function EditIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  );
+}
+
+function ViewIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+}
 
 const CustomerTabs = dynamic(() =>
   import("./customer-tabs").then((m) => m.CustomerTabs),
@@ -53,7 +74,7 @@ async function AdminPanel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-xl font-semibold tracking-tight">Landing pages</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Produk digital</h1>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
@@ -85,7 +106,7 @@ async function AdminPanel() {
 
       {pages.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-          <p className="text-sm text-[var(--muted)]">Belum ada landing page.</p>
+          <p className="text-sm text-[var(--muted)]">Belum ada produk digital.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <Button
               variant="secondary"
@@ -116,20 +137,13 @@ async function AdminPanel() {
                 <p className="font-medium text-foreground truncate">{p.title}</p>
                 <p className="font-mono text-xs text-[var(--muted)] truncate">{p.slug}</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">{formatDate(p.updated_at)}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href={`/panel/landing-pages/${p.id}/edit`}
-                    className="text-sm font-medium text-[var(--primary)] hover:underline"
-                  >
-                    Edit
+                <div className="mt-3 flex items-center gap-1">
+                  <PinButton id={p.id} featured={!!p.featured} />
+                  <Link href={`/panel/landing-pages/${p.id}/edit`} className={ACTION_LINK} title="Edit" aria-label="Edit">
+                    <EditIcon />
                   </Link>
-                  <Link
-                    href={`/lp/${p.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-[var(--primary)] hover:underline"
-                  >
-                    Lihat
+                  <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={ACTION_LINK} title="Lihat" aria-label="Lihat">
+                    <ViewIcon />
                   </Link>
                   <DeleteButton id={p.id} />
                 </div>
@@ -158,20 +172,13 @@ async function AdminPanel() {
                       <td className="px-4 py-3.5 font-mono text-sm text-[var(--muted)]">{p.slug}</td>
                       <td className="px-4 py-3.5 text-sm text-[var(--muted)]">{formatDate(p.updated_at)}</td>
                       <td className="px-4 py-3.5 text-right">
-                        <span className="inline-flex items-center gap-2">
-                          <Link
-                            href={`/panel/landing-pages/${p.id}/edit`}
-                            className="text-sm font-medium text-[var(--primary)] hover:underline"
-                          >
-                            Edit
+                        <span className="inline-flex items-center justify-end gap-1">
+                          <PinButton id={p.id} featured={!!p.featured} />
+                          <Link href={`/panel/landing-pages/${p.id}/edit`} className={ACTION_LINK} title="Edit" aria-label="Edit">
+                            <EditIcon />
                           </Link>
-                          <Link
-                            href={`/lp/${p.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium text-[var(--primary)] hover:underline"
-                          >
-                            Lihat
+                          <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={ACTION_LINK} title="Lihat" aria-label="Lihat">
+                            <ViewIcon />
                           </Link>
                           <DeleteButton id={p.id} />
                         </span>
