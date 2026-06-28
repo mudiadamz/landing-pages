@@ -63,8 +63,7 @@ export function CheckoutForm({
     return () => window.removeEventListener("checkout-shine", onShine);
   }, [triggerShine]);
 
-  async function handleDuitku(e: React.FormEvent) {
-    e.preventDefault();
+  const startDuitku = useCallback(async () => {
     setError(null);
     setLoading(true);
     fireBeginCheckout();
@@ -87,10 +86,26 @@ export function CheckoutForm({
       throw new Error("URL pembayaran tidak diterima");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memproses");
-    } finally {
       setLoading(false);
     }
+  }, [fireBeginCheckout, page.slug]);
+
+  async function handleDuitku(e: React.FormEvent) {
+    e.preventDefault();
+    await startDuitku();
   }
+
+  // After logging in via the buttons on this page (?pay=1), go straight to
+  // the Duitku payment instead of making the user click "Bayar sekarang" again.
+  const autoPaidRef = useRef(false);
+  useEffect(() => {
+    if (autoPaidRef.current) return;
+    if (!isLoggedIn || showAsFree || purchaseLink) return;
+    if (new URLSearchParams(window.location.search).get("pay") !== "1") return;
+    autoPaidRef.current = true;
+    void startDuitku();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (showAsFree) {
     if (isLoggedIn) {
@@ -144,14 +159,17 @@ export function CheckoutForm({
   }
 
   if (!isLoggedIn) {
+    // ?pay=1 makes the checkout page auto-start the Duitku payment once the
+    // user lands back here logged in (see the auto-pay effect above).
+    const nextAfterLogin = `/checkout/${page.slug}?pay=1`;
     return (
       <div data-checkout-form className="space-y-3">
         <GoogleSignInButton
-          next={`/checkout/${page.slug}`}
+          next={nextAfterLogin}
           label="Lanjut dengan Google untuk checkout"
         />
         <Link
-          href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
+          href={`/login?next=${encodeURIComponent(nextAfterLogin)}`}
           className="block text-center text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
           atau masuk dengan email

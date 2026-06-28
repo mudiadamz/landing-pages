@@ -11,7 +11,6 @@ import { FounderCredibility } from "@/components/founder-credibility";
 import { JsonLd } from "@/components/json-ld";
 import { SITE_URL, buildMetaDescription, normalizeDescription } from "@/lib/seo";
 import { CheckoutForm } from "./checkout-form";
-import { StickyMobileCTA } from "./sticky-cta";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
@@ -143,7 +142,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
       <JsonLd data={breadcrumbJsonLd} />
       <SiteHeader user={user} />
 
-      <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-28 sm:pb-12">
+      <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link
           href="/"
           className="text-sm text-[var(--muted)] hover:text-foreground transition-colors mb-6 inline-block"
@@ -240,7 +239,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
               fullWidth
               leftIcon={<EyeIcon className="w-5 h-5" />}
             >
-              Coba demo langsung — gratis, tanpa daftar
+              Preview Product
             </Button>
 
             {/* Description */}
@@ -305,13 +304,6 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
           </div>
         </div>
       </main>
-
-      {/* Sticky mobile CTA */}
-      <StickyMobileCTA
-        priceLabel={showAsFree ? "Gratis" : formatPrice(displayPrice)}
-        slug={page.slug}
-        showAsFree={showAsFree}
-      />
 
       <SiteFooter />
     </div>
