@@ -14,6 +14,8 @@ type Props = {
     preview_type: PreviewType;
     preview_url: string | null;
   };
+  /** Notified whenever the selected preview type changes (before save). */
+  onPreviewTypeChange?: (t: PreviewType) => void;
 };
 
 const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
@@ -22,10 +24,15 @@ const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
   { value: "link", label: "Link", hint: "Embed URL eksternal di halaman preview." },
 ];
 
-export function PageSettingsForm({ pageId, slug, initial }: Props) {
+export function PageSettingsForm({ pageId, slug, initial, onPreviewTypeChange }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(initial.title);
   const [previewType, setPreviewType] = useState<PreviewType>(initial.preview_type);
+
+  function selectPreviewType(t: PreviewType) {
+    setPreviewType(t);
+    onPreviewTypeChange?.(t);
+  }
   const [previewUrl, setPreviewUrl] = useState(initial.preview_url ?? "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -114,7 +121,7 @@ export function PageSettingsForm({ pageId, slug, initial }: Props) {
             <button
               key={opt.value}
               type="button"
-              onClick={() => setPreviewType(opt.value)}
+              onClick={() => selectPreviewType(opt.value)}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 previewType === opt.value
                   ? "bg-[var(--card)] text-foreground shadow-sm"

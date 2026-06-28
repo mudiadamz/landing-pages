@@ -2,9 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getLandingPageById, getCategories } from "@/lib/actions/landing-pages";
-import { Editor } from "./editor";
 import { PricingForm } from "./pricing-form";
-import { PageSettingsForm } from "./page-settings-form";
+import { EditWorkspace } from "./edit-workspace";
 import type { PreviewType } from "@/lib/actions/landing-pages";
 
 export default async function EditPage({
@@ -43,18 +42,16 @@ export default async function EditPage({
           Preview
         </a>
       </div>
-      <PageSettingsForm
+      <EditWorkspace
         pageId={id}
         slug={page.slug}
+        initialHtml={page.html_content}
         initial={{
           title: page.title,
           preview_type: ((page as { preview_type?: PreviewType }).preview_type ?? "html"),
           preview_url: (page as { preview_url?: string | null }).preview_url ?? null,
         }}
       />
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4 shadow-sm overflow-hidden">
-        <Editor id={id} initialHtml={page.html_content} />
-      </div>
       <PricingForm
         pageId={id}
         initial={{
