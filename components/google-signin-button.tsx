@@ -1,5 +1,5 @@
 import { signInWithGoogle } from "@/lib/actions/auth";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonVariant, type ButtonSize } from "@/components/ui/button";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -24,19 +24,49 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-type Props = { label?: string; next?: string };
+type Props = {
+  label?: string;
+  next?: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  shine?: boolean;
+  className?: string;
+};
 
-export function GoogleSignInButton({ label = "Lanjutkan dengan Google", next }: Props) {
+export function GoogleSignInButton({
+  label = "Lanjutkan dengan Google",
+  next,
+  variant = "secondary",
+  size = "md",
+  shine = false,
+  className,
+}: Props) {
+  // The default (secondary) keeps the recognizable white Google look; callers
+  // that need this to read as the page's primary CTA pass variant="primary".
+  const defaultClassName =
+    variant === "secondary"
+      ? "gap-3 py-3 px-4 text-base bg-background hover:bg-[var(--muted)]/30 hover:border-[var(--muted)]"
+      : "gap-3";
+  // On a filled (primary) button, sit the G on a white chip so it stays legible.
+  const icon =
+    variant === "primary" ? (
+      <span className="flex items-center justify-center bg-white rounded-md p-1 shrink-0">
+        <GoogleIcon className="w-5 h-5" />
+      </span>
+    ) : (
+      <GoogleIcon className="w-5 h-5 shrink-0" />
+    );
   return (
     <form action={signInWithGoogle}>
       {next && <input type="hidden" name="next" value={next} />}
       <Button
         type="submit"
-        variant="secondary"
-        size="md"
+        variant={variant}
+        size={size}
         fullWidth
-        leftIcon={<GoogleIcon className="w-5 h-5 shrink-0" />}
-        className="gap-3 py-3 px-4 text-base bg-background hover:bg-[var(--muted)]/30 hover:border-[var(--muted)]"
+        shine={shine}
+        leftIcon={icon}
+        className={className ?? defaultClassName}
       >
         {label}
       </Button>

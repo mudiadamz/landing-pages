@@ -129,7 +129,11 @@ export function CheckoutForm({
       <div data-checkout-form className="space-y-3">
         <GoogleSignInButton
           next={`/checkout/${page.slug}`}
-          label="Lanjutkan dengan Google"
+          label="Ambil gratis dengan Google"
+          variant="primary"
+          size="lg"
+          shine
+          className="gap-3 py-4 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
         />
         <Link
           href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
@@ -166,7 +170,11 @@ export function CheckoutForm({
       <div data-checkout-form className="space-y-3">
         <GoogleSignInButton
           next={nextAfterLogin}
-          label="Lanjut dengan Google untuk checkout"
+          label="Checkout dengan Google"
+          variant="primary"
+          size="lg"
+          shine
+          className="gap-3 py-4 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
         />
         <Link
           href={`/login?next=${encodeURIComponent(nextAfterLogin)}`}
