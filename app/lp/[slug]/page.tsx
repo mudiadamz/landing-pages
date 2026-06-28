@@ -36,32 +36,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LandingPageView({ params }: Props) {
   const { slug } = await params;
-  const [page, checkoutData] = await Promise.all([
-    getPageBySlug(slug),
-    getCheckoutData(slug),
-  ]);
+  const page = await getPageBySlug(slug);
   if (!page) notFound();
-  const price = checkoutData?.price ?? 0;
-  const priceDiscount = checkoutData?.price_discount ?? 0;
-  const isFree = checkoutData?.is_free === true;
-  const hasDiscount = !isFree && priceDiscount > 0;
-  const displayPrice = hasDiscount ? priceDiscount : price;
-  const showAsFree = isFree || displayPrice <= 0;
-  const isInternal = checkoutData?.purchase_type !== "external";
-  const externalUrl = checkoutData?.purchase_link?.trim() || null;
-
-  const buyHref = showAsFree
-    ? `/checkout/${slug}`
-    : isInternal
-      ? `/checkout/${slug}`
-      : externalUrl || `/checkout/${slug}`;
-  const buyLabel = showAsFree ? "Ambil gratis" : "Checkout";
-  const buyDescription = showAsFree
-    ? "Dapatkan file gratis, akses di panel"
-    : isInternal
-      ? "Bayar aman, akses file di panel"
-      : "Lanjut ke pembayaran di link eksternal";
-  const isExternal = !showAsFree && isInternal === false && !!externalUrl;
 
   // Preview source: an uploaded PDF or external link is embedded directly;
   // otherwise the inline HTML is rendered (with anti-copy guards).
@@ -93,12 +69,7 @@ export default async function LandingPageView({ params }: Props) {
           sandbox="allow-scripts allow-same-origin allow-modals"
         />
       )}
-      <PreviewBar
-        buyHref={checkoutData ? buyHref : undefined}
-        buyLabel={checkoutData ? buyLabel : undefined}
-        buyDescription={checkoutData ? buyDescription : undefined}
-        isExternal={isExternal}
-      />
+      <PreviewBar />
     </>
   );
 }
