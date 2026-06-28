@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { AssetLibraryModal } from "@/components/asset-library-modal";
 
 type Props = { isAdmin: boolean; displayName?: string };
 
@@ -110,8 +111,23 @@ function LogoutIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function ImageIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+}
 
-function NavContent({ isAdmin, onItemClick }: { isAdmin: boolean; onItemClick?: () => void }) {
+function NavContent({
+  isAdmin,
+  onItemClick,
+  onOpenAssets,
+}: {
+  isAdmin: boolean;
+  onItemClick?: () => void;
+  onOpenAssets?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -161,6 +177,27 @@ function NavContent({ isAdmin, onItemClick }: { isAdmin: boolean; onItemClick?: 
             </div>
           );
         })}
+
+        {isAdmin && onOpenAssets && (
+          <div>
+            <p className="px-3 mb-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
+              Media
+            </p>
+            <div className="flex flex-col gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenAssets();
+                  onItemClick?.();
+                }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+              >
+                <ImageIcon className="w-5 h-5 shrink-0" />
+                <span>Assets</span>
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
       <div className="mt-auto pt-4 border-t border-[var(--border)]">
         <a
@@ -189,6 +226,7 @@ function NavContent({ isAdmin, onItemClick }: { isAdmin: boolean; onItemClick?: 
 
 export function PanelSidebar({ isAdmin, displayName }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [assetsOpen, setAssetsOpen] = useState(false);
 
   return (
     <>
@@ -260,12 +298,18 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
           </div>
         )}
         <div className="flex flex-1 flex-col overflow-y-auto px-3">
-          <NavContent isAdmin={isAdmin} onItemClick={() => setMobileOpen(false)} />
+          <NavContent
+            isAdmin={isAdmin}
+            onItemClick={() => setMobileOpen(false)}
+            onOpenAssets={() => setAssetsOpen(true)}
+          />
         </div>
       </aside>
 
       {/* Spacer for desktop: takes space so main content is beside sidebar */}
       <div className="hidden md:block w-56 shrink-0" aria-hidden />
+
+      <AssetLibraryModal open={assetsOpen} onClose={() => setAssetsOpen(false)} />
     </>
   );
 }

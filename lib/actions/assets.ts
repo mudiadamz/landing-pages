@@ -41,6 +41,73 @@ export async function uploadAsset(
   return { url: urlData.publicUrl };
 }
 
+/**
+ * Independent, page-agnostic media library scoped to the current user
+ * (`<user>/_library/...`). Powers the reusable Assets popup that can be opened
+ * from anywhere (e.g. the panel sidebar) without a landing-page context.
+ */
+const LIBRARY_FOLDER = "_library";
+
+export async function uploadLibraryAsset(
+  formData: FormData,
+): Promise<{ url: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const file = formData.get("file") as File;
+  if (!file) return { error: "No file provided" };
+
+  const allowed = [
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "video/mp4", "video/webm", "video/ogg",
+  ];
+  if (!allowed.includes(file.type)) {
+    return { error: "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)." };
+  }
+
+  const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${user.id}/${LIBRARY_FOLDER}/${Date.now()}-${sanitized}`;
+
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) return { error: error.message };
+
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return { url: urlData.publicUrl };
+}
+
+export async function listLibraryAssets(): Promise<{ name: string; url: string }[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .list(`${user.id}/${LIBRARY_FOLDER}`, {
+      limit: 100,
+      sortBy: { column: "created_at", order: "desc" },
+    });
+
+  if (error || !data) return [];
+
+  const results: { name: string; url: string }[] = [];
+  for (const f of data) {
+    if (f.id && f.name && !f.name.startsWith(".")) {
+      const path = `${user.id}/${LIBRARY_FOLDER}/${f.name}`;
+      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      results.push({ name: f.name, url: urlData.publicUrl });
+    }
+  }
+  return results;
+}
+
 export async function listAssets(pageId: string): Promise<{ name: string; url: string }[]> {
   const supabase = await createClient();
   const {
