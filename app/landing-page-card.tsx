@@ -132,7 +132,6 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
             variant="secondary"
             size="md"
             href={`/lp/${page.slug}`}
-            external
             fullWidth
             className="flex-1 text-center"
           >
@@ -161,7 +160,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
             <Button
               size="md"
               href={externalUrl || `/lp/${page.slug}`}
-              external
+              external={!!externalUrl}
               title={externalUrl ? "Beli sekarang" : "Preview"}
               className="flex-1"
             >

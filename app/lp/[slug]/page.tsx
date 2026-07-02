@@ -1,7 +1,6 @@
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import { getLandingPageBySlug, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
@@ -38,21 +37,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LandingPageView({ params }: Props) {
   const { slug } = await params;
-  const [page, supabase, checkoutData] = await Promise.all([
-    getPageBySlug(slug),
-    createClient(),
-    getCheckoutData(slug),
-  ]);
+  const page = await getPageBySlug(slug);
   if (!page) notFound();
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Purchase state for the preview toolbar's Beli button.
-  const price = checkoutData?.price ?? 0;
-  const priceDiscount = checkoutData?.price_discount ?? 0;
-  const displayPrice = priceDiscount > 0 ? priceDiscount : price;
-  const showAsFree = checkoutData?.is_free === true || displayPrice <= 0;
-  const purchaseLink = checkoutData?.purchase_link?.trim() || null;
 
   // Preview source: an uploaded PDF or external link is embedded directly;
   // otherwise the inline HTML is rendered (with anti-copy guards).
@@ -82,12 +68,7 @@ export default async function LandingPageView({ params }: Props) {
           sandbox="allow-scripts allow-same-origin allow-modals"
         />
       )}
-      <PreviewBar
-        slug={slug}
-        isLoggedIn={!!user}
-        showAsFree={showAsFree}
-        purchaseLink={purchaseLink}
-      />
+      <PreviewBar />
     </>
   );
 }
