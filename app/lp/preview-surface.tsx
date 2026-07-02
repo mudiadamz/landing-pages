@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "lp-preview-dark";
 
@@ -9,11 +9,12 @@ const STORAGE_KEY = "lp-preview-dark";
 // mismatch (server snapshot is always light).
 let listeners: Array<() => void> = [];
 
+// Default is LIGHT. Dark only when the user has explicitly turned it on before
+// (remembered here) — we intentionally do NOT auto-follow the device, because a
+// forced invert degrades image-heavy previews.
 function readDark(): boolean {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored !== null) return stored === "1";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return localStorage.getItem(STORAGE_KEY) === "1";
   } catch {
     return false;
   }
@@ -26,15 +27,24 @@ function subscribe(cb: () => void) {
   };
 }
 
+type PreviewMode = "html" | "pdf" | "link";
+
 /**
  * Wraps the preview content and provides a dark-mode ("dark reader") toggle.
  *
- * The dark effect is a CSS filter applied ONLY to the wrapped content
- * (iframe / PDF canvas) — it never touches the toolbar, buy CTA, or the host
- * page, so toggling it can't disturb the surrounding UI. Defaults to the
- * device's dark preference on first visit, then remembers the last choice.
+ * The dark effect never touches the toolbar, buy CTA, or host page. For HTML
+ * previews it's injected INSIDE the iframe (see preview-guard) so images can be
+ * re-inverted and keep their real colours; for PDF/link previews (canvas or
+ * cross-origin) it falls back to a plain CSS filter on the wrapper.
  */
-export function PreviewSurface({ children }: { children: React.ReactNode }) {
+export function PreviewSurface({
+  children,
+  mode,
+}: {
+  children: React.ReactNode;
+  mode: PreviewMode;
+}) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const dark = useSyncExternalStore(
     subscribe,
     readDark,
@@ -50,9 +60,26 @@ export function PreviewSurface({ children }: { children: React.ReactNode }) {
     listeners.forEach((l) => l());
   }, []);
 
+  // HTML previews: tell the iframe to (un)apply its own image-preserving dark
+  // mode. Re-send on load in case the toggle changed before the frame loaded.
+  useEffect(() => {
+    if (mode !== "html") return;
+    const iframe = wrapperRef.current?.querySelector("iframe");
+    if (!iframe) return;
+    const send = () => iframe.contentWindow?.postMessage({ __lpSetDark: dark }, "*");
+    send();
+    iframe.addEventListener("load", send);
+    return () => iframe.removeEventListener("load", send);
+  }, [dark, mode]);
+
+  // PDF/link previews can't inject inside, so filter the wrapper directly.
+  const wrapperDark = dark && mode !== "html";
+
   return (
     <>
-      <div className={`h-full w-full ${dark ? "preview-dark" : ""}`}>{children}</div>
+      <div ref={wrapperRef} className={`h-full w-full ${wrapperDark ? "preview-dark" : ""}`}>
+        {children}
+      </div>
 
       <div className="fixed top-4 right-4 z-50 pointer-events-none">
         <div className="pointer-events-auto flex items-center p-1.5 rounded-xl bg-[var(--card)]/90 backdrop-blur border border-[var(--border)] shadow-lg">

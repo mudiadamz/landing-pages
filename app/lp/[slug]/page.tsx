@@ -64,7 +64,7 @@ export default async function LandingPageView({ params }: Props) {
   return (
     <>
       <PreviewGuardClient />
-      <PreviewSurface>
+      <PreviewSurface mode={embedPdf ? "pdf" : embedLink ? "link" : "html"}>
         {embedPdf ? (
           // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
           // streams in as the user scrolls instead of loading all at once.

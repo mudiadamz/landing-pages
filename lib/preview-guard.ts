@@ -96,6 +96,31 @@ const GUARD_SCRIPT = `
     __lpTick = true;
     (window.requestAnimationFrame || function (f) { return setTimeout(f, 100); })(__lpReport);
   }, { passive: true });
+
+  // Dark mode, toggled by the parent (PreviewSurface) via postMessage. Invert
+  // the whole page, then RE-invert raster media so images/photos/video keep
+  // their real colours — this avoids the "negative photo" look of a naive
+  // full-page invert. Only affects this preview document, never the host page.
+  var __lpDarkEl = null;
+  function __lpSetDark(on) {
+    if (on) {
+      if (!__lpDarkEl) {
+        __lpDarkEl = document.createElement("style");
+        __lpDarkEl.setAttribute("data-lp-dark", "");
+        __lpDarkEl.textContent =
+          "html{background-color:#fff !important;filter:invert(1) hue-rotate(180deg);}" +
+          "img,picture,video,canvas,[style*='background-image'],[style*='background:url'],[style*='background: url']{filter:invert(1) hue-rotate(180deg);}";
+        (document.head || document.documentElement).appendChild(__lpDarkEl);
+      }
+    } else if (__lpDarkEl) {
+      __lpDarkEl.parentNode && __lpDarkEl.parentNode.removeChild(__lpDarkEl);
+      __lpDarkEl = null;
+    }
+  }
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (d && typeof d === "object" && "__lpSetDark" in d) __lpSetDark(!!d.__lpSetDark);
+  });
 })();
 </script>
 `;
