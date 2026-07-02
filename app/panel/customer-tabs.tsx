@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { PurchaseWithPage, InvoiceRow } from "@/lib/actions/purchases";
 import type { UserReview } from "@/lib/actions/reviews";
 import { ReviewForm } from "./review-form";
+import { StoryPdfButton } from "@/components/story-pdf-button";
 
 type Props = {
   purchases: PurchaseWithPage[];
@@ -153,6 +154,7 @@ function PurchasesTab({
                     Download ZIP
                   </Link>
                 )}
+                {p.story_pdf_url && <StoryPdfButton slug={p.slug} title={p.title} />}
                 <button
                   type="button"
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}

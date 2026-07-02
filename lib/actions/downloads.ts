@@ -36,6 +36,40 @@ export async function uploadZip(
   return { url: path };
 }
 
+export async function uploadStoryPdf(
+  pageId: string,
+  formData: FormData
+): Promise<{ url: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const file = formData.get("file") as File;
+  if (!file) return { error: "Tidak ada file" };
+
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    return { error: "Hanya file PDF yang diizinkan" };
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    return { error: "Ukuran PDF maksimal 50MB" };
+  }
+
+  const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${user.id}/${pageId}/story/${Date.now()}-${sanitized}`;
+
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from(BUCKET).upload(path, file, {
+    contentType: "application/pdf",
+    upsert: true,
+  });
+
+  if (error) return { error: error.message };
+
+  return { url: path };
+}
+
 export async function getSignedDownloadUrl(storagePath: string): Promise<string | null> {
   const admin = createAdminClient();
   const { data, error } = await admin.storage

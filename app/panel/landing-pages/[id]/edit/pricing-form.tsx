@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateLandingPagePricing, type LandingPageCategory } from "@/lib/actions/landing-pages";
-import { uploadZip } from "@/lib/actions/downloads";
+import { uploadZip, uploadStoryPdf } from "@/lib/actions/downloads";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -18,6 +18,7 @@ type Props = {
     featured?: boolean;
     thumbnail_url?: string | null;
     zip_url?: string | null;
+    story_pdf_url?: string | null;
     rating?: number | null;
     category_id?: string | null;
     long_description?: string | null;
@@ -35,11 +36,14 @@ export function PricingForm({ pageId, categories, initial }: Props) {
   const [featured, setFeatured] = useState(!!initial.featured);
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
+  const [storyPdfUrl, setStoryPdfUrl] = useState(initial.story_pdf_url ?? "");
   const rating = initial.rating != null ? String(initial.rating) : "";
   const [categoryId, setCategoryId] = useState<string>(initial.category_id ?? "");
   const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
   const [zipUploading, setZipUploading] = useState(false);
   const [zipError, setZipError] = useState<string | null>(null);
+  const [storyUploading, setStoryUploading] = useState(false);
+  const [storyError, setStoryError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -50,6 +54,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
     setFeatured(!!initial.featured);
     setThumbnailUrl(initial.thumbnail_url ?? "");
     setZipUrl(initial.zip_url ?? "");
+    setStoryPdfUrl(initial.story_pdf_url ?? "");
     setCategoryId(initial.category_id ?? "");
     setLongDescription(initial.long_description ?? "");
   }, [initial]);
@@ -78,6 +83,30 @@ export function PricingForm({ pageId, categories, initial }: Props) {
     }
   }
 
+  async function handleStoryPdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStoryUploading(true);
+    setStoryError(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const res = await uploadStoryPdf(pageId, formData);
+      if ("error" in res) {
+        setStoryError(res.error);
+        return;
+      }
+      setStoryPdfUrl(res.url);
+      await updateLandingPagePricing(pageId, { story_pdf_url: res.url });
+      router.refresh();
+    } catch (err) {
+      setStoryError(err instanceof Error ? err.message : "Upload gagal");
+    } finally {
+      setStoryUploading(false);
+      e.target.value = "";
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     setMessage(null);
@@ -91,6 +120,7 @@ export function PricingForm({ pageId, categories, initial }: Props) {
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
         zip_url: zipUrl.trim() || null,
+        story_pdf_url: storyPdfUrl.trim() || null,
         rating: rating ? parseFloat(rating) : null,
         category_id: categoryId.trim() || null,
         long_description: longDescription.trim() || null,
@@ -212,6 +242,31 @@ export function PricingForm({ pageId, categories, initial }: Props) {
             >
               Lihat file →
             </a>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">
+          PDF cerita (dibaca customer dari daftar pembelian)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={handleStoryPdfUpload}
+            disabled={storyUploading}
+            className="block w-full text-sm text-foreground file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-[var(--border)] file:bg-[var(--background)] file:text-sm file:font-medium"
+          />
+        </div>
+        {storyUploading && <p className="mt-1 text-xs text-[var(--muted)]">Mengunggah…</p>}
+        {storyError && <p className="mt-1 text-xs text-red-500">{storyError}</p>}
+        {storyPdfUrl && (
+          <div className="mt-1.5 flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-xs text-green-600 dark:text-green-400">PDF cerita terpasang</span>
           </div>
         )}
       </div>

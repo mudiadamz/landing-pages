@@ -334,6 +334,7 @@ export async function updateLandingPagePricing(
     featured?: boolean;
     thumbnail_url?: string | null;
     zip_url?: string | null;
+    story_pdf_url?: string | null;
     rating?: number | null;
     category_id?: string | null;
     long_description?: string | null;
