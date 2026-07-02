@@ -88,7 +88,9 @@ export function StoryPdfButton({
               </button>
             </div>
           </div>
-          <div className={`flex-1 min-h-0 bg-[var(--background)] ${dark ? "preview-dark" : ""}`}>
+          {/* Fixed light surface — dark mode inverts this area (.preview-dark),
+              so the base must stay light to invert consistently to dark. */}
+          <div className={`flex-1 min-h-0 bg-[#fdfcfb] ${dark ? "preview-dark" : ""}`}>
             {loading && (
               <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">
                 Memuat PDF…

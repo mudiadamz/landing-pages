@@ -123,7 +123,10 @@ export default function PdfViewer({ url }: { url: string; title?: string }) {
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="w-full h-full overflow-y-auto overflow-x-hidden bg-[var(--background)] py-4"
+      // Fixed light surface (not theme-aware): dark mode is done by inverting
+      // this whole area (.preview-dark), so the base must always be light or the
+      // surround would invert to light while the rest of the app is dark.
+      className="w-full h-full overflow-y-auto overflow-x-hidden bg-[#fdfcfb] py-4"
     >
       <Document
         file={url}
