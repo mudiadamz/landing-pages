@@ -22,7 +22,15 @@ const WIDGET_ID = process.env.NEXT_PUBLIC_TAWK_WIDGET_ID || "1jjkdht1t";
 
 export function TawkChat() {
   const pathname = usePathname();
-  if (!PROPERTY_ID || !WIDGET_ID || pathname?.startsWith("/panel")) return null;
+  // Hide on the admin panel and on preview pages (/lp/[slug]) — the preview is a
+  // full-bleed demo where the chat bubble would overlap the content and CTA.
+  if (
+    !PROPERTY_ID ||
+    !WIDGET_ID ||
+    pathname?.startsWith("/panel") ||
+    pathname?.startsWith("/lp")
+  )
+    return null;
 
   return (
     <Script id="tawk-to" strategy="afterInteractive">
