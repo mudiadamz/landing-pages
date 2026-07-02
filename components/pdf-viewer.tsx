@@ -123,6 +123,10 @@ export default function PdfViewer({ url }: { url: string; title?: string }) {
     <div
       ref={containerRef}
       onScroll={handleScroll}
+      // The app forces `color-scheme: light` on :root to block auto-dark
+      // globally; override it here so the browser's auto-dark / dark-reading
+      // tools may darken the PDF preview.
+      style={{ colorScheme: "normal" }}
       className="w-full h-full overflow-y-auto overflow-x-hidden bg-[var(--background)] py-4"
     >
       <Document
