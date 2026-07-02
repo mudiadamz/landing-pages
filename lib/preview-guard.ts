@@ -78,6 +78,24 @@ const GUARD_SCRIPT = `
       el.scrollIntoView({ behavior: "smooth" });
     }
   }, true);
+
+  // Report scroll depth to the parent so it can reveal the sticky "Beli
+  // sekarang" CTA once the visitor has scrolled a few screens into the demo.
+  var __lpTick = false;
+  function __lpReport() {
+    __lpTick = false;
+    try {
+      var de = document.documentElement || {};
+      var y = window.pageYOffset || de.scrollTop || 0;
+      var vh = window.innerHeight || de.clientHeight || 0;
+      window.parent.postMessage({ __lpPreview: 1, scrolled: y > vh * 1.5 }, "*");
+    } catch (err) {}
+  }
+  window.addEventListener("scroll", function () {
+    if (__lpTick) return;
+    __lpTick = true;
+    (window.requestAnimationFrame || function (f) { return setTimeout(f, 100); })(__lpReport);
+  }, { passive: true });
 })();
 </script>
 `;

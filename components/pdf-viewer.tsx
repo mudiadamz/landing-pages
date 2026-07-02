@@ -88,8 +88,22 @@ function LazyPage({
 
 export default function PdfViewer({ url }: { url: string; title?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollTick = useRef(false);
   const [numPages, setNumPages] = useState(0);
   const [width, setWidth] = useState(720);
+
+  // Report scroll depth so the sticky "Beli sekarang" CTA can reveal itself
+  // once the visitor has scrolled a few screens into the document.
+  function handleScroll(e: React.UIEvent<HTMLDivElement>) {
+    if (scrollTick.current) return;
+    scrollTick.current = true;
+    const el = e.currentTarget;
+    requestAnimationFrame(() => {
+      scrollTick.current = false;
+      const past = el.scrollTop > el.clientHeight * 1.5;
+      window.dispatchEvent(new CustomEvent("lp-preview-scroll", { detail: { past } }));
+    });
+  }
 
   // Fit page width to the container (capped for readability on wide screens).
   useEffect(() => {
@@ -108,6 +122,7 @@ export default function PdfViewer({ url }: { url: string; title?: string }) {
   return (
     <div
       ref={containerRef}
+      onScroll={handleScroll}
       className="w-full h-full overflow-y-auto overflow-x-hidden bg-[var(--background)] py-4"
     >
       <Document

@@ -5,6 +5,7 @@ import { getLandingPageBySlug, getLandingPageForCheckout } from "@/lib/actions/l
 import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
 import { PreviewBar } from "../preview-bar";
+import { PreviewBuyBar } from "../preview-buy-bar";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 
@@ -46,6 +47,19 @@ export default async function LandingPageView({ params }: Props) {
   const embedPdf = page.preview_type === "pdf" && !!previewUrl;
   const embedLink = page.preview_type === "link" && !!previewUrl;
 
+  // Pricing for the sticky buy CTA (mirrors the checkout page's display logic).
+  const checkout = await getCheckoutData(slug);
+  const isFree = checkout?.is_free === true;
+  const priceDiscount = checkout?.price_discount ?? 0;
+  const basePrice = checkout?.price ?? 0;
+  const displayPrice = !isFree && priceDiscount > 0 ? priceDiscount : basePrice;
+  const showAsFree = isFree || displayPrice <= 0;
+  const buyLabel = showAsFree ? "Ambil gratis" : "Beli sekarang";
+  const priceText = showAsFree ? null : `Rp ${displayPrice.toLocaleString("id-ID")}`;
+  // External-link previews are cross-origin, so scroll can't be observed —
+  // fall back to revealing the CTA after a short delay.
+  const autoRevealMs = embedLink ? 5000 : undefined;
+
   return (
     <>
       <PreviewGuardClient />
@@ -69,6 +83,12 @@ export default async function LandingPageView({ params }: Props) {
         />
       )}
       <PreviewBar slug={slug} />
+      <PreviewBuyBar
+        slug={slug}
+        label={buyLabel}
+        priceText={priceText}
+        autoRevealMs={autoRevealMs}
+      />
     </>
   );
 }
