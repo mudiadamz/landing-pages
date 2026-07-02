@@ -68,7 +68,11 @@ export function PreviewBuyBar({ slug, label, priceText, autoRevealMs }: Props) {
             ) : (
               <p className="truncate text-sm font-semibold text-[var(--primary)]">Gratis</p>
             )}
-            <p className="truncate text-xs text-[var(--muted)]">Suka desainnya? Ambil sekarang.</p>
+            <p className="truncate text-xs text-[var(--muted)]">
+              {priceText
+                ? "Miliki sekarang — akses penuh, selamanya."
+                : "Ambil sekarang — akses penuh, selamanya."}
+            </p>
           </div>
           <Link
             href={`/checkout/${slug}`}
