@@ -249,13 +249,18 @@ export const getCategories = unstable_cache(
   { revalidate: 60, tags: ["categories"] },
 );
 
-export async function getLandingPagesForHomepage(categorySlug?: string | null) {
+export type HomepageSort = "newest" | "popular";
+
+export async function getLandingPagesForHomepage(
+  categorySlug?: string | null,
+  sort: HomepageSort = "newest",
+) {
   const slug = categorySlug?.trim() || "";
-  return getCachedHomepagePages(slug);
+  return getCachedHomepagePages(slug, sort);
 }
 
 const getCachedHomepagePages = unstable_cache(
-  async (slug: string): Promise<LandingPagePublic[]> => {
+  async (slug: string, sort: HomepageSort): Promise<LandingPagePublic[]> => {
     const supabase = createAnonClient();
 
     // Resolve the requested category slug to the set of category ids to include.
@@ -277,10 +282,16 @@ const getCachedHomepagePages = unstable_cache(
       .select(
         "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description, featured, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
       )
-      // Pinned (featured) products first, then most-recently updated.
-      .order("featured", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(24);
+      // Pinned (featured) products always first, then the chosen sort:
+      // "popular" = most sold, "newest" = most recently created.
+      .order("featured", { ascending: false });
+
+    query =
+      sort === "popular"
+        ? query.order("sold_count", { ascending: false, nullsFirst: false })
+        : query.order("created_at", { ascending: false });
+
+    query = query.limit(24);
 
     if (categoryIds) {
       query = query.in("category_id", categoryIds);

@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPagesForHomepage, getCategories } from "@/lib/actions/landing-pages";
+import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { LandingPageCard } from "@/app/landing-page-card";
+import { SortTabs } from "@/components/sort-tabs";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { FounderCredibility } from "@/components/founder-credibility";
@@ -12,7 +13,10 @@ import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
 import { HomeHero } from "@/components/home-hero";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ sort?: string | string[] }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -22,15 +26,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `${cat.name} — ADM.UIUX` };
 }
 
-export default async function CategoryPage({ params }: Props) {
+export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const sp = await searchParams;
+  const sortParam = Array.isArray(sp.sort) ? sp.sort[0] : sp.sort;
+  const sort: HomepageSort = sortParam === "popular" ? "popular" : "newest";
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const [pages, categories, reviews, reviewCounts] = await Promise.all([
-    getLandingPagesForHomepage(slug),
+    getLandingPagesForHomepage(slug, sort),
     getCategories(),
     getPublicReviews(),
     getReviewCounts(),
@@ -59,6 +66,7 @@ export default async function CategoryPage({ params }: Props) {
           </section>
         ) : (
           <section id="templates" className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24 scroll-mt-20">
+            <SortTabs basePath={`/category/${slug}`} current={sort} />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 landing-grid">
               {pages.map((page, i) => (
                 <LandingPageCard
