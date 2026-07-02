@@ -68,7 +68,7 @@ export default async function LandingPageView({ params }: Props) {
           sandbox="allow-scripts allow-same-origin allow-modals"
         />
       )}
-      <PreviewBar />
+      <PreviewBar slug={slug} />
     </>
   );
 }

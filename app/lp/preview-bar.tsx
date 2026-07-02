@@ -2,14 +2,14 @@
 
 import { useRouter } from "next/navigation";
 
-export function PreviewBar() {
+export function PreviewBar({ slug }: { slug: string }) {
   const router = useRouter();
 
-  // Go back to wherever the user came from; fall back to home if the preview
-  // was opened directly (no in-app history to pop).
+  // Always return to this product's checkout page. The preview is opened from
+  // there (and from product cards), so a deterministic target beats history.back(),
+  // which lands on the wrong page when the preview is opened directly.
   function goBack() {
-    if (window.history.length > 1) router.back();
-    else router.push("/");
+    router.push(`/checkout/${slug}`);
   }
 
   return (
