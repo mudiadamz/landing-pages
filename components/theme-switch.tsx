@@ -1,42 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-const STORAGE_KEY = "theme";
-const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year
-
-function setThemeCookie(value: "dark" | "light") {
-  document.cookie = `theme=${value};path=/;max-age=${COOKIE_MAX_AGE};sameSite=Lax`;
-}
+import { useTheme } from "@/lib/use-theme";
 
 export function ThemeSwitch() {
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  function toggle() {
-    const isNowDark = document.documentElement.classList.toggle("dark");
-    setIsDark(isNowDark);
-    const value = isNowDark ? "dark" : "light";
-    localStorage.setItem(STORAGE_KEY, value);
-    setThemeCookie(value);
-  }
-
-  if (!mounted) {
-    return (
-      <button
-        type="button"
-        aria-label="Ubah tema"
-        className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:scale-[0.95] active:opacity-80 transition-all duration-150"
-      >
-        <span className="w-5 h-5 block" />
-      </button>
-    );
-  }
+  const { dark: isDark, toggle } = useTheme();
 
   return (
     <button

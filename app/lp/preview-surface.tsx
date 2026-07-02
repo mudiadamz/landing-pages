@@ -1,36 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-
-const STORAGE_KEY = "lp-preview-dark";
-
-// Tiny external store so the dark preference can be read during render without
-// a setState-in-effect (project lint forbids it) and without a hydration
-// mismatch (server snapshot is always light).
-let listeners: Array<() => void> = [];
-
-// Default is LIGHT. Dark only when the user has explicitly turned it on before
-// (remembered here) — we intentionally do NOT auto-follow the device, because a
-// forced invert degrades image-heavy previews.
-function readDark(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function subscribe(cb: () => void) {
-  listeners.push(cb);
-  return () => {
-    listeners = listeners.filter((l) => l !== cb);
-  };
-}
+import { useEffect, useRef } from "react";
+import { useTheme } from "@/lib/use-theme";
 
 type PreviewMode = "html" | "pdf" | "link";
 
 /**
- * Wraps the preview content and provides a dark-mode ("dark reader") toggle.
+ * Wraps the preview content and provides the dark-mode toggle. Dark state is the
+ * app-wide theme (see lib/use-theme) — toggling here also flips the front/panel
+ * theme, and vice-versa. Default is light (the site's default theme).
  *
  * The dark effect never touches the toolbar, buy CTA, or host page. For HTML
  * previews it's injected INSIDE the iframe (see preview-guard) so images can be
@@ -45,20 +23,7 @@ export function PreviewSurface({
   mode: PreviewMode;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const dark = useSyncExternalStore(
-    subscribe,
-    readDark,
-    () => false, // server snapshot: always light (avoids hydration mismatch)
-  );
-
-  const toggle = useCallback(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, readDark() ? "0" : "1");
-    } catch {
-      /* ignore storage failures (private mode) */
-    }
-    listeners.forEach((l) => l());
-  }, []);
+  const { dark, toggle } = useTheme();
 
   // HTML previews: tell the iframe to (un)apply its own image-preserving dark
   // mode. Re-send on load in case the toggle changed before the frame loaded.

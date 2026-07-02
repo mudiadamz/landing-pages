@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PdfPreview } from "./pdf-preview";
+import { useTheme } from "@/lib/use-theme";
 
 // Lets a buyer read a product's story PDF in the same viewer used on the
 // product preview. Fetches a gated signed URL on demand (see /api/story/[slug]).
@@ -18,7 +19,7 @@ export function StoryPdfButton({
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dark, setDark] = useState(false);
+  const { dark, toggle: toggleDark } = useTheme();
 
   async function openReader() {
     setOpen(true);
@@ -62,7 +63,7 @@ export function StoryPdfButton({
             <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
-                onClick={() => setDark((d) => !d)}
+                onClick={toggleDark}
                 aria-pressed={dark}
                 aria-label={dark ? "Mode terang" : "Mode gelap"}
                 title={dark ? "Mode terang" : "Mode gelap"}
