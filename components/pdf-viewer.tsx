@@ -123,10 +123,7 @@ export default function PdfViewer({ url }: { url: string; title?: string }) {
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      // `pdf-auto-dark` makes the preview follow the device's dark mode
-      // automatically (see globals.css) even though the app forces a light
-      // color-scheme on :root.
-      className="pdf-auto-dark w-full h-full overflow-y-auto overflow-x-hidden bg-[var(--background)] py-4"
+      className="w-full h-full overflow-y-auto overflow-x-hidden bg-[var(--background)] py-4"
     >
       <Document
         file={url}

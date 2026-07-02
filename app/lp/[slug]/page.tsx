@@ -6,6 +6,7 @@ import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
 import { PreviewBar } from "../preview-bar";
 import { PreviewBuyBar } from "../preview-buy-bar";
+import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 
@@ -63,25 +64,27 @@ export default async function LandingPageView({ params }: Props) {
   return (
     <>
       <PreviewGuardClient />
-      {embedPdf ? (
-        // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
-        // streams in as the user scrolls instead of loading all at once.
-        <PdfPreview url={previewUrl as string} title={page.title} />
-      ) : embedLink ? (
-        <iframe
-          src={previewUrl ?? undefined}
-          title={page.title}
-          className="w-full h-full min-h-full border-0 block"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
-        />
-      ) : (
-        <iframe
-          srcDoc={guardPreviewHtml(page.html_content)}
-          title={page.title}
-          className="w-full h-full min-h-full border-0 block"
-          sandbox="allow-scripts allow-same-origin allow-modals"
-        />
-      )}
+      <PreviewSurface>
+        {embedPdf ? (
+          // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
+          // streams in as the user scrolls instead of loading all at once.
+          <PdfPreview url={previewUrl as string} title={page.title} />
+        ) : embedLink ? (
+          <iframe
+            src={previewUrl ?? undefined}
+            title={page.title}
+            className="w-full h-full min-h-full border-0 block"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
+          />
+        ) : (
+          <iframe
+            srcDoc={guardPreviewHtml(page.html_content)}
+            title={page.title}
+            className="w-full h-full min-h-full border-0 block"
+            sandbox="allow-scripts allow-same-origin allow-modals"
+          />
+        )}
+      </PreviewSurface>
       <PreviewBar slug={slug} />
       <PreviewBuyBar
         slug={slug}
