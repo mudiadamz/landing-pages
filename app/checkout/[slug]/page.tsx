@@ -229,19 +229,6 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
               </div>
             )}
 
-            {/* Live demo — the proof. Dominant action: let cold traffic touch the
-                real, public, no-login product before any wall. */}
-            <Button
-              variant="secondary"
-              size="lg"
-              href={`/lp/${page.slug}`}
-              external
-              fullWidth
-              leftIcon={<EyeIcon className="w-5 h-5" />}
-            >
-              Preview Product
-            </Button>
-
             {/* Description */}
             {page.long_description && (
               <p className="text-sm text-[var(--muted)] whitespace-pre-wrap leading-relaxed">
@@ -268,6 +255,17 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             {/* CTA — guarantee surfaced at the hesitation point, payment methods below */}
             <div className="border-t border-[var(--border)] pt-5 space-y-3">
               {!showAsFree && <GuaranteeBadge />}
+              {/* Live demo — the proof. Let cold traffic touch the real, public,
+                  no-login product right before the purchase wall. */}
+              <Button
+                variant="secondary"
+                size="lg"
+                href={`/lp/${page.slug}`}
+                fullWidth
+                leftIcon={<EyeIcon className="w-5 h-5" />}
+              >
+                Preview Product
+              </Button>
               <CheckoutForm
                 page={page}
                 isLoggedIn={!!user}
