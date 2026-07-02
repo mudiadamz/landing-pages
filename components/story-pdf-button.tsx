@@ -5,7 +5,15 @@ import { PdfPreview } from "./pdf-preview";
 
 // Lets a buyer read a product's story PDF in the same viewer used on the
 // product preview. Fetches a gated signed URL on demand (see /api/story/[slug]).
-export function StoryPdfButton({ slug, title }: { slug: string; title: string }) {
+export function StoryPdfButton({
+  slug,
+  title,
+  className,
+}: {
+  slug: string;
+  title: string;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,7 +44,7 @@ export function StoryPdfButton({ slug, title }: { slug: string; title: string })
       <button
         type="button"
         onClick={openReader}
-        className="text-sm font-medium text-[var(--primary)] hover:underline"
+        className={className ?? "text-sm font-medium text-[var(--primary)] hover:underline"}
       >
         Baca cerita
       </button>

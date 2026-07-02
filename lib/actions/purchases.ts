@@ -13,6 +13,7 @@ export type PurchaseWithPage = {
   slug: string;
   zip_url?: string | null;
   story_pdf_url?: string | null;
+  thumbnail_url?: string | null;
 };
 
 export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
@@ -28,14 +29,14 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       id,
       landing_page_id,
       purchased_at,
-      landing_pages:lp_landing_pages (title, slug, zip_url, story_pdf_url)
+      landing_pages:lp_landing_pages (title, slug, zip_url, story_pdf_url, thumbnail_url)
     `)
     .eq("user_id", user.id)
     .order("purchased_at", { ascending: false });
 
   if (error) return [];
 
-  type LP = { title: string; slug: string; zip_url?: string | null; story_pdf_url?: string | null };
+  type LP = { title: string; slug: string; zip_url?: string | null; story_pdf_url?: string | null; thumbnail_url?: string | null };
   type Row = {
     id: string;
     landing_page_id: string;
@@ -53,6 +54,7 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       slug: lp?.slug ?? "",
       zip_url: lp?.zip_url ?? null,
       story_pdf_url: lp?.story_pdf_url ?? null,
+      thumbnail_url: lp?.thumbnail_url ?? null,
     };
   });
 }
