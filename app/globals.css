@@ -156,3 +156,19 @@ input, textarea, select {
     border-radius: 0;
   }
 }
+
+/* PDF preview follows the DEVICE's dark mode automatically (prefers-color-scheme),
+   even though the app forces a light color-scheme on :root. Inverting the page
+   <canvas> is what actually darkens the pages — browser auto-dark and dark-mode
+   extensions skip canvas. hue-rotate keeps colour images looking right. */
+.pdf-auto-dark {
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  .pdf-auto-dark {
+    background-color: #0d0d0f;
+  }
+  .pdf-auto-dark canvas {
+    filter: invert(1) hue-rotate(180deg);
+  }
+}
