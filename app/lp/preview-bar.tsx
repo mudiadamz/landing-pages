@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type Props = {
@@ -11,7 +12,15 @@ type Props = {
 };
 
 export function PreviewBar({ slug, isLoggedIn, showAsFree, purchaseLink }: Props) {
+  const router = useRouter();
   const [buying, setBuying] = useState(false);
+
+  // Go back to wherever the user came from; fall back to home if the preview
+  // was opened directly (no in-app history to pop).
+  function goBack() {
+    if (window.history.length > 1) router.back();
+    else router.push("/");
+  }
 
   const checkoutHref = `/checkout/${slug}`;
   const loginHref = `/login?next=${encodeURIComponent(`${checkoutHref}?pay=1`)}`;
@@ -20,14 +29,15 @@ export function PreviewBar({ slug, isLoggedIn, showAsFree, purchaseLink }: Props
   return (
     <div className="fixed top-4 left-4 right-4 z-50 flex items-start gap-2 pointer-events-none">
       <div className="pointer-events-auto flex items-center gap-1.5 p-1.5 rounded-xl bg-[var(--card)]/90 backdrop-blur border border-[var(--border)] shadow-lg">
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={goBack}
           className="p-1.5 rounded-lg text-foreground hover:bg-[var(--background)] active:scale-95 transition-all duration-150"
-          aria-label="Kembali ke beranda"
-          title="Kembali ke beranda"
+          aria-label="Kembali"
+          title="Kembali"
         >
           <ArrowLeftIcon className="w-4 h-4" />
-        </Link>
+        </button>
 
         <div className="w-px h-5 bg-[var(--border)]" />
 
