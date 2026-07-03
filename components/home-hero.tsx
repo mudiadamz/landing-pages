@@ -77,7 +77,7 @@ export function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps =
       : hero.badge.replace(/\{count\}\s*/g, "").trim();
 
   return (
-    <section className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16 lg:py-20 overflow-hidden">
+    <section className="relative w-full max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16 lg:py-20 overflow-hidden">
       {/* Ornamen gradient blobs — static, no animation to reduce GPU cost */}
       <div
         className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-30 blur-2xl pointer-events-none"

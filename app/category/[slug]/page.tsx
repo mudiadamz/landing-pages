@@ -11,7 +11,6 @@ import { SiteFooter } from "@/components/site-footer";
 import { FounderCredibility } from "@/components/founder-credibility";
 import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
-import { HomeHero } from "@/components/home-hero";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -51,7 +50,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <SiteHeader user={user} categories={categories} currentCategorySlug={slug} />
 
       <main className="flex-1 relative">
-        <HomeHero templateCount={pages.length} />
+        <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-2">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">{cat.name}</h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">{pages.length} produk</p>
+        </section>
 
         {pages.length === 0 ? (
           <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
