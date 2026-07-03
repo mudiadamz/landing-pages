@@ -13,10 +13,19 @@ const PdfViewer = dynamic(() => import("./pdf-viewer"), {
   ),
 });
 
-export function PdfPreview({ url, title }: { url: string; title?: string }) {
+export function PdfPreview({
+  url,
+  title,
+  storageKey,
+}: {
+  url: string;
+  title?: string;
+  /** Stable key to remember scroll position across reloads (see PdfViewer). */
+  storageKey?: string;
+}) {
   return (
     <div className="w-full h-full">
-      <PdfViewer url={url} title={title} />
+      <PdfViewer url={url} title={title} storageKey={storageKey} />
     </div>
   );
 }

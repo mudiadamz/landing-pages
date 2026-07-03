@@ -68,7 +68,7 @@ export default async function LandingPageView({ params }: Props) {
         {embedPdf ? (
           // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
           // streams in as the user scrolls instead of loading all at once.
-          <PdfPreview url={previewUrl as string} title={page.title} />
+          <PdfPreview url={previewUrl as string} title={page.title} storageKey={`lp-pdf:${slug}`} />
         ) : embedLink ? (
           <iframe
             src={previewUrl ?? undefined}

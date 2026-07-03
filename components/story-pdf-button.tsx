@@ -101,7 +101,9 @@ export function StoryPdfButton({
                 {error}
               </div>
             )}
-            {url && !loading && !error && <PdfPreview url={url} title={title} />}
+            {url && !loading && !error && (
+              <PdfPreview url={url} title={title} storageKey={`story-pdf:${slug}`} />
+            )}
           </div>
         </div>
       )}
