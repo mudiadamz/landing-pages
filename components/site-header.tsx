@@ -5,6 +5,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { signOut } from "@/lib/actions/auth";
 import { CategoryIcon } from "@/lib/category-icons";
+import { BrandMark } from "@/components/brand-mark";
 
 type User = {
   id: string;
@@ -93,8 +94,9 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
         <Link
           href="/"
-          className="text-base sm:text-lg font-semibold tracking-tight shrink-0 text-foreground hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 text-base sm:text-lg font-semibold tracking-tight shrink-0 text-foreground hover:opacity-80 transition-opacity"
         >
+          <BrandMark className="h-6 w-6 sm:h-7 sm:w-7" />
           ADM.UIUX
         </Link>
 

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
+import { BrandMark } from "@/components/brand-mark";
 
 type Props = { isAdmin: boolean; displayName?: string };
 
@@ -278,7 +279,8 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
         }`}
       >
         <div className="flex h-14 items-center justify-between px-4 border-b border-[var(--border)] md:border-0">
-          <Link href="/panel" className="text-base font-semibold text-foreground" onClick={() => setMobileOpen(false)}>
+          <Link href="/panel" className="flex items-center gap-2 text-base font-semibold text-foreground" onClick={() => setMobileOpen(false)}>
+            <BrandMark className="h-6 w-6" />
             ADM.UIUX
           </Link>
           <div className="hidden md:flex items-center gap-0.5">
