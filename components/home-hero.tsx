@@ -141,7 +141,7 @@ export function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps =
             )}
           </div>
 
-          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5 max-w-md mx-auto lg:mx-0">
+          <div className="mt-8 hidden lg:grid lg:grid-cols-4 gap-x-4 gap-y-5 max-w-md mx-auto lg:mx-0">
             {hero.features.map((f, i) => (
               <div key={i} className="flex flex-col items-center lg:items-start text-center lg:text-left gap-1.5">
                 <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--accent-subtle)] text-[var(--primary)]">
@@ -156,8 +156,8 @@ export function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps =
           </div>
         </div>
 
-        {/* Right: illustration or fallback device mockup */}
-        <div className="relative animate-fade-in-up">
+        {/* Right: illustration or fallback device mockup — desktop only */}
+        <div className="relative animate-fade-in-up hidden lg:block">
           {hero.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
