@@ -23,6 +23,7 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, adminOnly: true },
       { href: "/panel/users", label: "Users", icon: UsersIcon, adminOnly: true },
       { href: "/panel/categories", label: "Kategori", icon: TagIcon, adminOnly: true },
+      { href: "/panel/hero", label: "Hero", icon: HeroIcon, adminOnly: true },
       { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, adminOnly: true },
     ],
   },
@@ -60,6 +61,13 @@ function InboxIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+    </svg>
+  );
+}
+function HeroIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5h16M4 5v9a2 2 0 002 2h5m-7-11v0m9 3l3 3m0 0l3-3m-3 3V9m0 12v-5" />
     </svg>
   );
 }

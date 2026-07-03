@@ -1,11 +1,61 @@
 "use server";
 
-import { unstable_cache, revalidateTag } from "next/cache";
+import { unstable_cache, updateTag, revalidatePath } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "./profiles";
+import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
 
 const CUSTOM_JS_KEY = "custom_js";
+const HERO_KEY = "hero";
+
+/* Hero section config (editable from /panel/hero, stored as JSON in
+ * lp_site_settings.value under key "hero"). Types/defaults live in
+ * lib/hero-config.ts so this "use server" file only exports async functions. */
+
+export const getHero = unstable_cache(
+  async (): Promise<HeroConfig> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("key", HERO_KEY)
+        .single();
+      if (!data?.value) return DEFAULT_HERO;
+      return normalizeHero(JSON.parse(data.value as string));
+    } catch {
+      return DEFAULT_HERO;
+    }
+  },
+  ["hero-config"],
+  { revalidate: 120, tags: ["hero-config"] },
+);
+
+export async function updateHero(config: HeroConfig): Promise<{ ok: boolean; error?: string }> {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizeHero(config);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lp_site_settings")
+    .upsert(
+      { key: HERO_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+
+  if (error) {
+    console.error("updateHero error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  updateTag("hero-config");
+  revalidatePath("/");
+  return { ok: true };
+}
 
 export const getCustomJs = unstable_cache(
   async (): Promise<string> => {

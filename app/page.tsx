@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
+import { getHero } from "@/lib/actions/site-settings";
 import { LandingPageCard } from "./landing-page-card";
 import { SortTabs } from "@/components/sort-tabs";
 import { SiteHeader } from "@/components/site-header";
@@ -21,11 +22,12 @@ export default async function Home({ searchParams }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [pages, categories, reviews, reviewCounts] = await Promise.all([
+  const [pages, categories, reviews, reviewCounts, hero] = await Promise.all([
     getLandingPagesForHomepage(null, sort),
     getCategories(),
     getPublicReviews(),
     getReviewCounts(),
+    getHero(),
   ]);
 
   return (
@@ -33,7 +35,7 @@ export default async function Home({ searchParams }: Props) {
       <SiteHeader user={user} categories={categories} />
 
       <main className="flex-1 relative">
-        <HomeHero templateCount={pages.length} />
+        <HomeHero hero={hero} templateCount={pages.length} />
 
         {pages.length === 0 ? (
           <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
