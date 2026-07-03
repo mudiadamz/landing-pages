@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { getCustomJs } from "@/lib/actions/site-settings";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -20,6 +21,16 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// AumanDisplay: local display face (Regular only). Set as the primary site
+// font; Geist stays in the CSS fallback stack for the few glyphs it lacks
+// ($, brackets, accents) and to cover heavier weights via faux-bold.
+const aumanDisplay = localFont({
+  src: "./fonts/AumanDisplay-Regular.woff",
+  variable: "--font-auman",
+  display: "swap",
+  weight: "400",
 });
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com").replace(/\/$/, "");
@@ -94,7 +105,7 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <JsonLd data={organizationJsonLd} />
         <MarketingScripts />
