@@ -208,21 +208,19 @@ function NavContent({
           </div>
         )}
       </nav>
-      <div className="mt-auto pt-4 border-t border-[var(--border)]">
-        <a
+      <div className="mt-auto pt-4 border-t border-[var(--border)] flex items-center gap-2">
+        <Link
           href="/"
-          target="_blank"
-          rel="noopener noreferrer"
           onClick={onItemClick}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+          className="flex flex-1 items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
         >
           <HomeIcon className="w-5 h-5 shrink-0" />
           <span>View home</span>
-        </a>
-        <form action={signOut}>
+        </Link>
+        <form action={signOut} className="flex-1">
           <button
             type="submit"
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+            className="flex w-full items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
           >
             <LogoutIcon className="w-5 h-5 shrink-0" />
             <span>Keluar</span>

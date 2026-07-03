@@ -29,7 +29,7 @@ export const DEFAULT_HERO: HeroConfig = {
   primaryLabel: "Lihat produk",
   primaryHref: "#templates",
   secondaryLabel: "Bagaimana cara beli?",
-  secondaryHref: "#templates",
+  secondaryHref: "https://www.youtube.com/watch?v=I7qTv6460nU",
   features: [
     { icon: "shield", title: "Garansi 7 hari", subtitle: "uang kembali" },
     { icon: "qr", title: "Bayar QRIS", subtitle: "e-wallet" },

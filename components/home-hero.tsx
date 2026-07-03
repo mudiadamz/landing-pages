@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_HERO, type HeroConfig, type HeroIcon } from "@/lib/hero-config";
 import { BrandMark } from "@/components/brand-mark";
+import { HeroVideoButton } from "@/components/hero-video-button";
 
 type HomeHeroProps = {
   /** Editable hero content (falls back to defaults). */
@@ -122,22 +123,7 @@ export function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps =
               {hero.primaryLabel}
             </Button>
             {hero.secondaryLabel && (
-              <Button
-                size="lg"
-                variant="secondary"
-                href={hero.secondaryHref}
-                external={/^https?:\/\//.test(hero.secondaryHref)}
-                rightIcon={
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--accent-subtle)] text-[var(--primary)]">
-                    <svg className="w-3 h-3 ml-0.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </span>
-                }
-                className="gap-2"
-              >
-                {hero.secondaryLabel}
-              </Button>
+              <HeroVideoButton label={hero.secondaryLabel} href={hero.secondaryHref} />
             )}
           </div>
 
