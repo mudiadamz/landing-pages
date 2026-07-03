@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { getProfile } from "@/lib/actions/profiles";
-import { getLandingPagesForUser } from "@/lib/actions/landing-pages";
+import { getLandingPagesForUser, getCategories } from "@/lib/actions/landing-pages";
 import { getPurchasesForUser, getInvoicesForUser } from "@/lib/actions/purchases";
 import { getReviewsByUser } from "@/lib/actions/reviews";
 import { ProductList } from "./product-list";
@@ -37,7 +37,7 @@ async function CustomerPanel() {
 }
 
 async function AdminPanel() {
-  const pages = await getLandingPagesForUser();
+  const [pages, categories] = await Promise.all([getLandingPagesForUser(), getCategories()]);
 
   return (
     <div className="space-y-6">
@@ -67,7 +67,7 @@ async function AdminPanel() {
           </div>
         </div>
       ) : (
-        <ProductList pages={pages} />
+        <ProductList pages={pages} categories={categories} />
       )}
     </div>
   );

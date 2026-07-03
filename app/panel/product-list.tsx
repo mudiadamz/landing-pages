@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import { PinButton } from "./pin-button";
 import { DeleteButton } from "./delete-button";
 import { VisibilityToggle } from "./visibility-toggle";
@@ -18,6 +19,7 @@ type ProductRow = {
   updated_at: string;
   featured?: boolean | null;
   published?: boolean | null;
+  category_id?: string | null;
 };
 
 function formatDate(s: string) {
@@ -38,11 +40,12 @@ function EditIcon() {
   );
 }
 
-function ViewIcon() {
+// Open-in-new-tab icon for "Lihat preview" — distinct from the eye/eye-off
+// used by the frontend show/hide toggle so the two actions don't look alike.
+function ExternalIcon() {
   return (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
     </svg>
   );
 }
@@ -63,25 +66,40 @@ function RowActions({ p }: { p: ProductRow }) {
       <Link href={`/panel/landing-pages/${p.id}/edit`} className={ACTION_LINK} title="Edit" aria-label="Edit">
         <EditIcon />
       </Link>
-      <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={ACTION_LINK} title="Lihat" aria-label="Lihat">
-        <ViewIcon />
+      <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={ACTION_LINK} title="Lihat preview" aria-label="Lihat preview">
+        <ExternalIcon />
       </Link>
       <DeleteButton id={p.id} />
     </>
   );
 }
 
-export function ProductList({ pages }: { pages: ProductRow[] }) {
+export function ProductList({
+  pages,
+  categories,
+}: {
+  pages: ProductRow[];
+  categories: LandingPageCategory[];
+}) {
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return pages;
-    return pages.filter(
-      (p) => p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q),
-    );
-  }, [pages, query]);
+    // Selecting a parent category also matches products in its sub-categories.
+    const catIds = category
+      ? new Set<string>([
+          category,
+          ...categories.filter((c) => c.parent_id === category).map((c) => c.id),
+        ])
+      : null;
+    return pages.filter((p) => {
+      if (q && !(p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q))) return false;
+      if (catIds && !(p.category_id && catIds.has(p.category_id))) return false;
+      return true;
+    });
+  }, [pages, query, category, categories]);
 
   const total = filtered.length;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -91,28 +109,68 @@ export function ProductList({ pages }: { pages: ProductRow[] }) {
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[var(--muted)]">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-          </svg>
-        </span>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Cari judul atau slug…"
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-        />
+      {/* Search + category filter */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative w-full sm:max-w-sm">
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[var(--muted)]">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Cari judul atau slug…"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+          />
+        </div>
+
+        {categories.length > 0 && (
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPage(1);
+            }}
+            aria-label="Filter kategori"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:w-56"
+          >
+            <option value="">Semua kategori</option>
+            {categories
+              .filter((c) => !c.parent_id)
+              .map((parent) => {
+                const children = categories.filter((c) => c.parent_id === parent.id);
+                if (children.length === 0) {
+                  return (
+                    <option key={parent.id} value={parent.id}>
+                      {parent.name}
+                    </option>
+                  );
+                }
+                return (
+                  <optgroup key={parent.id} label={parent.name}>
+                    <option value={parent.id}>{parent.name} — semua</option>
+                    {children.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
+          </select>
+        )}
       </div>
 
       {total === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted)] shadow-sm">
-          Tidak ada produk yang cocok dengan “{query.trim()}”.
+          {query.trim()
+            ? `Tidak ada produk yang cocok dengan “${query.trim()}”.`
+            : "Tidak ada produk pada kategori ini."}
         </div>
       ) : (
         <>

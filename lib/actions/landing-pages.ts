@@ -92,7 +92,7 @@ export async function getLandingPagesForUser() {
 
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, published, zip_url")
+    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, published, category_id, zip_url")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
