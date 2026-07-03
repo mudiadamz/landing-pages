@@ -92,7 +92,7 @@ export async function getLandingPagesForUser() {
 
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, zip_url")
+    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, published, zip_url")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
@@ -120,13 +120,18 @@ export async function getLandingPageById(id: string) {
 
 export async function getLandingPageBySlug(slug: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url")
+    .select("id, title, slug, html_content, preview_type, preview_url, published, user_id")
     .eq("slug", slug)
     .single();
 
   if (error || !data) return null;
+  // Hidden pages 404 for everyone except their owner (so the admin can preview).
+  if (data.published === false && data.user_id !== user?.id) return null;
   return data as {
     id: string;
     title: string;
@@ -285,6 +290,7 @@ const getCachedHomepagePages = unstable_cache(
       )
       // Pinned (featured) products always first, then the chosen sort:
       // "popular" = most sold, "newest" = most recently created.
+      .eq("published", true)
       .order("featured", { ascending: false });
 
     query =
@@ -314,13 +320,18 @@ const getCachedHomepagePages = unstable_cache(
 
 export async function getLandingPageForCheckout(slug: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, published, user_id")
     .eq("slug", slug)
     .single();
 
   if (error || !data) return null;
+  // Hidden pages can't be checked out by the public; the owner still can (preview).
+  if (data.published === false && data.user_id !== user?.id) return null;
   return data as LandingPageCheckout;
 }
 
@@ -378,6 +389,35 @@ export async function setLandingPageFeatured(id: string, featured: boolean) {
   updateTag("homepage-pages");
   revalidatePath("/panel");
   revalidatePath("/");
+}
+
+/**
+ * Show/hide a product. Hidden pages drop out of public listings and 404 for
+ * non-owners on /lp/[slug] and /checkout/[slug] (the owner can still preview).
+ */
+export async function setLandingPagePublished(id: string, published: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("lp_landing_pages")
+    .update({ published })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("slug")
+    .single();
+
+  if (error) throw error;
+  updateTag("homepage-pages");
+  revalidatePath("/panel");
+  revalidatePath("/");
+  if (data?.slug) {
+    revalidatePath(`/lp/${data.slug}`);
+    revalidatePath(`/checkout/${data.slug}`);
+  }
 }
 
 export async function deleteLandingPage(id: string) {
