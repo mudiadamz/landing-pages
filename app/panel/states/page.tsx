@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getProfile } from "@/lib/actions/profiles";
 import { getStats, getCustomers } from "@/lib/actions/admin";
 
@@ -9,7 +8,7 @@ export default async function DashboardPage() {
     getStats(),
     getCustomers(),
   ]);
-  if (profile?.role !== "admin") redirect("/panel");
+  if (profile?.role !== "admin") redirect("/panel/products");
 
   if (!stats) return null;
 
@@ -26,7 +25,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Stats</h1>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-6 shadow-sm min-w-0">

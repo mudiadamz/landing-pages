@@ -13,12 +13,12 @@ type Props = { isAdmin: boolean; displayName?: string };
 const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean; external?: boolean }[] }[] = [
   {
     label: "Produk",
-    items: [{ href: "/panel", label: "Produk digital", icon: LayoutIcon }],
+    items: [{ href: "/panel/products", label: "Produk digital", icon: LayoutIcon }],
   },
   {
     label: "Lainnya",
     items: [
-      { href: "/panel/dashboard", label: "Stats", icon: ChartIcon, adminOnly: true },
+      { href: "/panel/states", label: "Stats", icon: ChartIcon, adminOnly: true },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, adminOnly: true },
       { href: "/panel/users", label: "Users", icon: UsersIcon, adminOnly: true },
@@ -152,7 +152,7 @@ function NavContent({
               </p>
               <div className="flex flex-col gap-0.5">
                 {visibleItems.map((item) => {
-                  const active = !item.external && (pathname === item.href || (item.href !== "/panel" && item.href !== "/" && pathname.startsWith(item.href)));
+                  const active = !item.external && (pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)));
                   const Icon = item.icon;
                   const linkClass = `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                     active
@@ -162,7 +162,7 @@ function NavContent({
                   const content = (
                     <>
                       <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.href === "/panel" ? (isAdmin ? "Produk digital" : "Pembelian saya") : item.label}</span>
+                      <span>{item.href === "/panel/products" ? (isAdmin ? "Produk digital" : "Pembelian saya") : item.label}</span>
                     </>
                   );
                   return item.external ? (
