@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { uploadLibraryAsset, listLibraryAssets } from "@/lib/actions/assets";
+
+const PREVIEW_COUNT = 10;
 
 type Asset = { name: string; url: string };
 
@@ -136,13 +139,30 @@ export function AssetLibraryModal({
             <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>
           )}
 
+          {!loadingList && assets.length > 0 && (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <p className="text-xs text-[var(--muted)]">
+                {assets.length > PREVIEW_COUNT
+                  ? `${PREVIEW_COUNT} terbaru dari ${assets.length}`
+                  : `${assets.length} aset`}
+              </p>
+              <Link
+                href="/panel/assets"
+                onClick={onClose}
+                className="text-xs font-medium text-[var(--primary)] hover:underline"
+              >
+                Lihat semua →
+              </Link>
+            </div>
+          )}
+
           <div className="mt-4 space-y-2">
             {loadingList ? (
               <p className="text-xs text-[var(--muted)]">Loading…</p>
             ) : assets.length === 0 ? (
               <p className="text-xs text-[var(--muted)]">No assets yet</p>
             ) : (
-              assets.map((a) => (
+              assets.slice(0, PREVIEW_COUNT).map((a) => (
                 <div
                   key={a.url}
                   className="flex items-center gap-3 p-2 rounded-lg bg-[var(--background)]"

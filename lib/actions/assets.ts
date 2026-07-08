@@ -91,7 +91,7 @@ export async function listLibraryAssets(): Promise<{ name: string; url: string }
   const { data, error } = await supabase.storage
     .from(BUCKET)
     .list(`${user.id}/${LIBRARY_FOLDER}`, {
-      limit: 100,
+      limit: 1000,
       sortBy: { column: "created_at", order: "desc" },
     });
 
