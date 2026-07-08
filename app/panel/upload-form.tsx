@@ -45,7 +45,7 @@ export function UploadForm() {
 
     try {
       const id = await createLandingPage(title, slug, htmlContent);
-      router.push(`/panel/landing-pages/${id}/edit`);
+      router.push(`/panel/product/${id}/edit`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create landing page.");

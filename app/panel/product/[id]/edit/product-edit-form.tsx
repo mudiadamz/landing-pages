@@ -653,21 +653,22 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       </section>
 
       {/* ===================== Sticky action bar ============================== */}
-      <div className="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)]/95 px-4 py-3 shadow-lg backdrop-blur">
+      <div className="sticky bottom-3 z-10 flex items-center justify-between gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)]/95 px-3 py-2 shadow-lg backdrop-blur sm:gap-3 sm:px-4 sm:py-3">
         <button
           type="button"
           onClick={handleDelete}
           disabled={deleting || saving}
-          className="inline-flex items-center gap-2 rounded-lg border border-red-300 px-3.5 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900/70 dark:text-red-400 dark:hover:bg-red-950/40"
+          aria-label="Hapus produk"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-red-300 px-2.5 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900/70 dark:text-red-400 dark:hover:bg-red-950/40 sm:px-3.5"
         >
           <TrashIcon className="h-4 w-4" />
-          {deleting ? "Menghapus…" : "Hapus produk"}
+          <span className="hidden sm:inline">{deleting ? "Menghapus…" : "Hapus produk"}</span>
         </button>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {message && (
             <span
-              className={`text-sm ${
+              className={`truncate text-sm ${
                 message.type === "ok"
                   ? "text-green-600 dark:text-green-400"
                   : "text-red-600 dark:text-red-400"
@@ -676,11 +677,16 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
               {message.text}
             </span>
           )}
-          <Button variant="secondary" onClick={() => router.push("/panel")} disabled={saving || deleting}>
+          <Button variant="secondary" onClick={() => router.push("/panel/products")} disabled={saving || deleting} className="hidden sm:inline-flex">
             Batal
           </Button>
-          <Button onClick={handleSaveAll} loading={saving} disabled={saving || deleting}>
-            {saving ? "Menyimpan…" : "Simpan perubahan"}
+          <Button onClick={handleSaveAll} loading={saving} disabled={saving || deleting} className="shrink-0">
+            {saving ? "Menyimpan…" : (
+              <>
+                <span className="sm:hidden">Simpan</span>
+                <span className="hidden sm:inline">Simpan perubahan</span>
+              </>
+            )}
           </Button>
         </div>
       </div>

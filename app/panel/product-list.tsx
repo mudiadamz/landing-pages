@@ -67,7 +67,7 @@ function RowActions({ p, size = "sm" }: { p: ProductRow; size?: "sm" | "lg" }) {
     <>
       <VisibilityToggle id={p.id} published={p.published !== false} size={size} />
       <PinButton id={p.id} featured={!!p.featured} size={size} />
-      <Link href={`/panel/landing-pages/${p.id}/edit`} className={linkClass} title="Edit" aria-label="Edit">
+      <Link href={`/panel/product/${p.id}/edit`} className={linkClass} title="Edit" aria-label="Edit">
         <EditIcon className={iconClass} />
       </Link>
       <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={linkClass} title="Lihat preview" aria-label="Lihat preview">

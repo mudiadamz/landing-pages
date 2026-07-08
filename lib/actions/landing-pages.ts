@@ -185,7 +185,7 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
   if (error) throw error;
 
   revalidatePath("/panel");
-  revalidatePath(`/panel/landing-pages/${id}/edit`);
+  revalidatePath(`/panel/product/${id}/edit`);
 }
 
 /**
@@ -232,7 +232,7 @@ export async function updateLandingPageSettings(
 
   updateTag("homepage-pages");
   revalidatePath("/panel");
-  revalidatePath(`/panel/landing-pages/${id}/edit`);
+  revalidatePath(`/panel/product/${id}/edit`);
   if (slug) {
     revalidatePath(`/lp/${slug}`);
     revalidatePath(`/checkout/${slug}`);
@@ -367,7 +367,7 @@ export async function updateLandingPagePricing(
   if (error) throw error;
   updateTag("homepage-pages");
   revalidatePath("/panel");
-  revalidatePath(`/panel/landing-pages/${id}/edit`);
+  revalidatePath(`/panel/product/${id}/edit`);
   revalidatePath("/");
 }
 

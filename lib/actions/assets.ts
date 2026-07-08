@@ -251,7 +251,7 @@ export async function uploadSiteZip(
   if (updErr) return { error: updErr.message };
 
   revalidatePath("/panel");
-  revalidatePath(`/panel/landing-pages/${pageId}/edit`);
+  revalidatePath(`/panel/product/${pageId}/edit`);
 
   return { html, fileCount: files.length, indexPath: indexFile.path };
 }

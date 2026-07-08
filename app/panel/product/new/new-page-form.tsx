@@ -49,7 +49,7 @@ export function NewPageForm() {
 
     try {
       const id = await createLandingPage(title, slug, DEFAULT_HTML);
-      router.push(`/panel/landing-pages/${id}/edit`);
+      router.push(`/panel/product/${id}/edit`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal membuat produk.");
