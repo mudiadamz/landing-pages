@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   updateLandingPageSettings,
   updateLandingPagePricing,
-  deleteLandingPage,
   type PreviewType,
   type LandingPageCategory,
 } from "@/lib/actions/landing-pages";
@@ -119,7 +118,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
 
   // --- Action bar ---
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -295,18 +293,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       setMessage({ type: "err", text: err instanceof Error ? err.message : "Gagal menyimpan" });
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!confirm("Hapus produk ini? Tindakan ini tidak dapat dibatalkan.")) return;
-    setDeleting(true);
-    try {
-      await deleteLandingPage(pageId);
-      router.push("/panel/products");
-    } catch (err) {
-      setMessage({ type: "err", text: err instanceof Error ? err.message : "Gagal menghapus" });
-      setDeleting(false);
     }
   }
 
@@ -493,8 +479,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
             maxLength={2000}
             onChange={(e) => setLongDescription(e.target.value)}
             placeholder="Penjelasan produk, fitur, atau manfaat…"
-            rows={5}
-            className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+            rows={12}
+            className="min-h-64 w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm leading-relaxed text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
           <p className="text-right text-xs text-[var(--muted)]">{longDescription.length}/2000</p>
         </div>
@@ -736,18 +722,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       </section>
 
       {/* ===================== Sticky action bar ============================== */}
-      <div className="sticky bottom-3 z-10 flex items-center justify-between gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)]/95 px-3 py-2 shadow-lg backdrop-blur sm:gap-3 sm:px-4 sm:py-3">
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleting || saving}
-          aria-label="Hapus produk"
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-red-300 px-2.5 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900/70 dark:text-red-400 dark:hover:bg-red-950/40 sm:px-3.5"
-        >
-          <TrashIcon className="h-4 w-4" />
-          <span className="hidden sm:inline">{deleting ? "Menghapus…" : "Hapus produk"}</span>
-        </button>
-
+      <div className="sticky bottom-3 z-10 flex items-center justify-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)]/95 px-3 py-2 shadow-lg backdrop-blur sm:gap-3 sm:px-4 sm:py-3">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {message && (
             <span
@@ -760,10 +735,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
               {message.text}
             </span>
           )}
-          <Button variant="secondary" onClick={() => router.push("/panel/products")} disabled={saving || deleting} className="hidden sm:inline-flex">
+          <Button variant="secondary" onClick={() => router.push("/panel/products")} disabled={saving} className="hidden sm:inline-flex">
             Batal
           </Button>
-          <Button onClick={handleSaveAll} loading={saving} disabled={saving || deleting} className="shrink-0">
+          <Button onClick={handleSaveAll} loading={saving} disabled={saving} className="shrink-0">
             {saving ? "Menyimpan…" : (
               <>
                 <span className="sm:hidden">Simpan</span>
