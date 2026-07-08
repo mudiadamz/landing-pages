@@ -9,7 +9,7 @@ import {
   type PreviewType,
   type LandingPageCategory,
 } from "@/lib/actions/landing-pages";
-import { uploadPreviewPdf } from "@/lib/actions/assets";
+import { uploadPreviewPdf, uploadAsset } from "@/lib/actions/assets";
 import { uploadZip, uploadStoryPdf } from "@/lib/actions/downloads";
 import { Editor } from "./editor";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,12 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
     initial.price_discount != null ? String(initial.price_discount) : "",
   );
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
+  const [thumbMeta, setThumbMeta] = useState<FileMeta | null>(
+    initial.thumbnail_url ? { name: fileNameFromUrl(initial.thumbnail_url) } : null,
+  );
+  const [thumbUploading, setThumbUploading] = useState(false);
+  const [thumbDragging, setThumbDragging] = useState(false);
+  const [thumbError, setThumbError] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState(initial.category_id ?? "");
 
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
@@ -117,6 +123,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
 
   const pNum = parseFloat(price);
   const dNum = parseFloat(priceDiscount);
@@ -151,6 +158,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
     [pageId],
   );
 
+  // Uploads only push the file to storage + set local state. Nothing is written
+  // to the DB until the user clicks "Simpan perubahan" (handleSaveAll).
   async function handleZipUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -166,8 +175,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       }
       setZipUrl(res.url);
       setZipMeta({ name: file.name, size: file.size });
-      await updateLandingPagePricing(pageId, { zip_url: res.url });
-      router.refresh();
     } catch (err) {
       setZipError(err instanceof Error ? err.message : "Upload gagal");
     } finally {
@@ -176,12 +183,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
     }
   }
 
-  async function removeZip() {
+  function removeZip() {
     setZipUrl("");
     setZipMeta(null);
     setZipError(null);
-    await updateLandingPagePricing(pageId, { zip_url: null });
-    router.refresh();
   }
 
   async function handleStoryUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -199,8 +204,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       }
       setStoryUrl(res.url);
       setStoryMeta({ name: file.name, size: file.size });
-      await updateLandingPagePricing(pageId, { story_pdf_url: res.url });
-      router.refresh();
     } catch (err) {
       setStoryError(err instanceof Error ? err.message : "Upload gagal");
     } finally {
@@ -209,12 +212,41 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
     }
   }
 
-  async function removeStory() {
+  function removeStory() {
     setStoryUrl("");
     setStoryMeta(null);
     setStoryError(null);
-    await updateLandingPagePricing(pageId, { story_pdf_url: null });
-    router.refresh();
+  }
+
+  const uploadThumbFile = useCallback(
+    async (file: File) => {
+      if (file.type && !file.type.startsWith("image/")) {
+        setThumbError("File harus berupa gambar.");
+        return;
+      }
+      setThumbUploading(true);
+      setThumbError(null);
+      const formData = new FormData();
+      formData.set("file", file);
+      try {
+        const res = await uploadAsset(pageId, formData);
+        if ("error" in res) {
+          setThumbError(res.error);
+        } else {
+          setThumbnailUrl(res.url);
+          setThumbMeta({ name: file.name, size: file.size });
+        }
+      } finally {
+        setThumbUploading(false);
+      }
+    },
+    [pageId],
+  );
+
+  function removeThumb() {
+    setThumbnailUrl("");
+    setThumbMeta(null);
+    setThumbError(null);
   }
 
   /* ---------------------------- Save / delete ---------------------------- */
@@ -271,7 +303,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
     setDeleting(true);
     try {
       await deleteLandingPage(pageId);
-      router.push("/panel");
+      router.push("/panel/products");
     } catch (err) {
       setMessage({ type: "err", text: err instanceof Error ? err.message : "Gagal menghapus" });
       setDeleting(false);
@@ -283,7 +315,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   return (
     <div className="space-y-6 pb-4">
       {/* ===================== Card 1: Informasi halaman landing =============== */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6 shadow-sm space-y-5">
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-5">
         <div>
           <h2 className="text-base font-semibold text-foreground">Informasi halaman landing</h2>
           <p className="text-sm text-[var(--muted)]">Atur konten dan tampilan halaman produk Anda.</p>
@@ -372,7 +404,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
             </button>
 
             {previewUrl && (
-              <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-xs font-bold text-red-600 dark:text-red-400">
                   PDF
                 </span>
@@ -437,7 +469,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       )}
 
       {/* ===================== Card 2: Pricing & Purchase ===================== */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6 shadow-sm space-y-6">
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-6">
         <div>
           <h2 className="text-base font-semibold text-foreground">Pricing &amp; Purchase</h2>
           <p className="text-sm text-[var(--muted)]">
@@ -566,34 +598,85 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
 
         {/* Thumbnail */}
         <div className="space-y-1.5">
-          <label htmlFor="thumb-url" className="block text-sm font-medium text-foreground">
+          <span className="block text-sm font-medium text-foreground">
             Thumbnail <span className="text-[var(--muted)]">(untuk preview di homepage)</span>
-          </label>
-          <div className="relative">
-            <input
-              id="thumb-url"
-              type="url"
-              value={thumbnailUrl}
-              onChange={(e) => setThumbnailUrl(e.target.value)}
-              placeholder="https://…"
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-3 pr-12 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-            />
-            <span className="absolute inset-y-0 right-2 my-auto flex h-8 w-8 items-center justify-center overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
-              {thumbnailUrl.trim() ? (
-                // eslint-disable-next-line @next/next/no-img-element
+          </span>
+          <input
+            ref={thumbInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadThumbFile(f);
+              e.target.value = "";
+            }}
+          />
+          {thumbnailUrl.trim() ? (
+            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={thumbnailUrl}
                   alt=""
                   className="h-full w-full object-cover"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
                   }}
                 />
-              ) : (
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {thumbMeta?.name ?? fileNameFromUrl(thumbnailUrl)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => thumbInputRef.current?.click()}
+                  disabled={thumbUploading}
+                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
+                >
+                  {thumbUploading ? "Mengupload…" : "Ganti gambar"}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={removeThumb}
+                title="Hapus thumbnail"
+                aria-label="Hapus thumbnail"
+                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => thumbInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setThumbDragging(true);
+              }}
+              onDragLeave={() => setThumbDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setThumbDragging(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) uploadThumbFile(f);
+              }}
+              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+                thumbDragging
+                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
+                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
                 <ImageIcon className="h-4 w-4" />
-              )}
-            </span>
-          </div>
+                {thumbUploading ? "Mengupload…" : "Pilih gambar"}
+              </span>
+              <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop gambar di sini</span>
+            </button>
+          )}
+          {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
         </div>
 
         {/* Category + display info */}
@@ -758,7 +841,7 @@ function FileUploadCard({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="rounded-xl border border-[var(--border)] p-3">
+    <div className="min-w-0 rounded-xl border border-[var(--border)] p-3">
       <p className="mb-2 text-xs font-medium text-[var(--muted)]">{label}</p>
       <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={onUpload} disabled={uploading} />
 
