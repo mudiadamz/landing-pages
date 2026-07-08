@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { setLandingPageFeatured } from "@/lib/actions/landing-pages";
 
-export function PinButton({ id, featured }: { id: string; featured: boolean }) {
+export function PinButton({ id, featured, size = "sm" }: { id: string; featured: boolean; size?: "sm" | "lg" }) {
   const [pinned, setPinned] = useState(featured);
   const [pending, startTransition] = useTransition();
+  const shape = size === "lg" ? "h-11 flex-1 border border-[var(--border)] active:scale-95" : "p-2 active:scale-90";
 
   function toggle() {
     const next = !pinned;
@@ -27,12 +28,12 @@ export function PinButton({ id, featured }: { id: string; featured: boolean }) {
       aria-pressed={pinned}
       title={pinned ? "Lepas pin" : "Pin ke depan"}
       aria-label={pinned ? "Lepas pin" : "Pin ke depan"}
-      className={`inline-flex items-center justify-center p-2 rounded-lg transition-colors disabled:opacity-50 hover:bg-[var(--background)] ${
+      className={`inline-flex items-center justify-center rounded-lg transition disabled:opacity-50 hover:bg-[var(--background)] ${shape} ${
         pinned ? "text-[var(--primary)]" : "text-[var(--muted)] hover:text-foreground"
       }`}
     >
       <svg
-        className="w-4 h-4"
+        className={size === "lg" ? "w-5 h-5" : "w-4 h-4"}
         viewBox="0 0 24 24"
         fill={pinned ? "currentColor" : "none"}
         stroke="currentColor"

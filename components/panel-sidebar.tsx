@@ -18,7 +18,7 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
   {
     label: "Lainnya",
     items: [
-      { href: "/panel/states", label: "Stats", icon: ChartIcon, adminOnly: true },
+      { href: "/panel/stats", label: "Stats", icon: ChartIcon, adminOnly: true },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, adminOnly: true },
       { href: "/panel/users", label: "Users", icon: UsersIcon, adminOnly: true },
@@ -254,9 +254,6 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
             )}
           </svg>
         </button>
-        <Link href="/panel/profile" className="text-sm font-medium text-foreground hover:text-[var(--primary)] transition-colors truncate max-w-[140px]">
-          {displayName || "Panel"}
-        </Link>
         <div className="flex items-center gap-0.5">
           <ThemeSwitch />
           <button

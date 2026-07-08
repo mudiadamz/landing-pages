@@ -9,8 +9,10 @@ import { VisibilityToggle } from "./visibility-toggle";
 
 const PAGE_SIZE = 8;
 
-const ACTION_LINK =
-  "inline-flex items-center justify-center p-2 rounded-lg text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--background)] transition-colors";
+const ACTION_LINK_SM =
+  "inline-flex items-center justify-center p-2 rounded-lg text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--background)] transition active:scale-90";
+const ACTION_LINK_LG =
+  "inline-flex items-center justify-center h-11 flex-1 rounded-lg border border-[var(--border)] text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--background)] transition active:scale-95";
 
 type ProductRow = {
   id: string;
@@ -32,9 +34,9 @@ function formatDate(s: string) {
   });
 }
 
-function EditIcon() {
+function EditIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
     </svg>
   );
@@ -42,9 +44,9 @@ function EditIcon() {
 
 // Open-in-new-tab icon for "Lihat preview" — distinct from the eye/eye-off
 // used by the frontend show/hide toggle so the two actions don't look alike.
-function ExternalIcon() {
+function ExternalIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
     </svg>
   );
@@ -58,18 +60,20 @@ function HiddenBadge() {
   );
 }
 
-function RowActions({ p }: { p: ProductRow }) {
+function RowActions({ p, size = "sm" }: { p: ProductRow; size?: "sm" | "lg" }) {
+  const linkClass = size === "lg" ? ACTION_LINK_LG : ACTION_LINK_SM;
+  const iconClass = size === "lg" ? "w-5 h-5" : "w-4 h-4";
   return (
     <>
-      <VisibilityToggle id={p.id} published={p.published !== false} />
-      <PinButton id={p.id} featured={!!p.featured} />
-      <Link href={`/panel/landing-pages/${p.id}/edit`} className={ACTION_LINK} title="Edit" aria-label="Edit">
-        <EditIcon />
+      <VisibilityToggle id={p.id} published={p.published !== false} size={size} />
+      <PinButton id={p.id} featured={!!p.featured} size={size} />
+      <Link href={`/panel/landing-pages/${p.id}/edit`} className={linkClass} title="Edit" aria-label="Edit">
+        <EditIcon className={iconClass} />
       </Link>
-      <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={ACTION_LINK} title="Lihat preview" aria-label="Lihat preview">
-        <ExternalIcon />
+      <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={linkClass} title="Lihat preview" aria-label="Lihat preview">
+        <ExternalIcon className={iconClass} />
       </Link>
-      <DeleteButton id={p.id} />
+      <DeleteButton id={p.id} size={size} />
     </>
   );
 }
@@ -189,8 +193,8 @@ export function ProductList({
                 </div>
                 <p className="truncate font-mono text-xs text-[var(--muted)]">{p.slug}</p>
                 <p className="mt-1 text-xs text-[var(--muted)]">{formatDate(p.updated_at)}</p>
-                <div className="mt-3 flex items-center gap-1">
-                  <RowActions p={p} />
+                <div className="mt-3 flex items-stretch gap-2">
+                  <RowActions p={p} size="lg" />
                 </div>
               </div>
             ))}
