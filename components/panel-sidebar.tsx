@@ -21,6 +21,7 @@ type NavItem = {
   everyone?: boolean;
   sellerOnly?: boolean;
   publisherToo?: boolean;
+  adminOnly?: boolean;
 };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
@@ -38,6 +39,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, feature: "contacts" },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, feature: "inbox" },
       { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
+      { href: "/panel/roles", label: "Roles", icon: ShieldIcon, adminOnly: true },
       { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
       { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
@@ -92,6 +94,13 @@ function DocIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+}
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
     </svg>
   );
 }
@@ -171,6 +180,7 @@ function NavContent({
 
   const isVisible = (item: NavItem) => {
     if (item.everyone) return true;
+    if (item.adminOnly) return role === "admin";
     if (item.sellerOnly) return !!canSell;
     if (item.feature) return features.includes(item.feature) || (!!item.publisherToo && role === "publisher");
     return true;

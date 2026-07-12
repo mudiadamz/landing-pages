@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeFeatures } from "@/lib/features";
+import { requireAdmin, requireFeature } from "@/lib/actions/profiles";
 
-/** Caller's role + whether they can access the Users feature (admin or delegated). */
+/** Caller identity + access: full admin, and whether they can reach the Users feature. */
 async function getCaller() {
   const supabase = await createClient();
   const {
@@ -11,14 +11,7 @@ async function getCaller() {
   } = await supabase.auth.getUser();
   if (!user) return { user: null, isAdmin: false, hasUsers: false };
 
-  const { data: profile } = await supabase
-    .from("lp_profiles")
-    .select("role, permissions")
-    .eq("id", user.id)
-    .single();
-
-  const isAdmin = profile?.role === "admin";
-  const hasUsers = isAdmin || normalizeFeatures(profile?.permissions).includes("users");
+  const [isAdmin, hasUsers] = await Promise.all([requireAdmin(), requireFeature("users")]);
   return { user, isAdmin, hasUsers };
 }
 
@@ -30,7 +23,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("lp_profiles")
-    .select("id, full_name, email, role, is_active, permissions")
+    .select("id, full_name, email, role, is_active")
     .order("role", { ascending: true })
     .order("full_name", { ascending: true });
 
@@ -38,9 +31,7 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
   }
 
-  return NextResponse.json(
-    (data ?? []).map((u) => ({ ...u, permissions: normalizeFeatures(u.permissions) })),
-  );
+  return NextResponse.json(data ?? []);
 }
 
 export async function PATCH(req: Request) {
@@ -49,10 +40,9 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, permissions, role } = body as {
+  const { userId, active, role } = body as {
     userId: string;
     active?: boolean;
-    permissions?: string[];
     role?: string;
   };
 
@@ -73,7 +63,6 @@ export async function PATCH(req: Request) {
     if (!["admin", "customer", "publisher"].includes(role)) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
-    // Keep publisher_status consistent with the chosen role.
     const publisher_status = role === "publisher" ? "approved" : "none";
     const { error } = await admin
       .from("lp_profiles")
@@ -85,26 +74,8 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ success: true });
   }
 
-  // Edit feature access — only a full admin may delegate (prevents a delegate
-  // with the "users" feature from escalating their own / others' access).
-  if (Array.isArray(permissions)) {
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Hanya admin penuh yang bisa mengatur akses." }, { status: 403 });
-    }
-    const clean = normalizeFeatures(permissions);
-    const { error } = await admin
-      .from("lp_profiles")
-      .update({ permissions: clean })
-      .eq("id", userId);
-    if (error) {
-      return NextResponse.json({ error: "Failed to update access" }, { status: 500 });
-    }
-    return NextResponse.json({ success: true, permissions: clean });
-  }
-
-  // Toggle active / non-active. Also ban/unban at the auth level so a
-  // deactivated user's session actually stops working (getUser fails → treated
-  // as logged out by middleware).
+  // Ban / unban. Updates is_active and bans/unbans at the auth level so a banned
+  // user's session stops working (getUser fails → middleware sends to /login).
   if (typeof active === "boolean") {
     const { error } = await admin
       .from("lp_profiles")
@@ -117,7 +88,6 @@ export async function PATCH(req: Request) {
       ban_duration: active ? "none" : "876000h",
     });
     if (banError) {
-      // Roll back the flag so DB and auth stay consistent.
       await admin.from("lp_profiles").update({ is_active: !active }).eq("id", userId);
       return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
     }

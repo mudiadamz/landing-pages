@@ -8,8 +8,8 @@ export default async function UsersPage() {
   const ok = await requireFeature("users");
   if (!ok) redirect("/panel");
 
-  // Only a full admin may edit feature access (prevents self-escalation);
-  // delegates with the "users" feature can view + toggle active status.
+  // Only a full admin may change roles; delegates with the "users" feature can
+  // view + ban/unban.
   const isAdmin = await requireAdmin();
   const applications = await getPublisherApplications();
 
@@ -17,7 +17,7 @@ export default async function UsersPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold tracking-tight">Daftar User</h1>
       <PublisherApplications initial={applications} />
-      <UsersTable canEditAccess={isAdmin} />
+      <UsersTable isAdmin={isAdmin} />
     </div>
   );
 }

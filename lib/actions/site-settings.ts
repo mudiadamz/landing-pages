@@ -3,13 +3,41 @@
 import { unstable_cache, updateTag, revalidatePath } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { requireFeature } from "./profiles";
+import { requireFeature, requireAdmin } from "./profiles";
+import { normalizeRolePermissions, type RolePermissions } from "@/lib/role-permissions";
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
 
 const CUSTOM_JS_KEY = "custom_js";
 const HERO_KEY = "hero";
 const CONTENT_KEY = "site_content";
+const ROLE_PERMS_KEY = "role_permissions";
+
+/* Role-based feature access (edited at /panel/roles). The cached reader lives in
+ * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
+export async function updateRolePermissions(
+  perms: RolePermissions,
+): Promise<{ ok: boolean; error?: string }> {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizeRolePermissions(perms);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lp_site_settings")
+    .upsert(
+      { key: ROLE_PERMS_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+
+  if (error) {
+    console.error("updateRolePermissions error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  updateTag("role-permissions");
+  revalidatePath("/panel", "layout");
+  return { ok: true };
+}
 
 /* Hero section config (editable from /panel/hero, stored as JSON in
  * lp_site_settings.value under key "hero"). Types/defaults live in
