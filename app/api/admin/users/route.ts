@@ -49,10 +49,11 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, permissions } = body as {
+  const { userId, active, permissions, role } = body as {
     userId: string;
     active?: boolean;
     permissions?: string[];
+    role?: string;
   };
 
   if (!userId) {
@@ -63,6 +64,26 @@ export async function PATCH(req: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Change role — only a full admin may do this (esp. granting admin).
+  if (typeof role === "string") {
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Hanya admin penuh yang bisa mengubah role." }, { status: 403 });
+    }
+    if (!["admin", "customer", "publisher"].includes(role)) {
+      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    }
+    // Keep publisher_status consistent with the chosen role.
+    const publisher_status = role === "publisher" ? "approved" : "none";
+    const { error } = await admin
+      .from("lp_profiles")
+      .update({ role, publisher_status })
+      .eq("id", userId);
+    if (error) {
+      return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
 
   // Edit feature access — only a full admin may delegate (prevents a delegate
   // with the "users" feature from escalating their own / others' access).

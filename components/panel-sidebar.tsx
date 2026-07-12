@@ -9,17 +9,32 @@ import { AssetLibraryModal } from "@/components/asset-library-modal";
 import { BrandMark } from "@/components/brand-mark";
 import type { FeatureKey } from "@/lib/features";
 
-type Props = { canSell?: boolean; displayName?: string; pendingActions?: number; features?: FeatureKey[] };
+type Role = "admin" | "customer" | "publisher";
+type Props = { role?: Role; canSell?: boolean; displayName?: string; pendingActions?: number; features?: FeatureKey[] };
 
-const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; feature?: FeatureKey; external?: boolean }[] }[] = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutIcon;
+  feature?: FeatureKey;
+  external?: boolean;
+  everyone?: boolean;
+  sellerOnly?: boolean;
+  publisherToo?: boolean;
+};
+
+const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Produk",
-    items: [{ href: "/panel/products", label: "Produk digital", icon: LayoutIcon }],
+    items: [
+      { href: "/panel/purchases", label: "Pembelian saya", icon: ReceiptIcon, everyone: true },
+      { href: "/panel/products", label: "Produk digital", icon: LayoutIcon, sellerOnly: true },
+      { href: "/panel/stats", label: "Stats", icon: ChartIcon, feature: "stats", publisherToo: true },
+    ],
   },
   {
     label: "Lainnya",
     items: [
-      { href: "/panel/stats", label: "Stats", icon: ChartIcon, feature: "stats" },
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, feature: "contacts" },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, feature: "inbox" },
       { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
@@ -138,12 +153,14 @@ function ImageIcon({ className }: { className?: string }) {
 }
 
 function NavContent({
+  role,
   features = [],
   canSell,
   pendingActions = 0,
   onItemClick,
   onOpenAssets,
 }: {
+  role?: Role;
   features?: FeatureKey[];
   canSell?: boolean;
   pendingActions?: number;
@@ -152,11 +169,18 @@ function NavContent({
 }) {
   const pathname = usePathname();
 
+  const isVisible = (item: NavItem) => {
+    if (item.everyone) return true;
+    if (item.sellerOnly) return !!canSell;
+    if (item.feature) return features.includes(item.feature) || (!!item.publisherToo && role === "publisher");
+    return true;
+  };
+
   return (
     <>
       <nav className="flex flex-col gap-6 py-4">
         {navGroups.map((group) => {
-          const visibleItems = group.items.filter((item) => !item.feature || features.includes(item.feature));
+          const visibleItems = group.items.filter(isVisible);
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label}>
@@ -176,7 +200,7 @@ function NavContent({
                   const content = (
                     <>
                       <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.href === "/panel/products" ? (canSell ? "Produk digital" : "Pembelian saya") : item.label}</span>
+                      <span>{item.label}</span>
                       {badgeCount > 0 && (
                         <span
                           className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white"
@@ -253,7 +277,7 @@ function NavContent({
   );
 }
 
-export function PanelSidebar({ canSell, displayName, pendingActions, features }: Props) {
+export function PanelSidebar({ role, canSell, displayName, pendingActions, features }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
 
@@ -332,6 +356,7 @@ export function PanelSidebar({ canSell, displayName, pendingActions, features }:
         )}
         <div className="flex flex-1 flex-col overflow-y-auto px-3">
           <NavContent
+            role={role}
             features={features}
             canSell={canSell}
             pendingActions={pendingActions}

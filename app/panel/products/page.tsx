@@ -1,39 +1,15 @@
-import dynamic from "next/dynamic";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getProfile } from "@/lib/actions/profiles";
+import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPagesForUser, getCategories } from "@/lib/actions/landing-pages";
-import { getPurchasesForUser, getInvoicesForUser } from "@/lib/actions/purchases";
-import { getReviewsByUser } from "@/lib/actions/reviews";
 import { ProductList } from "../product-list";
 
-const CustomerTabs = dynamic(() =>
-  import("../customer-tabs").then((m) => m.CustomerTabs),
-);
-
 export default async function PanelPage() {
-  const profile = await getProfile();
-  const canSell = !!profile && (profile.role === "admin" || profile.role === "publisher");
-
-  if (!canSell) {
-    return <CustomerPanel />;
-  }
+  // Product management is seller-only; everyone else manages their purchases.
+  const canSell = await canSellProducts();
+  if (!canSell) redirect("/panel/purchases");
 
   return <SellerPanel />;
-}
-
-async function CustomerPanel() {
-  const [purchases, invoices, reviews] = await Promise.all([
-    getPurchasesForUser(),
-    getInvoicesForUser(),
-    getReviewsByUser(),
-  ]);
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-semibold tracking-tight">Pembelian saya</h1>
-      <CustomerTabs purchases={purchases} invoices={invoices} reviews={reviews} />
-    </div>
-  );
 }
 
 async function SellerPanel() {

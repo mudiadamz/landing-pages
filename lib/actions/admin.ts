@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireFeature } from "./profiles";
+import { requireFeature, getProfile } from "./profiles";
 
 export type Stats = {
   totalLandingPages: number;
@@ -80,6 +80,60 @@ export async function getCustomers(): Promise<CustomerRow[]> {
       last_purchase_at: lastPurchaseMap.get(uid) ?? null,
     };
   });
+}
+
+export type ProductStatRow = { id: string; title: string; sold: number; revenue: number };
+export type PublisherStats = {
+  totalProducts: number;
+  totalSales: number;
+  totalRevenue: number;
+  products: ProductStatRow[];
+};
+
+/**
+ * Sales stats scoped to the current seller's OWN products (by user_id). Used by
+ * the publisher stats view. Reads via the service-role client because a seller
+ * isn't the buyer on lp_purchases, so RLS would hide their products' sales.
+ */
+export async function getMyProductStats(): Promise<PublisherStats | null> {
+  const profile = await getProfile();
+  if (!profile || (profile.role !== "admin" && profile.role !== "publisher")) return null;
+
+  const supabase = createAdminClient();
+  const { data: pages } = await supabase
+    .from("lp_landing_pages")
+    .select("id, title")
+    .eq("user_id", profile.id);
+  const products = pages ?? [];
+  const ids = products.map((p) => p.id);
+
+  const agg = new Map<string, { sold: number; revenue: number }>();
+  if (ids.length) {
+    const { data: purchases } = await supabase
+      .from("lp_purchases")
+      .select("landing_page_id, amount")
+      .in("landing_page_id", ids);
+    for (const p of purchases ?? []) {
+      const cur = agg.get(p.landing_page_id) ?? { sold: 0, revenue: 0 };
+      cur.sold += 1;
+      cur.revenue += Number(p.amount ?? 0);
+      agg.set(p.landing_page_id, cur);
+    }
+  }
+
+  const rows: ProductStatRow[] = products
+    .map((p) => {
+      const a = agg.get(p.id) ?? { sold: 0, revenue: 0 };
+      return { id: p.id, title: p.title, sold: a.sold, revenue: a.revenue };
+    })
+    .sort((a, b) => b.sold - a.sold);
+
+  return {
+    totalProducts: products.length,
+    totalSales: rows.reduce((s, r) => s + r.sold, 0),
+    totalRevenue: rows.reduce((s, r) => s + r.revenue, 0),
+    products: rows,
+  };
 }
 
 export type PublisherApplication = {

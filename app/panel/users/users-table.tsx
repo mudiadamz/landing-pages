@@ -30,6 +30,27 @@ export function UsersTable({ canEditAccess = false }: { canEditAccess?: boolean 
       .finally(() => setLoading(false));
   }, []);
 
+  async function changeRole(user: UserRow, role: Role) {
+    if (role === user.role) return;
+    const prev = user.role;
+    setUsers((prevUsers) => prevUsers.map((u) => (u.id === user.id ? { ...u, role } : u)));
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, role }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error ?? "Gagal mengubah role");
+        setUsers((prevUsers) => prevUsers.map((u) => (u.id === user.id ? { ...u, role: prev } : u)));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
   async function toggleActive(user: UserRow) {
     const nextActive = !user.is_active;
     if (!nextActive && !confirm(`Nonaktifkan ${user.full_name || user.email || "user"}? Mereka tidak bisa masuk sampai diaktifkan kembali.`)) {
@@ -127,7 +148,7 @@ export function UsersTable({ canEditAccess = false }: { canEditAccess?: boolean 
                 <p className="text-sm text-[var(--muted)] truncate">{u.email || "—"}</p>
               </div>
               <div className="flex flex-col items-end gap-1">
-                <RoleBadge role={u.role} />
+                <RoleControl user={u} canEdit={canEditAccess} disabled={updating === u.id} onChange={changeRole} />
                 <StatusBadge active={u.is_active} />
               </div>
             </div>
@@ -181,7 +202,7 @@ export function UsersTable({ canEditAccess = false }: { canEditAccess?: boolean 
                     <td className="px-4 py-3 font-medium text-foreground">{u.full_name || "—"}</td>
                     <td className="px-4 py-3 text-[var(--muted)]">{u.email || "—"}</td>
                     <td className="px-4 py-3 text-center">
-                      <RoleBadge role={u.role} />
+                      <RoleControl user={u} canEdit={canEditAccess} disabled={updating === u.id} onChange={changeRole} />
                     </td>
                     <td className="px-4 py-3 text-center">
                       <StatusBadge active={u.is_active} />
@@ -287,6 +308,33 @@ function AccessCheckboxes({
         </label>
       ))}
     </div>
+  );
+}
+
+function RoleControl({
+  user,
+  canEdit,
+  disabled,
+  onChange,
+}: {
+  user: UserRow;
+  canEdit: boolean;
+  disabled: boolean;
+  onChange: (user: UserRow, role: Role) => void;
+}) {
+  if (!canEdit) return <RoleBadge role={user.role} />;
+  return (
+    <select
+      value={user.role}
+      disabled={disabled}
+      onChange={(e) => onChange(user, e.target.value as Role)}
+      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+      aria-label="Ubah role"
+    >
+      <option value="customer">customer</option>
+      <option value="publisher">publisher</option>
+      <option value="admin">admin</option>
+    </select>
   );
 }
 
