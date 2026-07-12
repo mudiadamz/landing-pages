@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { canSellProducts } from "@/lib/actions/profiles";
 import { NewPageForm } from "./new-page-form";
 
 const STEPS = [
@@ -10,8 +10,8 @@ const STEPS = [
 ];
 
 export default async function NewPagePage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const canSell = await canSellProducts();
+  if (!canSell) redirect("/panel");
 
   const current = 1; // this page is always step 1; step 2 is the edit page
 

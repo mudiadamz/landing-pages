@@ -1,20 +1,34 @@
 "use server";
 
 import { cache } from "react";
-import { unstable_noStore } from "next/cache";
+import { unstable_noStore, revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeRole } from "@/lib/profile-utils";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  normalizeRole,
+  normalizePublisherStatus,
+  canSell,
+  type Role,
+  type PublisherStatus,
+} from "@/lib/profile-utils";
 
 export type Profile = {
   id: string;
   full_name: string | null;
-  role: "admin" | "customer";
+  role: Role;
+  publisher_status: PublisherStatus;
 };
 
 /** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
 export async function requireAdmin() {
   const profile = await getProfile();
   return profile?.role === "admin";
+}
+
+/** Admin or approved publisher — may create & sell products. */
+export async function canSellProducts() {
+  const profile = await getProfile();
+  return !!profile && canSell(profile.role);
 }
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
@@ -27,7 +41,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role")
+    .select("id, full_name, role, publisher_status")
     .eq("id", user.id)
     .single();
 
@@ -36,13 +50,59 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
     id: data.id,
     full_name: data.full_name ?? null,
     role: normalizeRole(data.role),
+    publisher_status: normalizePublisherStatus(data.publisher_status),
   } as Profile;
 });
+
+/**
+ * Customer applies to become a publisher. Sets status to "pending" so an admin
+ * can review it (role stays "customer" until approved). Idempotent-ish: only
+ * customers who are not already pending/approved may apply.
+ */
+export async function applyAsPublisher(): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Belum masuk." };
+
+  const { data: current } = await supabase
+    .from("lp_profiles")
+    .select("role, publisher_status")
+    .eq("id", user.id)
+    .single();
+
+  const role = normalizeRole(current?.role);
+  const status = normalizePublisherStatus(current?.publisher_status);
+
+  if (role === "admin") return { ok: false, error: "Admin tidak perlu mengajukan." };
+  if (role === "publisher" || status === "approved")
+    return { ok: false, error: "Anda sudah menjadi publisher." };
+  if (status === "pending") return { ok: false, error: "Pengajuan Anda sedang ditinjau." };
+
+  // Privileged write: authenticated users cannot update publisher_status on their
+  // own row (column grant), so this transition runs through the service-role
+  // client. Still safe — the action authenticated the user and only touches
+  // their own id, keeping status at "pending" (admin decides approval).
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("lp_profiles")
+    .update({ publisher_status: "pending", publisher_applied_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("applyAsPublisher error:", error);
+    return { ok: false, error: "Gagal mengirim pengajuan." };
+  }
+  revalidatePath("/panel/profile");
+  return { ok: true };
+}
 
 export type ProfileWithUser = {
   id: string;
   full_name: string | null;
-  role: "admin" | "customer";
+  role: Role;
+  publisher_status: PublisherStatus;
   email: string | null;
 };
 
@@ -57,7 +117,7 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
 
   let { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role")
+    .select("id, full_name, role, publisher_status")
     .eq("id", user.id)
     .single();
 
@@ -70,7 +130,7 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
     if (!insertError || insertError.code === "23505") {
       const ret = await supabase
         .from("lp_profiles")
-        .select("id, full_name, role")
+        .select("id, full_name, role, publisher_status")
         .eq("id", user.id)
         .single();
       data = ret.data;
@@ -83,6 +143,7 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
     id: data.id,
     full_name: data.full_name ?? null,
     role: normalizeRole(data.role),
+    publisher_status: normalizePublisherStatus(data.publisher_status),
     email: user.email ?? null,
   };
 }

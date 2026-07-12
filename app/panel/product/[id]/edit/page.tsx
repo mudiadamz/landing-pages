@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById, getCategories } from "@/lib/actions/landing-pages";
 import { ProductEditForm } from "./product-edit-form";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,8 @@ export default async function EditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const canSell = await canSellProducts();
+  if (!canSell) redirect("/panel");
 
   const { id } = await params;
   const [page, categories] = await Promise.all([getLandingPageById(id), getCategories()]);

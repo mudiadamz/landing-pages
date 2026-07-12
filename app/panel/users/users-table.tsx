@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+type Role = "admin" | "customer" | "publisher";
+
 type UserRow = {
   id: string;
   full_name: string | null;
   email: string | null;
-  role: "admin" | "customer";
+  role: Role;
 };
 
 export function UsersTable() {
@@ -179,16 +181,12 @@ export function UsersTable() {
   );
 }
 
-function RoleBadge({ role }: { role: "admin" | "customer" }) {
-  return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-        role === "admin"
-          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-          : "bg-[var(--accent-subtle)] text-[var(--muted)]"
-      }`}
-    >
-      {role}
-    </span>
-  );
+function RoleBadge({ role }: { role: Role }) {
+  const cls =
+    role === "admin"
+      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+      : role === "publisher"
+        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+        : "bg-[var(--accent-subtle)] text-[var(--muted)]";
+  return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{role}</span>;
 }

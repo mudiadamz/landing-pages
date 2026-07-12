@@ -12,13 +12,13 @@ const CustomerTabs = dynamic(() =>
 
 export default async function PanelPage() {
   const profile = await getProfile();
-  const isAdmin = profile?.role === "admin";
+  const canSell = !!profile && (profile.role === "admin" || profile.role === "publisher");
 
-  if (!isAdmin) {
+  if (!canSell) {
     return <CustomerPanel />;
   }
 
-  return <AdminPanel />;
+  return <SellerPanel />;
 }
 
 async function CustomerPanel() {
@@ -36,7 +36,7 @@ async function CustomerPanel() {
   );
 }
 
-async function AdminPanel() {
+async function SellerPanel() {
   const [pages, categories] = await Promise.all([getLandingPagesForUser(), getCategories()]);
 
   return (

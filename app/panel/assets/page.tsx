@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { canSellProducts } from "@/lib/actions/profiles";
 import { listLibraryAssets } from "@/lib/actions/assets";
 import { AssetsBrowser } from "./assets-browser";
 
 export default async function AssetsPage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const canSell = await canSellProducts();
+  if (!canSell) redirect("/panel");
 
   const assets = await listLibraryAssets();
 

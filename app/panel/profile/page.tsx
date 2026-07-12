@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeRole } from "@/lib/profile-utils";
+import { normalizeRole, normalizePublisherStatus, roleLabel as roleLabelFor } from "@/lib/profile-utils";
 import { ProfileForm } from "./profile-form";
+import { PublisherApply } from "./publisher-apply";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -11,12 +12,13 @@ export default async function ProfilePage() {
 
   const { data: row, error: profileError } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role")
+    .select("id, full_name, role, publisher_status")
     .eq("id", user.id)
     .single();
 
   const rawRole = row?.role;
   const normalizedRole = row ? normalizeRole(rawRole) : "customer";
+  const publisherStatus = normalizePublisherStatus(row?.publisher_status);
   const profile = row
     ? {
         id: row.id,
@@ -41,7 +43,7 @@ export default async function ProfilePage() {
     final_role: profile.role,
   });
 
-  const roleLabel = profile.role === "admin" ? "Admin" : "Customer";
+  const roleLabel = roleLabelFor(profile.role);
 
   return (
     <div className="space-y-6">
@@ -75,7 +77,9 @@ export default async function ProfilePage() {
                   className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium ${
                     profile.role === "admin"
                       ? "bg-[var(--primary)]/15 text-[var(--primary)]"
-                      : "bg-[var(--accent-subtle)] text-[var(--muted)]"
+                      : profile.role === "publisher"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                        : "bg-[var(--accent-subtle)] text-[var(--muted)]"
                   }`}
                 >
                   {roleLabel}
@@ -85,6 +89,8 @@ export default async function ProfilePage() {
           </dl>
 
           <ProfileForm initialFullName={profile.full_name ?? ""} />
+
+          <PublisherApply role={profile.role} status={publisherStatus} />
         </div>
       </div>
     </div>

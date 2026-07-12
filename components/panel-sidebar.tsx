@@ -8,7 +8,7 @@ import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
 import { BrandMark } from "@/components/brand-mark";
 
-type Props = { isAdmin: boolean; displayName?: string };
+type Props = { isAdmin: boolean; canSell?: boolean; displayName?: string };
 
 const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean; external?: boolean }[] }[] = [
   {
@@ -138,10 +138,12 @@ function ImageIcon({ className }: { className?: string }) {
 
 function NavContent({
   isAdmin,
+  canSell,
   onItemClick,
   onOpenAssets,
 }: {
   isAdmin: boolean;
+  canSell?: boolean;
   onItemClick?: () => void;
   onOpenAssets?: () => void;
 }) {
@@ -170,7 +172,7 @@ function NavContent({
                   const content = (
                     <>
                       <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.href === "/panel/products" ? (isAdmin ? "Produk digital" : "Pembelian saya") : item.label}</span>
+                      <span>{item.href === "/panel/products" ? (canSell ? "Produk digital" : "Pembelian saya") : item.label}</span>
                     </>
                   );
                   return item.external ? (
@@ -195,7 +197,7 @@ function NavContent({
           );
         })}
 
-        {isAdmin && onOpenAssets && (
+        {canSell && onOpenAssets && (
           <div>
             <p className="px-3 mb-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
               Media
@@ -239,7 +241,7 @@ function NavContent({
   );
 }
 
-export function PanelSidebar({ isAdmin, displayName }: Props) {
+export function PanelSidebar({ isAdmin, canSell, displayName }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
 
@@ -313,6 +315,7 @@ export function PanelSidebar({ isAdmin, displayName }: Props) {
         <div className="flex flex-1 flex-col overflow-y-auto px-3">
           <NavContent
             isAdmin={isAdmin}
+            canSell={canSell}
             onItemClick={() => setMobileOpen(false)}
             onOpenAssets={() => setAssetsOpen(true)}
           />

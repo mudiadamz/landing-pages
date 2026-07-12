@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile } from "./profiles";
 
@@ -84,4 +85,76 @@ export async function getCustomers(): Promise<CustomerRow[]> {
 async function requireAdmin() {
   const profile = await getProfile();
   return profile?.role === "admin";
+}
+
+export type PublisherApplication = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  publisher_applied_at: string | null;
+};
+
+/** Pending publisher applications, newest first — for the admin review screen. */
+export async function getPublisherApplications(): Promise<PublisherApplication[]> {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return [];
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("lp_profiles")
+    .select("id, full_name, email, publisher_applied_at")
+    .eq("publisher_status", "pending")
+    .order("publisher_applied_at", { ascending: true });
+
+  if (error) return [];
+  return (data ?? []) as PublisherApplication[];
+}
+
+/** Approve an application: promote the user to publisher. */
+export async function approvePublisher(userId: string): Promise<{ ok: boolean; error?: string }> {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+  if (!userId) return { ok: false, error: "User tidak valid." };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("lp_profiles")
+    .update({
+      role: "publisher",
+      publisher_status: "approved",
+      publisher_reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+    .eq("publisher_status", "pending");
+
+  if (error) {
+    console.error("approvePublisher error:", error);
+    return { ok: false, error: "Gagal menyetujui." };
+  }
+  revalidatePath("/panel/users");
+  return { ok: true };
+}
+
+/** Reject an application: keep the user a customer, mark as rejected. */
+export async function rejectPublisher(userId: string): Promise<{ ok: boolean; error?: string }> {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+  if (!userId) return { ok: false, error: "User tidak valid." };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("lp_profiles")
+    .update({
+      publisher_status: "rejected",
+      publisher_reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+    .eq("publisher_status", "pending");
+
+  if (error) {
+    console.error("rejectPublisher error:", error);
+    return { ok: false, error: "Gagal menolak." };
+  }
+  revalidatePath("/panel/users");
+  return { ok: true };
 }
