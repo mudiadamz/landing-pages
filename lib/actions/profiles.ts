@@ -11,12 +11,14 @@ import {
   type Role,
   type PublisherStatus,
 } from "@/lib/profile-utils";
+import { normalizeFeatures, ALL_FEATURE_KEYS, type FeatureKey } from "@/lib/features";
 
 export type Profile = {
   id: string;
   full_name: string | null;
   role: Role;
   publisher_status: PublisherStatus;
+  permissions: FeatureKey[];
 };
 
 /** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
@@ -31,6 +33,24 @@ export async function canSellProducts() {
   return !!profile && canSell(profile.role);
 }
 
+/**
+ * Access check for a delegated admin feature. A full admin has everything;
+ * otherwise the feature key must be in the user's granted permissions.
+ */
+export async function requireFeature(feature: FeatureKey): Promise<boolean> {
+  const profile = await getProfile();
+  if (!profile) return false;
+  if (profile.role === "admin") return true;
+  return profile.permissions.includes(feature);
+}
+
+/** Feature keys the current user can access (all for admins) — drives the nav. */
+export async function getAccessibleFeatures(): Promise<FeatureKey[]> {
+  const profile = await getProfile();
+  if (!profile) return [];
+  return profile.role === "admin" ? [...ALL_FEATURE_KEYS] : profile.permissions;
+}
+
 export const getProfile = cache(async (): Promise<Profile | null> => {
   unstable_noStore();
   const supabase = await createClient();
@@ -41,7 +61,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role, publisher_status")
+    .select("id, full_name, role, publisher_status, permissions")
     .eq("id", user.id)
     .single();
 
@@ -51,6 +71,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
     full_name: data.full_name ?? null,
     role: normalizeRole(data.role),
     publisher_status: normalizePublisherStatus(data.publisher_status),
+    permissions: normalizeFeatures(data.permissions),
   } as Profile;
 });
 

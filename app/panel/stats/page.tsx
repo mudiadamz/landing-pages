@@ -1,14 +1,12 @@
 import { redirect } from "next/navigation";
-import { getProfile } from "@/lib/actions/profiles";
+import { requireFeature } from "@/lib/actions/profiles";
 import { getStats, getCustomers } from "@/lib/actions/admin";
 
 export default async function DashboardPage() {
-  const [profile, stats, customers] = await Promise.all([
-    getProfile(),
-    getStats(),
-    getCustomers(),
-  ]);
-  if (profile?.role !== "admin") redirect("/panel/products");
+  const ok = await requireFeature("stats");
+  if (!ok) redirect("/panel/products");
+
+  const [stats, customers] = await Promise.all([getStats(), getCustomers()]);
 
   if (!stats) return null;
 

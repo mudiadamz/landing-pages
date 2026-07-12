@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { ADMIN_FEATURES, type FeatureKey } from "@/lib/features";
 
 type Role = "admin" | "customer" | "publisher";
 
@@ -10,13 +11,15 @@ type UserRow = {
   email: string | null;
   role: Role;
   is_active: boolean;
+  permissions: FeatureKey[];
 };
 
-export function UsersTable() {
+export function UsersTable({ canEditAccess = false }: { canEditAccess?: boolean }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/users")
@@ -26,28 +29,6 @@ export function UsersTable() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  async function toggleRole(user: UserRow) {
-    const newRole = user.role === "admin" ? "customer" : "admin";
-    setUpdating(user.id);
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, role: newRole }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
-        );
-      } else {
-        alert(data.error ?? "Gagal mengubah role");
-      }
-    } finally {
-      setUpdating(null);
-    }
-  }
 
   async function toggleActive(user: UserRow) {
     const nextActive = !user.is_active;
@@ -63,11 +44,32 @@ export function UsersTable() {
       });
       const data = await res.json();
       if (res.ok) {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === user.id ? { ...u, is_active: nextActive } : u))
-        );
+        setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, is_active: nextActive } : u)));
       } else {
         alert(data.error ?? "Gagal mengubah status");
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function toggleFeature(user: UserRow, key: FeatureKey) {
+    const next = user.permissions.includes(key)
+      ? user.permissions.filter((k) => k !== key)
+      : [...user.permissions, key];
+    // Optimistic update.
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, permissions: next } : u)));
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, permissions: next }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error ?? "Gagal mengubah akses");
+        setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, permissions: user.permissions } : u)));
       }
     } finally {
       setUpdating(null);
@@ -112,23 +114,16 @@ export function UsersTable() {
             className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           />
         </div>
-        <span className="text-xs text-[var(--muted)]">
-          {filtered.length} user
-        </span>
+        <span className="text-xs text-[var(--muted)]">{filtered.length} user</span>
       </div>
 
       {/* Mobile cards */}
       <div className="sm:hidden space-y-3">
         {filtered.map((u) => (
-          <div
-            key={u.id}
-            className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm"
-          >
+          <div key={u.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-medium text-foreground truncate">
-                  {u.full_name || "—"}
-                </p>
+                <p className="font-medium text-foreground truncate">{u.full_name || "—"}</p>
                 <p className="text-sm text-[var(--muted)] truncate">{u.email || "—"}</p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -136,19 +131,20 @@ export function UsersTable() {
                 <StatusBadge active={u.is_active} />
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => toggleRole(u)}
-                disabled={updating === u.id}
-                className="text-sm font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
-              >
-                {updating === u.id
-                  ? "Mengubah…"
-                  : u.role === "admin"
-                    ? "Jadikan customer"
-                    : "Jadikan admin"}
-              </button>
+
+            <div className="mt-3">
+              <AccessSummary
+                user={u}
+                canEdit={canEditAccess}
+                expanded={expandedId === u.id}
+                onToggleExpand={() => setExpandedId((id) => (id === u.id ? null : u.id))}
+              />
+              {expandedId === u.id && u.role !== "admin" && canEditAccess && (
+                <AccessCheckboxes user={u} disabled={updating === u.id} onToggle={toggleFeature} />
+              )}
+            </div>
+
+            <div className="mt-3">
               <button
                 type="button"
                 onClick={() => toggleActive(u)}
@@ -172,39 +168,33 @@ export function UsersTable() {
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Email</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Role</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Akses</th>
                 <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--background)]/30 transition-colors"
-                >
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    {u.full_name || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-[var(--muted)]">{u.email || "—"}</td>
-                  <td className="px-4 py-3 text-center">
-                    <RoleBadge role={u.role} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <StatusBadge active={u.is_active} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <button
-                        type="button"
-                        onClick={() => toggleRole(u)}
-                        disabled={updating === u.id}
-                        className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
-                      >
-                        {updating === u.id
-                          ? "Mengubah…"
-                          : u.role === "admin"
-                            ? "Jadikan customer"
-                            : "Jadikan admin"}
-                      </button>
+                <Fragment key={u.id}>
+                  <tr
+                    className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--background)]/30 transition-colors"
+                  >
+                    <td className="px-4 py-3 font-medium text-foreground">{u.full_name || "—"}</td>
+                    <td className="px-4 py-3 text-[var(--muted)]">{u.email || "—"}</td>
+                    <td className="px-4 py-3 text-center">
+                      <RoleBadge role={u.role} />
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <StatusBadge active={u.is_active} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <AccessSummary
+                        user={u}
+                        canEdit={canEditAccess}
+                        expanded={expandedId === u.id}
+                        onToggleExpand={() => setExpandedId((id) => (id === u.id ? null : u.id))}
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right">
                       <button
                         type="button"
                         onClick={() => toggleActive(u)}
@@ -213,13 +203,20 @@ export function UsersTable() {
                       >
                         {u.is_active ? "Nonaktifkan" : "Aktifkan"}
                       </button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                  {expandedId === u.id && u.role !== "admin" && canEditAccess && (
+                    <tr className="border-b border-[var(--border)] bg-[var(--background)]/30">
+                      <td colSpan={6} className="px-4 py-3">
+                        <AccessCheckboxes user={u} disabled={updating === u.id} onToggle={toggleFeature} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">
+                  <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
                     Tidak ada user ditemukan.
                   </td>
                 </tr>
@@ -228,6 +225,67 @@ export function UsersTable() {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AccessSummary({
+  user,
+  canEdit,
+  expanded,
+  onToggleExpand,
+}: {
+  user: UserRow;
+  canEdit: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
+}) {
+  if (user.role === "admin") {
+    return <span className="text-xs text-[var(--muted)]">Semua fitur (admin)</span>;
+  }
+  const count = user.permissions.length;
+  const label = count === 0 ? "Tanpa akses" : `${count}/${ADMIN_FEATURES.length} fitur`;
+
+  if (!canEdit) {
+    return <span className="text-xs text-[var(--muted)]">{label}</span>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={onToggleExpand}
+      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--primary)] hover:underline"
+    >
+      {label}
+      <svg className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  );
+}
+
+function AccessCheckboxes({
+  user,
+  disabled,
+  onToggle,
+}: {
+  user: UserRow;
+  disabled: boolean;
+  onToggle: (user: UserRow, key: FeatureKey) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+      {ADMIN_FEATURES.map((f) => (
+        <label key={f.key} className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={user.permissions.includes(f.key)}
+            disabled={disabled}
+            onChange={() => onToggle(user, f.key)}
+            className="h-4 w-4 rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] disabled:opacity-50"
+          />
+          {f.label}
+        </label>
+      ))}
     </div>
   );
 }

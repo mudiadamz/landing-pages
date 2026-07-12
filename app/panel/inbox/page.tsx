@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireFeature } from "@/lib/actions/profiles";
 import { getReceivedEmailsForAdmin, getReceivedEmailById } from "@/lib/actions/received-emails";
 import { DeleteEmailButton } from "./delete-email-button";
 
 type Props = { searchParams: Promise<{ id?: string }> };
 
 export default async function InboxPage({ searchParams }: Props) {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const ok = await requireFeature("inbox");
+  if (!ok) redirect("/panel");
 
   const { id: detailId } = await searchParams;
   const [emails, detail] = await Promise.all([

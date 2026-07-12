@@ -3,7 +3,7 @@
 import { unstable_cache, updateTag, revalidatePath } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "./profiles";
+import { requireFeature } from "./profiles";
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
 
@@ -38,7 +38,7 @@ export const getHero = unstable_cache(
 );
 
 export async function updateHero(config: HeroConfig): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("hero");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeHero(config);
@@ -86,7 +86,7 @@ export const getSiteContent = unstable_cache(
 );
 
 export async function updateSiteContent(content: SiteContent): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("content");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeContent(content);
@@ -129,7 +129,7 @@ export const getCustomJs = unstable_cache(
 );
 
 export async function updateCustomJs(script: string): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("custom-js");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const supabase = await createClient();

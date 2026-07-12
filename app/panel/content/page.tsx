@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireFeature } from "@/lib/actions/profiles";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { ContentForm } from "./content-form";
 
 export default async function ContentSettingsPage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const ok = await requireFeature("content");
+  if (!ok) redirect("/panel");
 
   const content = await getSiteContent();
 

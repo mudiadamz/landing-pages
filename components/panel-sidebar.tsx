@@ -7,10 +7,11 @@ import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
 import { BrandMark } from "@/components/brand-mark";
+import type { FeatureKey } from "@/lib/features";
 
-type Props = { isAdmin: boolean; canSell?: boolean; displayName?: string; pendingActions?: number };
+type Props = { canSell?: boolean; displayName?: string; pendingActions?: number; features?: FeatureKey[] };
 
-const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean; external?: boolean }[] }[] = [
+const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; feature?: FeatureKey; external?: boolean }[] }[] = [
   {
     label: "Produk",
     items: [{ href: "/panel/products", label: "Produk digital", icon: LayoutIcon }],
@@ -18,14 +19,14 @@ const navGroups: { label: string; items: { href: string; label: string; icon: ty
   {
     label: "Lainnya",
     items: [
-      { href: "/panel/stats", label: "Stats", icon: ChartIcon, adminOnly: true },
-      { href: "/panel/contacts", label: "Kontak", icon: MailIcon, adminOnly: true },
-      { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, adminOnly: true },
-      { href: "/panel/users", label: "Users", icon: UsersIcon, adminOnly: true },
-      { href: "/panel/categories", label: "Kategori", icon: TagIcon, adminOnly: true },
-      { href: "/panel/hero", label: "Hero", icon: HeroIcon, adminOnly: true },
-      { href: "/panel/content", label: "Konten situs", icon: DocIcon, adminOnly: true },
-      { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, adminOnly: true },
+      { href: "/panel/stats", label: "Stats", icon: ChartIcon, feature: "stats" },
+      { href: "/panel/contacts", label: "Kontak", icon: MailIcon, feature: "contacts" },
+      { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, feature: "inbox" },
+      { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
+      { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
+      { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
+      { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
+      { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
     ],
   },
 ];
@@ -137,13 +138,13 @@ function ImageIcon({ className }: { className?: string }) {
 }
 
 function NavContent({
-  isAdmin,
+  features = [],
   canSell,
   pendingActions = 0,
   onItemClick,
   onOpenAssets,
 }: {
-  isAdmin: boolean;
+  features?: FeatureKey[];
   canSell?: boolean;
   pendingActions?: number;
   onItemClick?: () => void;
@@ -155,7 +156,7 @@ function NavContent({
     <>
       <nav className="flex flex-col gap-6 py-4">
         {navGroups.map((group) => {
-          const visibleItems = group.items.filter((item) => !item.adminOnly || isAdmin);
+          const visibleItems = group.items.filter((item) => !item.feature || features.includes(item.feature));
           if (visibleItems.length === 0) return null;
           return (
             <div key={group.label}>
@@ -252,7 +253,7 @@ function NavContent({
   );
 }
 
-export function PanelSidebar({ isAdmin, canSell, displayName, pendingActions }: Props) {
+export function PanelSidebar({ canSell, displayName, pendingActions, features }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
 
@@ -331,7 +332,7 @@ export function PanelSidebar({ isAdmin, canSell, displayName, pendingActions }: 
         )}
         <div className="flex flex-1 flex-col overflow-y-auto px-3">
           <NavContent
-            isAdmin={isAdmin}
+            features={features}
             canSell={canSell}
             pendingActions={pendingActions}
             onItemClick={() => setMobileOpen(false)}

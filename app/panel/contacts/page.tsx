@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireFeature } from "@/lib/actions/profiles";
 import { getContactsForAdmin } from "@/lib/actions/contacts";
 
 export default async function ContactsPage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const ok = await requireFeature("contacts");
+  if (!ok) redirect("/panel");
 
   const contacts = await getContactsForAdmin();
 

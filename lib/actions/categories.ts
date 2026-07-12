@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "./profiles";
+import { requireFeature } from "./profiles";
 
 export type CategoryRow = {
   id: string;
@@ -15,7 +15,7 @@ export type CategoryRow = {
 };
 
 export async function getAdminCategories(): Promise<CategoryRow[]> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("categories");
   if (!isAdmin) return [];
 
   const supabase = await createClient();
@@ -69,7 +69,7 @@ export async function createCategory(
   icon: string = "default",
   parent_id: string | null = null,
 ): Promise<{ ok: boolean; error?: string; id?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("categories");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, "-");
@@ -103,7 +103,7 @@ export async function updateCategory(
   icon: string = "default",
   parent_id: string | null = null,
 ): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("categories");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, "-");
@@ -131,7 +131,7 @@ export async function updateCategory(
 export async function deleteCategory(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("categories");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const supabase = await createClient();

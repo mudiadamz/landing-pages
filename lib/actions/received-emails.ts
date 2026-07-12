@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "./profiles";
+import { requireFeature } from "./profiles";
 
 export type ReceivedEmailRow = {
   id: string;
@@ -24,7 +24,7 @@ export type ReceivedEmailListItem = Pick<
 >;
 
 export async function getReceivedEmailsForAdmin(): Promise<ReceivedEmailListItem[]> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("inbox");
   if (!isAdmin) return [];
 
   const supabase = await createClient();
@@ -38,7 +38,7 @@ export async function getReceivedEmailsForAdmin(): Promise<ReceivedEmailListItem
 }
 
 export async function getReceivedEmailById(id: string): Promise<ReceivedEmailRow | null> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("inbox");
   if (!isAdmin) return null;
 
   const supabase = await createClient();
@@ -53,7 +53,7 @@ export async function getReceivedEmailById(id: string): Promise<ReceivedEmailRow
 }
 
 export async function deleteReceivedEmail(id: string) {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("inbox");
   if (!isAdmin) return { error: "Forbidden" };
 
   const supabase = createAdminClient();

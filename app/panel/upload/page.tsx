@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { canSellProducts } from "@/lib/actions/profiles";
 import { UploadForm } from "../upload-form";
 
 export default async function UploadPage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const canSell = await canSellProducts();
+  if (!canSell) redirect("/panel");
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

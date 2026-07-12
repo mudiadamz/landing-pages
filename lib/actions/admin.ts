@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getProfile } from "./profiles";
+import { requireFeature } from "./profiles";
 
 export type Stats = {
   totalLandingPages: number;
@@ -20,7 +20,7 @@ export type CustomerRow = {
 };
 
 export async function getStats(): Promise<Stats | null> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("stats");
   if (!isAdmin) return null;
 
   const supabase = createAdminClient();
@@ -41,7 +41,7 @@ export async function getStats(): Promise<Stats | null> {
 }
 
 export async function getCustomers(): Promise<CustomerRow[]> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("stats");
   if (!isAdmin) return [];
 
   const supabase = createAdminClient();
@@ -82,11 +82,6 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   });
 }
 
-async function requireAdmin() {
-  const profile = await getProfile();
-  return profile?.role === "admin";
-}
-
 export type PublisherApplication = {
   id: string;
   full_name: string | null;
@@ -96,7 +91,7 @@ export type PublisherApplication = {
 
 /** Pending publisher applications, newest first — for the admin review screen. */
 export async function getPublisherApplications(): Promise<PublisherApplication[]> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("users");
   if (!isAdmin) return [];
 
   const supabase = createAdminClient();
@@ -112,7 +107,7 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
 
 /** Approve an application: promote the user to publisher. */
 export async function approvePublisher(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("users");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
   if (!userId) return { ok: false, error: "User tidak valid." };
 
@@ -137,7 +132,7 @@ export async function approvePublisher(userId: string): Promise<{ ok: boolean; e
 
 /** Reject an application: keep the user a customer, mark as rejected. */
 export async function rejectPublisher(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("users");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
   if (!userId) return { ok: false, error: "User tidak valid." };
 

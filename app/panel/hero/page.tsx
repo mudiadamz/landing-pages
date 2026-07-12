@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireFeature } from "@/lib/actions/profiles";
 import { getHero } from "@/lib/actions/site-settings";
 import { HeroForm } from "./hero-form";
 
 export default async function HeroSettingsPage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const ok = await requireFeature("hero");
+  if (!ok) redirect("/panel");
 
   const hero = await getHero();
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "./profiles";
+import { requireFeature } from "./profiles";
 
 const HONEYPOT_FIELD = "fax"; // obscure name so autofill/bots don't match
 
@@ -47,7 +47,7 @@ export async function submitContact(formData: FormData) {
 }
 
 export async function getContactsForAdmin(): Promise<ContactSubmission[]> {
-  const isAdmin = await requireAdmin();
+  const isAdmin = await requireFeature("contacts");
   if (!isAdmin) return [];
 
   const supabase = await createClient();

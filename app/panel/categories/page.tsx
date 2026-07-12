@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireFeature } from "@/lib/actions/profiles";
 import { getAdminCategories } from "@/lib/actions/categories";
 import { CategoriesTable } from "./categories-table";
 
 export default async function CategoriesPage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const ok = await requireFeature("categories");
+  if (!ok) redirect("/panel");
 
   const categories = await getAdminCategories();
 

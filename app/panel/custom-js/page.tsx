@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireFeature } from "@/lib/actions/profiles";
 import { getCustomJs } from "@/lib/actions/site-settings";
 import { CustomJsForm } from "./custom-js-form";
 
 export default async function CustomJsPage() {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) redirect("/panel");
+  const ok = await requireFeature("custom-js");
+  if (!ok) redirect("/panel");
 
   const initialScript = await getCustomJs();
 
