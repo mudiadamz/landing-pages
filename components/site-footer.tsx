@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
+import { getSiteContent } from "@/lib/actions/site-settings";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const content = await getSiteContent();
+
   return (
     <footer className="relative border-t border-[var(--border)] py-12 sm:py-16 shrink-0 overflow-hidden">
       <div
@@ -13,7 +16,7 @@ export function SiteFooter() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="space-y-4">
             <p className="text-sm text-[var(--muted)] max-w-md">
-              ADM.UIUX — produk digital siap pakai. By Adam Mudianto, software developer 15+ tahun.
+              {content.footerTagline}
             </p>
             <div>
               <p className="text-xs font-medium text-foreground mb-2">Sosial media</p>

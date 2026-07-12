@@ -5,9 +5,11 @@ import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "./profiles";
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
+import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
 
 const CUSTOM_JS_KEY = "custom_js";
 const HERO_KEY = "hero";
+const CONTENT_KEY = "site_content";
 
 /* Hero section config (editable from /panel/hero, stored as JSON in
  * lp_site_settings.value under key "hero"). Types/defaults live in
@@ -54,6 +56,54 @@ export async function updateHero(config: HeroConfig): Promise<{ ok: boolean; err
   }
   updateTag("hero-config");
   revalidatePath("/");
+  return { ok: true };
+}
+
+/* Editable homepage copy (footer tagline + disclaimer/FAQ section), edited from
+ * /panel/content, stored as JSON in lp_site_settings.value under "site_content".
+ * Types/defaults live in lib/content-config.ts. */
+
+export const getSiteContent = unstable_cache(
+  async (): Promise<SiteContent> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("key", CONTENT_KEY)
+        .single();
+      if (!data?.value) return DEFAULT_CONTENT;
+      return normalizeContent(JSON.parse(data.value as string));
+    } catch {
+      return DEFAULT_CONTENT;
+    }
+  },
+  ["site-content"],
+  { revalidate: 120, tags: ["site-content"] },
+);
+
+export async function updateSiteContent(content: SiteContent): Promise<{ ok: boolean; error?: string }> {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizeContent(content);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lp_site_settings")
+    .upsert(
+      { key: CONTENT_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+
+  if (error) {
+    console.error("updateSiteContent error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  updateTag("site-content");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 

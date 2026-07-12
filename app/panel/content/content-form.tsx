@@ -1,0 +1,273 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { updateSiteContent } from "@/lib/actions/site-settings";
+import {
+  DEFAULT_CONTENT,
+  type SiteContent,
+  type HowToStep,
+  type FaqItem,
+} from "@/lib/content-config";
+
+const labelCls = "block text-xs font-medium text-[var(--muted)] mb-1.5";
+const inputCls =
+  "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]";
+const sectionCls =
+  "rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-6 shadow-sm space-y-4";
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-sm font-semibold tracking-tight text-foreground">{children}</h2>;
+}
+
+function AddButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-sm font-medium text-[var(--primary)] hover:underline"
+    >
+      + {children}
+    </button>
+  );
+}
+
+function RemoveButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Hapus"
+      className="shrink-0 rounded-lg p-2 text-[var(--muted)] hover:text-red-600 hover:bg-[var(--background)] transition-colors"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  );
+}
+
+export function ContentForm({ initialContent }: { initialContent: SiteContent }) {
+  const [content, setContent] = useState<SiteContent>(initialContent);
+  const [pending, startTransition] = useTransition();
+  const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);
+
+  function set<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
+    setContent((c) => ({ ...c, [key]: value }));
+    setStatus(null);
+  }
+
+  // Generic helpers for the string-array fields.
+  function setStr(key: "licenseParagraphs" | "supportPoints", i: number, value: string) {
+    set(key, content[key].map((x, idx) => (idx === i ? value : x)));
+  }
+  function addStr(key: "licenseParagraphs" | "supportPoints") {
+    set(key, [...content[key], ""]);
+  }
+  function removeStr(key: "licenseParagraphs" | "supportPoints", i: number) {
+    set(key, content[key].filter((_, idx) => idx !== i));
+  }
+
+  function setStep(i: number, patch: Partial<HowToStep>) {
+    set("howToSteps", content.howToSteps.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  }
+  function setFaq(i: number, patch: Partial<FaqItem>) {
+    set("faqs", content.faqs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
+  }
+
+  function handleSave() {
+    startTransition(async () => {
+      setStatus(await updateSiteContent(content));
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Footer */}
+      <section className={sectionCls}>
+        <SectionTitle>Footer</SectionTitle>
+        <div>
+          <label className={labelCls}>Tagline footer</label>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={content.footerTagline}
+            onChange={(e) => set("footerTagline", e.target.value)}
+          />
+        </div>
+      </section>
+
+      {/* Ketentuan & lisensi */}
+      <section className={sectionCls}>
+        <SectionTitle>Ketentuan & lisensi</SectionTitle>
+        <div>
+          <label className={labelCls}>Judul</label>
+          <input
+            className={inputCls}
+            value={content.licenseHeading}
+            onChange={(e) => set("licenseHeading", e.target.value)}
+          />
+        </div>
+        <div className="space-y-3">
+          <label className={labelCls}>Paragraf</label>
+          {content.licenseParagraphs.map((p, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <textarea
+                className={inputCls}
+                rows={3}
+                value={p}
+                onChange={(e) => setStr("licenseParagraphs", i, e.target.value)}
+              />
+              <RemoveButton onClick={() => removeStr("licenseParagraphs", i)} />
+            </div>
+          ))}
+          <AddButton onClick={() => addStr("licenseParagraphs")}>Tambah paragraf</AddButton>
+        </div>
+      </section>
+
+      {/* Cara pembelian */}
+      <section className={sectionCls}>
+        <SectionTitle>Cara pembelian</SectionTitle>
+        <div>
+          <label className={labelCls}>Judul</label>
+          <input
+            className={inputCls}
+            value={content.howToHeading}
+            onChange={(e) => set("howToHeading", e.target.value)}
+          />
+        </div>
+        <div className="space-y-3">
+          <label className={labelCls}>Langkah</label>
+          {content.howToSteps.map((s, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <div className="grid flex-1 grid-cols-1 sm:grid-cols-[12rem_1fr] gap-2">
+                <input
+                  className={inputCls}
+                  value={s.label}
+                  onChange={(e) => setStep(i, { label: e.target.value })}
+                  placeholder="Label (tebal)"
+                />
+                <input
+                  className={inputCls}
+                  value={s.text}
+                  onChange={(e) => setStep(i, { text: e.target.value })}
+                  placeholder="Keterangan"
+                />
+              </div>
+              <RemoveButton onClick={() => set("howToSteps", content.howToSteps.filter((_, idx) => idx !== i))} />
+            </div>
+          ))}
+          <AddButton onClick={() => set("howToSteps", [...content.howToSteps, { label: "", text: "" }])}>
+            Tambah langkah
+          </AddButton>
+        </div>
+      </section>
+
+      {/* Jaminan support */}
+      <section className={sectionCls}>
+        <SectionTitle>Jaminan support</SectionTitle>
+        <div>
+          <label className={labelCls}>Judul</label>
+          <input
+            className={inputCls}
+            value={content.supportHeading}
+            onChange={(e) => set("supportHeading", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Pembuka</label>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={content.supportIntro}
+            onChange={(e) => set("supportIntro", e.target.value)}
+          />
+        </div>
+        <div className="space-y-3">
+          <label className={labelCls}>Poin (bullet)</label>
+          {content.supportPoints.map((p, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <input
+                className={inputCls}
+                value={p}
+                onChange={(e) => setStr("supportPoints", i, e.target.value)}
+              />
+              <RemoveButton onClick={() => removeStr("supportPoints", i)} />
+            </div>
+          ))}
+          <AddButton onClick={() => addStr("supportPoints")}>Tambah poin</AddButton>
+        </div>
+        <div>
+          <label className={labelCls}>Penutup (diikuti link “halaman Kontak”)</label>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={content.supportOutro}
+            onChange={(e) => set("supportOutro", e.target.value)}
+          />
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className={sectionCls}>
+        <SectionTitle>FAQ</SectionTitle>
+        <div>
+          <label className={labelCls}>Judul</label>
+          <input
+            className={inputCls}
+            value={content.faqHeading}
+            onChange={(e) => set("faqHeading", e.target.value)}
+          />
+        </div>
+        <div className="space-y-3">
+          {content.faqs.map((f, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <div className="flex-1 space-y-2 rounded-lg border border-[var(--border)] p-3">
+                <input
+                  className={inputCls}
+                  value={f.q}
+                  onChange={(e) => setFaq(i, { q: e.target.value })}
+                  placeholder="Pertanyaan"
+                />
+                <textarea
+                  className={inputCls}
+                  rows={2}
+                  value={f.a}
+                  onChange={(e) => setFaq(i, { a: e.target.value })}
+                  placeholder="Jawaban"
+                />
+              </div>
+              <RemoveButton onClick={() => set("faqs", content.faqs.filter((_, idx) => idx !== i))} />
+            </div>
+          ))}
+          <AddButton onClick={() => set("faqs", [...content.faqs, { q: "", a: "" }])}>
+            Tambah pertanyaan
+          </AddButton>
+        </div>
+      </section>
+
+      {/* Actions */}
+      <div className="sticky bottom-0 flex items-center gap-3 border-t border-[var(--border)] bg-[var(--background)] py-3">
+        <Button size="md" onClick={handleSave} loading={pending} disabled={pending}>
+          {pending ? "Menyimpan…" : "Simpan"}
+        </Button>
+        <button
+          type="button"
+          className="text-sm text-[var(--muted)] hover:text-foreground"
+          onClick={() => {
+            setContent(DEFAULT_CONTENT);
+            setStatus(null);
+          }}
+        >
+          Reset ke bawaan
+        </button>
+        <Link href="/" target="_blank" className="ml-auto text-sm text-[var(--muted)] hover:text-foreground">
+          Lihat homepage ↗
+        </Link>
+        {status?.error && <span className="text-sm text-red-600">{status.error}</span>}
+        {status?.ok && <span className="text-sm text-green-600">Tersimpan.</span>}
+      </div>
+    </div>
+  );
+}

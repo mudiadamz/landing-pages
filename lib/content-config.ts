@@ -1,0 +1,120 @@
+/* Shared site-content types + defaults. Kept out of the "use server" action file
+ * so plain (non-async) values can be imported by client & server components.
+ *
+ * Powers the editable homepage copy: the footer tagline and the long
+ * "Ketentuan & lisensi / Cara pembelian / Jaminan support / FAQ" section.
+ * Edited from /panel/content, stored as JSON in lp_site_settings.value
+ * under key "site_content". */
+
+export type HowToStep = { label: string; text: string };
+export type FaqItem = { q: string; a: string };
+
+export type SiteContent = {
+  /** One-line tagline in the site footer. */
+  footerTagline: string;
+
+  /** "Ketentuan & lisensi" block. */
+  licenseHeading: string;
+  licenseParagraphs: string[];
+
+  /** "Cara pembelian" block. `label` is rendered bold, followed by ` — text`. */
+  howToHeading: string;
+  howToSteps: HowToStep[];
+
+  /** "Jaminan support" block. `outro` is followed by a link to /contact. */
+  supportHeading: string;
+  supportIntro: string;
+  supportPoints: string[];
+  supportOutro: string;
+
+  /** FAQ block. */
+  faqHeading: string;
+  faqs: FaqItem[];
+};
+
+export const DEFAULT_CONTENT: SiteContent = {
+  footerTagline:
+    "ADM.UIUX — produk digital siap pakai. By Adam Mudianto, software developer 15+ tahun.",
+
+  licenseHeading: "Ketentuan & lisensi",
+  licenseParagraphs: [
+    "Produk yang dijual di sini adalah produk digital: landing page, template HTML, dan aset digital lainnya. Anda membeli hak penggunaan produk, bukan lisensi eksklusif. Produk boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.",
+    "Setiap template kami test sebelum rilis. Kalau Anda menemukan bug, laporkan lewat halaman Kontak dan kami bantu perbaiki. Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar, mencakup bantuan implementasi dan perbaikan bug.",
+    "Pembayaran diproses dengan aman lewat payment gateway resmi kami (Duitku) langsung di halaman ini. Untuk sebagian produk pihak ketiga, pembayaran bisa diarahkan ke link resmi penjual—pastikan Anda selalu membeli dari sumber resmi.",
+    "Dengan membeli atau mengambil template gratis, Anda dianggap telah membaca dan menyetujui disclaimer serta ketentuan layanan kami.",
+  ],
+
+  howToHeading: "Cara pembelian",
+  howToSteps: [
+    { label: "Daftar akun", text: "Klik Daftar di pojok kanan atas, isi email dan password." },
+    { label: "Lihat preview", text: "Klik tombol Lihat pada landing page yang diminati untuk melihat tampilan lengkap." },
+    { label: "Klik Beli", text: "Untuk template berbayar, klik Beli. Anda akan diarahkan ke halaman pembayaran." },
+    { label: "Lakukan pembayaran", text: "Selesaikan pembayaran sesuai instruksi di halaman tersebut." },
+    { label: "Akses di Panel", text: "Setelah pembayaran terkonfirmasi, landing page bisa diakses di Panel → Pembelian Saya." },
+    { label: "Template gratis", text: "Klik Ambil gratis. Langsung tersimpan di akun Anda tanpa biaya." },
+  ],
+
+  supportHeading: "Jaminan support 1 bulan",
+  supportIntro:
+    "Support 1 bulan diberikan untuk setiap pembelian berbayar. Dukungan teknis berlaku selama 1 bulan sejak tanggal pembelian. Yang termasuk:",
+  supportPoints: [
+    "Bantuan implementasi (cara upload, deploy, integrasi dasar)",
+    "Perbaikan bug pada kode template",
+    "Panduan modifikasi sederhana (teks, gambar, warna)",
+  ],
+  supportOutro:
+    "Untuk memakai dukungan, sertakan detail pembelian (email atau bukti transaksi). Kami akan merespons dalam 1–2 hari kerja. Hubungi kami lewat",
+
+  faqHeading: "FAQ",
+  faqs: [
+    {
+      q: "Apa saja yang dijual di ADM.UIUX?",
+      a: "Produk digital siap pakai — mulai dari landing page dan template HTML, hingga aset digital lainnya. Semua bisa di-preview gratis sebelum beli, lalu langsung dipakai sesuai kebutuhan.",
+    },
+    {
+      q: "Bagaimana cara preview sebelum beli?",
+      a: "Setiap landing page punya tombol Lihat. Klik untuk membuka preview di tab baru. Anda bisa cek tampilan dan struktur sebelum memutuskan membeli.",
+    },
+    {
+      q: "Apakah bisa diedit setelah dibeli?",
+      a: "Ya. Anda mendapat akses file HTML. Edit menggunakan code editor favorit Anda. Template dirancang sederhana agar mudah dimodifikasi.",
+    },
+    {
+      q: "Bagaimana support 1 bulan itu?",
+      a: "Support 1 bulan diberikan untuk setiap pembelian berbayar. Anda punya hak support selama 1 bulan sejak pembelian: tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
+    },
+  ],
+};
+
+/** Merge a partial/parsed value onto the defaults so missing keys never break render. */
+export function normalizeContent(raw: unknown): SiteContent {
+  if (!raw || typeof raw !== "object") return DEFAULT_CONTENT;
+  const v = raw as Partial<SiteContent>;
+
+  const strArr = (a: unknown, fallback: string[]) =>
+    Array.isArray(a) && a.length > 0 ? a.map((x) => String(x ?? "")) : fallback;
+
+  const steps =
+    Array.isArray(v.howToSteps) && v.howToSteps.length > 0
+      ? v.howToSteps.map((s) => ({ label: String(s?.label ?? ""), text: String(s?.text ?? "") }))
+      : DEFAULT_CONTENT.howToSteps;
+
+  const faqs =
+    Array.isArray(v.faqs) && v.faqs.length > 0
+      ? v.faqs.map((f) => ({ q: String(f?.q ?? ""), a: String(f?.a ?? "") }))
+      : DEFAULT_CONTENT.faqs;
+
+  return {
+    footerTagline: v.footerTagline ?? DEFAULT_CONTENT.footerTagline,
+    licenseHeading: v.licenseHeading ?? DEFAULT_CONTENT.licenseHeading,
+    licenseParagraphs: strArr(v.licenseParagraphs, DEFAULT_CONTENT.licenseParagraphs),
+    howToHeading: v.howToHeading ?? DEFAULT_CONTENT.howToHeading,
+    howToSteps: steps,
+    supportHeading: v.supportHeading ?? DEFAULT_CONTENT.supportHeading,
+    supportIntro: v.supportIntro ?? DEFAULT_CONTENT.supportIntro,
+    supportPoints: strArr(v.supportPoints, DEFAULT_CONTENT.supportPoints),
+    supportOutro: v.supportOutro ?? DEFAULT_CONTENT.supportOutro,
+    faqHeading: v.faqHeading ?? DEFAULT_CONTENT.faqHeading,
+    faqs,
+  };
+}

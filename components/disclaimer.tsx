@@ -1,93 +1,64 @@
 import Link from "next/link";
+import { getSiteContent } from "@/lib/actions/site-settings";
 
-const faqs = [
-  {
-    q: "Apa saja yang dijual di ADM.UIUX?",
-    a: "Produk digital siap pakai — mulai dari landing page dan template HTML, hingga aset digital lainnya. Semua bisa di-preview gratis sebelum beli, lalu langsung dipakai sesuai kebutuhan.",
-  },
-  {
-    q: "Bagaimana cara preview sebelum beli?",
-    a: "Setiap landing page punya tombol Lihat. Klik untuk membuka preview di tab baru. Anda bisa cek tampilan dan struktur sebelum memutuskan membeli.",
-  },
-  {
-    q: "Apakah bisa diedit setelah dibeli?",
-    a: "Ya. Anda mendapat akses file HTML. Edit menggunakan code editor favorit Anda. Template dirancang sederhana agar mudah dimodifikasi.",
-  },
-  {
-    q: "Bagaimana support 1 bulan itu?",
-    a: "Support 1 bulan diberikan untuk setiap pembelian berbayar. Anda punya hak support selama 1 bulan sejak pembelian: tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
-  },
-];
+export async function Disclaimer() {
+  const content = await getSiteContent();
 
-export function Disclaimer() {
   return (
     <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20 border-t border-[var(--border)]">
       <div className="space-y-12 sm:space-y-16">
         {/* Disclaimer panjang */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground mb-4">
-            Ketentuan &amp; lisensi
+            {content.licenseHeading}
           </h2>
           <div className="space-y-4 text-sm text-[var(--muted)] leading-relaxed">
-            <p>
-              Produk yang dijual di sini adalah produk digital: landing page, template HTML, dan aset digital lainnya. Anda membeli hak penggunaan produk, bukan lisensi eksklusif. Produk boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.
-            </p>
-            <p>
-              Setiap template kami test sebelum rilis. Kalau Anda menemukan bug, laporkan lewat halaman Kontak dan kami bantu perbaiki. Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar, mencakup bantuan implementasi dan perbaikan bug.
-            </p>
-            <p>
-              Pembayaran diproses dengan aman lewat payment gateway resmi kami (Duitku) langsung di halaman ini. Untuk sebagian produk pihak ketiga, pembayaran bisa diarahkan ke link resmi penjual—pastikan Anda selalu membeli dari sumber resmi.
-            </p>
-            <p>
-              Dengan membeli atau mengambil template gratis, Anda dianggap telah membaca dan menyetujui disclaimer serta ketentuan layanan kami.
-            </p>
+            {content.licenseParagraphs.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
           </div>
         </div>
 
         {/* Cara pembelian */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground mb-4">
-            Cara pembelian
+            {content.howToHeading}
           </h2>
           <ol className="space-y-3 text-sm text-[var(--muted)] leading-relaxed list-decimal list-inside">
-            <li><strong className="text-foreground">Daftar akun</strong> — Klik Daftar di pojok kanan atas, isi email dan password.</li>
-            <li><strong className="text-foreground">Lihat preview</strong> — Klik tombol Lihat pada landing page yang diminati untuk melihat tampilan lengkap.</li>
-            <li><strong className="text-foreground">Klik Beli</strong> — Untuk template berbayar, klik Beli. Anda akan diarahkan ke halaman pembayaran.</li>
-            <li><strong className="text-foreground">Lakukan pembayaran</strong> — Selesaikan pembayaran sesuai instruksi di halaman tersebut.</li>
-            <li><strong className="text-foreground">Akses di Panel</strong> — Setelah pembayaran terkonfirmasi, landing page bisa diakses di Panel → Pembelian Saya.</li>
-            <li><strong className="text-foreground">Template gratis</strong> — Klik Ambil gratis. Langsung tersimpan di akun Anda tanpa biaya.</li>
+            {content.howToSteps.map((s, i) => (
+              <li key={i}>
+                <strong className="text-foreground">{s.label}</strong> — {s.text}
+              </li>
+            ))}
           </ol>
         </div>
 
         {/* Jaminan support */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground mb-4">
-            Jaminan support 1 bulan
+            {content.supportHeading}
           </h2>
-          <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
-            Support 1 bulan diberikan untuk <strong className="text-foreground">setiap pembelian berbayar</strong>. Dukungan teknis berlaku selama 1 bulan sejak tanggal pembelian. Yang termasuk:
-          </p>
+          <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">{content.supportIntro}</p>
           <ul className="space-y-2 text-sm text-[var(--muted)] leading-relaxed list-disc list-inside">
-            <li>Bantuan implementasi (cara upload, deploy, integrasi dasar)</li>
-            <li>Perbaikan bug pada kode template</li>
-            <li>Panduan modifikasi sederhana (teks, gambar, warna)</li>
+            {content.supportPoints.map((p, i) => (
+              <li key={i}>{p}</li>
+            ))}
           </ul>
           <p className="text-sm text-[var(--muted)] leading-relaxed mt-4">
-            Untuk memakai dukungan, hubungi kami lewat{" "}
+            {content.supportOutro}{" "}
             <Link href="/contact" className="text-[var(--primary)] hover:underline font-medium">
               halaman Kontak
             </Link>
-            {" "}dengan menyertakan detail pembelian (email atau bukti transaksi). Kami akan merespons dalam 1–2 hari kerja.
           </p>
         </div>
 
         {/* FAQ */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground mb-6">
-            FAQ
+            {content.faqHeading}
           </h2>
           <dl className="space-y-6">
-            {faqs.map((faq, i) => (
+            {content.faqs.map((faq, i) => (
               <div key={i}>
                 <dt className="text-sm font-medium text-foreground mb-1.5">{faq.q}</dt>
                 <dd className="text-sm text-[var(--muted)] leading-relaxed">{faq.a}</dd>
