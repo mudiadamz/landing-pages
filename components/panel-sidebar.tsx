@@ -8,7 +8,7 @@ import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
 import { BrandMark } from "@/components/brand-mark";
 
-type Props = { isAdmin: boolean; canSell?: boolean; displayName?: string };
+type Props = { isAdmin: boolean; canSell?: boolean; displayName?: string; pendingActions?: number };
 
 const navGroups: { label: string; items: { href: string; label: string; icon: typeof LayoutIcon; adminOnly?: boolean; external?: boolean }[] }[] = [
   {
@@ -139,11 +139,13 @@ function ImageIcon({ className }: { className?: string }) {
 function NavContent({
   isAdmin,
   canSell,
+  pendingActions = 0,
   onItemClick,
   onOpenAssets,
 }: {
   isAdmin: boolean;
   canSell?: boolean;
+  pendingActions?: number;
   onItemClick?: () => void;
   onOpenAssets?: () => void;
 }) {
@@ -169,10 +171,19 @@ function NavContent({
                       ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
                       : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
                   }`;
+                  const badgeCount = item.href === "/panel/users" ? pendingActions : 0;
                   const content = (
                     <>
                       <Icon className="w-5 h-5 shrink-0" />
                       <span>{item.href === "/panel/products" ? (canSell ? "Produk digital" : "Pembelian saya") : item.label}</span>
+                      {badgeCount > 0 && (
+                        <span
+                          className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white"
+                          title={`${badgeCount} tindakan menunggu`}
+                        >
+                          {badgeCount}
+                        </span>
+                      )}
                     </>
                   );
                   return item.external ? (
@@ -241,7 +252,7 @@ function NavContent({
   );
 }
 
-export function PanelSidebar({ isAdmin, canSell, displayName }: Props) {
+export function PanelSidebar({ isAdmin, canSell, displayName, pendingActions }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
 
@@ -254,7 +265,7 @@ export function PanelSidebar({ isAdmin, canSell, displayName }: Props) {
           aria-label="Menu"
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 -ml-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+          className="relative p-2 -ml-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {mobileOpen ? (
@@ -263,6 +274,9 @@ export function PanelSidebar({ isAdmin, canSell, displayName }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             )}
           </svg>
+          {!mobileOpen && !!pendingActions && pendingActions > 0 && (
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)]" aria-hidden />
+          )}
         </button>
         <div className="flex items-center gap-0.5">
           <ThemeSwitch />
@@ -309,13 +323,17 @@ export function PanelSidebar({ isAdmin, canSell, displayName }: Props) {
         </div>
         {displayName && (
           <div className="px-4 pb-2">
-            <p className="text-xs text-[var(--muted)]">Halo, <Link href="/panel/profile" className="font-medium text-foreground hover:text-[var(--primary)] transition-colors">{displayName}</Link></p>
+            <p className="text-xs text-[var(--muted)]">Halo, <span className="font-medium text-foreground">{displayName}</span></p>
+            <Link href="/panel/profile" className="text-xs font-medium text-[var(--primary)] hover:underline" onClick={() => setMobileOpen(false)}>
+              View Profile
+            </Link>
           </div>
         )}
         <div className="flex flex-1 flex-col overflow-y-auto px-3">
           <NavContent
             isAdmin={isAdmin}
             canSell={canSell}
+            pendingActions={pendingActions}
             onItemClick={() => setMobileOpen(false)}
             onOpenAssets={() => setAssetsOpen(true)}
           />

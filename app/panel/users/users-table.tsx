@@ -9,6 +9,7 @@ type UserRow = {
   full_name: string | null;
   email: string | null;
   role: Role;
+  is_active: boolean;
 };
 
 export function UsersTable() {
@@ -42,6 +43,31 @@ export function UsersTable() {
         );
       } else {
         alert(data.error ?? "Gagal mengubah role");
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function toggleActive(user: UserRow) {
+    const nextActive = !user.is_active;
+    if (!nextActive && !confirm(`Nonaktifkan ${user.full_name || user.email || "user"}? Mereka tidak bisa masuk sampai diaktifkan kembali.`)) {
+      return;
+    }
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, active: nextActive }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === user.id ? { ...u, is_active: nextActive } : u))
+        );
+      } else {
+        alert(data.error ?? "Gagal mengubah status");
       }
     } finally {
       setUpdating(null);
@@ -105,9 +131,12 @@ export function UsersTable() {
                 </p>
                 <p className="text-sm text-[var(--muted)] truncate">{u.email || "—"}</p>
               </div>
-              <RoleBadge role={u.role} />
+              <div className="flex flex-col items-end gap-1">
+                <RoleBadge role={u.role} />
+                <StatusBadge active={u.is_active} />
+              </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex items-center gap-4">
               <button
                 type="button"
                 onClick={() => toggleRole(u)}
@@ -119,6 +148,14 @@ export function UsersTable() {
                   : u.role === "admin"
                     ? "Jadikan customer"
                     : "Jadikan admin"}
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleActive(u)}
+                disabled={updating === u.id}
+                className={`text-sm font-medium hover:underline disabled:opacity-50 ${u.is_active ? "text-red-600" : "text-emerald-600"}`}
+              >
+                {u.is_active ? "Nonaktifkan" : "Aktifkan"}
               </button>
             </div>
           </div>
@@ -134,6 +171,7 @@ export function UsersTable() {
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Nama</th>
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Email</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Role</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Status</th>
                 <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Aksi</th>
               </tr>
             </thead>
@@ -150,25 +188,38 @@ export function UsersTable() {
                   <td className="px-4 py-3 text-center">
                     <RoleBadge role={u.role} />
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    <StatusBadge active={u.is_active} />
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => toggleRole(u)}
-                      disabled={updating === u.id}
-                      className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
-                    >
-                      {updating === u.id
-                        ? "Mengubah…"
-                        : u.role === "admin"
-                          ? "Jadikan customer"
-                          : "Jadikan admin"}
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleRole(u)}
+                        disabled={updating === u.id}
+                        className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
+                      >
+                        {updating === u.id
+                          ? "Mengubah…"
+                          : u.role === "admin"
+                            ? "Jadikan customer"
+                            : "Jadikan admin"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleActive(u)}
+                        disabled={updating === u.id}
+                        className={`text-xs font-medium hover:underline disabled:opacity-50 ${u.is_active ? "text-red-600" : "text-emerald-600"}`}
+                      >
+                        {u.is_active ? "Nonaktifkan" : "Aktifkan"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-[var(--muted)]">
+                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">
                     Tidak ada user ditemukan.
                   </td>
                 </tr>
@@ -189,4 +240,18 @@ function RoleBadge({ role }: { role: Role }) {
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
         : "bg-[var(--accent-subtle)] text-[var(--muted)]";
   return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{role}</span>;
+}
+
+function StatusBadge({ active }: { active: boolean }) {
+  return (
+    <span
+      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+        active
+          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+      }`}
+    >
+      {active ? "Aktif" : "Nonaktif"}
+    </span>
+  );
 }
