@@ -5,9 +5,31 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const BUCKET = "landing-downloads";
 
+/**
+ * Best-effort delete of a deliverable file being replaced. Values stored for the
+ * deliverable are storage paths (private bucket). Only removes the caller's own
+ * object and never the just-uploaded file; failures are swallowed.
+ */
+async function removePreviousDownload(
+  admin: ReturnType<typeof createAdminClient>,
+  previousPath: string | null | undefined,
+  userId: string,
+  newPath: string,
+) {
+  if (!previousPath) return;
+  const path = previousPath.split("?")[0];
+  if (!path || path === newPath || !path.startsWith(`${userId}/`)) return;
+  try {
+    await admin.storage.from(BUCKET).remove([path]);
+  } catch {
+    /* ignore cleanup errors */
+  }
+}
+
 export async function uploadZip(
   pageId: string,
-  formData: FormData
+  formData: FormData,
+  previousPath?: string | null,
 ): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -33,12 +55,16 @@ export async function uploadZip(
 
   if (error) return { error: error.message };
 
+  // Replacing the deliverable: delete the previous file.
+  await removePreviousDownload(admin, previousPath, user.id, path);
+
   return { url: path };
 }
 
 export async function uploadStoryPdf(
   pageId: string,
-  formData: FormData
+  formData: FormData,
+  previousPath?: string | null,
 ): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -66,6 +92,9 @@ export async function uploadStoryPdf(
   });
 
   if (error) return { error: error.message };
+
+  // Replacing the deliverable: delete the previous file.
+  await removePreviousDownload(admin, previousPath, user.id, path);
 
   return { url: path };
 }

@@ -50,7 +50,6 @@ type DeliverableType = "zip" | "pdf";
 type Props = {
   pageId: string;
   slug: string;
-  isAdmin: boolean;
   initialHtml: string;
   categories: LandingPageCategory[];
   initial: {
@@ -75,7 +74,7 @@ type Props = {
  * Monaco HTML editor keeps its own save (heavy, separate surface) and only shows
  * when the preview source is "HTML editor".
  */
-export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories, initial }: Props) {
+export function ProductEditForm({ pageId, slug, initialHtml, categories, initial }: Props) {
   const router = useRouter();
 
   // --- Page info ---
@@ -152,7 +151,8 @@ export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories
       const formData = new FormData();
       formData.set("file", file);
       try {
-        const result = await uploadPreviewPdf(pageId, formData);
+        // Pass the current PDF so it's deleted once the new one is stored.
+        const result = await uploadPreviewPdf(pageId, formData, previewUrl || null);
         if ("error" in result) {
           setMessage({ type: "err", text: result.error });
         } else {
@@ -164,7 +164,7 @@ export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories
         setPdfUploading(false);
       }
     },
-    [pageId],
+    [pageId, previewUrl],
   );
 
   // Uploads only push the file to storage + set local state. Nothing is written
@@ -177,7 +177,8 @@ export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories
     try {
       const formData = new FormData();
       formData.set("file", file);
-      const res = await uploadZip(pageId, formData);
+      // Pass the current deliverable path so it's deleted once the new one is stored.
+      const res = await uploadZip(pageId, formData, zipUrl || null);
       if ("error" in res) {
         setZipError(res.error);
         return;
@@ -206,7 +207,8 @@ export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories
     try {
       const formData = new FormData();
       formData.set("file", file);
-      const res = await uploadStoryPdf(pageId, formData);
+      // Pass the current deliverable path so it's deleted once the new one is stored.
+      const res = await uploadStoryPdf(pageId, formData, storyUrl || null);
       if ("error" in res) {
         setStoryError(res.error);
         return;
@@ -238,7 +240,8 @@ export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories
       const formData = new FormData();
       formData.set("file", file);
       try {
-        const res = await uploadAsset(pageId, formData);
+        // Pass the current thumbnail so it's deleted once the new one is stored.
+        const res = await uploadAsset(pageId, formData, thumbnailUrl || null);
         if ("error" in res) {
           setThumbError(res.error);
         } else {
@@ -249,7 +252,7 @@ export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories
         setThumbUploading(false);
       }
     },
-    [pageId],
+    [pageId, thumbnailUrl],
   );
 
   function removeThumb() {
@@ -461,7 +464,7 @@ export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories
       {/* Monaco editor — only for the HTML preview source. Keeps its own save. */}
       {previewType === "html" && (
         <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm sm:p-4">
-          <Editor id={pageId} initialHtml={initialHtml} canUploadAssets={isAdmin} />
+          <Editor id={pageId} initialHtml={initialHtml} />
         </div>
       )}
 

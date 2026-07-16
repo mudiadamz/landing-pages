@@ -3,15 +3,43 @@
 import { unzipSync } from "fflate";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/actions/profiles";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BUCKET = "landing-assets";
 
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+/** Extract the storage object path from a public URL for the given bucket. */
+function pathFromPublicUrl(url: string, bucket: string): string | null {
+  const marker = `/storage/v1/object/public/${bucket}/`;
+  const i = url.indexOf(marker);
+  if (i === -1) return null;
+  return decodeURIComponent(url.slice(i + marker.length).split("?")[0]);
+}
+
+/**
+ * Best-effort delete of a file being replaced. Only removes the caller's own
+ * object (path must start with their user id) and never the just-uploaded file.
+ * Failures are swallowed so a replace never fails on cleanup.
+ */
+async function removePreviousAsset(
+  supabase: SupabaseClient,
+  previousUrl: string | null | undefined,
+  userId: string,
+  newPath: string,
+) {
+  if (!previousUrl) return;
+  const path = pathFromPublicUrl(previousUrl, BUCKET) ?? previousUrl.split("?")[0];
+  if (!path || path === newPath || !path.startsWith(`${userId}/`)) return;
+  try {
+    await supabase.storage.from(BUCKET).remove([path]);
+  } catch {
+    /* ignore cleanup errors */
+  }
+}
 
 export async function uploadAsset(
   pageId: string,
-  formData: FormData
+  formData: FormData,
+  previousUrl?: string | null,
 ): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -22,18 +50,12 @@ export async function uploadAsset(
   const file = formData.get("file") as File;
   if (!file) return { error: "No file provided" };
 
-  // Non-admins (publishers) may only upload images here — this endpoint still
-  // powers the product thumbnail, but video/site-asset hosting is admin-only.
-  const isAdmin = await requireAdmin();
-  const allowed = isAdmin
-    ? [...IMAGE_TYPES, "video/mp4", "video/webm", "video/ogg"]
-    : IMAGE_TYPES;
+  const allowed = [
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "video/mp4", "video/webm", "video/ogg",
+  ];
   if (!allowed.includes(file.type)) {
-    return {
-      error: isAdmin
-        ? "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)."
-        : "Hanya gambar (jpg, png, gif, webp, svg) yang diizinkan.",
-    };
+    return { error: "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)." };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -45,6 +67,9 @@ export async function uploadAsset(
   });
 
   if (error) return { error: error.message };
+
+  // Replacing a single-slot asset (e.g. thumbnail): delete the old file.
+  await removePreviousAsset(supabase, previousUrl, user.id, path);
 
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return { url: urlData.publicUrl };
@@ -65,9 +90,6 @@ export async function uploadLibraryAsset(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
-
-  // Reusable media library is an admin-only surface.
-  if (!(await requireAdmin())) return { error: "Forbidden" };
 
   const file = formData.get("file") as File;
   if (!file) return { error: "No file provided" };
@@ -164,9 +186,6 @@ export async function uploadSiteZip(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
-
-  // Uploading a full static-site bundle (arbitrary files) is admin-only.
-  if (!(await requireAdmin())) return { error: "Forbidden" };
 
   // Confirm the caller owns this page before writing anything.
   const { data: page } = await supabase
@@ -279,6 +298,7 @@ export async function uploadSiteZip(
 export async function uploadPreviewPdf(
   pageId: string,
   formData: FormData,
+  previousUrl?: string | null,
 ): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -303,6 +323,9 @@ export async function uploadPreviewPdf(
     upsert: true,
   });
   if (error) return { error: error.message };
+
+  // Replacing the preview PDF: delete the old one.
+  await removePreviousAsset(supabase, previousUrl, user.id, path);
 
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return { url: urlData.publicUrl };

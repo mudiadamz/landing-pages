@@ -22,12 +22,9 @@ type Tab = "html" | "css" | "js";
 export function Editor({
   id,
   initialHtml,
-  canUploadAssets = false,
 }: {
   id: string;
   initialHtml: string;
-  /** Only admins may upload media/site-ZIP assets (publishers use HTML + URLs). */
-  canUploadAssets?: boolean;
 }) {
   const router = useRouter();
   const parsed = parseHtmlContent(initialHtml);
@@ -137,8 +134,8 @@ export function Editor({
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 gap-4 ${canUploadAssets ? "lg:grid-cols-3" : ""}`}>
-        <div className={canUploadAssets ? "lg:col-span-2" : ""}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
           <div className="rounded-lg border border-[var(--border)] overflow-hidden">
             <MonacoEditor
               height="60vh"
@@ -158,11 +155,9 @@ export function Editor({
           </div>
         </div>
 
-        {canUploadAssets && (
-          <div className="space-y-4">
-            <AssetUpload pageId={id} onSiteUploaded={handleSiteUploaded} />
-          </div>
-        )}
+        <div className="space-y-4">
+          <AssetUpload pageId={id} onSiteUploaded={handleSiteUploaded} />
+        </div>
       </div>
     </div>
   );
