@@ -165,3 +165,32 @@ input, textarea, select {
 .preview-dark {
   filter: invert(1) hue-rotate(180deg);
 }
+
+/* Formatted product descriptions (RichText / RichTextEditor). Scoped so the
+   allowlisted tags render with sensible spacing without a typography plugin. */
+.rich-text {
+  line-height: 1.65;
+  word-break: break-word;
+}
+.rich-text > :first-child { margin-top: 0; }
+.rich-text > :last-child { margin-bottom: 0; }
+.rich-text p { margin: 0 0 0.75em; }
+.rich-text h2 { font-size: 1.15em; font-weight: 700; margin: 1em 0 0.4em; }
+.rich-text h3 { font-size: 1.05em; font-weight: 600; margin: 0.9em 0 0.35em; }
+.rich-text ul,
+.rich-text ol { margin: 0 0 0.75em; padding-left: 1.4em; }
+.rich-text ul { list-style: disc; }
+.rich-text ol { list-style: decimal; }
+.rich-text li { margin: 0.15em 0; }
+.rich-text a { color: var(--primary); text-decoration: underline; }
+.rich-text strong, .rich-text b { font-weight: 700; }
+.rich-text blockquote {
+  margin: 0 0 0.75em;
+  padding-left: 0.9em;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+.rich-text:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+}

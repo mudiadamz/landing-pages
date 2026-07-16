@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
 import { normalizeDescription } from "@/lib/seo";
+import { isProbablyHtml, richTextToPlain } from "@/lib/html-sanitize";
 
 type Props = {
   page: LandingPagePublic;
@@ -27,7 +28,10 @@ function formatPrice(value: number): string {
 
 export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Props) {
   const isFree = page.is_free === true;
-  const description = normalizeDescription(page.long_description);
+  // Cards show a plain-text snippet — strip rich-text HTML, keep legacy markdown cleanup.
+  const description = isProbablyHtml(page.long_description)
+    ? richTextToPlain(page.long_description)
+    : normalizeDescription(page.long_description);
   const price = page.price ?? 0;
   const priceDiscount = page.price_discount ?? 0;
   const hasDiscount = !isFree && priceDiscount > 0;

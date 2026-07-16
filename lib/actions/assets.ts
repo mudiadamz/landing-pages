@@ -3,8 +3,11 @@
 import { unzipSync } from "fflate";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/actions/profiles";
 
 const BUCKET = "landing-assets";
+
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
 
 export async function uploadAsset(
   pageId: string,
@@ -19,12 +22,18 @@ export async function uploadAsset(
   const file = formData.get("file") as File;
   if (!file) return { error: "No file provided" };
 
-  const allowed = [
-    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
-    "video/mp4", "video/webm", "video/ogg",
-  ];
+  // Non-admins (publishers) may only upload images here — this endpoint still
+  // powers the product thumbnail, but video/site-asset hosting is admin-only.
+  const isAdmin = await requireAdmin();
+  const allowed = isAdmin
+    ? [...IMAGE_TYPES, "video/mp4", "video/webm", "video/ogg"]
+    : IMAGE_TYPES;
   if (!allowed.includes(file.type)) {
-    return { error: "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)." };
+    return {
+      error: isAdmin
+        ? "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)."
+        : "Hanya gambar (jpg, png, gif, webp, svg) yang diizinkan.",
+    };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -56,6 +65,9 @@ export async function uploadLibraryAsset(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
+
+  // Reusable media library is an admin-only surface.
+  if (!(await requireAdmin())) return { error: "Forbidden" };
 
   const file = formData.get("file") as File;
   if (!file) return { error: "No file provided" };
@@ -152,6 +164,9 @@ export async function uploadSiteZip(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
+
+  // Uploading a full static-site bundle (arbitrary files) is admin-only.
+  if (!(await requireAdmin())) return { error: "Forbidden" };
 
   // Confirm the caller owns this page before writing anything.
   const { data: page } = await supabase

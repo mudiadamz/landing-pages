@@ -12,6 +12,8 @@ import { uploadPreviewPdf, uploadAsset } from "@/lib/actions/assets";
 import { uploadZip, uploadStoryPdf } from "@/lib/actions/downloads";
 import { Editor } from "./editor";
 import { Button } from "@/components/ui/button";
+import { RichTextEditor } from "@/components/rich-text-editor";
+import { richTextToPlain } from "@/lib/html-sanitize";
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
@@ -43,9 +45,12 @@ const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
   { value: "link", label: "Link", hint: "Embed URL eksternal di halaman preview." },
 ];
 
+type DeliverableType = "zip" | "pdf";
+
 type Props = {
   pageId: string;
   slug: string;
+  isAdmin: boolean;
   initialHtml: string;
   categories: LandingPageCategory[];
   initial: {
@@ -70,7 +75,7 @@ type Props = {
  * Monaco HTML editor keeps its own save (heavy, separate surface) and only shows
  * when the preview source is "HTML editor".
  */
-export function ProductEditForm({ pageId, slug, initialHtml, categories, initial }: Props) {
+export function ProductEditForm({ pageId, slug, isAdmin, initialHtml, categories, initial }: Props) {
   const router = useRouter();
 
   // --- Page info ---
@@ -115,6 +120,12 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   );
   const [storyUploading, setStoryUploading] = useState(false);
   const [storyError, setStoryError] = useState<string | null>(null);
+
+  // The buyer receives exactly one file: either a ZIP (downloaded) or a PDF
+  // (read in the purchases list). Default to whichever already exists.
+  const [deliverableType, setDeliverableType] = useState<DeliverableType>(
+    initial.story_pdf_url && !initial.zip_url ? "pdf" : "zip",
+  );
 
   // --- Action bar ---
   const [saving, setSaving] = useState(false);
@@ -282,8 +293,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         purchase_type: "internal",
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
-        zip_url: zipUrl.trim() || null,
-        story_pdf_url: storyUrl.trim() || null,
+        zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
+        story_pdf_url: deliverableType === "pdf" ? storyUrl.trim() || null : null,
         category_id: categoryId.trim() || null,
         long_description: longDescription.trim() || null,
       });
@@ -450,7 +461,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       {/* Monaco editor — only for the HTML preview source. Keeps its own save. */}
       {previewType === "html" && (
         <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm sm:p-4">
-          <Editor id={pageId} initialHtml={initialHtml} />
+          <Editor id={pageId} initialHtml={initialHtml} canUploadAssets={isAdmin} />
         </div>
       )}
 
@@ -463,26 +474,24 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
           </p>
         </div>
 
-        {/* Long description */}
+        {/* Long description — rich text (WYSIWYG). Stored as HTML, sanitized on save. */}
         <div className="space-y-1.5">
           <div className="flex items-baseline justify-between gap-3">
-            <label htmlFor="long-desc" className="text-sm font-medium text-foreground">
+            <span className="text-sm font-medium text-foreground">
               Deskripsi panjang <span className="text-[var(--muted)]">(tampil di kartu &amp; checkout)</span>
-            </label>
+            </span>
             <span className="hidden text-xs text-[var(--muted)] sm:block">
               Bantu pembeli memahami isi produk Anda.
             </span>
           </div>
-          <textarea
-            id="long-desc"
-            value={longDescription}
-            maxLength={2000}
-            onChange={(e) => setLongDescription(e.target.value)}
+          <RichTextEditor
+            initialHtml={initial.long_description ?? ""}
+            onChange={setLongDescription}
             placeholder="Penjelasan produk, fitur, atau manfaat…"
-            rows={12}
-            className="min-h-64 w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm leading-relaxed text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
-          <p className="text-right text-xs text-[var(--muted)]">{longDescription.length}/2000</p>
+          <p className="text-right text-xs text-[var(--muted)]">
+            {richTextToPlain(longDescription).length} karakter
+          </p>
         </div>
 
         {/* Toggle cards */}
@@ -546,13 +555,34 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
           </div>
         )}
 
-        {/* Deliverables */}
+        {/* Deliverable — buyer receives one file, either ZIP or PDF. */}
         <div className="space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-foreground">File yang diberikan ke pembeli</h3>
             <p className="text-xs text-[var(--muted)]">File akan tersedia setelah pembayaran berhasil.</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+
+          <div className="space-y-1.5">
+            <label htmlFor="deliverable-type" className="block text-sm font-medium text-foreground">
+              Tipe file
+            </label>
+            <select
+              id="deliverable-type"
+              value={deliverableType}
+              onChange={(e) => setDeliverableType(e.target.value as DeliverableType)}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+            >
+              <option value="zip">ZIP — file untuk di-download pembeli</option>
+              <option value="pdf">PDF — dibaca pembeli di daftar pembelian</option>
+            </select>
+            <p className="text-xs text-[var(--muted)]">
+              {deliverableType === "zip"
+                ? "Pembeli mengunduh file ZIP setelah pembayaran berhasil."
+                : "Pembeli membaca file PDF langsung dari daftar pembelian."}
+            </p>
+          </div>
+
+          {deliverableType === "zip" ? (
             <FileUploadCard
               label="File ZIP (untuk download setelah pembayaran)"
               accept=".zip,application/zip,application/x-zip-compressed"
@@ -566,8 +596,9 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
               onUpload={handleZipUpload}
               onRemove={removeZip}
             />
+          ) : (
             <FileUploadCard
-              label="PDF cerita (dibaca customer di daftar pembelian)"
+              label="File PDF (dibaca customer di daftar pembelian)"
               accept=".pdf,application/pdf"
               badge="PDF"
               badgeClass="bg-red-500/10 text-red-600 dark:text-red-400"
@@ -575,11 +606,11 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
               meta={storyMeta}
               uploading={storyUploading}
               error={storyError}
-              statusText="PDF cerita terpasang"
+              statusText="PDF terpasang"
               onUpload={handleStoryUpload}
               onRemove={removeStory}
             />
-          </div>
+          )}
         </div>
 
         {/* Thumbnail */}

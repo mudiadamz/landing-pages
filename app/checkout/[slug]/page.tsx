@@ -9,7 +9,8 @@ import { getPublicReviews, getReviewCount } from "@/lib/actions/reviews";
 import { VerifiedReviews } from "@/components/verified-reviews";
 import { FounderCredibility } from "@/components/founder-credibility";
 import { JsonLd } from "@/components/json-ld";
-import { SITE_URL, buildMetaDescription, normalizeDescription } from "@/lib/seo";
+import { SITE_URL, buildMetaDescription } from "@/lib/seo";
+import { RichText } from "@/components/rich-text";
 import { CheckoutForm } from "./checkout-form";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -231,9 +232,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
 
             {/* Description */}
             {page.long_description && (
-              <p className="text-sm text-[var(--muted)] whitespace-pre-wrap leading-relaxed">
-                {normalizeDescription(page.long_description)}
-              </p>
+              <RichText text={page.long_description} className="text-sm text-[var(--muted)]" />
             )}
 
             {/* Verified buyer reviews */}

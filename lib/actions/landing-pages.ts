@@ -4,6 +4,7 @@ import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isValidSlug } from "@/lib/slug";
+import { sanitizeRichText } from "@/lib/html-sanitize";
 
 export type PreviewType = "html" | "pdf" | "link";
 
@@ -358,9 +359,16 @@ export async function updateLandingPagePricing(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
+  // Descriptions are publisher-authored rich text — sanitize before storing.
+  const payload = { ...opts };
+  if ("long_description" in payload) {
+    const clean = sanitizeRichText(payload.long_description);
+    payload.long_description = clean || null;
+  }
+
   const { error } = await supabase
     .from("lp_landing_pages")
-    .update(opts)
+    .update(payload)
     .eq("id", id)
     .eq("user_id", user.id);
 

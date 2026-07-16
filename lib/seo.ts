@@ -1,3 +1,5 @@
+import { richTextToPlain } from "@/lib/html-sanitize";
+
 /** Canonical site origin. Falls back to the production domain, never a placeholder. */
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com"
@@ -12,7 +14,7 @@ export function buildMetaDescription(
   text: string | null | undefined,
   fallback: string,
 ): string {
-  const cleaned = (text || "")
+  const cleaned = richTextToPlain(text)
     .replace(/[*_#>`~]/g, " ")
     .replace(/\s+/g, " ")
     .trim();

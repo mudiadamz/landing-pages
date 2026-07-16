@@ -24,31 +24,38 @@ export function NewPageForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Slug is generated automatically from the title. Once the user edits the
+  // slug by hand, we stop overwriting it so their choice sticks.
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
+
+  const effectiveSlug = slugEdited ? slug : slugFromTitle(title);
+
+  function handleTitleChange(value: string) {
+    setTitle(value);
+    if (!slugEdited) setSlug(slugFromTitle(value));
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
-    const form = e.currentTarget;
-    const titleInput = form.querySelector('input[name="title"]') as HTMLInputElement;
-    const slugInput = form.querySelector('input[name="slug"]') as HTMLInputElement;
+    const trimmedTitle = title.trim();
+    const finalSlug = (effectiveSlug || "").trim().toLowerCase();
 
-    const title = (titleInput?.value || "").trim();
-    const slug = (slugInput?.value || "").trim().toLowerCase() || slugFromTitle(title);
-
-    if (!title) {
+    if (!trimmedTitle) {
       setError("Judul tidak boleh kosong.");
-      setLoading(false);
       return;
     }
-    if (!isValidSlug(slug)) {
+    if (!isValidSlug(finalSlug)) {
       setError("Slug hanya boleh huruf kecil, angka, dan tanda hubung.");
-      setLoading(false);
       return;
     }
 
+    setLoading(true);
     try {
-      const id = await createLandingPage(title, slug, DEFAULT_HTML);
+      const id = await createLandingPage(trimmedTitle, finalSlug, DEFAULT_HTML);
       router.push(`/panel/product/${id}/edit`);
       router.refresh();
     } catch (err) {
@@ -74,23 +81,35 @@ export function NewPageForm() {
           type="text"
           placeholder="Judul produk"
           required
+          value={title}
+          onChange={(e) => handleTitleChange(e.target.value)}
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
       </div>
       <div>
-        <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-1.5">
-          Slug (URL)
-        </label>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <label htmlFor="slug" className="block text-sm font-medium text-foreground">
+            Slug (URL)
+          </label>
+          <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--primary)]">
+            otomatis dari judul
+          </span>
+        </div>
         <input
           id="slug"
           name="slug"
           type="text"
           placeholder="judul-produk"
+          value={effectiveSlug}
+          onChange={(e) => {
+            setSlugEdited(true);
+            setSlug(e.target.value.toLowerCase());
+          }}
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground font-mono text-sm focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Dipakai di /lp/[slug]. Huruf kecil, angka, dan tanda hubung. Kosongkan untuk otomatis dari
-          judul.
+          Terisi sendiri dari judul — boleh diubah manual. Alamat produk:{" "}
+          <span className="font-mono text-foreground">/lp/{effectiveSlug || "…"}</span>
         </p>
       </div>
       <Button
