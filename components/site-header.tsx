@@ -132,6 +132,9 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
 
         <div className="flex items-center gap-2 shrink-0">
           <ThemeSwitch />
+          {/* Auth control is hidden on mobile — the bottom nav + hamburger menu
+              cover profile/login there. Shown from md upward. */}
+          <div className="hidden md:flex items-center">
           {user ? (
             <div className="relative" ref={userMenuRef}>
               <button
@@ -174,6 +177,7 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
               Masuk
             </Link>
           )}
+          </div>
           <button
             type="button"
             aria-label="Toggle menu"
