@@ -8,7 +8,6 @@ import { LandingPageCard } from "@/app/landing-page-card";
 import { SortTabs } from "@/components/sort-tabs";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { FounderCredibility } from "@/components/founder-credibility";
 import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
@@ -94,7 +93,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       </main>
 
       <SiteFooter />
-      <MobileBottomNav isLoggedIn={!!user} active="categories" />
     </div>
   );
 }

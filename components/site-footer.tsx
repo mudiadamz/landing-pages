@@ -1,11 +1,23 @@
 import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { createClient } from "@/lib/supabase/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
 
+/**
+ * Bottom of the public shell: the footer itself plus the mobile bottom nav.
+ * The nav lives here so every page that renders the public shell gets it for
+ * free — /lp (fullscreen preview) and /panel (own sidebar) render no footer and
+ * so stay untouched.
+ */
 export async function SiteFooter() {
-  const content = await getSiteContent();
+  const [content, supabase] = await Promise.all([getSiteContent(), createClient()]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
+    <>
     <footer className="relative border-t border-[var(--border)] py-12 sm:py-16 shrink-0 overflow-hidden">
       <div
         className="absolute bottom-0 right-0 w-64 h-64 rounded-full opacity-15 blur-3xl pointer-events-none"
@@ -52,5 +64,7 @@ export async function SiteFooter() {
         </div>
       </div>
     </footer>
+    <MobileBottomNav isLoggedIn={!!user} />
+    </>
   );
 }

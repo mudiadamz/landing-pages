@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { CategoryIcon } from "@/lib/category-icons";
 
 export const metadata: Metadata = {
@@ -88,7 +87,6 @@ export default async function CategoriesPage() {
       </main>
 
       <SiteFooter />
-      <MobileBottomNav isLoggedIn={!!user} active="categories" />
     </div>
   );
 }

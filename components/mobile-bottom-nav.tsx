@@ -1,29 +1,60 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 type Tab = "home" | "categories" | "profile";
 
+/** Short buzz on tap where the browser supports it (Android Chrome; no-op on iOS). */
+function buzz() {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    navigator.vibrate(8);
+  }
+}
+
 /**
  * Fixed bottom navigation shown on small screens for the public site: Beranda,
- * Kategori, and Profil (or Masuk when logged out). Includes an in-flow spacer so
- * page content/footer isn't hidden behind the fixed bar. Hidden on md+.
+ * Kategori, and Profil (or Masuk when logged out). Mounted once via SiteFooter,
+ * so every page with the public shell gets it; /lp and /panel have their own
+ * chrome and never render the footer. Includes an in-flow spacer so the footer
+ * isn't hidden behind the fixed bar. Hidden on md+.
  */
-export function MobileBottomNav({
-  isLoggedIn,
-  active,
-}: {
-  isLoggedIn: boolean;
-  active?: Tab;
-}) {
-  const items: { key: Tab; href: string; label: string; icon: React.ReactNode }[] = [
-    { key: "home", href: "/", label: "Beranda", icon: <HomeIcon /> },
-    { key: "categories", href: "/categories", label: "Kategori", icon: <GridIcon /> },
+export function MobileBottomNav({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const pathname = usePathname() ?? "/";
+
+  const items: {
+    key: Tab;
+    href: string;
+    label: string;
+    icon: React.ReactNode;
+    match: (p: string) => boolean;
+  }[] = [
+    { key: "home", href: "/", label: "Beranda", icon: <HomeIcon />, match: (p) => p === "/" },
+    {
+      key: "categories",
+      href: "/categories",
+      label: "Kategori",
+      icon: <GridIcon />,
+      match: (p) => p === "/categories" || p.startsWith("/category/"),
+    },
     {
       key: "profile",
       href: isLoggedIn ? "/panel" : "/login",
       label: isLoggedIn ? "Profil" : "Masuk",
       icon: <UserIcon />,
+      match: (p) => p.startsWith("/panel") || p === "/login" || p === "/signup",
     },
   ];
+
+  const routeTab = items.find((it) => it.match(pathname))?.key ?? null;
+
+  // Optimistic highlight: the tapped tab lights up right away instead of waiting
+  // for the server render, so the bar reacts even on a slow navigation. Tagged
+  // with the path it was tapped from, so it self-expires once we've navigated.
+  const [pending, setPending] = useState<{ tab: Tab; from: string } | null>(null);
+  const active = pending && pending.from === pathname ? pending.tab : routeTab;
+  const activeIndex = items.findIndex((it) => it.key === active);
 
   return (
     <>
@@ -33,20 +64,55 @@ export function MobileBottomNav({
         aria-label="Navigasi bawah"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--card)]/80 pb-[env(safe-area-inset-bottom)] md:hidden"
       >
-        <div className="mx-auto flex max-w-5xl items-stretch">
+        <div className="relative mx-auto flex max-w-5xl items-stretch">
+          {/* Indicator that slides between tabs; hidden on pages that map to no tab. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-0 left-0 flex justify-center transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none"
+            style={{
+              width: `${100 / items.length}%`,
+              transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
+              opacity: activeIndex < 0 ? 0 : 1,
+            }}
+          >
+            <span className="h-0.5 w-8 rounded-full bg-[var(--primary)]" />
+          </span>
+
           {items.map((it) => {
             const isActive = active === it.key;
             return (
               <Link
                 key={it.key}
                 href={it.href}
+                onPointerDown={buzz}
+                onClick={() => setPending({ tab: it.key, from: pathname })}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors active:opacity-70 ${
+                className={`group flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
                   isActive ? "text-[var(--primary)]" : "text-[var(--muted)] hover:text-foreground"
                 }`}
               >
-                {it.icon}
-                <span>{it.label}</span>
+                <span className="flex flex-col items-center gap-0.5 transition-transform duration-100 ease-out group-active:scale-90 motion-reduce:transition-none">
+                  <span className="relative flex h-7 w-14 items-center justify-center">
+                    {/* Pill sits behind the icon: always on for the active tab,
+                        and blooms under the thumb on press for the others. */}
+                    <span
+                      aria-hidden
+                      className={`absolute inset-0 rounded-full bg-[var(--accent-subtle)] transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
+                        isActive
+                          ? "scale-100 opacity-100"
+                          : "scale-75 opacity-0 group-active:scale-100 group-active:opacity-70 group-active:duration-150"
+                      }`}
+                    />
+                    <span
+                      className={`relative transition-transform duration-300 ease-out motion-reduce:transition-none ${
+                        isActive ? "-translate-y-px scale-110" : "scale-100"
+                      }`}
+                    >
+                      {it.icon}
+                    </span>
+                  </span>
+                  <span>{it.label}</span>
+                </span>
               </Link>
             );
           })}
