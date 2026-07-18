@@ -3,21 +3,22 @@ import { requireFeature, getProfile } from "@/lib/actions/profiles";
 import { getStats, getCustomers, getMyProductStats, type Stats, type CustomerRow, type PublisherStats } from "@/lib/actions/admin";
 
 export default async function StatsPage() {
-  // Admins / users granted the "stats" feature see global stats; publishers see
-  // stats for their own products only.
   const [profile, hasGlobal] = await Promise.all([getProfile(), requireFeature("stats")]);
-  const isPublisher = profile?.role === "publisher";
-  if (!hasGlobal && !isPublisher) redirect("/panel");
 
-  if (hasGlobal) {
-    const [stats, customers] = await Promise.all([getStats(), getCustomers()]);
+  // Publishers only ever see stats for their OWN products — even if the "stats"
+  // feature is also granted to their role, they never get the global view (all
+  // products / customers / revenue). Global stats stay for admins and any other
+  // role explicitly granted the feature.
+  if (profile?.role === "publisher") {
+    const stats = await getMyProductStats();
     if (!stats) return null;
-    return <GlobalStats stats={stats} customers={customers} />;
+    return <MyProductStats stats={stats} />;
   }
 
-  const stats = await getMyProductStats();
+  if (!hasGlobal) redirect("/panel");
+  const [stats, customers] = await Promise.all([getStats(), getCustomers()]);
   if (!stats) return null;
-  return <MyProductStats stats={stats} />;
+  return <GlobalStats stats={stats} customers={customers} />;
 }
 
 function formatIDR(n: number) {
