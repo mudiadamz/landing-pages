@@ -45,7 +45,11 @@ export default async function LandingPageView({ params }: Props) {
   // Preview source: an uploaded PDF or external link is embedded directly;
   // otherwise the inline HTML is rendered (with anti-copy guards).
   const previewUrl = page.preview_url?.trim() || null;
-  const embedPdf = page.preview_type === "pdf" && !!previewUrl;
+  const previewUrlDark = page.preview_url_dark?.trim() || null;
+  // A PDF preview needs at least one file; if only the dark one exists, use it
+  // as the default so the preview still renders.
+  const pdfLight = previewUrl ?? previewUrlDark;
+  const embedPdf = page.preview_type === "pdf" && !!pdfLight;
   const embedLink = page.preview_type === "link" && !!previewUrl;
 
   // Pricing for the sticky buy CTA (mirrors the checkout page's display logic).
@@ -68,7 +72,12 @@ export default async function LandingPageView({ params }: Props) {
         {embedPdf ? (
           // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
           // streams in as the user scrolls instead of loading all at once.
-          <PdfPreview url={previewUrl as string} title={page.title} storageKey={`lp-pdf:${slug}`} />
+          <PdfPreview
+            url={pdfLight as string}
+            urlDark={previewUrlDark}
+            title={page.title}
+            storageKey={`lp-pdf:${slug}`}
+          />
         ) : embedLink ? (
           <iframe
             src={previewUrl ?? undefined}

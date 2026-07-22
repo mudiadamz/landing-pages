@@ -59,6 +59,7 @@ export default async function EditPage({
           title: page.title,
           preview_type: (page as { preview_type?: PreviewType }).preview_type ?? "html",
           preview_url: (page as { preview_url?: string | null }).preview_url ?? null,
+          preview_url_dark: (page as { preview_url_dark?: string | null }).preview_url_dark ?? null,
           price: page.price,
           price_discount: page.price_discount,
           is_free: page.is_free,

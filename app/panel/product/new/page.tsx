@@ -2,16 +2,19 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canSellProducts } from "@/lib/actions/profiles";
+import { getCategories } from "@/lib/actions/landing-pages";
 import { NewPageForm } from "./new-page-form";
 
 const STEPS = [
-  { n: 1, title: "Buat produk", desc: "Judul & URL" },
+  { n: 1, title: "Buat produk", desc: "Judul, URL & kategori" },
   { n: 2, title: "Lengkapi detail", desc: "Preview, harga & file" },
 ];
 
 export default async function NewPagePage() {
   const canSell = await canSellProducts();
   if (!canSell) redirect("/panel");
+
+  const categories = await getCategories();
 
   const current = 1; // this page is always step 1; step 2 is the edit page
 
@@ -69,11 +72,11 @@ export default async function NewPagePage() {
         <div className="mb-5">
           <h2 className="text-base font-semibold text-foreground">Info dasar</h2>
           <p className="text-sm text-[var(--muted)]">
-            Langkah 1 dari 2 — mulai dari judul &amp; URL produk. Detail, harga, dan file diatur di
-            langkah berikutnya.
+            Langkah 1 dari 2 — mulai dari judul, URL &amp; kategori produk. Detail, harga, dan file
+            diatur di langkah berikutnya.
           </p>
         </div>
-        <NewPageForm />
+        <NewPageForm categories={categories} />
       </div>
     </div>
   );

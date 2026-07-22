@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createLandingPage } from "@/lib/actions/landing-pages";
+import { createLandingPage, type LandingPageCategory } from "@/lib/actions/landing-pages";
 import { slugFromTitle, isValidSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +19,7 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-export function NewPageForm() {
+export function NewPageForm({ categories }: { categories: LandingPageCategory[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,6 +29,7 @@ export function NewPageForm() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
+  const [categoryId, setCategoryId] = useState("");
 
   const effectiveSlug = slugEdited ? slug : slugFromTitle(title);
 
@@ -55,7 +56,7 @@ export function NewPageForm() {
 
     setLoading(true);
     try {
-      const id = await createLandingPage(trimmedTitle, finalSlug, DEFAULT_HTML);
+      const id = await createLandingPage(trimmedTitle, finalSlug, DEFAULT_HTML, categoryId || null);
       router.push(`/panel/product/${id}/edit`);
       router.refresh();
     } catch (err) {
@@ -110,6 +111,44 @@ export function NewPageForm() {
         <p className="mt-1 text-xs text-[var(--muted)]">
           Terisi sendiri dari judul — boleh diubah manual. Alamat produk:{" "}
           <span className="font-mono text-foreground">/lp/{effectiveSlug || "…"}</span>
+        </p>
+      </div>
+      <div>
+        <label htmlFor="category" className="block text-sm font-medium text-foreground mb-1.5">
+          Kategori <span className="text-[var(--muted)] font-normal">(opsional)</span>
+        </label>
+        <select
+          id="category"
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
+        >
+          <option value="">— Pilih kategori —</option>
+          {categories
+            .filter((c) => !c.parent_id)
+            .map((parent) => {
+              const children = categories.filter((c) => c.parent_id === parent.id);
+              if (children.length === 0) {
+                return (
+                  <option key={parent.id} value={parent.id}>
+                    {parent.name}
+                  </option>
+                );
+              }
+              return (
+                <optgroup key={parent.id} label={parent.name}>
+                  <option value={parent.id}>{parent.name} — semua</option>
+                  {children.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+        </select>
+        <p className="mt-1 text-xs text-[var(--muted)]">
+          Bisa diubah nanti di langkah berikutnya.
         </p>
       </div>
       <Button

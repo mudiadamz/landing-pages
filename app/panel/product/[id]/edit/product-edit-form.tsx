@@ -56,6 +56,7 @@ type Props = {
     title: string;
     preview_type: PreviewType;
     preview_url: string | null;
+    preview_url_dark?: string | null;
     price?: number | null;
     price_discount?: number | null;
     is_free?: boolean;
@@ -67,6 +68,141 @@ type Props = {
     long_description?: string | null;
   };
 };
+
+/**
+ * One PDF drop-zone + uploaded-file chip. Used twice (light + dark variants).
+ * Self-contained: manages its own uploading/dragging state and deletes the file
+ * it's replacing (passes its current url to uploadPreviewPdf). Local state only —
+ * the parent persists the url on "Simpan perubahan".
+ */
+function PdfPreviewSlot({
+  label,
+  hint,
+  pageId,
+  url,
+  meta,
+  onUploaded,
+  onClear,
+  onError,
+}: {
+  label: string;
+  hint?: string;
+  pageId: string;
+  url: string;
+  meta: FileMeta | null;
+  onUploaded: (url: string, meta: FileMeta) => void;
+  onClear: () => void;
+  onError: (text: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
+  const upload = useCallback(
+    async (file: File) => {
+      if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        onError("File harus berformat PDF.");
+        return;
+      }
+      setUploading(true);
+      const formData = new FormData();
+      formData.set("file", file);
+      try {
+        // Pass the current PDF so it's deleted once the new one is stored.
+        const result = await uploadPreviewPdf(pageId, formData, url || null);
+        if ("error" in result) {
+          onError(result.error);
+        } else {
+          onUploaded(result.url, { name: file.name, size: file.size });
+        }
+      } finally {
+        setUploading(false);
+      }
+    },
+    [pageId, url, onUploaded, onError],
+  );
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <span className="block text-sm font-medium text-foreground">{label}</span>
+        {hint && <span className="text-xs text-[var(--muted)]">{hint}</span>}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) upload(f);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) upload(f);
+        }}
+        className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+          dragging
+            ? "border-[var(--primary)] bg-[var(--primary)]/5"
+            : "border-[var(--border)] hover:border-[var(--primary)]/60"
+        }`}
+      >
+        <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
+          <FileTextIcon className="h-4 w-4" />
+          {uploading ? "Mengupload…" : url ? "Ganti file PDF" : "Pilih file PDF"}
+        </span>
+        <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop file PDF di sini</span>
+      </button>
+
+      {url && (
+        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-xs font-bold text-red-600 dark:text-red-400">
+            PDF
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">
+              {meta?.name ?? fileNameFromUrl(url)}
+            </p>
+            {formatBytes(meta?.size) && (
+              <p className="text-xs text-[var(--muted)]">{formatBytes(meta?.size)}</p>
+            )}
+          </div>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Buka PDF"
+            aria-label="Buka PDF"
+            className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground"
+          >
+            <ExternalIcon className="h-4 w-4" />
+          </a>
+          <button
+            type="button"
+            onClick={onClear}
+            title="Hapus PDF"
+            aria-label="Hapus PDF"
+            className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+          >
+            <TrashIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * Single stateful form for the product edit page: page info (title + preview
@@ -86,8 +222,14 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       ? { name: fileNameFromUrl(initial.preview_url) }
       : null,
   );
-  const [pdfUploading, setPdfUploading] = useState(false);
-  const [pdfDragging, setPdfDragging] = useState(false);
+  // Optional dark-mode PDF; when both light & dark exist the preview follows the
+  // reader's theme, otherwise whichever one is set is always shown.
+  const [previewUrlDark, setPreviewUrlDark] = useState(initial.preview_url_dark ?? "");
+  const [pdfMetaDark, setPdfMetaDark] = useState<FileMeta | null>(
+    initial.preview_type === "pdf" && initial.preview_url_dark
+      ? { name: fileNameFromUrl(initial.preview_url_dark) }
+      : null,
+  );
 
   // --- Pricing ---
   const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
@@ -130,7 +272,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  const pdfInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
   const pNum = parseFloat(price);
@@ -139,33 +280,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
     !isFree && pNum > 0 && dNum > 0 && dNum < pNum ? Math.round((1 - dNum / pNum) * 100) : null;
 
   /* ---------------------------- Uploads ---------------------------------- */
-
-  const uploadPdfFile = useCallback(
-    async (file: File) => {
-      if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-        setMessage({ type: "err", text: "File harus berformat PDF." });
-        return;
-      }
-      setMessage(null);
-      setPdfUploading(true);
-      const formData = new FormData();
-      formData.set("file", file);
-      try {
-        // Pass the current PDF so it's deleted once the new one is stored.
-        const result = await uploadPreviewPdf(pageId, formData, previewUrl || null);
-        if ("error" in result) {
-          setMessage({ type: "err", text: result.error });
-        } else {
-          setPreviewUrl(result.url);
-          setPdfMeta({ name: file.name, size: file.size });
-          setMessage({ type: "ok", text: "PDF terupload. Klik Simpan perubahan untuk menerapkan." });
-        }
-      } finally {
-        setPdfUploading(false);
-      }
-    },
-    [pageId, previewUrl],
-  );
 
   // Uploads only push the file to storage + set local state. Nothing is written
   // to the DB until the user clicks "Simpan perubahan" (handleSaveAll).
@@ -269,11 +383,12 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       setMessage({ type: "err", text: "Judul tidak boleh kosong." });
       return;
     }
-    if ((previewType === "pdf" || previewType === "link") && !previewUrl.trim()) {
-      setMessage({
-        type: "err",
-        text: previewType === "pdf" ? "Upload PDF dulu." : "Isi URL link dulu.",
-      });
+    if (previewType === "pdf" && !previewUrl.trim() && !previewUrlDark.trim()) {
+      setMessage({ type: "err", text: "Upload minimal satu PDF (terang atau gelap)." });
+      return;
+    }
+    if (previewType === "link" && !previewUrl.trim()) {
+      setMessage({ type: "err", text: "Isi URL link dulu." });
       return;
     }
     setSaving(true);
@@ -284,7 +399,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         {
           title: trimmedTitle,
           preview_type: previewType,
-          preview_url: previewType === "html" ? null : previewUrl.trim(),
+          preview_url: previewType === "html" ? null : previewUrl.trim() || null,
+          preview_url_dark: previewType === "pdf" ? previewUrlDark.trim() || null : null,
         },
         slug,
       );
@@ -362,84 +478,47 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
           </p>
         </div>
 
-        {/* PDF upload */}
+        {/* PDF upload — light + optional dark variant. */}
         {previewType === "pdf" && (
-          <div className="space-y-3">
-            <input
-              ref={pdfInputRef}
-              type="file"
-              accept="application/pdf,.pdf"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) uploadPdfFile(f);
-                e.target.value = "";
+          <div className="space-y-4">
+            <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
+              Upload versi <strong className="text-foreground">terang</strong> &amp;{" "}
+              <strong className="text-foreground">gelap</strong> agar preview mengikuti tema pembaca.
+              Kalau hanya satu yang diupload, versi itu yang selalu tampil.
+            </p>
+            <PdfPreviewSlot
+              label="PDF versi terang (light)"
+              pageId={pageId}
+              url={previewUrl}
+              meta={pdfMeta}
+              onUploaded={(url, meta) => {
+                setPreviewUrl(url);
+                setPdfMeta(meta);
+                setMessage({ type: "ok", text: "PDF terupload. Klik Simpan perubahan untuk menerapkan." });
               }}
+              onClear={() => {
+                setPreviewUrl("");
+                setPdfMeta(null);
+              }}
+              onError={(text) => setMessage({ type: "err", text })}
             />
-            <button
-              type="button"
-              onClick={() => pdfInputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setPdfDragging(true);
+            <PdfPreviewSlot
+              label="PDF versi gelap (dark)"
+              hint="Opsional — tampil saat pembaca memakai mode gelap."
+              pageId={pageId}
+              url={previewUrlDark}
+              meta={pdfMetaDark}
+              onUploaded={(url, meta) => {
+                setPreviewUrlDark(url);
+                setPdfMetaDark(meta);
+                setMessage({ type: "ok", text: "PDF (gelap) terupload. Klik Simpan perubahan untuk menerapkan." });
               }}
-              onDragLeave={() => setPdfDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setPdfDragging(false);
-                const f = e.dataTransfer.files?.[0];
-                if (f) uploadPdfFile(f);
+              onClear={() => {
+                setPreviewUrlDark("");
+                setPdfMetaDark(null);
               }}
-              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
-                pdfDragging
-                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
-              }`}
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
-                <FileTextIcon className="h-4 w-4" />
-                {pdfUploading ? "Mengupload…" : previewUrl ? "Ganti file PDF" : "Pilih file PDF"}
-              </span>
-              <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop file PDF di sini</span>
-            </button>
-
-            {previewUrl && (
-              <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-xs font-bold text-red-600 dark:text-red-400">
-                  PDF
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {pdfMeta?.name ?? fileNameFromUrl(previewUrl)}
-                  </p>
-                  {formatBytes(pdfMeta?.size) && (
-                    <p className="text-xs text-[var(--muted)]">{formatBytes(pdfMeta?.size)}</p>
-                  )}
-                </div>
-                <a
-                  href={previewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Buka PDF"
-                  aria-label="Buka PDF"
-                  className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground"
-                >
-                  <ExternalIcon className="h-4 w-4" />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPreviewUrl("");
-                    setPdfMeta(null);
-                  }}
-                  title="Hapus PDF"
-                  aria-label="Hapus PDF"
-                  className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+              onError={(text) => setMessage({ type: "err", text })}
+            />
           </div>
         )}
 

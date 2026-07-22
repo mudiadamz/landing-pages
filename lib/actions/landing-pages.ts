@@ -46,6 +46,7 @@ export type LandingPageRow = {
   long_description?: string | null;
   preview_type?: PreviewType;
   preview_url?: string | null;
+  preview_url_dark?: string | null;
 };
 
 export type LandingPagePublic = {
@@ -126,7 +127,7 @@ export async function getLandingPageBySlug(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url, published, user_id")
+    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, published, user_id")
     .eq("slug", slug)
     .single();
 
@@ -140,13 +141,15 @@ export async function getLandingPageBySlug(slug: string) {
     html_content: string;
     preview_type?: PreviewType | null;
     preview_url?: string | null;
+    preview_url_dark?: string | null;
   };
 }
 
 export async function createLandingPage(
   title: string,
   slug: string,
-  html_content: string
+  html_content: string,
+  category_id?: string | null,
 ) {
   const normalizedSlug = slug.toLowerCase().trim();
   if (!isValidSlug(normalizedSlug)) {
@@ -161,7 +164,13 @@ export async function createLandingPage(
 
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .insert({ title, slug: normalizedSlug, html_content, user_id: user.id })
+    .insert({
+      title,
+      slug: normalizedSlug,
+      html_content,
+      user_id: user.id,
+      category_id: category_id?.trim() || null,
+    })
     .select("id")
     .single();
 
@@ -196,7 +205,12 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
  */
 export async function updateLandingPageSettings(
   id: string,
-  opts: { title?: string; preview_type?: PreviewType; preview_url?: string | null },
+  opts: {
+    title?: string;
+    preview_type?: PreviewType;
+    preview_url?: string | null;
+    preview_url_dark?: string | null;
+  },
   slug?: string,
 ) {
   const supabase = await createClient();
@@ -213,14 +227,17 @@ export async function updateLandingPageSettings(
   }
   if (opts.preview_type !== undefined) update.preview_type = opts.preview_type;
   if (opts.preview_url !== undefined) update.preview_url = opts.preview_url?.trim() || null;
+  if (opts.preview_url_dark !== undefined)
+    update.preview_url_dark = opts.preview_url_dark?.trim() || null;
 
-  // A non-HTML preview type requires a URL to embed.
-  if (
-    (update.preview_type === "pdf" || update.preview_type === "link") &&
-    !update.preview_url &&
-    opts.preview_url !== undefined
-  ) {
-    throw new Error("Preview PDF/link membutuhkan URL.");
+  // A PDF preview needs at least one file (light or dark); a link needs its URL.
+  if (opts.preview_type === "pdf" && opts.preview_url !== undefined) {
+    if (!update.preview_url && !update.preview_url_dark) {
+      throw new Error("Preview PDF membutuhkan minimal satu file (terang atau gelap).");
+    }
+  }
+  if (opts.preview_type === "link" && opts.preview_url !== undefined && !update.preview_url) {
+    throw new Error("Preview link membutuhkan URL.");
   }
 
   const { error } = await supabase
