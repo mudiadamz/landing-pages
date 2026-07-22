@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
@@ -26,11 +26,19 @@ type NavItem = {
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
-    label: "Produk",
+    // Publisher-facing: managing and tracking what you sell. Renders nothing
+    // for a plain customer (both items are seller/publisher gated).
+    label: "Sebagai Publisher",
     items: [
-      { href: "/panel/purchases", label: "Pembelian saya", icon: ReceiptIcon, everyone: true },
       { href: "/panel/products", label: "Produk digital", icon: LayoutIcon, sellerOnly: true },
       { href: "/panel/stats", label: "Stats", icon: ChartIcon, feature: "stats", publisherToo: true },
+    ],
+  },
+  {
+    // Customer-facing: what you've bought.
+    label: "Sebagai Pembeli",
+    items: [
+      { href: "/panel/purchases", label: "Pembelian saya", icon: ReceiptIcon, everyone: true },
     ],
   },
   {
@@ -193,7 +201,8 @@ function NavContent({
           const visibleItems = group.items.filter(isVisible);
           if (visibleItems.length === 0) return null;
           return (
-            <div key={group.label}>
+            <Fragment key={group.label}>
+            <div>
               <p className="px-3 mb-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
                 {group.label}
               </p>
@@ -240,29 +249,31 @@ function NavContent({
                 })}
               </div>
             </div>
+
+            {/* Assets library sits with the publisher tools it belongs to. */}
+            {group.label === "Sebagai Publisher" && canSell && onOpenAssets && (
+              <div>
+                <p className="px-3 mb-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
+                  Media
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenAssets();
+                      onItemClick?.();
+                    }}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+                  >
+                    <ImageIcon className="w-5 h-5 shrink-0" />
+                    <span>Assets</span>
+                  </button>
+                </div>
+              </div>
+            )}
+            </Fragment>
           );
         })}
-
-        {canSell && onOpenAssets && (
-          <div>
-            <p className="px-3 mb-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
-              Media
-            </p>
-            <div className="flex flex-col gap-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenAssets();
-                  onItemClick?.();
-                }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
-              >
-                <ImageIcon className="w-5 h-5 shrink-0" />
-                <span>Assets</span>
-              </button>
-            </div>
-          </div>
-        )}
       </nav>
       <div className="mt-auto pt-4 border-t border-[var(--border)] flex items-center gap-2">
         <Link
