@@ -368,6 +368,7 @@ export async function updateLandingPagePricing(
     thumbnail_url?: string | null;
     zip_url?: string | null;
     story_pdf_url?: string | null;
+    story_pdf_url_dark?: string | null;
     rating?: number | null;
     category_id?: string | null;
     long_description?: string | null;

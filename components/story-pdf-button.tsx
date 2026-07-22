@@ -17,6 +17,7 @@ export function StoryPdfButton({
 }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
+  const [urlDark, setUrlDark] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { dark, toggle: toggleDark } = useTheme();
@@ -34,6 +35,7 @@ export function StoryPdfButton({
         return;
       }
       setUrl(data.url as string);
+      setUrlDark((data.urlDark as string | null) ?? null);
     } catch {
       setError("Gagal memuat PDF");
     } finally {
@@ -88,9 +90,9 @@ export function StoryPdfButton({
               </button>
             </div>
           </div>
-          {/* Fixed light surface — dark mode inverts this area (.preview-dark),
-              so the base must stay light to invert consistently to dark. */}
-          <div className={`flex-1 min-h-0 bg-[#fdfcfb] ${dark ? "preview-dark" : ""}`}>
+          {/* No colour inversion: dark mode swaps to the seller's dark-version
+              PDF when one exists (see PdfPreview). Surround follows the theme. */}
+          <div className="flex-1 min-h-0 bg-[#fdfcfb] dark:bg-[#141414]">
             {loading && (
               <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">
                 Memuat PDF…
@@ -102,7 +104,7 @@ export function StoryPdfButton({
               </div>
             )}
             {url && !loading && !error && (
-              <PdfPreview url={url} title={title} storageKey={`story-pdf:${slug}`} />
+              <PdfPreview url={url} urlDark={urlDark} title={title} storageKey={`story-pdf:${slug}`} />
             )}
           </div>
         </div>

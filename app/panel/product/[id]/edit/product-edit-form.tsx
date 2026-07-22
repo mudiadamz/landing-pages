@@ -64,6 +64,7 @@ type Props = {
     thumbnail_url?: string | null;
     zip_url?: string | null;
     story_pdf_url?: string | null;
+    story_pdf_url_dark?: string | null;
     category_id?: string | null;
     long_description?: string | null;
   };
@@ -262,6 +263,15 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   const [storyUploading, setStoryUploading] = useState(false);
   const [storyError, setStoryError] = useState<string | null>(null);
 
+  // Optional dark-mode variant of the PDF deliverable (buyer reads it in dark
+  // mode instead of a colour-inverted light file).
+  const [storyUrlDark, setStoryUrlDark] = useState(initial.story_pdf_url_dark ?? "");
+  const [storyMetaDark, setStoryMetaDark] = useState<FileMeta | null>(
+    initial.story_pdf_url_dark ? { name: fileNameFromUrl(initial.story_pdf_url_dark) } : null,
+  );
+  const [storyUploadingDark, setStoryUploadingDark] = useState(false);
+  const [storyErrorDark, setStoryErrorDark] = useState<string | null>(null);
+
   // The buyer receives exactly one file: either a ZIP (downloaded) or a PDF
   // (read in the purchases list). Default to whichever already exists.
   const [deliverableType, setDeliverableType] = useState<DeliverableType>(
@@ -343,6 +353,36 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
     setStoryError(null);
   }
 
+  async function handleStoryUploadDark(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStoryUploadingDark(true);
+    setStoryErrorDark(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      // Pass the current dark PDF path so it's deleted once the new one is stored.
+      const res = await uploadStoryPdf(pageId, formData, storyUrlDark || null);
+      if ("error" in res) {
+        setStoryErrorDark(res.error);
+        return;
+      }
+      setStoryUrlDark(res.url);
+      setStoryMetaDark({ name: file.name, size: file.size });
+    } catch (err) {
+      setStoryErrorDark(err instanceof Error ? err.message : "Upload gagal");
+    } finally {
+      setStoryUploadingDark(false);
+      e.target.value = "";
+    }
+  }
+
+  function removeStoryDark() {
+    setStoryUrlDark("");
+    setStoryMetaDark(null);
+    setStoryErrorDark(null);
+  }
+
   const uploadThumbFile = useCallback(
     async (file: File) => {
       if (file.type && !file.type.startsWith("image/")) {
@@ -414,6 +454,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         thumbnail_url: thumbnailUrl.trim() || null,
         zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
         story_pdf_url: deliverableType === "pdf" ? storyUrl.trim() || null : null,
+        story_pdf_url_dark: deliverableType === "pdf" ? storyUrlDark.trim() || null : null,
         category_id: categoryId.trim() || null,
         long_description: longDescription.trim() || null,
       });
@@ -679,19 +720,39 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
               onRemove={removeZip}
             />
           ) : (
-            <FileUploadCard
-              label="File PDF (dibaca customer di daftar pembelian)"
-              accept=".pdf,application/pdf"
-              badge="PDF"
-              badgeClass="bg-red-500/10 text-red-600 dark:text-red-400"
-              url={storyUrl}
-              meta={storyMeta}
-              uploading={storyUploading}
-              error={storyError}
-              statusText="PDF terpasang"
-              onUpload={handleStoryUpload}
-              onRemove={removeStory}
-            />
+            <div className="space-y-3">
+              <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
+                Bisa upload dua versi: <strong className="text-foreground">terang</strong> &amp;{" "}
+                <strong className="text-foreground">gelap</strong>. Pembaca yang memakai mode gelap
+                akan melihat versi gelap. Kalau versi gelap kosong, versi terang dipakai untuk semua.
+              </p>
+              <FileUploadCard
+                label="File PDF versi terang (light) — wajib"
+                accept=".pdf,application/pdf"
+                badge="PDF"
+                badgeClass="bg-red-500/10 text-red-600 dark:text-red-400"
+                url={storyUrl}
+                meta={storyMeta}
+                uploading={storyUploading}
+                error={storyError}
+                statusText="PDF (terang) terpasang"
+                onUpload={handleStoryUpload}
+                onRemove={removeStory}
+              />
+              <FileUploadCard
+                label="File PDF versi gelap (dark) — opsional"
+                accept=".pdf,application/pdf"
+                badge="PDF"
+                badgeClass="bg-slate-500/10 text-slate-600 dark:text-slate-300"
+                url={storyUrlDark}
+                meta={storyMetaDark}
+                uploading={storyUploadingDark}
+                error={storyErrorDark}
+                statusText="PDF (gelap) terpasang"
+                onUpload={handleStoryUploadDark}
+                onRemove={removeStoryDark}
+              />
+            </div>
           )}
         </div>
 

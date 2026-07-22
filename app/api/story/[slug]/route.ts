@@ -21,7 +21,7 @@ export async function GET(
 
     const { data: page } = await supabase
       .from("lp_landing_pages")
-      .select("id, story_pdf_url")
+      .select("id, story_pdf_url, story_pdf_url_dark")
       .eq("slug", slug)
       .single();
 
@@ -45,7 +45,12 @@ export async function GET(
       return NextResponse.json({ error: "Gagal membuat link PDF" }, { status: 500 });
     }
 
-    return NextResponse.json({ url: signedUrl });
+    // Optional dark-mode variant: sign it too so the reader can swap by theme.
+    const signedUrlDark = page.story_pdf_url_dark
+      ? await getSignedDownloadUrl(page.story_pdf_url_dark)
+      : null;
+
+    return NextResponse.json({ url: signedUrl, urlDark: signedUrlDark });
   } catch (err) {
     console.error("Story PDF error:", err);
     return NextResponse.json({ error: "Gagal memuat PDF" }, { status: 500 });
