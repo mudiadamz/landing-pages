@@ -72,8 +72,12 @@ export async function signInWithGoogle(formData?: FormData) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
+      // No `prompt: "consent"` / `access_type: "offline"`: forcing the consent
+      // screen every login adds an approval step for returning users, and we
+      // never use Google's refresh token (Supabase manages the session). With
+      // the defaults, users who've authorized once are redirected straight
+      // through — at most a quick account picker.
       redirectTo,
-      queryParams: { access_type: "offline", prompt: "consent" },
     },
   });
   if (error) {
