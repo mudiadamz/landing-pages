@@ -98,9 +98,13 @@ export default async function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning className={isDark ? "dark" : undefined}>
       <head>
+        {/* Tints the iOS Safari toolbar to match the theme (kept in sync by the
+            inline script below and lib/use-theme on toggle) so the browser chrome
+            doesn't stay light behind a dark page — e.g. on the /lp preview. */}
+        <meta name="theme-color" content={isDark ? "#0d0d0f" : "#fdfcfb"} />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}})()`,
+            __html: `(function(){var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
           }}
         />
       </head>

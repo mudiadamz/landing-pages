@@ -38,6 +38,9 @@ export function setTheme(dark: boolean) {
     /* ignore (private mode) */
   }
   document.cookie = `theme=${value};path=/;max-age=${COOKIE_MAX_AGE};sameSite=Lax`;
+  // Keep the iOS Safari toolbar tint in sync with the theme (matches --background).
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", dark ? "#0d0d0f" : "#fdfcfb");
   listeners.forEach((l) => l());
 }
 
