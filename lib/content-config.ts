@@ -9,9 +9,28 @@
 export type HowToStep = { label: string; text: string };
 export type FaqItem = { q: string; a: string };
 
+/** Maker-proof card shown on homepage/category/checkout (FounderCredibility). */
+export type FounderCard = {
+  /** When false, the card isn't rendered anywhere. */
+  enabled: boolean;
+  name: string;
+  /** Small line under the name, e.g. "Founder · software developer 15+ tahun". */
+  role: string;
+  /** Sentence before the contact link (a live template count may be prefixed). */
+  bio: string;
+  /** Public photo URL, or a local path like "/pas_foto.png". Empty → initial. */
+  photoUrl: string;
+  /** Contact link text + target rendered at the end of the bio. */
+  contactLabel: string;
+  contactHref: string;
+};
+
 export type SiteContent = {
   /** One-line tagline in the site footer. */
   footerTagline: string;
+
+  /** Founder credibility card. */
+  founder: FounderCard;
 
   /** "Ketentuan & lisensi" block. */
   licenseHeading: string;
@@ -35,6 +54,16 @@ export type SiteContent = {
 export const DEFAULT_CONTENT: SiteContent = {
   footerTagline:
     "ADM.UIUX — produk digital siap pakai. By Adam Mudianto, software developer 15+ tahun.",
+
+  founder: {
+    enabled: true,
+    name: "Adam Mudianto",
+    role: "Founder · software developer 15+ tahun",
+    bio: "setiap template dibuat & dirawat sendiri. Ada pertanyaan sebelum beli?",
+    photoUrl: "/pas_foto.png",
+    contactLabel: "Hubungi langsung",
+    contactHref: "/contact",
+  },
 
   licenseHeading: "Ketentuan & lisensi",
   licenseParagraphs: [
@@ -104,8 +133,21 @@ export function normalizeContent(raw: unknown): SiteContent {
       ? v.faqs.map((f) => ({ q: String(f?.q ?? ""), a: String(f?.a ?? "") }))
       : DEFAULT_CONTENT.faqs;
 
+  const df = DEFAULT_CONTENT.founder;
+  const rf = (v.founder ?? {}) as Partial<FounderCard>;
+  const founder: FounderCard = {
+    enabled: typeof rf.enabled === "boolean" ? rf.enabled : df.enabled,
+    name: rf.name ?? df.name,
+    role: rf.role ?? df.role,
+    bio: rf.bio ?? df.bio,
+    photoUrl: rf.photoUrl ?? df.photoUrl,
+    contactLabel: rf.contactLabel ?? df.contactLabel,
+    contactHref: rf.contactHref ?? df.contactHref,
+  };
+
   return {
     footerTagline: v.footerTagline ?? DEFAULT_CONTENT.footerTagline,
+    founder,
     licenseHeading: v.licenseHeading ?? DEFAULT_CONTENT.licenseHeading,
     licenseParagraphs: strArr(v.licenseParagraphs, DEFAULT_CONTENT.licenseParagraphs),
     howToHeading: v.howToHeading ?? DEFAULT_CONTENT.howToHeading,

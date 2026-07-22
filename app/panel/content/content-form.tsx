@@ -4,11 +4,13 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { updateSiteContent } from "@/lib/actions/site-settings";
+import { uploadLibraryAsset } from "@/lib/actions/assets";
 import {
   DEFAULT_CONTENT,
   type SiteContent,
   type HowToStep,
   type FaqItem,
+  type FounderCard,
 } from "@/lib/content-config";
 
 const labelCls = "block text-xs font-medium text-[var(--muted)] mb-1.5";
@@ -52,10 +54,34 @@ export function ContentForm({ initialContent }: { initialContent: SiteContent })
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   function set<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
     setContent((c) => ({ ...c, [key]: value }));
     setStatus(null);
+  }
+
+  function setFounder(patch: Partial<FounderCard>) {
+    set("founder", { ...content.founder, ...patch });
+  }
+
+  async function handleFounderPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    setStatus(null);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await uploadLibraryAsset(fd);
+      if ("error" in res) setStatus({ error: res.error });
+      else setFounder({ photoUrl: res.url });
+    } catch {
+      setStatus({ error: "Gagal mengunggah foto." });
+    } finally {
+      setPhotoUploading(false);
+      e.target.value = "";
+    }
   }
 
   // Generic helpers for the string-array fields.
@@ -95,6 +121,113 @@ export function ContentForm({ initialContent }: { initialContent: SiteContent })
             value={content.footerTagline}
             onChange={(e) => set("footerTagline", e.target.value)}
           />
+        </div>
+      </section>
+
+      {/* Kartu kredibilitas founder */}
+      <section className={sectionCls}>
+        <div className="flex items-center justify-between gap-3">
+          <SectionTitle>Kartu founder</SectionTitle>
+          <label className="flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+            <input
+              type="checkbox"
+              checked={content.founder.enabled}
+              onChange={(e) => setFounder({ enabled: e.target.checked })}
+              className="h-4 w-4 rounded border-[var(--border)] accent-[var(--primary)]"
+            />
+            Tampilkan
+          </label>
+        </div>
+        <p className="text-xs text-[var(--muted)]">
+          Kartu bukti pembuat yang tampil di homepage, halaman kategori, dan checkout.
+        </p>
+
+        <div className="flex items-start gap-4">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--background)]">
+            {content.founder.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={content.founder.photoUrl} alt="Foto founder" className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-xl font-semibold text-[var(--muted)]">
+                {content.founder.name.trim().charAt(0).toUpperCase() || "A"}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <div>
+              <label className={labelCls}>URL foto</label>
+              <input
+                className={inputCls}
+                value={content.founder.photoUrl}
+                onChange={(e) => setFounder({ photoUrl: e.target.value })}
+                placeholder="/pas_foto.png atau URL"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--background)]">
+                <input type="file" accept="image/*" className="hidden" onChange={handleFounderPhoto} disabled={photoUploading} />
+                {photoUploading ? "Mengunggah…" : "Unggah foto"}
+              </label>
+              {content.founder.photoUrl && (
+                <button
+                  type="button"
+                  className="text-sm text-red-600 hover:opacity-80"
+                  onClick={() => setFounder({ photoUrl: "" })}
+                >
+                  Hapus foto
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className={labelCls}>Nama</label>
+            <input
+              className={inputCls}
+              value={content.founder.name}
+              onChange={(e) => setFounder({ name: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Peran / jabatan</label>
+            <input
+              className={inputCls}
+              value={content.founder.role}
+              onChange={(e) => setFounder({ role: e.target.value })}
+              placeholder="Founder · software developer 15+ tahun"
+            />
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>Deskripsi singkat</label>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={content.founder.bio}
+            onChange={(e) => setFounder({ bio: e.target.value })}
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className={labelCls}>Teks link kontak</label>
+            <input
+              className={inputCls}
+              value={content.founder.contactLabel}
+              onChange={(e) => setFounder({ contactLabel: e.target.value })}
+              placeholder="Hubungi langsung"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Tujuan link kontak</label>
+            <input
+              className={inputCls}
+              value={content.founder.contactHref}
+              onChange={(e) => setFounder({ contactHref: e.target.value })}
+              placeholder="/contact"
+            />
+          </div>
         </div>
       </section>
 
