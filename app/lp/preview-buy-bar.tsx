@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Props = {
-  slug: string;
+  /** Where the CTA leads: this site's /checkout/[slug] or an external link. */
+  href: string;
+  /** When true, the link opens in a new tab (external purchase link). */
+  external?: boolean;
   /** CTA label, e.g. "Beli sekarang" or "Ambil gratis". */
   label: string;
   /** Formatted price shown above the CTA; null renders "Gratis". */
   priceText: string | null;
+  /** Optional subtitle override; null uses the derived default. */
+  note?: string | null;
   /**
    * Fallback reveal delay (ms) for previews where scroll can't be observed
    * (external-link iframes are cross-origin). 0/undefined = scroll-only.
@@ -23,7 +28,7 @@ type Props = {
  * HTML previews, and PdfViewer dispatches `lp-preview-scroll` for PDFs. The
  * visitor can dismiss it (collapses to a small handle) and bring it back.
  */
-export function PreviewBuyBar({ slug, label, priceText, autoRevealMs }: Props) {
+export function PreviewBuyBar({ href, external, label, priceText, note, autoRevealMs }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [hidden, setHidden] = useState(false);
 
@@ -72,13 +77,15 @@ export function PreviewBuyBar({ slug, label, priceText, autoRevealMs }: Props) {
               <p className="truncate text-sm font-semibold text-[var(--primary)]">Gratis</p>
             )}
             <p className="truncate text-xs text-[var(--muted)]">
-              {priceText
-                ? "Miliki sekarang — akses penuh, selamanya."
-                : "Ambil sekarang — akses penuh, selamanya."}
+              {note ??
+                (priceText
+                  ? "Miliki sekarang — akses penuh, selamanya."
+                  : "Ambil sekarang — akses penuh, selamanya.")}
             </p>
           </div>
           <Link
-            href={`/checkout/${slug}`}
+            href={href}
+            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/25 transition-transform hover:scale-[1.02] active:scale-95"
           >
             <CartIcon className="h-4 w-4" />

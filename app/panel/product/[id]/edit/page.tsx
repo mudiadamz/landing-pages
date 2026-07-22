@@ -70,6 +70,10 @@ export default async function EditPage({
           story_pdf_url_dark: (page as { story_pdf_url_dark?: string | null }).story_pdf_url_dark ?? null,
           category_id: (page as { category_id?: string | null }).category_id ?? null,
           long_description: (page as { long_description?: string | null }).long_description ?? null,
+          cta_label: (page as { cta_label?: string | null }).cta_label ?? null,
+          cta_note: (page as { cta_note?: string | null }).cta_note ?? null,
+          purchase_link: (page as { purchase_link?: string | null }).purchase_link ?? null,
+          purchase_type: (page as { purchase_type?: "external" | "internal" }).purchase_type,
         }}
       />
     </div>

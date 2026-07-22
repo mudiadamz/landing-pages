@@ -67,6 +67,10 @@ type Props = {
     story_pdf_url_dark?: string | null;
     category_id?: string | null;
     long_description?: string | null;
+    cta_label?: string | null;
+    cta_note?: string | null;
+    purchase_link?: string | null;
+    purchase_type?: "external" | "internal";
   };
 };
 
@@ -236,6 +240,14 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
   const [isFree, setIsFree] = useState(!!initial.is_free);
   const [featured, setFeatured] = useState(!!initial.featured);
+
+  // Preview buy-now card: optional text overrides + action (checkout | link).
+  const [ctaLabel, setCtaLabel] = useState(initial.cta_label ?? "");
+  const [ctaNote, setCtaNote] = useState(initial.cta_note ?? "");
+  const [actionType, setActionType] = useState<"checkout" | "link">(
+    initial.purchase_type === "external" && initial.purchase_link ? "link" : "checkout",
+  );
+  const [purchaseLink, setPurchaseLink] = useState(initial.purchase_link ?? "");
   const [price, setPrice] = useState(initial.price != null ? String(initial.price) : "");
   const [priceDiscount, setPriceDiscount] = useState(
     initial.price_discount != null ? String(initial.price_discount) : "",
@@ -448,8 +460,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         price: isFree ? null : price ? parseFloat(price) : null,
         price_discount: isFree || !priceDiscount ? null : parseFloat(priceDiscount),
         is_free: isFree,
-        purchase_link: null,
-        purchase_type: "internal",
+        purchase_link: actionType === "link" ? purchaseLink.trim() || null : null,
+        purchase_type: actionType === "link" && purchaseLink.trim() ? "external" : "internal",
+        cta_label: ctaLabel.trim() || null,
+        cta_note: ctaNote.trim() || null,
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
         zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
@@ -677,6 +691,84 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
             </div>
           </div>
         )}
+
+        {/* Preview buy-now card: text overrides + action */}
+        <div className="space-y-3 rounded-xl border border-[var(--border)] p-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Tombol beli (di preview)</h3>
+            <p className="text-xs text-[var(--muted)]">
+              Atur teks &amp; tujuan kartu &ldquo;beli sekarang&rdquo; yang muncul saat pengunjung
+              scroll di halaman preview. Kosongkan teks untuk memakai bawaan.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="cta-label" className="block text-sm font-medium text-foreground">
+                Teks tombol
+              </label>
+              <input
+                id="cta-label"
+                type="text"
+                value={ctaLabel}
+                maxLength={40}
+                onChange={(e) => setCtaLabel(e.target.value)}
+                placeholder={isFree ? "Ambil gratis" : "Beli sekarang"}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="cta-note" className="block text-sm font-medium text-foreground">
+                Teks keterangan
+              </label>
+              <input
+                id="cta-note"
+                type="text"
+                value={ctaNote}
+                maxLength={80}
+                onChange={(e) => setCtaNote(e.target.value)}
+                placeholder={isFree ? "Ambil sekarang — akses penuh, selamanya." : "Miliki sekarang — akses penuh, selamanya."}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="cta-action" className="block text-sm font-medium text-foreground">
+              Aksi tombol
+            </label>
+            <select
+              id="cta-action"
+              value={actionType}
+              onChange={(e) => setActionType(e.target.value as "checkout" | "link")}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+            >
+              <option value="checkout">Checkout di situs ini (default)</option>
+              <option value="link">Link eksternal</option>
+            </select>
+            <p className="text-xs text-[var(--muted)]">
+              {actionType === "link"
+                ? "Tombol mengarah ke URL yang Anda isi (membuka tab baru), melewati checkout bawaan."
+                : "Tombol mengarah ke halaman checkout produk ini."}
+            </p>
+          </div>
+
+          {actionType === "link" && (
+            <div className="space-y-1.5">
+              <label htmlFor="cta-link" className="block text-sm font-medium text-foreground">
+                URL tujuan
+              </label>
+              <input
+                id="cta-link"
+                type="url"
+                value={purchaseLink}
+                onChange={(e) => setPurchaseLink(e.target.value)}
+                placeholder="https://contoh.com/beli"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              />
+            </div>
+          )}
+        </div>
 
         {/* Deliverable — buyer receives one file, either ZIP or PDF. */}
         <div className="space-y-3">

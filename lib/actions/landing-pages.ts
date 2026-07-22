@@ -47,6 +47,9 @@ export type LandingPageRow = {
   preview_type?: PreviewType;
   preview_url?: string | null;
   preview_url_dark?: string | null;
+  /** Optional overrides for the preview buy-now card (empty → derived default). */
+  cta_label?: string | null;
+  cta_note?: string | null;
 };
 
 export type LandingPagePublic = {
@@ -83,6 +86,8 @@ export type LandingPageCheckout = {
   long_description?: string | null;
   sold_count?: number;
   rating?: number | null;
+  cta_label?: string | null;
+  cta_note?: string | null;
 };
 
 export async function getLandingPagesForUser() {
@@ -346,7 +351,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, published, user_id")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, published, user_id, cta_label, cta_note")
     .eq("slug", slug)
     .single();
 
@@ -372,6 +377,8 @@ export async function updateLandingPagePricing(
     rating?: number | null;
     category_id?: string | null;
     long_description?: string | null;
+    cta_label?: string | null;
+    cta_note?: string | null;
   }
 ) {
   const supabase = await createClient();
