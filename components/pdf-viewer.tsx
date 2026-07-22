@@ -189,10 +189,10 @@ export default function PdfViewer({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      // Fixed light surface (not theme-aware): dark mode is done by inverting
-      // this whole area (.preview-dark), so the base must always be light or the
-      // surround would invert to light while the rest of the app is dark.
-      className="w-full h-full overflow-y-auto overflow-x-hidden bg-[#fdfcfb] py-4"
+      // Theme-aware surround: PDFs are no longer colour-inverted, so the padding
+      // around/between pages follows the app theme — a light frame in light mode,
+      // a dark frame in dark mode (which suits a seller's dark-version PDF).
+      className="w-full h-full overflow-y-auto overflow-x-hidden bg-[#fdfcfb] dark:bg-[#141414] py-4"
     >
       <Document
         file={url}

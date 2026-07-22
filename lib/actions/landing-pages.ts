@@ -170,6 +170,9 @@ export async function createLandingPage(
       html_content,
       user_id: user.id,
       category_id: category_id?.trim() || null,
+      // Step 1 only creates a draft — the product stays hidden from public
+      // listings until the seller explicitly publishes it (from the panel).
+      published: false,
     })
     .select("id")
     .single();

@@ -12,8 +12,10 @@ type PreviewMode = "html" | "pdf" | "link";
  *
  * The dark effect never touches the toolbar, buy CTA, or host page. For HTML
  * previews it's injected INSIDE the iframe (see preview-guard) so images can be
- * re-inverted and keep their real colours; for PDF/link previews (canvas or
- * cross-origin) it falls back to a plain CSS filter on the wrapper.
+ * re-inverted and keep their real colours. PDF previews are NOT colour-inverted
+ * — instead the viewer swaps to the seller's dark-version PDF when one exists
+ * (see PdfPreview). Only cross-origin `link` previews still fall back to a plain
+ * CSS invert filter on the wrapper.
  */
 export function PreviewSurface({
   children,
@@ -37,8 +39,9 @@ export function PreviewSurface({
     return () => iframe.removeEventListener("load", send);
   }, [dark, mode]);
 
-  // PDF/link previews can't inject inside, so filter the wrapper directly.
-  const wrapperDark = dark && mode !== "html";
+  // Only external links still get the crude CSS invert (cross-origin, can't
+  // inject or swap the source). PDFs switch to a dark-version file instead.
+  const wrapperDark = dark && mode === "link";
 
   return (
     <>
