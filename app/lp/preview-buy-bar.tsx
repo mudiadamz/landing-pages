@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   /** Where the CTA leads: /checkout/[slug], an external link, or the .ics route. */
@@ -32,6 +32,10 @@ type Props = {
 export function PreviewBuyBar({ href, external, calendar, label, priceText, note, autoRevealMs }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [hidden, setHidden] = useState(false);
+  // The collapsed handle sits in the same bottom-right corner as the bar's close
+  // (X) button. Showing it the instant the bar is dismissed makes it bloom right
+  // under the finger — a mis-tap trap. Delay it until the bar has slid away.
+  const [handleReady, setHandleReady] = useState(false);
 
   useEffect(() => {
     const reveal = () => setRevealed(true);
@@ -56,8 +60,26 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
     };
   }, [autoRevealMs]);
 
+  // Dismiss (X): hide the bar now, then bring the collapsed handle in ~half a
+  // second later — after the bar's 300ms slide-out — so it doesn't bloom right
+  // under the finger that just tapped X. Restore: drop the handle immediately.
+  const handleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismiss = () => {
+    setHidden(true);
+    if (handleTimer.current) clearTimeout(handleTimer.current);
+    handleTimer.current = setTimeout(() => setHandleReady(true), 500);
+  };
+  const restore = () => {
+    if (handleTimer.current) clearTimeout(handleTimer.current);
+    setHandleReady(false);
+    setHidden(false);
+  };
+  useEffect(() => () => {
+    if (handleTimer.current) clearTimeout(handleTimer.current);
+  }, []);
+
   const showBar = revealed && !hidden;
-  const showHandle = revealed && hidden;
+  const showHandle = revealed && hidden && handleReady;
 
   return (
     <>
@@ -94,7 +116,7 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
           </a>
           <button
             type="button"
-            onClick={() => setHidden(true)}
+            onClick={dismiss}
             aria-label="Sembunyikan tombol beli"
             title="Sembunyikan"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-all hover:bg-[var(--background)] hover:text-foreground active:scale-95"
@@ -112,7 +134,7 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
       >
         <button
           type="button"
-          onClick={() => setHidden(false)}
+          onClick={restore}
           aria-label="Tampilkan tombol beli"
           title="Tampilkan tombol beli"
           className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/30 transition-transform hover:scale-105 active:scale-95"
