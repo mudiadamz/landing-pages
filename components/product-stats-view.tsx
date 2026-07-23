@@ -47,15 +47,27 @@ export function ProductStatsView({
 }) {
   const [stats, setStats] = useState<ProductStats | null>(initial);
   const [live, setLive] = useState(true);
+  // Minutes east of UTC for the viewer's local day (WIB = +420), used to bucket
+  // "today"/hourly to their wall clock. Server render defaults to WIB.
+  const [tzOffset] = useState(() =>
+    typeof window === "undefined" ? 420 : -new Date().getTimezoneOffset(),
+  );
 
   const refetch = useCallback(async () => {
     try {
-      const s = await getProductStats(pageId, days);
+      const s = await getProductStats(pageId, days, tzOffset);
       if (s) setStats(s);
     } catch {
       /* transient — keep showing the last good data */
     }
-  }, [pageId, days]);
+  }, [pageId, days, tzOffset]);
+
+  // One refetch shortly after mount so the local timezone (and freshest data) is
+  // applied even if the viewer isn't in WIB or has live paused.
+  useEffect(() => {
+    const t = setTimeout(() => void refetch(), 0);
+    return () => clearTimeout(t);
+  }, [refetch]);
 
   useEffect(() => {
     if (!live) return;
@@ -120,6 +132,10 @@ export function ProductStatsView({
       {stats.totalViews === 0 && (
         <Empty text="Belum ada kunjungan pada rentang ini. Data mulai terkumpul saat pengunjung membuka halaman preview / checkout produk." />
       )}
+
+      <Section title={`Kunjungan per jam hari ini · ${fmt(stats.todayViews)} total`}>
+        <HourlyChart hourly={stats.hourlyToday} />
+      </Section>
 
       <Section title="Kunjungan per hari">
         <DailyChart daily={stats.daily} />
@@ -215,6 +231,35 @@ function BarList({
         );
       })}
     </ul>
+  );
+}
+
+function HourlyChart({ hourly }: { hourly: number[] }) {
+  const hours = hourly.length === 24 ? hourly : new Array(24).fill(0);
+  const max = Math.max(...hours, 1);
+  const nowHour = new Date().getHours();
+  return (
+    <div>
+      <div className="flex h-28 items-end gap-0.5">
+        {hours.map((count, h) => (
+          <div key={h} className="group relative flex h-full flex-1 items-end">
+            <div
+              className={`w-full rounded-t transition-colors ${
+                h === nowHour ? "bg-[var(--primary)]" : "bg-[var(--primary)]/60 group-hover:bg-[var(--primary)]"
+              }`}
+              style={{ height: `${Math.max((count / max) * 100, count > 0 ? 6 : 2)}%` }}
+              title={`${String(h).padStart(2, "0")}:00 — ${count}`}
+            />
+          </div>
+        ))}
+      </div>
+      {/* Sparse hour axis: 00, 06, 12, 18, 23 */}
+      <div className="mt-1 flex justify-between text-[10px] text-[var(--muted)]">
+        {["00", "06", "12", "18", "23"].map((l) => (
+          <span key={l}>{l}</span>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -17,6 +17,9 @@ export type ProductStats = {
   referrers: Bucket[];
   ctas: Bucket[];
   daily: { date: string; views: number }[];
+  /** Views per hour (index 0–23) for the viewer's local "today". */
+  hourlyToday: number[];
+  todayViews: number;
   capped: boolean;
 };
 
@@ -50,6 +53,9 @@ function topBuckets(counts: Map<string, number>, limit = 8): Bucket[] {
 export async function getProductStats(
   pageId: string,
   days = 30,
+  // Minutes east of UTC for the viewer's local day (WIB = +420). Used to bucket
+  // "today"/hourly and daily by the viewer's wall clock rather than UTC.
+  tzOffsetMinutes = 420,
 ): Promise<ProductStats | null> {
   const supabase = await createClient();
   const {
@@ -93,6 +99,17 @@ export async function getProductStats(
   let previewViews = 0;
   let checkoutViews = 0;
 
+  // Local-day bucketing: shift the UTC instant by the viewer's offset, then read
+  // the shifted value with getUTC* to get their wall-clock day/hour.
+  const tz = Number.isFinite(tzOffsetMinutes)
+    ? Math.max(-840, Math.min(840, tzOffsetMinutes))
+    : 420;
+  const dayMs = 24 * 60 * 60 * 1000;
+  const nowLocalMs = Date.now() + tz * 60000;
+  const todayKey = new Date(nowLocalMs).toISOString().slice(0, 10);
+  const hourlyToday = new Array<number>(24).fill(0);
+  let todayViews = 0;
+
   const bump = (m: Map<string, number>, key: string | null, fallback: string) =>
     m.set(key || fallback, (m.get(key || fallback) ?? 0) + 1);
 
@@ -107,8 +124,13 @@ export async function getProductStats(
       bump(browsers, r.browser, "Lainnya");
       bump(os, r.os, "Lainnya");
       bump(referrers, r.referrer_host, "Langsung");
-      const day = r.created_at.slice(0, 10);
+      const local = new Date(new Date(r.created_at).getTime() + tz * 60000);
+      const day = local.toISOString().slice(0, 10);
       dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
+      if (day === todayKey) {
+        hourlyToday[local.getUTCHours()]++;
+        todayViews++;
+      }
     } else if (r.kind === "session" && r.session_id && r.duration_ms) {
       durationBySession.set(
         r.session_id,
@@ -124,10 +146,10 @@ export async function getProductStats(
     ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length / 1000)
     : 0;
 
-  // Last `sinceDays` days as a dense series (fill gaps with 0).
+  // Last `sinceDays` days as a dense series (fill gaps with 0), in local days.
   const daily: { date: string; views: number }[] = [];
   for (let i = sinceDays - 1; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const d = new Date(nowLocalMs - i * dayMs).toISOString().slice(0, 10);
     daily.push({ date: d, views: dailyMap.get(d) ?? 0 });
   }
 
@@ -144,6 +166,8 @@ export async function getProductStats(
     referrers: topBuckets(referrers),
     ctas: topBuckets(ctas),
     daily,
+    hourlyToday,
+    todayViews,
     capped: rows.length >= MAX_ROWS,
   };
 }
