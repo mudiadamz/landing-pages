@@ -88,6 +88,8 @@ export type LandingPageCheckout = {
   rating?: number | null;
   cta_label?: string | null;
   cta_note?: string | null;
+  /** When the sticky CTA reveals on scroll: "start"|"middle"(default)|"near"|"end". */
+  cta_reveal?: "start" | "middle" | "near" | "end" | null;
   /** Buy-button action: "checkout" (default) | "link" | "calendar". */
   cta_action?: "checkout" | "link" | "calendar" | null;
   event_title?: string | null;
@@ -359,7 +361,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, published, user_id, cta_label, cta_note, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, published, user_id, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
     .eq("slug", slug)
     .single();
 
@@ -387,6 +389,7 @@ export async function updateLandingPagePricing(
     long_description?: string | null;
     cta_label?: string | null;
     cta_note?: string | null;
+    cta_reveal?: "start" | "middle" | "near" | "end" | null;
     cta_action?: "checkout" | "link" | "calendar" | null;
     event_title?: string | null;
     event_start?: string | null;

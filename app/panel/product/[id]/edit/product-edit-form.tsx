@@ -69,6 +69,7 @@ type Props = {
     long_description?: string | null;
     cta_label?: string | null;
     cta_note?: string | null;
+    cta_reveal?: "start" | "middle" | "near" | "end" | null;
     purchase_link?: string | null;
     purchase_type?: "external" | "internal";
     cta_action?: "checkout" | "link" | "calendar" | null;
@@ -250,6 +251,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   // Preview buy-now card: optional text overrides + action (checkout | link | calendar).
   const [ctaLabel, setCtaLabel] = useState(initial.cta_label ?? "");
   const [ctaNote, setCtaNote] = useState(initial.cta_note ?? "");
+  // When the sticky CTA reveals as the visitor scrolls the preview.
+  const [ctaReveal, setCtaReveal] = useState<"start" | "middle" | "near" | "end">(
+    initial.cta_reveal ?? "middle",
+  );
   const [actionType, setActionType] = useState<"checkout" | "link" | "calendar">(
     initial.cta_action === "calendar"
       ? "calendar"
@@ -488,6 +493,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         purchase_type: actionType === "link" && purchaseLink.trim() ? "external" : "internal",
         cta_label: ctaLabel.trim() || null,
         cta_note: ctaNote.trim() || null,
+        cta_reveal: ctaReveal,
         cta_action: actionType,
         event_title: actionType === "calendar" ? eventTitle.trim() || null : null,
         event_start: actionType === "calendar" ? eventStart.trim() || null : null,
@@ -768,6 +774,26 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="cta-reveal" className="block text-sm font-medium text-foreground">
+              Kapan tombol muncul
+            </label>
+            <select
+              id="cta-reveal"
+              value={ctaReveal}
+              onChange={(e) => setCtaReveal(e.target.value as "start" | "middle" | "near" | "end")}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+            >
+              <option value="start">Dari awal</option>
+              <option value="middle">Tengah (default)</option>
+              <option value="near">Mendekati akhir</option>
+              <option value="end">Di akhir</option>
+            </select>
+            <p className="text-xs text-[var(--muted)]">
+              Seberapa jauh pengunjung harus scroll di halaman preview sebelum kartu beli muncul.
+            </p>
           </div>
 
           <div className="space-y-1.5">

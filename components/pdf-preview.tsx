@@ -19,6 +19,7 @@ export function PdfPreview({
   urlDark,
   title,
   storageKey,
+  revealAt,
 }: {
   /** Light / default PDF. Always set (the caller falls back to the dark one). */
   url: string;
@@ -27,6 +28,8 @@ export function PdfPreview({
   title?: string;
   /** Stable key to remember scroll position across reloads (see PdfViewer). */
   storageKey?: string;
+  /** Scroll-progress fraction (0..1) at which the buy CTA reveals. */
+  revealAt?: number;
 }) {
   const { dark } = useTheme();
   // Follow the theme only when a dark variant exists; otherwise the single
@@ -36,7 +39,13 @@ export function PdfPreview({
   return (
     <div className="w-full h-full">
       {/* Re-key on the source so switching theme cleanly reloads the viewer. */}
-      <PdfViewer key={effectiveUrl} url={effectiveUrl} title={title} storageKey={storageKey} />
+      <PdfViewer
+        key={effectiveUrl}
+        url={effectiveUrl}
+        title={title}
+        storageKey={storageKey}
+        revealAt={revealAt}
+      />
     </div>
   );
 }

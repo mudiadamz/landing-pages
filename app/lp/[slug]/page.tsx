@@ -82,9 +82,21 @@ export default async function LandingPageView({ params }: Props) {
   const buyHref = calendarMode
     ? `/api/calendar/${slug}`
     : externalBuyLink ?? `/checkout/${slug}`;
-  // External-link previews are cross-origin, so scroll can't be observed —
-  // fall back to revealing the CTA after a short delay.
-  const autoRevealMs = embedLink ? 5000 : undefined;
+
+  // When the sticky CTA reveals as the visitor scrolls the preview. The keyword
+  // maps to a scroll-progress fraction (0..1); the HTML guard + PdfViewer report
+  // "revealed" once the visitor passes it. "start" reveals as soon as they
+  // scroll at all (0) and also auto-shows shortly after load.
+  const revealKey = checkout?.cta_reveal ?? "middle";
+  const revealAt = { start: 0, middle: 0.4, near: 0.75, end: 0.92 }[revealKey] ?? 0.4;
+  // External-link previews are cross-origin, so scroll can't be observed — map
+  // the reveal point to a timed fallback instead. For scroll-observable previews
+  // only "start" gets an auto-reveal (so it shows without needing a scroll).
+  const autoRevealMs = embedLink
+    ? { start: 1200, middle: 5000, near: 9000, end: 13000 }[revealKey] ?? 5000
+    : revealKey === "start"
+      ? 1200
+      : undefined;
 
   return (
     <>
@@ -98,6 +110,7 @@ export default async function LandingPageView({ params }: Props) {
             urlDark={previewUrlDark}
             title={page.title}
             storageKey={`lp-pdf:${slug}`}
+            revealAt={revealAt}
           />
         ) : embedLink ? (
           <iframe
@@ -108,7 +121,7 @@ export default async function LandingPageView({ params }: Props) {
           />
         ) : (
           <iframe
-            srcDoc={guardPreviewHtml(page.html_content)}
+            srcDoc={guardPreviewHtml(page.html_content, revealAt)}
             title={page.title}
             className="w-full h-full min-h-full border-0 block"
             sandbox="allow-scripts allow-same-origin allow-modals"

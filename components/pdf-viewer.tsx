@@ -110,12 +110,15 @@ function LazyPage({
 export default function PdfViewer({
   url,
   storageKey,
+  revealAt = 0.4,
 }: {
   url: string;
   title?: string;
   /** When set, scroll position is saved/restored under this key (survives the
    *  mobile-Safari crash-reload). Should be stable across reloads for one PDF. */
   storageKey?: string;
+  /** Scroll-progress fraction (0..1) at which to signal the buy CTA to reveal. */
+  revealAt?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTick = useRef(false);
@@ -134,7 +137,9 @@ export default function PdfViewer({
       const el = e.currentTarget;
       requestAnimationFrame(() => {
         scrollTick.current = false;
-        const past = el.scrollTop > el.clientHeight * 1.5;
+        const max = el.scrollHeight - el.clientHeight;
+        const prog = max > 0 ? el.scrollTop / max : 1;
+        const past = prog >= revealAt;
         window.dispatchEvent(new CustomEvent("lp-preview-scroll", { detail: { past } }));
         if (storageKey) {
           try {
@@ -145,7 +150,7 @@ export default function PdfViewer({
         }
       });
     },
-    [storageKey],
+    [storageKey, revealAt],
   );
 
   // Fit page width to the container (capped for readability on wide screens) and

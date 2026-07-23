@@ -28,9 +28,15 @@ const GUARD_STYLE = `
 </style>
 `;
 
+/**
+ * The guard script is parameterized by REVEAL_AT — the scroll-progress fraction
+ * (0..1 of the document's scrollable height) at which the sticky buy CTA reveals.
+ * The `__REVEAL_AT__` token is replaced by the numeric threshold at build time.
+ */
 const GUARD_SCRIPT = `
 <script>
 (function () {
+  var __lpRevealAt = __REVEAL_AT__;
   function isEditable(t) {
     if (!t || !t.tagName) return false;
     var tag = t.tagName.toUpperCase();
@@ -88,7 +94,11 @@ const GUARD_SCRIPT = `
       var de = document.documentElement || {};
       var y = window.pageYOffset || de.scrollTop || 0;
       var vh = window.innerHeight || de.clientHeight || 0;
-      window.parent.postMessage({ __lpPreview: 1, scrolled: y > vh * 1.5 }, "*");
+      var sh = de.scrollHeight || 0;
+      var max = sh - vh;
+      // Fraction scrolled through the whole document (1 when it doesn't scroll).
+      var prog = max > 0 ? y / max : 1;
+      window.parent.postMessage({ __lpPreview: 1, scrolled: prog >= __lpRevealAt }, "*");
     } catch (err) {}
   }
   window.addEventListener("scroll", function () {
@@ -125,9 +135,15 @@ const GUARD_SCRIPT = `
 </script>
 `;
 
-/** Inject anti-copy/download guards into an arbitrary HTML document string. */
-export function guardPreviewHtml(html: string): string {
-  const injection = GUARD_STYLE + GUARD_SCRIPT;
+/**
+ * Inject anti-copy/download guards into an arbitrary HTML document string.
+ * `revealAt` is the scroll-progress fraction (0..1) at which the sticky buy CTA
+ * is reported as revealed — 0 means "reveal as soon as the visitor scrolls".
+ */
+export function guardPreviewHtml(html: string, revealAt = 0.4): string {
+  const clamped = Number.isFinite(revealAt) ? Math.min(Math.max(revealAt, 0), 1) : 0.4;
+  const script = GUARD_SCRIPT.replace("__REVEAL_AT__", String(clamped));
+  const injection = GUARD_STYLE + script;
 
   if (/<\/head>/i.test(html)) {
     return html.replace(/<\/head>/i, injection + "</head>");
