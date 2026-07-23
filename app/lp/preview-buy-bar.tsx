@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Props = {
-  /** Where the CTA leads: this site's /checkout/[slug] or an external link. */
+  /** Where the CTA leads: /checkout/[slug], an external link, or the .ics route. */
   href: string;
   /** When true, the link opens in a new tab (external purchase link). */
   external?: boolean;
+  /** Swap the cart icon for a calendar icon when the action is "add to calendar". */
+  calendar?: boolean;
   /** CTA label, e.g. "Beli sekarang" or "Ambil gratis". */
   label: string;
   /** Formatted price shown above the CTA; null renders "Gratis". */
@@ -28,7 +29,7 @@ type Props = {
  * HTML previews, and PdfViewer dispatches `lp-preview-scroll` for PDFs. The
  * visitor can dismiss it (collapses to a small handle) and bring it back.
  */
-export function PreviewBuyBar({ href, external, label, priceText, note, autoRevealMs }: Props) {
+export function PreviewBuyBar({ href, external, calendar, label, priceText, note, autoRevealMs }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [hidden, setHidden] = useState(false);
 
@@ -83,14 +84,14 @@ export function PreviewBuyBar({ href, external, label, priceText, note, autoReve
                   : "Ambil sekarang — akses penuh, selamanya.")}
             </p>
           </div>
-          <Link
+          <a
             href={href}
             {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/25 transition-transform hover:scale-[1.02] active:scale-95"
           >
-            <CartIcon className="h-4 w-4" />
+            {calendar ? <CalendarIcon className="h-4 w-4" /> : <CartIcon className="h-4 w-4" />}
             {label}
-          </Link>
+          </a>
           <button
             type="button"
             onClick={() => setHidden(true)}
@@ -131,6 +132,19 @@ function CartIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+      />
+    </svg>
+  );
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       />
     </svg>
   );

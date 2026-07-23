@@ -74,6 +74,12 @@ export default async function EditPage({
           cta_note: (page as { cta_note?: string | null }).cta_note ?? null,
           purchase_link: (page as { purchase_link?: string | null }).purchase_link ?? null,
           purchase_type: (page as { purchase_type?: "external" | "internal" }).purchase_type,
+          cta_action: (page as { cta_action?: "checkout" | "link" | "calendar" | null }).cta_action ?? null,
+          event_title: (page as { event_title?: string | null }).event_title ?? null,
+          event_start: (page as { event_start?: string | null }).event_start ?? null,
+          event_end: (page as { event_end?: string | null }).event_end ?? null,
+          event_location: (page as { event_location?: string | null }).event_location ?? null,
+          event_description: (page as { event_description?: string | null }).event_description ?? null,
         }}
       />
     </div>

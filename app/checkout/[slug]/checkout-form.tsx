@@ -13,6 +13,10 @@ type Props = {
   isLoggedIn: boolean;
   showAsFree: boolean;
   purchaseLink: string | null;
+  /** When set, the CTA adds the product's event to the visitor's calendar (.ics). */
+  calendarHref: string | null;
+  /** Publisher-set button label override (falls back to a sensible default). */
+  ctaLabel: string | null;
 };
 
 export function CheckoutForm({
@@ -20,6 +24,8 @@ export function CheckoutForm({
   isLoggedIn,
   showAsFree,
   purchaseLink,
+  calendarHref,
+  ctaLabel,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,12 +106,31 @@ export function CheckoutForm({
   const autoPaidRef = useRef(false);
   useEffect(() => {
     if (autoPaidRef.current) return;
-    if (!isLoggedIn || showAsFree || purchaseLink) return;
+    if (!isLoggedIn || showAsFree || purchaseLink || calendarHref) return;
     if (new URLSearchParams(window.location.search).get("pay") !== "1") return;
     autoPaidRef.current = true;
     void startDuitku();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Calendar action replaces the purchase CTA entirely: no login, no payment —
+  // just hand the visitor an .ics event that works on iOS/Android/desktop.
+  if (calendarHref) {
+    return (
+      <div data-checkout-form>
+        <a
+          href={calendarHref}
+          onClick={fireBeginCheckout}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-4 text-base font-semibold text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/25 transition-all hover:scale-[1.01] hover:shadow-xl hover:shadow-[var(--primary)]/30"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          {ctaLabel || "Tambahkan ke kalender"}
+        </a>
+      </div>
+    );
+  }
 
   if (showAsFree) {
     if (isLoggedIn) {

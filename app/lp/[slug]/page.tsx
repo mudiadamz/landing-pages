@@ -59,16 +59,29 @@ export default async function LandingPageView({ params }: Props) {
   const basePrice = checkout?.price ?? 0;
   const displayPrice = !isFree && priceDiscount > 0 ? priceDiscount : basePrice;
   const showAsFree = isFree || displayPrice <= 0;
-  const defaultLabel = showAsFree ? "Ambil gratis" : "Beli sekarang";
+  // Action decides where the buy CTA leads:
+  //  • calendar → download an .ics event (works on iOS/Android/desktop)
+  //  • external link → straight there in a new tab
+  //  • otherwise → this site's checkout (the default)
+  const calendarMode =
+    checkout?.cta_action === "calendar" && !!checkout?.event_start?.trim();
+  const externalBuyLink =
+    !calendarMode && checkout?.purchase_type === "external"
+      ? checkout?.purchase_link?.trim() || null
+      : null;
+
+  const defaultLabel = calendarMode
+    ? "Tambahkan ke kalender"
+    : showAsFree
+      ? "Ambil gratis"
+      : "Beli sekarang";
   const buyLabel = checkout?.cta_label?.trim() || defaultLabel;
   const priceText = showAsFree ? null : `Rp ${displayPrice.toLocaleString("id-ID")}`;
   const buyNote = checkout?.cta_note?.trim() || null;
 
-  // Action: an external purchase link goes straight there (new tab); otherwise
-  // the card leads to this site's checkout (the default).
-  const externalBuyLink =
-    checkout?.purchase_type === "external" ? checkout?.purchase_link?.trim() || null : null;
-  const buyHref = externalBuyLink ?? `/checkout/${slug}`;
+  const buyHref = calendarMode
+    ? `/api/calendar/${slug}`
+    : externalBuyLink ?? `/checkout/${slug}`;
   // External-link previews are cross-origin, so scroll can't be observed —
   // fall back to revealing the CTA after a short delay.
   const autoRevealMs = embedLink ? 5000 : undefined;
@@ -106,6 +119,7 @@ export default async function LandingPageView({ params }: Props) {
       <PreviewBuyBar
         href={buyHref}
         external={!!externalBuyLink}
+        calendar={calendarMode}
         label={buyLabel}
         priceText={priceText}
         note={buyNote}

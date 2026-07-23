@@ -71,6 +71,12 @@ type Props = {
     cta_note?: string | null;
     purchase_link?: string | null;
     purchase_type?: "external" | "internal";
+    cta_action?: "checkout" | "link" | "calendar" | null;
+    event_title?: string | null;
+    event_start?: string | null;
+    event_end?: string | null;
+    event_location?: string | null;
+    event_description?: string | null;
   };
 };
 
@@ -241,13 +247,23 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   const [isFree, setIsFree] = useState(!!initial.is_free);
   const [featured, setFeatured] = useState(!!initial.featured);
 
-  // Preview buy-now card: optional text overrides + action (checkout | link).
+  // Preview buy-now card: optional text overrides + action (checkout | link | calendar).
   const [ctaLabel, setCtaLabel] = useState(initial.cta_label ?? "");
   const [ctaNote, setCtaNote] = useState(initial.cta_note ?? "");
-  const [actionType, setActionType] = useState<"checkout" | "link">(
-    initial.purchase_type === "external" && initial.purchase_link ? "link" : "checkout",
+  const [actionType, setActionType] = useState<"checkout" | "link" | "calendar">(
+    initial.cta_action === "calendar"
+      ? "calendar"
+      : initial.purchase_type === "external" && initial.purchase_link
+        ? "link"
+        : "checkout",
   );
   const [purchaseLink, setPurchaseLink] = useState(initial.purchase_link ?? "");
+  // Calendar-event fields (used when actionType === "calendar").
+  const [eventTitle, setEventTitle] = useState(initial.event_title ?? "");
+  const [eventStart, setEventStart] = useState(initial.event_start ?? "");
+  const [eventEnd, setEventEnd] = useState(initial.event_end ?? "");
+  const [eventLocation, setEventLocation] = useState(initial.event_location ?? "");
+  const [eventDescription, setEventDescription] = useState(initial.event_description ?? "");
   const [price, setPrice] = useState(initial.price != null ? String(initial.price) : "");
   const [priceDiscount, setPriceDiscount] = useState(
     initial.price_discount != null ? String(initial.price_discount) : "",
@@ -443,6 +459,14 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
       setMessage({ type: "err", text: "Isi URL link dulu." });
       return;
     }
+    if (actionType === "link" && !purchaseLink.trim()) {
+      setMessage({ type: "err", text: "Isi URL tujuan tombol beli dulu." });
+      return;
+    }
+    if (actionType === "calendar" && !eventStart.trim()) {
+      setMessage({ type: "err", text: "Isi tanggal & waktu mulai acara dulu." });
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
@@ -464,6 +488,12 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         purchase_type: actionType === "link" && purchaseLink.trim() ? "external" : "internal",
         cta_label: ctaLabel.trim() || null,
         cta_note: ctaNote.trim() || null,
+        cta_action: actionType,
+        event_title: actionType === "calendar" ? eventTitle.trim() || null : null,
+        event_start: actionType === "calendar" ? eventStart.trim() || null : null,
+        event_end: actionType === "calendar" ? eventEnd.trim() || null : null,
+        event_location: actionType === "calendar" ? eventLocation.trim() || null : null,
+        event_description: actionType === "calendar" ? eventDescription.trim() || null : null,
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
         zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
@@ -695,10 +725,11 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         {/* Preview buy-now card: text overrides + action */}
         <div className="space-y-3 rounded-xl border border-[var(--border)] p-4">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Tombol beli (di preview)</h3>
+            <h3 className="text-sm font-semibold text-foreground">Tombol beli</h3>
             <p className="text-xs text-[var(--muted)]">
-              Atur teks &amp; tujuan kartu &ldquo;beli sekarang&rdquo; yang muncul saat pengunjung
-              scroll di halaman preview. Kosongkan teks untuk memakai bawaan.
+              Atur teks &amp; tujuan tombol beli — berlaku di kartu &ldquo;beli sekarang&rdquo;
+              pada halaman preview <strong className="text-foreground">dan</strong> di halaman
+              checkout. Kosongkan teks untuk memakai bawaan.
             </p>
           </div>
 
@@ -713,7 +744,13 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
                 value={ctaLabel}
                 maxLength={40}
                 onChange={(e) => setCtaLabel(e.target.value)}
-                placeholder={isFree ? "Ambil gratis" : "Beli sekarang"}
+                placeholder={
+                  actionType === "calendar"
+                    ? "Tambahkan ke kalender"
+                    : isFree
+                      ? "Ambil gratis"
+                      : "Beli sekarang"
+                }
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
             </div>
@@ -740,16 +777,19 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
             <select
               id="cta-action"
               value={actionType}
-              onChange={(e) => setActionType(e.target.value as "checkout" | "link")}
+              onChange={(e) => setActionType(e.target.value as "checkout" | "link" | "calendar")}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
             >
               <option value="checkout">Checkout di situs ini (default)</option>
               <option value="link">Link eksternal</option>
+              <option value="calendar">Tambahkan ke kalender</option>
             </select>
             <p className="text-xs text-[var(--muted)]">
               {actionType === "link"
                 ? "Tombol mengarah ke URL yang Anda isi (membuka tab baru), melewati checkout bawaan."
-                : "Tombol mengarah ke halaman checkout produk ini."}
+                : actionType === "calendar"
+                  ? "Tombol menambahkan acara ke kalender pengunjung (file .ics — jalan di iOS, Android & desktop)."
+                  : "Tombol mengarah ke halaman checkout produk ini."}
             </p>
           </div>
 
@@ -766,6 +806,85 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
                 placeholder="https://contoh.com/beli"
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
+            </div>
+          )}
+
+          {actionType === "calendar" && (
+            <div className="space-y-4 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
+              <p className="text-xs text-[var(--muted)]">
+                Detail acara yang ditambahkan ke kalender pengunjung. Waktu memakai zona waktu
+                lokal perangkat pengunjung.
+              </p>
+              <div className="space-y-1.5">
+                <label htmlFor="event-title" className="block text-sm font-medium text-foreground">
+                  Judul acara
+                </label>
+                <input
+                  id="event-title"
+                  type="text"
+                  value={eventTitle}
+                  maxLength={200}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                  placeholder={title || "Judul acara"}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                />
+                <p className="text-xs text-[var(--muted)]">Kosongkan untuk memakai judul produk.</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="event-start" className="block text-sm font-medium text-foreground">
+                    Mulai <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="event-start"
+                    type="datetime-local"
+                    value={eventStart}
+                    onChange={(e) => setEventStart(e.target.value)}
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="event-end" className="block text-sm font-medium text-foreground">
+                    Selesai
+                  </label>
+                  <input
+                    id="event-end"
+                    type="datetime-local"
+                    value={eventEnd}
+                    onChange={(e) => setEventEnd(e.target.value)}
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  />
+                  <p className="text-xs text-[var(--muted)]">Kosong = 1 jam setelah mulai.</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="event-location" className="block text-sm font-medium text-foreground">
+                  Lokasi
+                </label>
+                <input
+                  id="event-location"
+                  type="text"
+                  value={eventLocation}
+                  maxLength={300}
+                  onChange={(e) => setEventLocation(e.target.value)}
+                  placeholder="Alamat, atau link Zoom/Google Meet"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="event-desc" className="block text-sm font-medium text-foreground">
+                  Deskripsi
+                </label>
+                <textarea
+                  id="event-desc"
+                  value={eventDescription}
+                  maxLength={1000}
+                  rows={3}
+                  onChange={(e) => setEventDescription(e.target.value)}
+                  placeholder="Catatan acara yang tampil di kalender…"
+                  className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                />
+              </div>
             </div>
           )}
         </div>

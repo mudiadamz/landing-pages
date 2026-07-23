@@ -270,6 +270,12 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 isLoggedIn={!!user}
                 showAsFree={showAsFree}
                 purchaseLink={page.purchase_link?.trim() || null}
+                calendarHref={
+                  page.cta_action === "calendar" && page.event_start?.trim()
+                    ? `/api/calendar/${page.slug}`
+                    : null
+                }
+                ctaLabel={page.cta_label?.trim() || null}
               />
               {!showAsFree && <PaymentMethodsRow className="pt-1" />}
             </div>
