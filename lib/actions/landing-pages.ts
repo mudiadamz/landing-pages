@@ -84,6 +84,7 @@ export type LandingPageCheckout = {
   zip_url: string | null;
   story_pdf_url?: string | null;
   long_description?: string | null;
+  category_id?: string | null;
   sold_count?: number;
   rating?: number | null;
   view_count?: number;
@@ -364,7 +365,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, view_count, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, category_id, sold_count, rating, view_count, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
     .eq("slug", slug)
     .single();
 
@@ -389,6 +390,54 @@ export async function incrementLandingView(slug: string) {
   } catch {
     /* view counting is best-effort — never surface an error to the visitor */
   }
+}
+
+export type RelatedProduct = {
+  id: string;
+  title: string;
+  slug: string;
+  price: number | null;
+  price_discount: number | null;
+  is_free: boolean;
+  thumbnail_url: string | null;
+};
+
+/**
+ * Other published products in the same PARENT category as the given product
+ * (aggregating the parent + its sub-categories), excluding the product itself.
+ * Also returns the parent category so the caller can link to its page.
+ */
+export async function getRelatedProducts(
+  currentId: string,
+  categoryId: string | null,
+  limit = 5,
+): Promise<{ items: RelatedProduct[]; parent: LandingPageCategory | null }> {
+  if (!categoryId) return { items: [], parent: null };
+
+  const cats = await getCategories();
+  const current = cats.find((c) => c.id === categoryId);
+  if (!current) return { items: [], parent: null };
+
+  // Resolve to the top-level parent: a sub-category rolls up to its parent; a
+  // top-level category is its own parent.
+  const parent = current.parent_id
+    ? cats.find((c) => c.id === current.parent_id) ?? current
+    : current;
+  const categoryIds = [parent.id, ...cats.filter((c) => c.parent_id === parent.id).map((c) => c.id)];
+
+  const supabase = createAnonClient();
+  const { data, error } = await supabase
+    .from("lp_landing_pages")
+    .select("id, title, slug, price, price_discount, is_free, thumbnail_url")
+    .eq("published", true)
+    .in("category_id", categoryIds)
+    .neq("id", currentId)
+    .order("featured", { ascending: false })
+    .order("sold_count", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) return { items: [], parent };
+  return { items: (data ?? []) as RelatedProduct[], parent };
 }
 
 export async function updateLandingPagePricing(

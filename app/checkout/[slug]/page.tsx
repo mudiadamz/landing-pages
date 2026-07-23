@@ -4,7 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+import { getLandingPageForCheckout, getRelatedProducts } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCount } from "@/lib/actions/reviews";
 import { VerifiedReviews } from "@/components/verified-reviews";
 import { FounderCredibility } from "@/components/founder-credibility";
@@ -16,6 +16,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
+import { RelatedProducts } from "@/components/related-products";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
@@ -92,10 +93,11 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   ]);
   if (!page) notFound();
   const adHeadline = sanitizeAdHeadline(sp.h);
-  const [{ data: { user } }, reviews, reviewCount] = await Promise.all([
+  const [{ data: { user } }, reviews, reviewCount, related] = await Promise.all([
     supabase.auth.getUser(),
     getPublicReviews(page.id, 5),
     getReviewCount(page.id),
+    getRelatedProducts(page.id, page.category_id ?? null, 5),
   ]);
 
   const isFree = page.is_free === true;
@@ -333,6 +335,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             <FounderCredibility />
           </div>
         </div>
+
+        {/* Related products in the same parent category (+ link to that category) */}
+        <RelatedProducts items={related.items} parent={related.parent} />
       </main>
 
       <SiteFooter />
