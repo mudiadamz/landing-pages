@@ -273,6 +273,17 @@ export function ProductActionsMenu({
         />
       )}
 
+      {isLoggedIn && (
+        <MenuButton
+          onClick={() => {
+            setOpen(false);
+            router.push("/panel");
+          }}
+          icon={<PanelIcon className="h-4 w-4" />}
+          label="Buka panel"
+        />
+      )}
+
       {/* View count — informational row */}
       <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--muted)]">
         <EyeIcon className="h-4 w-4 shrink-0" />
@@ -323,7 +334,7 @@ export function ProductActionsMenu({
         <MenuButton
           onClick={addToHome}
           icon={<HomePlusIcon className="h-4 w-4" />}
-          label="Tambah ke layar utama"
+          label="Pasang aplikasi (layar utama)"
         />
       )}
       <div className="my-1 h-px bg-[var(--border)]" />
@@ -394,7 +405,7 @@ export function ProductActionsMenu({
           >
             <div className="mb-3 flex items-center gap-2">
               <HomePlusIcon className="h-5 w-5 text-[var(--primary)]" />
-              <h3 className="text-sm font-semibold text-foreground">Tambah ke layar utama</h3>
+              <h3 className="text-sm font-semibold text-foreground">Pasang aplikasi ke layar utama</h3>
             </div>
             {isIOS ? (
               <ol className="space-y-2 text-sm text-[var(--muted)]">
@@ -514,6 +525,14 @@ function HomePlusIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function PanelIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+    </svg>
+  );
+}
+
 function HeartIcon({ filled, className }: { filled: boolean; className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} aria-hidden>
