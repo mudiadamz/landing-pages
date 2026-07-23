@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
 import { getLandingPageBySlug, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
@@ -102,6 +103,12 @@ export default async function LandingPageView({ params }: Props) {
 
   const viewCount = checkout?.view_count ?? 0;
 
+  // For the "Masuk dengan Google" item in the actions menu (logged-out only).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <>
       <PreviewGuardClient />
@@ -141,6 +148,7 @@ export default async function LandingPageView({ params }: Props) {
         backHref={`/checkout/${slug}`}
         slug={slug}
         page="preview"
+        isLoggedIn={!!user}
       />
       <PreviewBuyBar
         href={buyHref}

@@ -14,6 +14,7 @@ const CTA_LABELS: Record<string, string> = {
   share_native: "Share — lainnya",
   bookmark: "Simpan (bookmark)",
   add_to_home: "Tambah ke layar utama",
+  login_google: "Login Google",
 };
 
 function fmt(n: number) {
