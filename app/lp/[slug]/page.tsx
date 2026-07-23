@@ -164,6 +164,7 @@ export default async function LandingPageView({ params }: Props) {
         slug={slug}
         page="preview"
         isLoggedIn={!!user}
+        userName={(user?.user_metadata?.full_name as string | undefined) || user?.email || null}
       />
       <PreviewBuyBar
         href={buyHref}

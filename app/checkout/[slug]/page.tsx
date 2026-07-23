@@ -211,6 +211,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 backLabel="Ke beranda"
                 slug={page.slug}
                 page="checkout"
+                isLoggedIn={!!user}
+                userName={(user?.user_metadata?.full_name as string | undefined) || user?.email || null}
               />
             </div>
 
