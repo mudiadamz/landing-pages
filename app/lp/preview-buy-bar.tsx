@@ -99,20 +99,7 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
         {/* Solid (no backdrop-blur): a fixed backdrop-filter at the bottom edge
             makes iOS Safari frost its toolbar lighter. The card was already 95%
             opaque, so an opaque bg looks the same without the side effect. */}
-        <div className="pointer-events-auto mx-auto flex max-w-md items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl">
-          {/* Dismiss on the LEFT: the text block separates it from the CTA, so a
-              slight miss lands on the (harmless) text rather than "beli". 44px,
-              no tap delay, subtle hover — no detached floating bubble. */}
-          <button
-            type="button"
-            onPointerDown={buzz}
-            onClick={dismiss}
-            aria-label="Sembunyikan tombol beli"
-            title="Sembunyikan"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[var(--muted)] touch-manipulation transition-transform duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90"
-          >
-            <CloseIcon className="h-5 w-5" />
-          </button>
+        <div className="pointer-events-auto relative mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 pl-4 shadow-xl">
           <div className="min-w-0 flex-1">
             {priceText ? (
               <p className="truncate text-sm font-semibold text-foreground">{priceText}</p>
@@ -135,6 +122,21 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
             {calendar ? <CalendarIcon className="h-4 w-4" /> : <CartIcon className="h-4 w-4" />}
             {label}
           </a>
+
+          {/* Dismiss pinned to the top-right corner, floating just above the bar
+              over the preview — no row column (takes no space) and no filled
+              bubble. Big transparent hit area sits above the CTA, not on it, so a
+              miss can't trigger "beli"; drop-shadow keeps the bare icon legible. */}
+          <button
+            type="button"
+            onPointerDown={buzz}
+            onClick={dismiss}
+            aria-label="Sembunyikan tombol beli"
+            title="Sembunyikan"
+            className="absolute bottom-full right-0 mb-1 flex h-10 w-10 items-center justify-center text-foreground [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.45))] touch-manipulation transition-transform duration-150 active:scale-90"
+          >
+            <CloseIcon className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
