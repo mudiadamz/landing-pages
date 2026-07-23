@@ -35,6 +35,13 @@ export function TawkChat() {
   return (
     <Script id="tawk-to" strategy="afterInteractive">
       {`var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();
+// Shrink only the minimized launcher bubble. Tawk sizes are set in its dashboard
+// and the widget lives in a cross-origin iframe, so we scale the (same-origin)
+// launcher iframe element itself. The size guard (< 220px) keeps the open chat
+// window and the mobile full-screen view untouched.
+function tawkShrink(){try{document.querySelectorAll('iframe[title="chat widget"]').forEach(function(f){var r=f.getBoundingClientRect();if(r.width&&r.width<220&&r.height<220){f.style.transformOrigin='100% 100%';f.style.transform='scale(0.72)';}});}catch(e){}}
+Tawk_API.onLoad=function(){tawkShrink();setTimeout(tawkShrink,500);setTimeout(tawkShrink,1500);};
+Tawk_API.onChatMinimized=function(){setTimeout(tawkShrink,50);};
 (function(){
 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
 s1.async=true;

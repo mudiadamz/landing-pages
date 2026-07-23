@@ -233,18 +233,18 @@ export function ProductActionsMenu({
       title="Menu tindakan"
       className={
         variant === "floating"
-          ? "flex h-11 w-11 items-center justify-center rounded-lg text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
+          ? "flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-all hover:text-foreground active:scale-95"
           : "flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
       }
     >
-      <DotsIcon className="h-5 w-5" />
+      <DotsIcon className={variant === "floating" ? "h-4 w-4" : "h-5 w-5"} />
     </button>
   );
 
   const body = (
     <div ref={rootRef} className="relative">
       {variant === "floating" ? (
-        <div className="flex items-center rounded-xl border border-[var(--border)] bg-[var(--card)]/90 p-1.5 shadow-lg backdrop-blur">
+        <div className="flex items-center rounded-xl border border-[var(--border)]/50 bg-[var(--card)]/50 p-1 shadow-md backdrop-blur">
           {trigger}
         </div>
       ) : (
