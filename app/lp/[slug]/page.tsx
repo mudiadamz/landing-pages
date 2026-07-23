@@ -4,11 +4,12 @@ import type { Metadata } from "next";
 import { getLandingPageBySlug, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
-import { PreviewBar } from "../preview-bar";
 import { PreviewBuyBar } from "../preview-buy-bar";
 import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
+import { ProductActionsMenu } from "@/components/product-actions";
+import { ViewTracker } from "@/components/view-tracker";
 
 const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 const getCheckoutData = cache((slug: string) => getLandingPageForCheckout(slug));
@@ -98,9 +99,12 @@ export default async function LandingPageView({ params }: Props) {
       ? 1200
       : undefined;
 
+  const viewCount = checkout?.view_count ?? 0;
+
   return (
     <>
       <PreviewGuardClient />
+      <ViewTracker slug={slug} />
       <PreviewSurface mode={embedPdf ? "pdf" : embedLink ? "link" : "html"}>
         {embedPdf ? (
           // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
@@ -128,7 +132,12 @@ export default async function LandingPageView({ params }: Props) {
           />
         )}
       </PreviewSurface>
-      <PreviewBar slug={slug} />
+      <ProductActionsMenu
+        variant="floating"
+        title={page.title}
+        viewCount={viewCount}
+        backHref={`/checkout/${slug}`}
+      />
       <PreviewBuyBar
         href={buyHref}
         external={!!externalBuyLink}

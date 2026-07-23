@@ -12,6 +12,7 @@ import { CustomJsInjector } from "@/components/custom-js-injector";
 import { JsonLd } from "@/components/json-ld";
 import { MarketingScripts } from "@/components/marketing-scripts";
 import { TawkChat } from "@/components/tawk-chat";
+import { PwaRegister } from "@/components/pwa-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,6 +103,14 @@ export default async function RootLayout({
             inline script below and lib/use-theme on toggle) so the browser chrome
             doesn't stay light behind a dark page — e.g. on the /lp preview. */}
         <meta name="theme-color" content={isDark ? "#0d0d0f" : "#fdfcfb"} />
+        {/* Add-to-home-screen support: manifest (auto-linked by app/manifest.ts)
+            drives Chrome/Android/desktop installs; these tags cover iOS Safari,
+            which has no install API and uses the apple-touch-icon + Share sheet. */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="ADM.UIUX" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
@@ -114,6 +123,7 @@ export default async function RootLayout({
         <JsonLd data={organizationJsonLd} />
         <MarketingScripts />
         <TawkChat />
+        <PwaRegister />
         <Suspense fallback={null}>
           <RouteProgress />
         </Suspense>

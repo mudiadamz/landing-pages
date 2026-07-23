@@ -16,6 +16,8 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
+import { ProductActionsMenu } from "@/components/product-actions";
+import { ViewTracker } from "@/components/view-tracker";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -141,6 +143,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <JsonLd data={productJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />
+      <ViewTracker slug={page.slug} />
       <SiteHeader user={user} />
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -179,11 +182,20 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
 
           <div className="p-5 sm:p-6 space-y-5">
             {/* Title (with optional ad-headline echo for ad->landing message match) */}
-            <div className="space-y-1">
-              {adHeadline && (
-                <p className="text-sm font-medium text-[var(--primary)]">{adHeadline}</p>
-              )}
-              <h1 className="text-xl font-semibold text-foreground">{page.title}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1">
+                {adHeadline && (
+                  <p className="text-sm font-medium text-[var(--primary)]">{adHeadline}</p>
+                )}
+                <h1 className="text-xl font-semibold text-foreground">{page.title}</h1>
+              </div>
+              <ProductActionsMenu
+                variant="inline"
+                title={page.title}
+                viewCount={page.view_count ?? 0}
+                backHref="/"
+                backLabel="Ke beranda"
+              />
             </div>
 
             {/* Price */}

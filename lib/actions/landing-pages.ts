@@ -86,6 +86,7 @@ export type LandingPageCheckout = {
   long_description?: string | null;
   sold_count?: number;
   rating?: number | null;
+  view_count?: number;
   cta_label?: string | null;
   cta_note?: string | null;
   /** When the sticky CTA reveals on scroll: "start"|"middle"(default)|"near"|"end". */
@@ -361,7 +362,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, published, user_id, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, view_count, published, user_id, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
     .eq("slug", slug)
     .single();
 
@@ -369,6 +370,23 @@ export async function getLandingPageForCheckout(slug: string) {
   // Hidden pages can't be checked out by the public; the owner still can (preview).
   if (data.published === false && data.user_id !== user?.id) return null;
   return data as LandingPageCheckout;
+}
+
+/**
+ * Best-effort atomic +1 to a product's public view counter. Called once per
+ * session from the preview / checkout pages (see ViewTracker). Uses the anon
+ * client + a SECURITY DEFINER RPC so it works for logged-out visitors and never
+ * throws into the render.
+ */
+export async function incrementLandingView(slug: string) {
+  const clean = slug.trim();
+  if (!clean) return;
+  try {
+    const supabase = createAnonClient();
+    await supabase.rpc("lp_increment_view", { p_slug: clean });
+  } catch {
+    /* view counting is best-effort — never surface an error to the visitor */
+  }
 }
 
 export async function updateLandingPagePricing(
