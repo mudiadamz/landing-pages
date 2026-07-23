@@ -88,6 +88,7 @@ export type LandingPageCheckout = {
   sold_count?: number;
   rating?: number | null;
   view_count?: number;
+  like_count?: number;
   /** Preview-button label keyword: "product"(default)|"buku"|"pages". */
   preview_label?: "product" | "buku" | "pages" | null;
   cta_label?: string | null;
@@ -146,7 +147,7 @@ export async function getLandingPageBySlug(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, published, user_id")
+    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, like_count, published, user_id")
     .eq("slug", slug)
     .single();
 
@@ -161,6 +162,7 @@ export async function getLandingPageBySlug(slug: string) {
     preview_type?: PreviewType | null;
     preview_url?: string | null;
     preview_url_dark?: string | null;
+    like_count?: number;
   };
 }
 
@@ -365,7 +367,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, category_id, sold_count, rating, view_count, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, category_id, sold_count, rating, view_count, like_count, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
     .eq("slug", slug)
     .single();
 

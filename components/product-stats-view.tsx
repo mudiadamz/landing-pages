@@ -15,6 +15,8 @@ const CTA_LABELS: Record<string, string> = {
   bookmark: "Simpan (bookmark)",
   add_to_home: "Tambah ke layar utama",
   login_google: "Login Google",
+  like: "Suka",
+  unlike: "Batal suka",
 };
 
 function fmt(n: number) {

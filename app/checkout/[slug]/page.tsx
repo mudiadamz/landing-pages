@@ -17,6 +17,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
 import { RelatedProducts } from "@/components/related-products";
+import { LikeButton } from "@/components/like-button";
+import { getMyLike } from "@/lib/actions/likes";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
@@ -93,11 +95,12 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   ]);
   if (!page) notFound();
   const adHeadline = sanitizeAdHeadline(sp.h);
-  const [{ data: { user } }, reviews, reviewCount, related] = await Promise.all([
+  const [{ data: { user } }, reviews, reviewCount, related, liked] = await Promise.all([
     supabase.auth.getUser(),
     getPublicReviews(page.id, 5),
     getReviewCount(page.id),
     getRelatedProducts(page.id, page.category_id ?? null, 5),
+    getMyLike(page.id),
   ]);
 
   const isFree = page.is_free === true;
@@ -232,6 +235,19 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                   )}
                 </>
               )}
+            </div>
+
+            {/* Like (login-gated) */}
+            <div>
+              <LikeButton
+                pageId={page.id}
+                slug={page.slug}
+                page="checkout"
+                initialLiked={liked}
+                initialCount={page.like_count ?? 0}
+                isLoggedIn={!!user}
+                variant="inline"
+              />
             </div>
 
             {/* Social proof */}

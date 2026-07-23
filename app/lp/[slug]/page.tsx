@@ -10,6 +10,8 @@ import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { ProductActionsMenu } from "@/components/product-actions";
+import { LikeButton } from "@/components/like-button";
+import { getMyLike } from "@/lib/actions/likes";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
 
@@ -103,11 +105,13 @@ export default async function LandingPageView({ params }: Props) {
 
   const viewCount = checkout?.view_count ?? 0;
 
-  // For the "Masuk dengan Google" item in the actions menu (logged-out only).
+  // For the "Masuk dengan Google" item in the actions menu (logged-out only)
+  // and the like button's current state.
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [{ data: { user } }, liked] = await Promise.all([
+    supabase.auth.getUser(),
+    getMyLike(page.id),
+  ]);
 
   return (
     <>
@@ -141,6 +145,17 @@ export default async function LandingPageView({ params }: Props) {
           />
         )}
       </PreviewSurface>
+      <div className="fixed left-4 top-4 z-50">
+        <LikeButton
+          pageId={page.id}
+          slug={slug}
+          page="preview"
+          initialLiked={liked}
+          initialCount={page.like_count ?? 0}
+          isLoggedIn={!!user}
+          variant="floating"
+        />
+      </div>
       <ProductActionsMenu
         variant="floating"
         title={page.title}
