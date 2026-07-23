@@ -67,6 +67,7 @@ type Props = {
     story_pdf_url_dark?: string | null;
     category_id?: string | null;
     long_description?: string | null;
+    preview_label?: "product" | "buku" | "pages" | null;
     cta_label?: string | null;
     cta_note?: string | null;
     cta_reveal?: "start" | "middle" | "near" | "end" | null;
@@ -228,6 +229,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   // --- Page info ---
   const [title, setTitle] = useState(initial.title);
   const [previewType, setPreviewType] = useState<PreviewType>(initial.preview_type);
+  // Label of the "Preview Product" button on the checkout page.
+  const [previewLabel, setPreviewLabel] = useState<"product" | "buku" | "pages">(
+    initial.preview_label ?? "product",
+  );
   const [previewUrl, setPreviewUrl] = useState(initial.preview_url ?? "");
   const [pdfMeta, setPdfMeta] = useState<FileMeta | null>(
     initial.preview_type === "pdf" && initial.preview_url
@@ -507,6 +512,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         story_pdf_url_dark: deliverableType === "pdf" ? storyUrlDark.trim() || null : null,
         category_id: categoryId.trim() || null,
         long_description: longDescription.trim() || null,
+        preview_label: previewLabel,
       });
       setMessage({ type: "ok", text: "Perubahan tersimpan." });
       router.refresh();
@@ -629,6 +635,26 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
             />
           </div>
         )}
+
+        {/* Label of the "Preview" button shown on the checkout page. */}
+        <div className="space-y-1.5">
+          <label htmlFor="preview-label" className="block text-sm font-medium text-foreground">
+            Teks tombol preview
+          </label>
+          <select
+            id="preview-label"
+            value={previewLabel}
+            onChange={(e) => setPreviewLabel(e.target.value as "product" | "buku" | "pages")}
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+          >
+            <option value="product">Preview Product (default)</option>
+            <option value="buku">Preview Buku</option>
+            <option value="pages">Preview Pages</option>
+          </select>
+          <p className="text-xs text-[var(--muted)]">
+            Teks tombol yang membuka halaman preview dari halaman checkout.
+          </p>
+        </div>
       </section>
 
       {/* Monaco editor — only for the HTML preview source. Keeps its own save. */}

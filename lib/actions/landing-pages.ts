@@ -87,6 +87,8 @@ export type LandingPageCheckout = {
   sold_count?: number;
   rating?: number | null;
   view_count?: number;
+  /** Preview-button label keyword: "product"(default)|"buku"|"pages". */
+  preview_label?: "product" | "buku" | "pages" | null;
   cta_label?: string | null;
   cta_note?: string | null;
   /** When the sticky CTA reveals on scroll: "start"|"middle"(default)|"near"|"end". */
@@ -362,7 +364,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, view_count, published, user_id, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, sold_count, rating, view_count, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
     .eq("slug", slug)
     .single();
 
@@ -405,6 +407,7 @@ export async function updateLandingPagePricing(
     rating?: number | null;
     category_id?: string | null;
     long_description?: string | null;
+    preview_label?: "product" | "buku" | "pages" | null;
     cta_label?: string | null;
     cta_note?: string | null;
     cta_reveal?: "start" | "middle" | "near" | "end" | null;

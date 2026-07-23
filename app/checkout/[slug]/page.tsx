@@ -107,6 +107,13 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const soldCount = page.sold_count ?? 0;
   const rating = page.rating != null && page.rating > 0 ? Number(page.rating) : null;
 
+  // Publisher-configurable preview-button label + the CTA note shown above the buy button.
+  const previewButtonLabel =
+    { product: "Preview Product", buku: "Preview Buku", pages: "Preview Pages" }[
+      page.preview_label ?? "product"
+    ] ?? "Preview Product";
+  const ctaNote = page.cta_note?.trim() || null;
+
   const canonicalUrl = `${SITE_URL}/checkout/${page.slug}`;
   const metaDescription = buildMetaDescription(
     page.long_description,
@@ -275,8 +282,12 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 fullWidth
                 leftIcon={<EyeIcon className="w-5 h-5" />}
               >
-                Preview Product
+                {previewButtonLabel}
               </Button>
+              {/* Publisher-set CTA note, surfaced right above the buy button. */}
+              {ctaNote && (
+                <p className="text-center text-sm text-[var(--muted)]">{ctaNote}</p>
+              )}
               <CheckoutForm
                 page={page}
                 isLoggedIn={!!user}
