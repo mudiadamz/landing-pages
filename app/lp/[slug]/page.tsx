@@ -10,7 +10,6 @@ import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { ProductActionsMenu } from "@/components/product-actions";
-import { LikeButton } from "@/components/like-button";
 import { getMyLike } from "@/lib/actions/likes";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
@@ -145,17 +144,6 @@ export default async function LandingPageView({ params }: Props) {
           />
         )}
       </PreviewSurface>
-      <div className="fixed left-4 top-4 z-50">
-        <LikeButton
-          pageId={page.id}
-          slug={slug}
-          page="preview"
-          initialLiked={liked}
-          initialCount={page.like_count ?? 0}
-          isLoggedIn={!!user}
-          variant="floating"
-        />
-      </div>
       <ProductActionsMenu
         variant="floating"
         title={page.title}
@@ -165,6 +153,9 @@ export default async function LandingPageView({ params }: Props) {
         page="preview"
         isLoggedIn={!!user}
         userName={(user?.user_metadata?.full_name as string | undefined) || user?.email || null}
+        pageId={page.id}
+        liked={liked}
+        likeCount={page.like_count ?? 0}
       />
       <PreviewBuyBar
         href={buyHref}

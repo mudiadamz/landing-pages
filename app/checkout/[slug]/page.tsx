@@ -17,7 +17,6 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
 import { RelatedProducts } from "@/components/related-products";
-import { LikeButton } from "@/components/like-button";
 import { getMyLike } from "@/lib/actions/likes";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
@@ -213,6 +212,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 page="checkout"
                 isLoggedIn={!!user}
                 userName={(user?.user_metadata?.full_name as string | undefined) || user?.email || null}
+                pageId={page.id}
+                liked={liked}
+                likeCount={page.like_count ?? 0}
               />
             </div>
 
@@ -237,19 +239,6 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                   )}
                 </>
               )}
-            </div>
-
-            {/* Like (login-gated) */}
-            <div>
-              <LikeButton
-                pageId={page.id}
-                slug={page.slug}
-                page="checkout"
-                initialLiked={liked}
-                initialCount={page.like_count ?? 0}
-                isLoggedIn={!!user}
-                variant="inline"
-              />
             </div>
 
             {/* Social proof */}

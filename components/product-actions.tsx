@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/use-theme";
 import { trackCta, type TrackPage } from "@/lib/track";
 import { signInWithGoogle } from "@/lib/actions/auth";
+import { toggleLike } from "@/lib/actions/likes";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -29,6 +30,10 @@ type Props = {
   isLoggedIn?: boolean;
   /** Display name of the signed-in user, shown at the top of the menu. */
   userName?: string | null;
+  /** Product id + initial like state for the in-menu like toggle. */
+  pageId?: string;
+  liked?: boolean;
+  likeCount?: number;
 };
 
 /**
@@ -47,6 +52,9 @@ export function ProductActionsMenu({
   page = "checkout",
   isLoggedIn,
   userName,
+  pageId,
+  liked: likedInitial = false,
+  likeCount: likeCountInitial = 0,
 }: Props) {
   const router = useRouter();
   const { dark, toggle } = useTheme();
@@ -56,6 +64,37 @@ export function ProductActionsMenu({
     },
     [slug, page],
   );
+
+  const nextPath = page === "checkout" ? `/checkout/${slug}` : `/lp/${slug}`;
+
+  // In-menu like toggle (login-gated; optimistic). Count doubles as the total.
+  const [liked, setLiked] = useState(likedInitial);
+  const [likeCount, setLikeCount] = useState(likeCountInitial);
+  const [likePending, setLikePending] = useState(false);
+
+  const onToggleLike = useCallback(async () => {
+    if (likePending || !pageId) return;
+    setLikePending(true);
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    logCta(next ? "like" : "unlike");
+    try {
+      const res = await toggleLike(pageId);
+      if (res.ok) {
+        setLiked(res.liked);
+        setLikeCount(res.count);
+      } else {
+        setLiked(!next);
+        setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+      }
+    } catch {
+      setLiked(!next);
+      setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+    } finally {
+      setLikePending(false);
+    }
+  }, [likePending, pageId, liked, logCta]);
 
   const [open, setOpen] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
@@ -205,11 +244,7 @@ export function ProductActionsMenu({
       {isLoggedIn === false && slug && (
         <>
           <form action={signInWithGoogle}>
-            <input
-              type="hidden"
-              name="next"
-              value={page === "checkout" ? `/checkout/${slug}` : `/lp/${slug}`}
-            />
+            <input type="hidden" name="next" value={nextPath} />
             <button
               type="submit"
               role="menuitem"
@@ -245,6 +280,37 @@ export function ProductActionsMenu({
           <span className="font-medium text-foreground">{views}</span> kali dilihat
         </span>
       </div>
+
+      {/* Like — toggles when signed in, else starts Google sign-in. Shows total. */}
+      {pageId &&
+        (isLoggedIn ? (
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onToggleLike}
+            disabled={likePending}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-[var(--background)] disabled:opacity-60"
+          >
+            <HeartIcon
+              filled={liked}
+              className={`h-4 w-4 shrink-0 ${liked ? "text-red-500" : "text-[var(--muted)]"}`}
+            />
+            {liked ? "Disukai" : "Suka"} · {new Intl.NumberFormat("id-ID").format(likeCount)}
+          </button>
+        ) : (
+          <form action={signInWithGoogle}>
+            <input type="hidden" name="next" value={nextPath} />
+            <button
+              type="submit"
+              role="menuitem"
+              onClick={() => logCta("like")}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-[var(--background)]"
+            >
+              <HeartIcon filled={false} className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+              Suka · {new Intl.NumberFormat("id-ID").format(likeCount)}
+            </button>
+          </form>
+        ))}
 
       <div className="my-1 h-px bg-[var(--border)]" />
 
@@ -448,6 +514,14 @@ function HomePlusIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function HeartIcon({ filled, className }: { filled: boolean; className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  );
+}
+
 function ShareIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
