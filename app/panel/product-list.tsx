@@ -34,6 +34,14 @@ function formatDate(s: string) {
   });
 }
 
+function ChartIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6m4 6V5m4 14v-9M5 19h14" />
+    </svg>
+  );
+}
+
 function EditIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
@@ -67,6 +75,9 @@ function RowActions({ p, size = "sm" }: { p: ProductRow; size?: "sm" | "lg" }) {
     <>
       <VisibilityToggle id={p.id} published={p.published !== false} size={size} />
       <PinButton id={p.id} featured={!!p.featured} size={size} />
+      <Link href={`/panel/product/${p.id}/stats`} className={linkClass} title="Statistik" aria-label="Statistik">
+        <ChartIcon className={iconClass} />
+      </Link>
       <Link href={`/panel/product/${p.id}/edit`} className={linkClass} title="Edit" aria-label="Edit">
         <EditIcon className={iconClass} />
       </Link>

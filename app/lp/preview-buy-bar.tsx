@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { trackCta } from "@/lib/track";
 
 /** Short buzz on tap where supported (Android Chrome; no-op on iOS). */
 function buzz() {
@@ -27,6 +28,9 @@ type Props = {
    * (external-link iframes are cross-origin). 0/undefined = scroll-only.
    */
   autoRevealMs?: number;
+  /** Product slug + CTA action name for analytics (fired on click). */
+  slug?: string;
+  ctaAction?: string;
 };
 
 /**
@@ -36,7 +40,7 @@ type Props = {
  * HTML previews, and PdfViewer dispatches `lp-preview-scroll` for PDFs. The
  * visitor can dismiss it (collapses to a small handle) and bring it back.
  */
-export function PreviewBuyBar({ href, external, calendar, label, priceText, note, autoRevealMs }: Props) {
+export function PreviewBuyBar({ href, external, calendar, label, priceText, note, autoRevealMs, slug, ctaAction }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [hidden, setHidden] = useState(false);
   // The collapsed handle sits in the same bottom-right corner as the bar's close
@@ -117,6 +121,9 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
             href={href}
             {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             onPointerDown={buzz}
+            onClick={() => {
+              if (slug) trackCta(slug, "preview", ctaAction || "buy");
+            }}
             className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/25 touch-manipulation transition-transform hover:scale-[1.02] active:scale-95"
           >
             {calendar ? <CalendarIcon className="h-4 w-4" /> : <CartIcon className="h-4 w-4" />}

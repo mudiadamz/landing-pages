@@ -10,6 +10,7 @@ import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
+import { ProductTracker } from "@/components/product-tracker";
 
 const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 const getCheckoutData = cache((slug: string) => getLandingPageForCheckout(slug));
@@ -105,6 +106,7 @@ export default async function LandingPageView({ params }: Props) {
     <>
       <PreviewGuardClient />
       <ViewTracker slug={slug} />
+      <ProductTracker slug={slug} page="preview" />
       <PreviewSurface mode={embedPdf ? "pdf" : embedLink ? "link" : "html"}>
         {embedPdf ? (
           // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
@@ -137,6 +139,8 @@ export default async function LandingPageView({ params }: Props) {
         title={page.title}
         viewCount={viewCount}
         backHref={`/checkout/${slug}`}
+        slug={slug}
+        page="preview"
       />
       <PreviewBuyBar
         href={buyHref}
@@ -146,6 +150,8 @@ export default async function LandingPageView({ params }: Props) {
         priceText={priceText}
         note={buyNote}
         autoRevealMs={autoRevealMs}
+        slug={slug}
+        ctaAction={calendarMode ? "calendar" : externalBuyLink ? "buy_link" : "buy"}
       />
     </>
   );

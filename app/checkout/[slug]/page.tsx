@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
+import { ProductTracker } from "@/components/product-tracker";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -151,6 +152,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
       <JsonLd data={productJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />
       <ViewTracker slug={page.slug} />
+      <ProductTracker slug={page.slug} page="checkout" />
       <SiteHeader user={user} />
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -202,6 +204,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 viewCount={page.view_count ?? 0}
                 backHref="/"
                 backLabel="Ke beranda"
+                slug={page.slug}
+                page="checkout"
               />
             </div>
 

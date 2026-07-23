@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/use-theme";
+import { trackCta, type TrackPage } from "@/lib/track";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -20,6 +21,9 @@ type Props = {
   /** When set, a "Back" item is shown that navigates here. */
   backHref?: string | null;
   backLabel?: string;
+  /** Product slug + surface for analytics (share / add-to-home / bookmark). */
+  slug?: string;
+  page?: TrackPage;
 };
 
 /**
@@ -34,9 +38,17 @@ export function ProductActionsMenu({
   variant = "inline",
   backHref,
   backLabel = "Kembali",
+  slug,
+  page = "checkout",
 }: Props) {
   const router = useRouter();
   const { dark, toggle } = useTheme();
+  const logCta = useCallback(
+    (action: string) => {
+      if (slug) trackCta(slug, page, action);
+    },
+    [slug, page],
+  );
 
   const [open, setOpen] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
@@ -111,6 +123,7 @@ export function ProductActionsMenu({
 
   const addToHome = useCallback(async () => {
     setOpen(false);
+    logCta("add_to_home");
     if (deferredPrompt.current) {
       const ev = deferredPrompt.current;
       await ev.prompt();
@@ -120,19 +133,21 @@ export function ProductActionsMenu({
     }
     // No install API available (iOS always; some desktop states) → instructions.
     setIosHelp(true);
-  }, []);
+  }, [logCta]);
 
   const bookmark = useCallback(() => {
     setOpen(false);
+    logCta("bookmark");
     // Modern browsers block programmatic bookmarking — guide the keyboard combo.
     const isMac = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
     showHint(
       isMac ? "Tekan ⌘ + D untuk menyimpan ke bookmark browser" : "Tekan Ctrl + D untuk menyimpan ke bookmark browser",
     );
-  }, [showHint]);
+  }, [showHint, logCta]);
 
   const nativeShare = useCallback(async () => {
     setOpen(false);
+    logCta("share_native");
     const url = shareUrl();
     if (navigator.share) {
       try {
@@ -148,11 +163,12 @@ export function ProductActionsMenu({
     } catch {
       showHint(url);
     }
-  }, [title, showHint]);
+  }, [title, showHint, logCta]);
 
   const shareTo = useCallback(
     (target: "wa" | "threads" | "x") => {
       setOpen(false);
+      logCta(`share_${target}`);
       const url = shareUrl();
       const text = `${title} — ${url}`;
       const map: Record<typeof target, string> = {
@@ -162,7 +178,7 @@ export function ProductActionsMenu({
       };
       window.open(map[target], "_blank", "noopener,noreferrer");
     },
-    [title],
+    [title, logCta],
   );
 
   const views = new Intl.NumberFormat("id-ID").format(Math.max(0, viewCount || 0));

@@ -6,6 +6,7 @@ import { addPurchaseAction } from "@/lib/actions/purchases";
 import { Button } from "@/components/ui/button";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { trackEvent } from "@/lib/analytics";
+import { trackCta } from "@/lib/track";
 import type { LandingPageCheckout } from "@/lib/actions/landing-pages";
 
 type Props = {
@@ -73,6 +74,7 @@ export function CheckoutForm({
     setError(null);
     setLoading(true);
     fireBeginCheckout();
+    trackCta(page.slug, "checkout", "buy");
     try {
       const res = await fetch("/api/duitku/create-invoice", {
         method: "POST",
@@ -120,7 +122,10 @@ export function CheckoutForm({
       <div data-checkout-form>
         <a
           href={calendarHref}
-          onClick={fireBeginCheckout}
+          onClick={() => {
+            fireBeginCheckout();
+            trackCta(page.slug, "checkout", "calendar");
+          }}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-4 text-base font-semibold text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/25 transition-all hover:scale-[1.01] hover:shadow-xl hover:shadow-[var(--primary)]/30"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -142,7 +147,10 @@ export function CheckoutForm({
             size="lg"
             fullWidth
             shine
-            onClick={fireBeginCheckout}
+            onClick={() => {
+              fireBeginCheckout();
+              trackCta(page.slug, "checkout", "buy_free");
+            }}
             className="py-4 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
           >
             Ambil gratis
@@ -177,7 +185,10 @@ export function CheckoutForm({
           size="lg"
           href={purchaseLink}
           external
-          onClick={fireBeginCheckout}
+          onClick={() => {
+            fireBeginCheckout();
+            trackCta(page.slug, "checkout", "buy_link");
+          }}
           fullWidth
           className="py-4 text-center shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
         >
