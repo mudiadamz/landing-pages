@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/** Short buzz on tap where supported (Android Chrome; no-op on iOS). */
+function buzz() {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    navigator.vibrate(8);
+  }
+}
+
 type Props = {
   /** Where the CTA leads: /checkout/[slug], an external link, or the .ics route. */
   href: string;
@@ -92,7 +99,7 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
         {/* Solid (no backdrop-blur): a fixed backdrop-filter at the bottom edge
             makes iOS Safari frost its toolbar lighter. The card was already 95%
             opaque, so an opaque bg looks the same without the side effect. */}
-        <div className="pointer-events-auto mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 pl-4 shadow-xl">
+        <div className="pointer-events-auto relative mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 pl-4 shadow-xl">
           <div className="min-w-0 flex-1">
             {priceText ? (
               <p className="truncate text-sm font-semibold text-foreground">{priceText}</p>
@@ -109,17 +116,23 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
           <a
             href={href}
             {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/25 transition-transform hover:scale-[1.02] active:scale-95"
+            onPointerDown={buzz}
+            className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/25 touch-manipulation transition-transform hover:scale-[1.02] active:scale-95"
           >
             {calendar ? <CalendarIcon className="h-4 w-4" /> : <CartIcon className="h-4 w-4" />}
             {label}
           </a>
+
+          {/* Dismiss lifted out of the button row into the top-right corner: next
+              to the CTA a slight miss used to tap "beli" (navigating away) instead
+              of closing. Separated + 44px + no tap delay. */}
           <button
             type="button"
+            onPointerDown={buzz}
             onClick={dismiss}
             aria-label="Sembunyikan tombol beli"
             title="Sembunyikan"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-all hover:bg-[var(--background)] hover:text-foreground active:scale-95"
+            className="absolute -right-2.5 -top-2.5 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] text-[var(--muted)] shadow-md touch-manipulation transition-transform duration-150 hover:text-foreground active:scale-90 active:rotate-90"
           >
             <CloseIcon className="h-5 w-5" />
           </button>
@@ -134,10 +147,11 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
       >
         <button
           type="button"
+          onPointerDown={buzz}
           onClick={restore}
           aria-label="Tampilkan tombol beli"
           title="Tampilkan tombol beli"
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/30 transition-transform hover:scale-105 active:scale-95"
+          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/30 touch-manipulation transition-transform hover:scale-105 active:scale-95"
         >
           <CartIcon className="h-5 w-5" />
         </button>
