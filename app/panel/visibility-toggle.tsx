@@ -15,6 +15,12 @@ export function VisibilityToggle({ id, published, size = "sm" }: { id: string; p
 
   function toggle() {
     const next = !visible;
+    const ok = confirm(
+      next
+        ? "Tampilkan produk ini di frontend? Produk akan muncul di homepage & bisa diakses pengunjung."
+        : "Sembunyikan produk ini dari frontend? Produk akan hilang dari homepage & tidak bisa diakses pengunjung.",
+    );
+    if (!ok) return;
     setVisible(next); // optimistic
     startTransition(async () => {
       try {
