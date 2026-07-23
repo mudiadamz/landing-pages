@@ -233,8 +233,8 @@ export function ProductActionsMenu({
       title="Menu tindakan"
       className={
         variant === "floating"
-          ? "flex h-8 w-8 items-center justify-center rounded-lg text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
-          : "flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
+          ? "flex h-11 w-11 items-center justify-center rounded-lg text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
+          : "flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
       }
     >
       <DotsIcon className="h-5 w-5" />
@@ -332,7 +332,7 @@ function MenuButton({
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-[var(--background)]"
+      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-[var(--background)]"
     >
       <span className="shrink-0 text-[var(--muted)]">{icon}</span>
       {label}

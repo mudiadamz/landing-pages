@@ -59,7 +59,7 @@ export function MobileBottomNav({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <>
       {/* Reserve space so the fixed bar never covers the footer. */}
-      <div className="h-16 md:hidden" aria-hidden />
+      <div className="h-[4.5rem] md:hidden" aria-hidden />
       <nav
         aria-label="Navigasi bawah"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--card)]/80 pb-[env(safe-area-inset-bottom)] md:hidden"
@@ -87,12 +87,12 @@ export function MobileBottomNav({ isLoggedIn }: { isLoggedIn: boolean }) {
                 onPointerDown={buzz}
                 onClick={() => setPending({ tab: it.key, from: pathname })}
                 aria-current={isActive ? "page" : undefined}
-                className={`group flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+                className={`group flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors ${
                   isActive ? "text-[var(--primary)]" : "text-[var(--muted)] hover:text-foreground"
                 }`}
               >
                 <span className="flex flex-col items-center gap-0.5 transition-transform duration-100 ease-out group-active:scale-90 motion-reduce:transition-none">
-                  <span className="relative flex h-7 w-14 items-center justify-center">
+                  <span className="relative flex h-8 w-16 items-center justify-center">
                     {/* Pill sits behind the icon: always on for the active tab,
                         and blooms under the thumb on press for the others. */}
                     <span

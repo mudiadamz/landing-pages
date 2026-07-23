@@ -97,9 +97,9 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
             onClick={() => setHidden(true)}
             aria-label="Sembunyikan tombol beli"
             title="Sembunyikan"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-all hover:bg-[var(--background)] hover:text-foreground active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-all hover:bg-[var(--background)] hover:text-foreground active:scale-95"
           >
-            <CloseIcon className="h-4 w-4" />
+            <CloseIcon className="h-5 w-5" />
           </button>
         </div>
       </div>
