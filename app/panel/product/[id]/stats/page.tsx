@@ -3,6 +3,7 @@ import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById } from "@/lib/actions/landing-pages";
 import { getProductStats, type Bucket } from "@/lib/actions/product-stats";
+import { AutoRefresh } from "@/components/auto-refresh";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -47,12 +48,21 @@ export default async function ProductStatsPage({ params, searchParams }: Props) 
 
   return (
     <div className="space-y-6">
+      {/* Re-fetch the stats every 5s without a full reload. */}
+      <AutoRefresh intervalMs={5000} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           <Link href="/panel/products" className="text-sm text-[var(--muted)] transition-colors hover:text-foreground">
             ← Kembali
           </Link>
           <h1 className="truncate text-xl font-semibold tracking-tight">Statistik — {page.title}</h1>
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-[11px] font-medium text-[var(--muted)]">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
+            </span>
+            Live · tiap 5 dtk
+          </span>
         </div>
         {/* Range selector */}
         <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--background)] p-1">
