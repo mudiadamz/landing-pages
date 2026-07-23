@@ -51,8 +51,15 @@ export default async function ProductStatsPage({ params, searchParams }: Props) 
 
       {/* Rendering + live polling happen client-side: each tick calls only the
           getProductStats action (not a full route refresh). Re-keyed on `days` so
-          switching ranges reseeds the initial data. */}
-      <ProductStatsView key={days} pageId={id} days={days} initial={stats} />
+          switching ranges reseeds the initial data. viewCountAllTime is the same
+          lifetime counter shown in the product list, so the two reconcile. */}
+      <ProductStatsView
+        key={days}
+        pageId={id}
+        days={days}
+        initial={stats}
+        viewCountAllTime={(page as { view_count?: number }).view_count ?? 0}
+      />
     </div>
   );
 }

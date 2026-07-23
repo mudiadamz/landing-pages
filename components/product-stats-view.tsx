@@ -37,10 +37,13 @@ export function ProductStatsView({
   pageId,
   days,
   initial,
+  viewCountAllTime,
 }: {
   pageId: string;
   days: number;
   initial: ProductStats | null;
+  /** Lifetime view counter (same value shown in the product list table). */
+  viewCountAllTime: number;
 }) {
   const [stats, setStats] = useState<ProductStats | null>(initial);
   const [live, setLive] = useState(true);
@@ -71,7 +74,11 @@ export function ProductStatsView({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-[var(--muted)]">Data {stats.sinceDays} hari terakhir.</p>
+        <p className="text-xs text-[var(--muted)]">
+          <strong className="font-medium text-foreground">Total kunjungan</strong> = semua waktu
+          (sama seperti kolom di daftar produk). Metrik lain di bawah mencakup{" "}
+          {stats.sinceDays} hari terakhir, sejak fitur analitik aktif.
+        </p>
         <button
           type="button"
           onClick={() => setLive((v) => !v)}
@@ -100,13 +107,14 @@ export function ProductStatsView({
 
       {/* Top-line numbers */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Kunjungan" value={fmt(stats.totalViews)} />
-        <StatCard label="Sesi unik" value={fmt(stats.sessions)} />
-        <StatCard label="Rata-rata durasi" value={humanDuration(stats.avgSessionSec)} />
+        <StatCard label="Total kunjungan" value={fmt(viewCountAllTime)} sub="semua waktu" />
         <StatCard
-          label="Preview / Checkout"
-          value={`${fmt(stats.previewViews)} / ${fmt(stats.checkoutViews)}`}
+          label={`Kunjungan · ${stats.sinceDays} hari`}
+          value={fmt(stats.totalViews)}
+          sub={`preview ${fmt(stats.previewViews)} · checkout ${fmt(stats.checkoutViews)}`}
         />
+        <StatCard label={`Sesi unik · ${stats.sinceDays} hari`} value={fmt(stats.sessions)} />
+        <StatCard label="Durasi rata-rata" value={humanDuration(stats.avgSessionSec)} />
       </div>
 
       {stats.totalViews === 0 && (
@@ -144,11 +152,12 @@ export function ProductStatsView({
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
       <p className="text-xs font-medium text-[var(--muted)]">{label}</p>
       <p className="mt-1 truncate text-xl font-bold text-foreground sm:text-2xl">{value}</p>
+      {sub && <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{sub}</p>}
     </div>
   );
 }
