@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import { PreviewRelated } from "./preview-related";
+import type { RelatedProduct } from "@/lib/actions/landing-pages";
 
 // Use the worker that ships with the installed pdfjs-dist (kept in version sync).
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -111,6 +113,7 @@ export default function PdfViewer({
   url,
   storageKey,
   revealAt = 0.4,
+  related = [],
 }: {
   url: string;
   title?: string;
@@ -119,6 +122,8 @@ export default function PdfViewer({
   storageKey?: string;
   /** Scroll-progress fraction (0..1) at which to signal the buy CTA to reveal. */
   revealAt?: number;
+  /** Seller-curated related products shown after the last page ("book end"). */
+  related?: RelatedProduct[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTick = useRef(false);
@@ -215,6 +220,9 @@ export default function PdfViewer({
           <LazyPage key={i + 1} pageNumber={i + 1} width={width} dpr={dpr} eager={i === 0} />
         ))}
       </Document>
+
+      {/* Related products at the end of the book — only once the PDF is loaded. */}
+      {numPages > 0 && <PreviewRelated items={related} />}
     </div>
   );
 }

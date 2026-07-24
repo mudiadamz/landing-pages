@@ -237,6 +237,14 @@ export function ProductActionsMenu({
             </span>
           </div>
           <div className="my-1 h-px bg-[var(--border)]" />
+        <MenuButton
+          onClick={() => {
+            setOpen(false);
+            router.push("/panel");
+          }}
+          icon={<PanelIcon className="h-4 w-4" />}
+          label="Menu Profile"
+        />
         </>
       )}
 
@@ -270,17 +278,6 @@ export function ProductActionsMenu({
           }}
           icon={<ArrowLeftIcon className="h-4 w-4" />}
           label={backLabel}
-        />
-      )}
-
-      {isLoggedIn && (
-        <MenuButton
-          onClick={() => {
-            setOpen(false);
-            router.push("/panel");
-          }}
-          icon={<PanelIcon className="h-4 w-4" />}
-          label="Buka panel"
         />
       )}
 

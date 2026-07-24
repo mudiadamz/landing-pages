@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
-import { getLandingPageById, getCategories } from "@/lib/actions/landing-pages";
+import { getLandingPageById, getCategories, getLandingPagesForUser } from "@/lib/actions/landing-pages";
 import { ProductEditForm } from "./product-edit-form";
 import { Button } from "@/components/ui/button";
 import type { PreviewType } from "@/lib/actions/landing-pages";
@@ -15,8 +15,18 @@ export default async function EditPage({
   if (!canSell) redirect("/panel");
 
   const { id } = await params;
-  const [page, categories] = await Promise.all([getLandingPageById(id), getCategories()]);
+  const [page, categories, myProducts] = await Promise.all([
+    getLandingPageById(id),
+    getCategories(),
+    getLandingPagesForUser(),
+  ]);
   if (!page) notFound();
+
+  // Candidate products to mark as "related" — the seller's own products, minus
+  // this one. Keeps the picker to what they can vouch for.
+  const relatedOptions = myProducts
+    .filter((p) => p.id !== id)
+    .map((p) => ({ id: p.id, title: p.title, slug: p.slug }));
 
   return (
     <div className="space-y-6">
@@ -68,6 +78,7 @@ export default async function EditPage({
         slug={page.slug}
         initialHtml={page.html_content}
         categories={categories}
+        relatedOptions={relatedOptions}
         initial={{
           title: page.title,
           preview_type: (page as { preview_type?: PreviewType }).preview_type ?? "html",
@@ -95,6 +106,7 @@ export default async function EditPage({
           event_end: (page as { event_end?: string | null }).event_end ?? null,
           event_location: (page as { event_location?: string | null }).event_location ?? null,
           event_description: (page as { event_description?: string | null }).event_description ?? null,
+          related_product_ids: (page as { related_product_ids?: string[] | null }).related_product_ids ?? null,
         }}
       />
     </div>

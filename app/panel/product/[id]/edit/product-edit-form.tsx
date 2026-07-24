@@ -47,11 +47,15 @@ const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
 
 type DeliverableType = "zip" | "pdf";
 
+type RelatedOption = { id: string; title: string; slug: string };
+
 type Props = {
   pageId: string;
   slug: string;
   initialHtml: string;
   categories: LandingPageCategory[];
+  /** The seller's other products, offered as "related product" choices. */
+  relatedOptions: RelatedOption[];
   initial: {
     title: string;
     preview_type: PreviewType;
@@ -79,6 +83,7 @@ type Props = {
     event_end?: string | null;
     event_location?: string | null;
     event_description?: string | null;
+    related_product_ids?: string[] | null;
   };
 };
 
@@ -223,7 +228,7 @@ function PdfPreviewSlot({
  * Monaco HTML editor keeps its own save (heavy, separate surface) and only shows
  * when the preview source is "HTML editor".
  */
-export function ProductEditForm({ pageId, slug, initialHtml, categories, initial }: Props) {
+export function ProductEditForm({ pageId, slug, initialHtml, categories, relatedOptions, initial }: Props) {
   const router = useRouter();
 
   // --- Page info ---
@@ -286,6 +291,18 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
   const [thumbDragging, setThumbDragging] = useState(false);
   const [thumbError, setThumbError] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState(initial.category_id ?? "");
+
+  // Related products (manually curated) shown at the end of this product's
+  // preview. Keep only ids that still exist among the offered options.
+  const validRelatedIds = new Set(relatedOptions.map((o) => o.id));
+  const [relatedIds, setRelatedIds] = useState<string[]>(
+    (initial.related_product_ids ?? []).filter((id) => validRelatedIds.has(id)),
+  );
+  const [relatedSearch, setRelatedSearch] = useState("");
+
+  const toggleRelated = useCallback((id: string) => {
+    setRelatedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
 
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
   const [zipMeta, setZipMeta] = useState<FileMeta | null>(
@@ -513,6 +530,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
         category_id: categoryId.trim() || null,
         long_description: longDescription.trim() || null,
         preview_label: previewLabel,
+        related_product_ids: relatedIds,
       });
       setMessage({ type: "ok", text: "Perubahan tersimpan." });
       router.refresh();
@@ -1155,6 +1173,70 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, initial
               {featured && <CheckItem>Produk akan di-pin di bagian paling depan</CheckItem>}
             </ul>
           </div>
+        </div>
+
+        {/* Related products — shown at the end of this product's preview (setelah
+            book end). Seller picks from their own products. */}
+        <div className="space-y-2">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Produk terkait</h3>
+            <p className="text-xs text-[var(--muted)]">
+              Produk yang muncul di akhir preview (setelah halaman terakhir). Pilih dari produk Anda sendiri.
+            </p>
+          </div>
+
+          {relatedOptions.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
+              Belum ada produk lain untuk dijadikan produk terkait.
+            </p>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-[var(--border)] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <input
+                  type="text"
+                  value={relatedSearch}
+                  onChange={(e) => setRelatedSearch(e.target.value)}
+                  placeholder="Cari produk…"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                />
+                <span className="shrink-0 rounded-md bg-[var(--background)] px-2 py-1 text-xs text-[var(--muted)]">
+                  {relatedIds.length} dipilih
+                </span>
+              </div>
+
+              <div className="max-h-56 space-y-0.5 overflow-y-auto">
+                {relatedOptions
+                  .filter((o) => o.title.toLowerCase().includes(relatedSearch.trim().toLowerCase()))
+                  .map((o) => {
+                    const checked = relatedIds.includes(o.id);
+                    return (
+                      <label
+                        key={o.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
+                          checked ? "bg-[var(--primary)]/5" : "hover:bg-[var(--background)]"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleRelated(o.id)}
+                          className="h-4 w-4 shrink-0 rounded border-[var(--border)] accent-[var(--primary)]"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-foreground">{o.title}</span>
+                        <span className="shrink-0 font-mono text-xs text-[var(--muted)]">{o.slug}</span>
+                      </label>
+                    );
+                  })}
+                {relatedOptions.filter((o) =>
+                  o.title.toLowerCase().includes(relatedSearch.trim().toLowerCase()),
+                ).length === 0 && (
+                  <p className="px-2.5 py-3 text-center text-xs text-[var(--muted)]">
+                    Tidak ada produk yang cocok.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

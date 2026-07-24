@@ -2,7 +2,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPageBySlug, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds } from "@/lib/actions/landing-pages";
 import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
 import { PreviewBuyBar } from "../preview-buy-bar";
@@ -107,9 +107,10 @@ export default async function LandingPageView({ params }: Props) {
   // For the "Masuk dengan Google" item in the actions menu (logged-out only)
   // and the like button's current state.
   const supabase = await createClient();
-  const [{ data: { user } }, liked] = await Promise.all([
+  const [{ data: { user } }, liked, related] = await Promise.all([
     supabase.auth.getUser(),
     getMyLike(page.id),
+    getProductsByIds(page.related_product_ids ?? []),
   ]);
 
   return (
@@ -127,6 +128,7 @@ export default async function LandingPageView({ params }: Props) {
             title={page.title}
             storageKey={`lp-pdf:${slug}`}
             revealAt={revealAt}
+            related={related}
           />
         ) : embedLink ? (
           <iframe

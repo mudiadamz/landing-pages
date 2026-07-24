@@ -147,7 +147,7 @@ export async function getLandingPageBySlug(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, like_count, published, user_id")
+    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, like_count, related_product_ids, published, user_id")
     .eq("slug", slug)
     .single();
 
@@ -163,6 +163,7 @@ export async function getLandingPageBySlug(slug: string) {
     preview_url?: string | null;
     preview_url_dark?: string | null;
     like_count?: number;
+    related_product_ids?: string[] | null;
   };
 }
 
@@ -442,6 +443,29 @@ export async function getRelatedProducts(
   return { items: (data ?? []) as RelatedProduct[], parent };
 }
 
+/**
+ * Fetch a set of products by id, in the same order the ids are given. Only
+ * published products come back (unpublished/deleted ids are silently dropped).
+ * Used for the manually-curated "related products" shown at the end of a
+ * product's preview.
+ */
+export async function getProductsByIds(ids: string[]): Promise<RelatedProduct[]> {
+  const clean = (ids ?? []).filter((id) => typeof id === "string" && id.length > 0);
+  if (clean.length === 0) return [];
+
+  const supabase = createAnonClient();
+  const { data, error } = await supabase
+    .from("lp_landing_pages")
+    .select("id, title, slug, price, price_discount, is_free, thumbnail_url")
+    .eq("published", true)
+    .in("id", clean);
+
+  if (error || !data) return [];
+  // Preserve the seller's chosen order (the DB doesn't guarantee it).
+  const byId = new Map((data as RelatedProduct[]).map((p) => [p.id, p]));
+  return clean.map((id) => byId.get(id)).filter((p): p is RelatedProduct => !!p);
+}
+
 export async function updateLandingPagePricing(
   id: string,
   opts: {
@@ -468,6 +492,7 @@ export async function updateLandingPagePricing(
     event_end?: string | null;
     event_location?: string | null;
     event_description?: string | null;
+    related_product_ids?: string[] | null;
   }
 ) {
   const supabase = await createClient();
