@@ -110,24 +110,25 @@ export default function EpubViewer({
       });
     };
 
+    const handleWheel = (e: WheelEvent) => {
+      const el = scrollerEl();
+      const before = el.scrollTop;
+      el.scrollBy?.({ top: e.deltaY, left: e.deltaX });
+      // Scroller couldn't move (not scrollable, or already at the edge) → load
+      // the neighbouring section so scrolling can continue.
+      if (Math.abs(el.scrollTop - before) < 1 && Math.abs(e.deltaY) > 0) {
+        advance(e.deltaY > 0 ? 1 : -1);
+      }
+    };
+
+    // Inside each section's iframe (the text column)…
     rendition.hooks.content.register((contents: { document?: Document }) => {
-      const doc = contents?.document;
-      if (!doc) return;
-      doc.addEventListener(
-        "wheel",
-        (e: WheelEvent) => {
-          const el = scrollerEl();
-          const before = el.scrollTop;
-          el.scrollBy?.({ top: e.deltaY, left: e.deltaX });
-          // Scroller couldn't move (not scrollable, or already at the edge) →
-          // load the neighbouring section so scrolling can continue.
-          if (Math.abs(el.scrollTop - before) < 1 && Math.abs(e.deltaY) > 0) {
-            advance(e.deltaY > 0 ? 1 : -1);
-          }
-        },
-        { passive: true },
-      );
+      contents?.document?.addEventListener("wheel", handleWheel, { passive: true });
     });
+    // …and over the surrounding letterbox margins (host's parent), so scrolling
+    // works anywhere in the reader, not just on the narrowed column.
+    const outer = host.parentElement;
+    outer?.addEventListener("wheel", handleWheel, { passive: true });
 
     rendition
       .display(saved || undefined)
@@ -151,6 +152,7 @@ export default function EpubViewer({
 
     return () => {
       destroyed = true;
+      outer?.removeEventListener("wheel", handleWheel);
       try {
         book.destroy();
       } catch {
@@ -182,7 +184,9 @@ export default function EpubViewer({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fdfcfb] dark:bg-[#141414]">
-      <div ref={hostRef} className="h-full w-full" />
+      {/* Cap the reading column on wide screens (~half a laptop screen) and
+          centre it; full width on mobile/tablet. */}
+      <div ref={hostRef} className="mx-auto h-full w-full max-w-3xl" />
 
       {loading && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">
