@@ -49,6 +49,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, feature: "inbox" },
       { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
       { href: "/panel/roles", label: "Roles", icon: ShieldIcon, adminOnly: true },
+      { href: "/panel/storage", label: "Storage", icon: DatabaseIcon, adminOnly: true },
       { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
       { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
@@ -117,6 +118,14 @@ function ShieldIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  );
+}
+function DatabaseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7c0 1.657 3.582 3 8 3s8-1.343 8-3-3.582-3-8-3-8 1.343-8 3z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v5c0 1.657 3.582 3 8 3s8-1.343 8-3V7M4 12v5c0 1.657 3.582 3 8 3s8-1.343 8-3v-5" />
     </svg>
   );
 }
