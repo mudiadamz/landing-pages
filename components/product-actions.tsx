@@ -14,6 +14,11 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+/** Shared number formatter (allocating one per render is wasteful). */
+const NUM_ID = new Intl.NumberFormat("id-ID");
+
+type ShareTarget = "wa" | "threads" | "x";
+
 type Props = {
   /** Product title, used as the share text / event summary. */
   title: string;
@@ -215,12 +220,12 @@ export function ProductActionsMenu({
   }, [title, showHint, logCta]);
 
   const shareTo = useCallback(
-    (target: "wa" | "threads" | "x") => {
+    (target: ShareTarget) => {
       setOpen(false);
       logCta(`share_${target}`);
       const url = shareUrl();
       const text = `${title} — ${url}`;
-      const map: Record<typeof target, string> = {
+      const map: Record<ShareTarget, string> = {
         wa: `https://wa.me/?text=${encodeURIComponent(text)}`,
         threads: `https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`,
         x: `https://x.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
@@ -230,9 +235,10 @@ export function ProductActionsMenu({
     [title, logCta],
   );
 
-  const views = new Intl.NumberFormat("id-ID").format(Math.max(0, viewCount || 0));
-
-  const menu = (
+  // Only build the (large) menu tree while it's actually open — the component
+  // re-renders on every theme toggle / like change, and the menu stays unmounted
+  // most of the time.
+  const menu = open ? (
     <div
       role="menu"
       className="absolute right-0 mt-2 w-60 origin-top-right overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 shadow-xl"
@@ -271,7 +277,7 @@ export function ProductActionsMenu({
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
-                    <span className="block text-[11px] text-[var(--muted)]">Masuk</span>
+                    <span className="block text-[11px] text-[var(--muted)]">Profile</span>
                   </span>
                 </button>
                 <form action={signOut} className="shrink-0">
@@ -317,7 +323,10 @@ export function ProductActionsMenu({
       <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--muted)]">
         <EyeIcon className="h-4 w-4 shrink-0" />
         <span>
-          <span className="font-medium text-foreground">{views}</span> kali dilihat
+          <span className="font-medium text-foreground">
+            {NUM_ID.format(Math.max(0, viewCount || 0))}
+          </span>{" "}
+          Views
         </span>
       </div>
 
@@ -335,7 +344,7 @@ export function ProductActionsMenu({
               filled={liked}
               className={`h-4 w-4 shrink-0 transition-transform duration-150 ${liked ? "scale-110 text-red-500" : "text-[var(--muted)]"}`}
             />
-            {liked ? "Disukai" : "Suka"} · {new Intl.NumberFormat("id-ID").format(likeCount)}
+            {liked ? "Disukai" : "Suka"} · {NUM_ID.format(likeCount)}
           </button>
         ) : (
           <form action={signInWithGoogle}>
@@ -347,7 +356,7 @@ export function ProductActionsMenu({
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
             >
               <HeartIcon filled={false} className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-              Suka · {new Intl.NumberFormat("id-ID").format(likeCount)}
+              {NUM_ID.format(likeCount)} Likes
             </button>
           </form>
         ))}
@@ -390,24 +399,32 @@ export function ProductActionsMenu({
         </div>
       )}
 
-      {!standalone && (
-        <MenuButton
-          onClick={addToHome}
-          icon={<HomePlusIcon className="h-4 w-4" />}
-          label="Pasang aplikasi (layar utama)"
-        />
-      )}
       <div className="my-1 h-px bg-[var(--border)]" />
 
       <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
         Bagikan
       </p>
-      <MenuButton onClick={() => shareTo("wa")} icon={<WhatsAppIcon className="h-4 w-4" />} label="WhatsApp" />
-      <MenuButton onClick={() => shareTo("threads")} icon={<ThreadsIcon className="h-4 w-4" />} label="Threads" />
-      <MenuButton onClick={() => shareTo("x")} icon={<XIcon className="h-4 w-4" />} label="X" />
+      {SHARE_TARGETS.map(({ key, label, Icon }) => (
+        <MenuButton
+          key={key}
+          onClick={() => shareTo(key)}
+          icon={<Icon className="h-4 w-4" />}
+          label={label}
+        />
+      ))}
       <MenuButton onClick={nativeShare} icon={<ShareIcon className="h-4 w-4" />} label="Bagikan lainnya…" />
+
+      <div className="my-1 h-px bg-[var(--border)]" />
+
+      {!standalone && (
+        <MenuButton
+          onClick={addToHome}
+          icon={<HomePlusIcon className="h-4 w-4" />}
+          label="Add to Home Screen"
+        />
+      )}
     </div>
-  );
+  ) : null;
 
   const trigger = (
     <button
@@ -439,7 +456,7 @@ export function ProductActionsMenu({
       ) : (
         trigger
       )}
-      {open && menu}
+      {menu}
       {hint && (
         <div className="absolute right-0 top-full z-10 mt-2 w-max max-w-[80vw] rounded-lg bg-foreground px-3 py-2 text-xs font-medium text-[var(--background)] shadow-lg">
           {hint}
@@ -468,7 +485,7 @@ export function ProductActionsMenu({
           >
             <div className="mb-3 flex items-center gap-2">
               <HomePlusIcon className="h-5 w-5 text-[var(--primary)]" />
-              <h3 className="text-sm font-semibold text-foreground">Pasang aplikasi ke layar utama</h3>
+              <h3 className="text-sm font-semibold text-foreground">Add to Home Screen</h3>
             </div>
             {isIOS ? (
               <ol className="space-y-2 text-sm text-[var(--muted)]">
@@ -511,6 +528,16 @@ const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
   { level: "small", label: "Kecil", cls: "text-[11px]" },
   { level: "medium", label: "Sedang", cls: "text-sm" },
   { level: "large", label: "Besar", cls: "text-lg" },
+];
+
+const SHARE_TARGETS: {
+  key: ShareTarget;
+  label: string;
+  Icon: (props: { className?: string }) => React.ReactElement;
+}[] = [
+  { key: "wa", label: "WhatsApp", Icon: WhatsAppIcon },
+  { key: "threads", label: "Threads", Icon: ThreadsIcon },
+  { key: "x", label: "X", Icon: XIcon },
 ];
 
 function MenuButton({
