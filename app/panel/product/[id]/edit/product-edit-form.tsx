@@ -8,8 +8,14 @@ import {
   type PreviewType,
   type LandingPageCategory,
 } from "@/lib/actions/landing-pages";
-import { uploadPreviewPdf, uploadPreviewEpub, uploadAsset } from "@/lib/actions/assets";
-import { uploadZip, uploadStoryPdf, uploadStoryEpub } from "@/lib/actions/downloads";
+import {
+  uploadPreviewPdfClient,
+  uploadPreviewEpubClient,
+  uploadThumbnailClient,
+  uploadZipClient,
+  uploadStoryPdfClient,
+  uploadStoryEpubClient,
+} from "@/lib/upload-client";
 import { Editor } from "./editor";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -135,11 +141,9 @@ function PdfPreviewSlot({
         return;
       }
       setUploading(true);
-      const formData = new FormData();
-      formData.set("file", file);
       try {
         // Pass the current PDF so it's deleted once the new one is stored.
-        const result = await uploadPreviewPdf(pageId, formData, url || null);
+        const result = await uploadPreviewPdfClient(pageId, file, url || null);
         if ("error" in result) {
           onError(result.error);
         } else {
@@ -392,10 +396,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     setZipUploading(true);
     setZipError(null);
     try {
-      const formData = new FormData();
-      formData.set("file", file);
       // Pass the current deliverable path so it's deleted once the new one is stored.
-      const res = await uploadZip(pageId, formData, zipUrl || null);
+      const res = await uploadZipClient(pageId, file, zipUrl || null);
       if ("error" in res) {
         setZipError(res.error);
         return;
@@ -422,10 +424,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     setStoryUploading(true);
     setStoryError(null);
     try {
-      const formData = new FormData();
-      formData.set("file", file);
       // Pass the current deliverable path so it's deleted once the new one is stored.
-      const res = await uploadStoryPdf(pageId, formData, storyUrl || null);
+      const res = await uploadStoryPdfClient(pageId, file, storyUrl || null);
       if ("error" in res) {
         setStoryError(res.error);
         return;
@@ -452,10 +452,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     setStoryUploadingDark(true);
     setStoryErrorDark(null);
     try {
-      const formData = new FormData();
-      formData.set("file", file);
       // Pass the current dark PDF path so it's deleted once the new one is stored.
-      const res = await uploadStoryPdf(pageId, formData, storyUrlDark || null);
+      const res = await uploadStoryPdfClient(pageId, file, storyUrlDark || null);
       if ("error" in res) {
         setStoryErrorDark(res.error);
         return;
@@ -482,9 +480,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     setEpubUploading(true);
     setEpubError(null);
     try {
-      const formData = new FormData();
-      formData.set("file", file);
-      const res = await uploadPreviewEpub(pageId, formData, previewUrl || null);
+      const res = await uploadPreviewEpubClient(pageId, file, previewUrl || null);
       if ("error" in res) {
         setEpubError(res.error);
         return;
@@ -512,9 +508,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     setStoryEpubUploading(true);
     setStoryEpubError(null);
     try {
-      const formData = new FormData();
-      formData.set("file", file);
-      const res = await uploadStoryEpub(pageId, formData, storyEpubUrl || null);
+      const res = await uploadStoryEpubClient(pageId, file, storyEpubUrl || null);
       if ("error" in res) {
         setStoryEpubError(res.error);
         return;
@@ -543,11 +537,9 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       }
       setThumbUploading(true);
       setThumbError(null);
-      const formData = new FormData();
-      formData.set("file", file);
       try {
         // Pass the current thumbnail so it's deleted once the new one is stored.
-        const res = await uploadAsset(pageId, formData, thumbnailUrl || null);
+        const res = await uploadThumbnailClient(pageId, file, thumbnailUrl || null);
         if ("error" in res) {
           setThumbError(res.error);
         } else {
