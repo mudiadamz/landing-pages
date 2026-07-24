@@ -7,13 +7,24 @@ import { useTheme } from "@/lib/use-theme";
 // Content-document themes applied inside the EPUB's sandboxed iframe. EPUB themes
 // natively (unlike PDF, which needs a separate dark file) — we just re-select on
 // toggle, no reload.
+// Tight gutters so the text column uses nearly the full width — the theme
+// stylesheet is injected after the book's own CSS, so these win by cascade
+// order and neutralise large default body margins.
+const BODY_GUTTER = {
+  margin: "0",
+  "padding-top": "0.25rem",
+  "padding-bottom": "0.25rem",
+  "padding-left": "0.5rem",
+  "padding-right": "0.5rem",
+} as const;
+
 const THEMES = {
   light: {
-    body: { background: "#fdfcfb", color: "#1a1a1a" },
+    body: { background: "#fdfcfb", color: "#1a1a1a", ...BODY_GUTTER },
     a: { color: "#2563eb" },
   },
   dark: {
-    body: { background: "#141414", color: "#d4d4d4" },
+    body: { background: "#141414", color: "#d4d4d4", ...BODY_GUTTER },
     a: { color: "#8ab4f8" },
   },
 } as const;
@@ -162,28 +173,80 @@ function FontSizeControl({
   level: FontLevel;
   onChange: (l: FontLevel) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="absolute left-3 top-3 z-10 flex items-center gap-0.5 rounded-full border border-[var(--border)] bg-[var(--card)]/85 p-0.5 shadow-sm backdrop-blur">
-      {FONT_BUTTONS.map((b) => {
-        const active = b.level === level;
-        return (
+    <div className="absolute left-3 top-3 z-20">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Ukuran font"
+        aria-label="Ukuran font"
+        className="flex h-8 items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--card)]/85 px-2.5 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-[var(--card)]"
+      >
+        <span className="text-xs font-semibold leading-none">A</span>
+        <span className="text-base font-semibold leading-none">A</span>
+        <svg
+          className={`h-3.5 w-3.5 text-[var(--muted)] transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+          aria-hidden
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          {/* Click-away backdrop */}
           <button
-            key={b.level}
             type="button"
-            onClick={() => onChange(b.level)}
-            aria-pressed={active}
-            title={`Font ${b.label}`}
-            aria-label={`Ukuran font ${b.label}`}
-            className={`flex h-7 w-7 items-center justify-center rounded-full font-semibold leading-none transition-colors ${b.cls} ${
-              active
-                ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
-            }`}
+            aria-hidden
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-10 cursor-default"
+          />
+          <div
+            role="menu"
+            className="absolute left-0 top-10 z-20 w-36 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 shadow-lg"
           >
-            A
-          </button>
-        );
-      })}
+            <p className="px-2.5 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wide text-[var(--muted)]">
+              Ukuran font
+            </p>
+            {FONT_BUTTONS.map((b) => {
+              const active = b.level === level;
+              return (
+                <button
+                  key={b.level}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  onClick={() => {
+                    onChange(b.level);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left transition-colors ${
+                    active ? "bg-[var(--primary)]/10" : "hover:bg-[var(--background)]"
+                  }`}
+                >
+                  <span className={`${b.cls} font-medium ${active ? "text-[var(--primary)]" : "text-foreground"}`}>
+                    {b.label}
+                  </span>
+                  {active && (
+                    <svg className="h-4 w-4 shrink-0 text-[var(--primary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
