@@ -12,7 +12,8 @@
     "supabase:status": "supabase status",
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
-    "db:migrate": "supabase migration up"
+    "db:migrate": "supabase migration up",
+    "pdf:epub": "node scripts/pdf-to-epub.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
