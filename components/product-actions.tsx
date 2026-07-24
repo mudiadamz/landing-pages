@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/use-theme";
 import { trackCta, type TrackPage } from "@/lib/track";
-import { signInWithGoogle } from "@/lib/actions/auth";
+import { signInWithGoogle, signOut } from "@/lib/actions/auth";
 import { toggleLike } from "@/lib/actions/likes";
 import { readEpubFont, setEpubFont, type EpubFontLevel } from "@/lib/epub-font";
 
@@ -237,27 +237,56 @@ export function ProductActionsMenu({
       role="menu"
       className="absolute right-0 mt-2 w-60 origin-top-right overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 shadow-xl"
     >
-      {/* Signed-in identity header. */}
-      {isLoggedIn && userName && (
+      {/* Top row: back (icon only, far left) + signed-in profile (inline, opens
+          the panel) + logout on the right. */}
+      {(backHref || (isLoggedIn && userName)) && (
         <>
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-xs font-semibold text-[var(--primary)]">
-              {userName.trim().charAt(0).toUpperCase()}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
-              <span className="block text-[11px] text-[var(--muted)]">Masuk</span>
-            </span>
+          <div className="flex items-center gap-2 px-1.5 py-1.5">
+            {backHref && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  router.push(backHref);
+                }}
+                aria-label={backLabel}
+                title={backLabel}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+              >
+                <ArrowLeftIcon className="h-4 w-4" />
+              </button>
+            )}
+            {isLoggedIn && userName && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    router.push("/panel");
+                  }}
+                  className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-1 text-left transition-colors hover:bg-[var(--background)]"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-xs font-semibold text-[var(--primary)]">
+                    {userName.trim().charAt(0).toUpperCase()}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
+                    <span className="block text-[11px] text-[var(--muted)]">Menu Profile</span>
+                  </span>
+                </button>
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    onClick={() => logCta("logout")}
+                    className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+                  >
+                    Logout
+                  </button>
+                </form>
+              </>
+            )}
           </div>
           <div className="my-1 h-px bg-[var(--border)]" />
-        <MenuButton
-          onClick={() => {
-            setOpen(false);
-            router.push("/panel");
-          }}
-          icon={<PanelIcon className="h-4 w-4" />}
-          label="Menu Profile"
-        />
         </>
       )}
 
@@ -281,17 +310,6 @@ export function ProductActionsMenu({
           </form>
           <div className="my-1 h-px bg-[var(--border)]" />
         </>
-      )}
-
-      {backHref && (
-        <MenuButton
-          onClick={() => {
-            setOpen(false);
-            router.push(backHref);
-          }}
-          icon={<ArrowLeftIcon className="h-4 w-4" />}
-          label={backLabel}
-        />
       )}
 
       {/* View count — informational row */}
@@ -404,7 +422,11 @@ export function ProductActionsMenu({
           : "flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
       }
     >
-      <DotsIcon className={variant === "floating" ? "h-4 w-4" : "h-5 w-5"} />
+      {open ? (
+        <CloseIcon className={variant === "floating" ? "h-4 w-4" : "h-5 w-5"} />
+      ) : (
+        <DotsIcon className={variant === "floating" ? "h-4 w-4" : "h-5 w-5"} />
+      )}
     </button>
   );
 
@@ -571,10 +593,10 @@ function HomePlusIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-function PanelIcon({ className }: { className?: string }) {
+function CloseIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }
