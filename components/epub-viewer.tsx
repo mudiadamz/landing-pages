@@ -93,6 +93,23 @@ export default function EpubViewer({
         scrollBy?: (o: ScrollToOptions) => void;
       };
     };
+
+    // When only the first (short) section is loaded, the scroller doesn't
+    // overflow yet — so scrollBy can't move and epub.js never loads the next
+    // section (it only fills on scroll). Break that deadlock: if a wheel can't
+    // move the scroller in its direction, advance/retreat a section instead.
+    // Throttled so one gesture doesn't skip several sections.
+    let paging = false;
+    const advance = (dir: 1 | -1) => {
+      if (paging) return;
+      paging = true;
+      Promise.resolve(dir > 0 ? rendition.next() : rendition.prev()).finally(() => {
+        setTimeout(() => {
+          paging = false;
+        }, 250);
+      });
+    };
+
     rendition.hooks.content.register((contents: { document?: Document }) => {
       const doc = contents?.document;
       if (!doc) return;
@@ -100,7 +117,13 @@ export default function EpubViewer({
         "wheel",
         (e: WheelEvent) => {
           const el = scrollerEl();
-          el?.scrollBy?.({ top: e.deltaY, left: e.deltaX });
+          const before = el.scrollTop;
+          el.scrollBy?.({ top: e.deltaY, left: e.deltaX });
+          // Scroller couldn't move (not scrollable, or already at the edge) →
+          // load the neighbouring section so scrolling can continue.
+          if (Math.abs(el.scrollTop - before) < 1 && Math.abs(e.deltaY) > 0) {
+            advance(e.deltaY > 0 ? 1 : -1);
+          }
         },
         { passive: true },
       );
