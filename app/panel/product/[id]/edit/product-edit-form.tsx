@@ -8,8 +8,8 @@ import {
   type PreviewType,
   type LandingPageCategory,
 } from "@/lib/actions/landing-pages";
-import { uploadPreviewPdf, uploadAsset } from "@/lib/actions/assets";
-import { uploadZip, uploadStoryPdf } from "@/lib/actions/downloads";
+import { uploadPreviewPdf, uploadPreviewEpub, uploadAsset } from "@/lib/actions/assets";
+import { uploadZip, uploadStoryPdf, uploadStoryEpub } from "@/lib/actions/downloads";
 import { Editor } from "./editor";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -42,10 +42,11 @@ type FileMeta = { name: string; size?: number };
 const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
   { value: "html", label: "HTML editor", hint: "Pakai konten HTML/CSS/JS dari editor di bawah." },
   { value: "pdf", label: "PDF", hint: "Upload file PDF untuk di-embed di halaman preview." },
+  { value: "epub", label: "EPUB", hint: "Upload file EPUB — pembaca bisa ganti tema terang/gelap langsung di reader." },
   { value: "link", label: "Link", hint: "Embed URL eksternal di halaman preview." },
 ];
 
-type DeliverableType = "zip" | "pdf";
+type DeliverableType = "zip" | "pdf" | "epub";
 
 type RelatedOption = { id: string; title: string; slug: string };
 
@@ -69,6 +70,7 @@ type Props = {
     zip_url?: string | null;
     story_pdf_url?: string | null;
     story_pdf_url_dark?: string | null;
+    story_epub_url?: string | null;
     category_id?: string | null;
     long_description?: string | null;
     preview_label?: "product" | "buku" | "pages" | null;
@@ -262,6 +264,15 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       ? { name: fileNameFromUrl(initial.preview_url_dark) }
       : null,
   );
+  // Preview EPUB (single file — the reader themes light/dark itself). Reuses
+  // `previewUrl` for the stored public URL, like the PDF/link sources.
+  const [epubMeta, setEpubMeta] = useState<FileMeta | null>(
+    initial.preview_type === "epub" && initial.preview_url
+      ? { name: fileNameFromUrl(initial.preview_url) }
+      : null,
+  );
+  const [epubUploading, setEpubUploading] = useState(false);
+  const [epubError, setEpubError] = useState<string | null>(null);
 
   // --- Pricing ---
   const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
@@ -342,10 +353,22 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   const [storyUploadingDark, setStoryUploadingDark] = useState(false);
   const [storyErrorDark, setStoryErrorDark] = useState<string | null>(null);
 
-  // The buyer receives exactly one file: either a ZIP (downloaded) or a PDF
-  // (read in the purchases list). Default to whichever already exists.
+  // Optional EPUB deliverable (buyer reads it in the EPUB reader).
+  const [storyEpubUrl, setStoryEpubUrl] = useState(initial.story_epub_url ?? "");
+  const [storyEpubMeta, setStoryEpubMeta] = useState<FileMeta | null>(
+    initial.story_epub_url ? { name: fileNameFromUrl(initial.story_epub_url) } : null,
+  );
+  const [storyEpubUploading, setStoryEpubUploading] = useState(false);
+  const [storyEpubError, setStoryEpubError] = useState<string | null>(null);
+
+  // The buyer receives exactly one file: a ZIP (downloaded), a PDF, or an EPUB
+  // (both read in the purchases list). Default to whichever already exists.
   const [deliverableType, setDeliverableType] = useState<DeliverableType>(
-    initial.story_pdf_url && !initial.zip_url ? "pdf" : "zip",
+    initial.story_epub_url && !initial.zip_url && !initial.story_pdf_url
+      ? "epub"
+      : initial.story_pdf_url && !initial.zip_url
+        ? "pdf"
+        : "zip",
   );
 
   // --- Action bar ---
@@ -453,6 +476,65 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     setStoryErrorDark(null);
   }
 
+  async function handlePreviewEpubUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEpubUploading(true);
+    setEpubError(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const res = await uploadPreviewEpub(pageId, formData, previewUrl || null);
+      if ("error" in res) {
+        setEpubError(res.error);
+        return;
+      }
+      setPreviewUrl(res.url);
+      setEpubMeta({ name: file.name, size: file.size });
+      setMessage({ type: "ok", text: "EPUB terupload. Klik Simpan perubahan untuk menerapkan." });
+    } catch (err) {
+      setEpubError(err instanceof Error ? err.message : "Upload gagal");
+    } finally {
+      setEpubUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  function removePreviewEpub() {
+    setPreviewUrl("");
+    setEpubMeta(null);
+    setEpubError(null);
+  }
+
+  async function handleStoryEpubUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStoryEpubUploading(true);
+    setStoryEpubError(null);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const res = await uploadStoryEpub(pageId, formData, storyEpubUrl || null);
+      if ("error" in res) {
+        setStoryEpubError(res.error);
+        return;
+      }
+      setStoryEpubUrl(res.url);
+      setStoryEpubMeta({ name: file.name, size: file.size });
+    } catch (err) {
+      setStoryEpubError(err instanceof Error ? err.message : "Upload gagal");
+    } finally {
+      setStoryEpubUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  function removeStoryEpub() {
+    setStoryEpubUrl("");
+    setStoryEpubMeta(null);
+    setStoryEpubError(null);
+  }
+
   const uploadThumbFile = useCallback(
     async (file: File) => {
       if (file.type && !file.type.startsWith("image/")) {
@@ -495,6 +577,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     }
     if (previewType === "pdf" && !previewUrl.trim() && !previewUrlDark.trim()) {
       setMessage({ type: "err", text: "Upload minimal satu PDF (terang atau gelap)." });
+      return;
+    }
+    if (previewType === "epub" && !previewUrl.trim()) {
+      setMessage({ type: "err", text: "Upload file EPUB dulu." });
       return;
     }
     if (previewType === "link" && !previewUrl.trim()) {
@@ -546,6 +632,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
         story_pdf_url: deliverableType === "pdf" ? storyUrl.trim() || null : null,
         story_pdf_url_dark: deliverableType === "pdf" ? storyUrlDark.trim() || null : null,
+        story_epub_url: deliverableType === "epub" ? storyEpubUrl.trim() || null : null,
         category_id: categoryId.trim() || null,
         long_description: longDescription.trim() || null,
         preview_label: previewLabel,
@@ -656,6 +743,29 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
                 setPdfMetaDark(null);
               }}
               onError={(text) => setMessage({ type: "err", text })}
+            />
+          </div>
+        )}
+
+        {/* EPUB preview — single file, themed in-reader. */}
+        {previewType === "epub" && (
+          <div className="space-y-2">
+            <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
+              Cukup satu file EPUB — pembaca bisa ganti <strong className="text-foreground">terang</strong> /{" "}
+              <strong className="text-foreground">gelap</strong> langsung di reader (tema diterapkan otomatis).
+            </p>
+            <FileUploadCard
+              label="File EPUB untuk preview"
+              accept=".epub,application/epub+zip"
+              badge="EPUB"
+              badgeClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+              url={previewUrl}
+              meta={epubMeta}
+              uploading={epubUploading}
+              error={epubError}
+              statusText="EPUB terpasang"
+              onUpload={handlePreviewEpubUpload}
+              onRemove={removePreviewEpub}
             />
           </div>
         )}
@@ -1031,11 +1141,14 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             >
               <option value="zip">ZIP — file untuk di-download pembeli</option>
               <option value="pdf">PDF — dibaca pembeli di daftar pembelian</option>
+              <option value="epub">EPUB — dibaca pembeli di daftar pembelian</option>
             </select>
             <p className="text-xs text-[var(--muted)]">
               {deliverableType === "zip"
                 ? "Pembeli mengunduh file ZIP setelah pembayaran berhasil."
-                : "Pembeli membaca file PDF langsung dari daftar pembelian."}
+                : deliverableType === "epub"
+                  ? "Pembeli membaca file EPUB langsung dari daftar pembelian (bisa ganti tema)."
+                  : "Pembeli membaca file PDF langsung dari daftar pembelian."}
             </p>
           </div>
 
@@ -1052,6 +1165,20 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
               statusText="ZIP terpasang"
               onUpload={handleZipUpload}
               onRemove={removeZip}
+            />
+          ) : deliverableType === "epub" ? (
+            <FileUploadCard
+              label="File EPUB (dibaca pembeli setelah pembayaran)"
+              accept=".epub,application/epub+zip"
+              badge="EPUB"
+              badgeClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+              url={storyEpubUrl}
+              meta={storyEpubMeta}
+              uploading={storyEpubUploading}
+              error={storyEpubError}
+              statusText="EPUB terpasang"
+              onUpload={handleStoryEpubUpload}
+              onRemove={removeStoryEpub}
             />
           ) : (
             <div className="space-y-3">

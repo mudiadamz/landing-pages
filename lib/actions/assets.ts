@@ -331,6 +331,46 @@ export async function uploadPreviewPdf(
   return { url: urlData.publicUrl };
 }
 
+/**
+ * Upload the EPUB used as a product's preview source. Public bucket (the reader
+ * fetches it client-side, like the preview PDF). EPUB themes light/dark in the
+ * reader, so there's a single file — no dark variant.
+ */
+export async function uploadPreviewEpub(
+  pageId: string,
+  formData: FormData,
+  previousUrl?: string | null,
+): Promise<{ url: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const file = formData.get("file") as File | null;
+  if (!file) return { error: "No file provided" };
+  const okType =
+    file.type === "application/epub+zip" || file.name.toLowerCase().endsWith(".epub");
+  if (!okType) return { error: "Hanya file EPUB yang diperbolehkan." };
+  if (file.size > 50 * 1024 * 1024) {
+    return { error: "Ukuran EPUB melebihi 50 MB." };
+  }
+
+  const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${user.id}/${pageId}/preview/${Date.now()}-${sanitized}`;
+
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    contentType: "application/epub+zip",
+    upsert: true,
+  });
+  if (error) return { error: error.message };
+
+  await removePreviousAsset(supabase, previousUrl, user.id, path);
+
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return { url: urlData.publicUrl };
+}
+
 /** Insert (replacing any existing) a <base href> at the top of the document head. */
 function injectBaseHref(html: string, baseHref: string): string {
   const tag = `<base href="${baseHref}">`;

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useTheme } from "@/lib/use-theme";
 
-type PreviewMode = "html" | "pdf" | "link";
+type PreviewMode = "html" | "pdf" | "link" | "epub";
 
 /**
  * Wraps the preview content and provides the dark-mode toggle. Dark state is the

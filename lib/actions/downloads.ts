@@ -99,6 +99,45 @@ export async function uploadStoryPdf(
   return { url: path };
 }
 
+/**
+ * Upload the EPUB deliverable a buyer receives. Private bucket (admin client),
+ * mirroring uploadStoryPdf; the buyer reads it through a gated signed URL.
+ */
+export async function uploadStoryEpub(
+  pageId: string,
+  formData: FormData,
+  previousPath?: string | null,
+): Promise<{ url: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const file = formData.get("file") as File;
+  if (!file) return { error: "Tidak ada file" };
+
+  const okType =
+    file.type === "application/epub+zip" || file.name.toLowerCase().endsWith(".epub");
+  if (!okType) return { error: "Hanya file EPUB yang diizinkan" };
+  if (file.size > 50 * 1024 * 1024) {
+    return { error: "Ukuran EPUB maksimal 50MB" };
+  }
+
+  const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${user.id}/${pageId}/story/${Date.now()}-${sanitized}`;
+
+  const admin = createAdminClient();
+  const { error } = await admin.storage.from(BUCKET).upload(path, file, {
+    contentType: "application/epub+zip",
+    upsert: true,
+  });
+  if (error) return { error: error.message };
+
+  await removePreviousDownload(admin, previousPath, user.id, path);
+  return { url: path };
+}
+
 export async function getSignedDownloadUrl(storagePath: string): Promise<string | null> {
   const admin = createAdminClient();
   const { data, error } = await admin.storage

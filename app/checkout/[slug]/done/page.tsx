@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PurchaseTracker } from "@/components/purchase-tracker";
 import { StoryPdfButton } from "@/components/story-pdf-button";
+import { EpubStoryButton } from "@/components/epub-story-button";
 
 // Matches the Button component's secondary + md variant, so the story reader
 // trigger sits inline with the other buttons.
@@ -135,6 +136,13 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
                 )}
                 {checkoutData?.story_pdf_url && (
                   <StoryPdfButton
+                    slug={slug}
+                    title={checkoutData.title}
+                    className={SECONDARY_BTN}
+                  />
+                )}
+                {checkoutData?.story_epub_url && (
+                  <EpubStoryButton
                     slug={slug}
                     title={checkoutData.title}
                     className={SECONDARY_BTN}

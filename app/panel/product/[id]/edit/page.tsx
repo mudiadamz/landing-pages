@@ -92,6 +92,7 @@ export default async function EditPage({
           zip_url: (page as { zip_url?: string | null }).zip_url ?? null,
           story_pdf_url: (page as { story_pdf_url?: string | null }).story_pdf_url ?? null,
           story_pdf_url_dark: (page as { story_pdf_url_dark?: string | null }).story_pdf_url_dark ?? null,
+          story_epub_url: (page as { story_epub_url?: string | null }).story_epub_url ?? null,
           category_id: (page as { category_id?: string | null }).category_id ?? null,
           long_description: (page as { long_description?: string | null }).long_description ?? null,
           preview_label: (page as { preview_label?: "product" | "buku" | "pages" | null }).preview_label ?? null,

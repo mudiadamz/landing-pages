@@ -7,6 +7,7 @@ import type { PurchaseWithPage, InvoiceRow } from "@/lib/actions/purchases";
 import type { UserReview } from "@/lib/actions/reviews";
 import { ReviewForm } from "./review-form";
 import { StoryPdfButton } from "@/components/story-pdf-button";
+import { EpubStoryButton } from "@/components/epub-story-button";
 
 type Props = {
   purchases: PurchaseWithPage[];
@@ -179,6 +180,9 @@ function PurchasesTab({
                     )}
                     {p.story_pdf_url && (
                       <StoryPdfButton slug={p.slug} title={p.title} className={ACTION_SECONDARY} />
+                    )}
+                    {p.story_epub_url && (
+                      <EpubStoryButton slug={p.slug} title={p.title} className={ACTION_SECONDARY} />
                     )}
                     <button
                       type="button"

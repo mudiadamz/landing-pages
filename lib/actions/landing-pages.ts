@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
 
-export type PreviewType = "html" | "pdf" | "link";
+export type PreviewType = "html" | "pdf" | "link" | "epub";
 
 function createAnonClient() {
   return createSupabaseJS(
@@ -85,6 +85,7 @@ export type LandingPageCheckout = {
   thumbnail_url: string | null;
   zip_url: string | null;
   story_pdf_url?: string | null;
+  story_epub_url?: string | null;
   long_description?: string | null;
   category_id?: string | null;
   sold_count?: number;
@@ -377,7 +378,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
     .eq("slug", slug)
     .single();
 
@@ -488,6 +489,7 @@ export async function updateLandingPagePricing(
     zip_url?: string | null;
     story_pdf_url?: string | null;
     story_pdf_url_dark?: string | null;
+    story_epub_url?: string | null;
     rating?: number | null;
     category_id?: string | null;
     long_description?: string | null;

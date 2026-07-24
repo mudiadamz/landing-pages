@@ -11,6 +11,7 @@ import { PreviewBuyBar } from "../preview-buy-bar";
 import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
+import { EpubReader } from "@/components/epub-reader";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { getMyLike } from "@/lib/actions/likes";
 import { ViewTracker } from "@/components/view-tracker";
@@ -57,6 +58,7 @@ export default async function LandingPageView({ params }: Props) {
   const pdfLight = previewUrl ?? previewUrlDark;
   const embedPdf = page.preview_type === "pdf" && !!pdfLight;
   const embedLink = page.preview_type === "link" && !!previewUrl;
+  const embedEpub = page.preview_type === "epub" && !!previewUrl;
 
   // Pricing for the sticky buy CTA (mirrors the checkout page's display logic).
   const checkout = await getCheckoutData(slug);
@@ -98,11 +100,14 @@ export default async function LandingPageView({ params }: Props) {
   // External-link previews are cross-origin, so scroll can't be observed — map
   // the reveal point to a timed fallback instead. For scroll-observable previews
   // only "start" gets an auto-reveal (so it shows without needing a scroll).
-  const autoRevealMs = embedLink
-    ? { start: 1200, middle: 5000, near: 9000, end: 13000 }[revealKey] ?? 5000
-    : revealKey === "start"
-      ? 1200
-      : undefined;
+  // EPUB pages inside sandboxed iframes can't report scroll either, so it uses
+  // the same timed reveal fallback as external links.
+  const autoRevealMs =
+    embedLink || embedEpub
+      ? { start: 1200, middle: 5000, near: 9000, end: 13000 }[revealKey] ?? 5000
+      : revealKey === "start"
+        ? 1200
+        : undefined;
 
   const viewCount = checkout?.view_count ?? 0;
 
@@ -130,8 +135,10 @@ export default async function LandingPageView({ params }: Props) {
       <PreviewGuardClient />
       <ViewTracker slug={slug} />
       <ProductTracker slug={slug} page="preview" />
-      <PreviewSurface mode={embedPdf ? "pdf" : embedLink ? "link" : "html"}>
-        {embedPdf ? (
+      <PreviewSurface mode={embedPdf ? "pdf" : embedEpub ? "epub" : embedLink ? "link" : "html"}>
+        {embedEpub ? (
+          <EpubReader url={previewUrl as string} title={page.title} storageKey={`lp-epub:${slug}`} />
+        ) : embedPdf ? (
           // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
           // streams in as the user scrolls instead of loading all at once.
           <PdfPreview
