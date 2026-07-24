@@ -241,7 +241,7 @@ export function ProductActionsMenu({
           the panel) + logout on the right. */}
       {(backHref || (isLoggedIn && userName)) && (
         <>
-          <div className="flex items-center gap-2 px-1.5 py-1.5">
+          <div className="flex items-center gap-1 px-1.5 py-1.5">
             {backHref && (
               <button
                 type="button"
@@ -251,7 +251,7 @@ export function ProductActionsMenu({
                 }}
                 aria-label={backLabel}
                 title={backLabel}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+                className="-ml-0.5 flex h-7 w-6 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
               >
                 <ArrowLeftIcon className="h-4 w-4" />
               </button>
@@ -264,23 +264,25 @@ export function ProductActionsMenu({
                     setOpen(false);
                     router.push("/panel");
                   }}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-1 text-left transition-colors hover:bg-[var(--background)]"
+                  className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-[var(--background)]"
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-xs font-semibold text-[var(--primary)]">
                     {userName.trim().charAt(0).toUpperCase()}
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
-                    <span className="block text-[11px] text-[var(--muted)]">Menu Profile</span>
+                    <span className="block text-[11px] text-[var(--muted)]">Masuk</span>
                   </span>
                 </button>
-                <form action={signOut}>
+                <form action={signOut} className="shrink-0">
                   <button
                     type="submit"
                     onClick={() => logCta("logout")}
-                    className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+                    aria-label="Logout"
+                    title="Logout"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
                   >
-                    Logout
+                    <LogoutIcon className="h-4 w-4" />
                   </button>
                 </form>
               </>
@@ -593,6 +595,14 @@ function HomePlusIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+  );
+}
+
 function CloseIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
