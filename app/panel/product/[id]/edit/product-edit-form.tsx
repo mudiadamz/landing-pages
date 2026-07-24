@@ -84,8 +84,18 @@ type Props = {
     event_location?: string | null;
     event_description?: string | null;
     related_product_ids?: string[] | null;
+    available_at?: string | null;
   };
 };
+
+/** ISO instant → value for a <input type="datetime-local"> (local wall time). */
+function isoToLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 /**
  * One PDF drop-zone + uploaded-file chip. Used twice (light + dark variants).
@@ -304,6 +314,11 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     setRelatedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }, []);
 
+  // Scheduled release ("upcoming"): when on, the product shows only a countdown
+  // to non-owners until `availableAt` passes.
+  const [scheduleEnabled, setScheduleEnabled] = useState(!!initial.available_at);
+  const [availableAt, setAvailableAt] = useState(isoToLocalInput(initial.available_at));
+
   const [zipUrl, setZipUrl] = useState(initial.zip_url ?? "");
   const [zipMeta, setZipMeta] = useState<FileMeta | null>(
     initial.zip_url ? { name: fileNameFromUrl(initial.zip_url) } : null,
@@ -494,6 +509,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       setMessage({ type: "err", text: "Isi tanggal & waktu mulai acara dulu." });
       return;
     }
+    if (scheduleEnabled && !availableAt.trim()) {
+      setMessage({ type: "err", text: "Isi tanggal & waktu rilis dulu." });
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
@@ -531,6 +550,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         long_description: longDescription.trim() || null,
         preview_label: previewLabel,
         related_product_ids: relatedIds,
+        available_at:
+          scheduleEnabled && availableAt.trim()
+            ? new Date(availableAt).toISOString()
+            : null,
       });
       setMessage({ type: "ok", text: "Perubahan tersimpan." });
       router.refresh();
@@ -725,6 +748,36 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             title="Pin produk di homepage"
             description="Tampilkan produk ini di bagian paling depan"
           />
+        </div>
+
+        {/* Scheduled release ("upcoming"): before the time, visitors see only a
+            countdown and can't read/buy. */}
+        <div className="space-y-3 rounded-xl border border-[var(--border)] p-4">
+          <ToggleCard
+            checked={scheduleEnabled}
+            onChange={setScheduleEnabled}
+            title="Jadwalkan rilis (upcoming)"
+            description="Tampilkan hitung mundur dulu — pengunjung baru bisa baca & beli setelah waktunya tiba."
+          />
+          {scheduleEnabled && (
+            <div className="space-y-1.5">
+              <label htmlFor="available-at" className="block text-sm font-medium text-foreground">
+                Tanggal &amp; waktu rilis <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="available-at"
+                type="datetime-local"
+                value={availableAt}
+                onChange={(e) => setAvailableAt(e.target.value)}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+              />
+              <p className="text-xs text-[var(--muted)]">
+                Memakai zona waktu perangkat Anda. Sebelum waktu ini, halaman preview &amp; checkout
+                hanya menampilkan hitung mundur (Anda sendiri tetap bisa membukanya untuk cek).
+                Setelah lewat, produk otomatis terbuka.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Prices */}

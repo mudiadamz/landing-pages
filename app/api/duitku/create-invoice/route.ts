@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createDuitkuInvoice } from "@/lib/duitku";
 import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+import { isUpcoming } from "@/lib/product-status";
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,6 +37,14 @@ export async function POST(req: NextRequest) {
     const page = await getLandingPageForCheckout(slug);
     if (!page) {
       return NextResponse.json({ error: "Landing page tidak ditemukan" }, { status: 404 });
+    }
+
+    // Scheduled-upcoming products can't be bought yet (owner excepted).
+    if (isUpcoming(page.available_at, page.user_id === user.id)) {
+      return NextResponse.json(
+        { error: "Produk ini belum tersedia untuk dibeli." },
+        { status: 403 }
+      );
     }
 
     const isFree = page.is_free === true;

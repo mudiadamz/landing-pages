@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds } from "@/lib/actions/landing-pages";
+import { isUpcoming } from "@/lib/product-status";
+import { ComingSoon } from "@/components/coming-soon";
 import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
 import { PreviewBuyBar } from "../preview-buy-bar";
@@ -112,6 +114,16 @@ export default async function LandingPageView({ params }: Props) {
     getMyLike(page.id),
     getProductsByIds(page.related_product_ids ?? []),
   ]);
+
+  // Scheduled but not yet released: non-owners see a countdown, not the preview.
+  const isOwner = !!user && page.user_id === user.id;
+  if (isUpcoming(page.available_at, isOwner)) {
+    return (
+      <div className="flex h-full w-full items-center justify-center overflow-y-auto p-4">
+        <ComingSoon title={page.title} thumbnailUrl={page.thumbnail_url} target={page.available_at!} />
+      </div>
+    );
+  }
 
   return (
     <>

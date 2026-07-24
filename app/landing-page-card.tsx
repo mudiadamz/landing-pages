@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
+import { isUpcoming } from "@/lib/product-status";
 import { normalizeDescription } from "@/lib/seo";
 import { isProbablyHtml, richTextToPlain } from "@/lib/html-sanitize";
 
@@ -42,6 +43,9 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
   const rating = page.rating != null && page.rating > 0 ? Number(page.rating) : null;
   const isInternal = page.purchase_type !== "external";
   const externalUrl = page.purchase_link?.trim() || null;
+  // Scheduled-upcoming: still listed (to build anticipation), but opening it
+  // lands on the countdown until release.
+  const upcoming = isUpcoming(page.available_at, false);
 
   return (
     <article className="group rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[var(--primary)]/30 transition-all duration-300 ease-out active:scale-[0.99]">
@@ -53,6 +57,14 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.585 10.8c-.783-.57-.38-1.81.588-1.81h4.915a1 1 0 00.95-.69l1.519-4.674z" />
               </svg>
               Unggulan
+            </span>
+          )}
+          {upcoming && (
+            <span className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-[var(--card)]/90 text-foreground shadow-sm ring-1 ring-[var(--border)] backdrop-blur">
+              <svg className="w-3 h-3 text-[var(--primary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Segera
             </span>
           )}
           {page.thumbnail_url ? (
@@ -132,6 +144,22 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
           </div>
         )}
         <div className="mt-3 flex gap-2 sm:gap-3">
+          {upcoming ? (
+            <Button
+              size="md"
+              href={`/checkout/${page.slug}`}
+              fullWidth
+              className="flex-1"
+              leftIcon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            >
+              Lihat hitung mundur
+            </Button>
+          ) : (
+          <>
           <Button
             variant="secondary"
             size="md"
@@ -170,6 +198,8 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
             >
               {externalUrl ? "Beli sekarang" : "Preview"}
             </Button>
+          )}
+          </>
           )}
         </div>
       </div>

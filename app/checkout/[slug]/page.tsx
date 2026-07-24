@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPageForCheckout, getRelatedProducts } from "@/lib/actions/landing-pages";
+import { isUpcoming } from "@/lib/product-status";
+import { ComingSoon } from "@/components/coming-soon";
 import { getPublicReviews, getReviewCount } from "@/lib/actions/reviews";
 import { VerifiedReviews } from "@/components/verified-reviews";
 import { FounderCredibility } from "@/components/founder-credibility";
@@ -102,6 +104,24 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     getMyLike(page.id),
   ]);
 
+  const isOwner = !!user && page.user_id === user.id;
+  // Scheduled but not yet released: non-owners get a countdown, no buy/preview.
+  if (isUpcoming(page.available_at, isOwner)) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <SiteHeader user={user} />
+        <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-12 sm:py-16 flex items-center justify-center">
+          <ComingSoon title={page.title} thumbnailUrl={page.thumbnail_url} target={page.available_at!} />
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
+  // Owner-only heads-up when a release is still scheduled (they bypass the lock).
+  // isUpcoming(..., false) = "still in the future" regardless of ownership.
+  const ownerScheduledAt =
+    isOwner && isUpcoming(page.available_at, false) ? page.available_at : null;
+
   const isFree = page.is_free === true;
   const price = page.price ?? 0;
   const priceDiscount = page.price_discount ?? 0;
@@ -166,6 +186,19 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
         >
           ← Kembali ke beranda
         </Link>
+
+        {ownerScheduledAt && (
+          <div className="mb-4 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-4 py-3 text-sm text-foreground">
+            <span className="font-medium">Dijadwalkan (upcoming).</span>{" "}
+            <span className="text-[var(--muted)]">
+              Pengunjung hanya melihat hitung mundur sampai{" "}
+              {new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" }).format(
+                new Date(ownerScheduledAt),
+              )}
+              . Hanya Anda yang bisa membukanya sekarang.
+            </span>
+          </div>
+        )}
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm">
           {/* Discount banner */}

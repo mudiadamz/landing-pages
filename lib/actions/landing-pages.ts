@@ -69,6 +69,8 @@ export type LandingPagePublic = {
   long_description?: string | null;
   /** Pinned products sort to the front of listings. */
   featured?: boolean;
+  /** Scheduled release instant (ISO); in the future = "upcoming". */
+  available_at?: string | null;
 };
 
 export type LandingPageCheckout = {
@@ -103,6 +105,10 @@ export type LandingPageCheckout = {
   event_end?: string | null;
   event_location?: string | null;
   event_description?: string | null;
+  /** Scheduled release instant (ISO); before it, non-owners see a countdown. */
+  available_at?: string | null;
+  /** Product owner — used to let the owner bypass the upcoming lock (preview). */
+  user_id?: string;
 };
 
 export async function getLandingPagesForUser() {
@@ -147,7 +153,7 @@ export async function getLandingPageBySlug(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, like_count, related_product_ids, published, user_id")
+    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, like_count, related_product_ids, available_at, thumbnail_url, published, user_id")
     .eq("slug", slug)
     .single();
 
@@ -164,6 +170,9 @@ export async function getLandingPageBySlug(slug: string) {
     preview_url_dark?: string | null;
     like_count?: number;
     related_product_ids?: string[] | null;
+    available_at?: string | null;
+    thumbnail_url?: string | null;
+    user_id?: string;
   };
 }
 
@@ -329,7 +338,7 @@ const getCachedHomepagePages = unstable_cache(
     let query = supabase
       .from("lp_landing_pages")
       .select(
-        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description, featured, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
+        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
       )
       // Pinned (featured) products always first, then the chosen sort:
       // "popular" = most sold, "newest" = most recently created.
@@ -368,7 +377,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, category_id, sold_count, rating, view_count, like_count, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
     .eq("slug", slug)
     .single();
 
@@ -493,6 +502,7 @@ export async function updateLandingPagePricing(
     event_location?: string | null;
     event_description?: string | null;
     related_product_ids?: string[] | null;
+    available_at?: string | null;
   }
 ) {
   const supabase = await createClient();

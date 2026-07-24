@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateInvoiceNumber } from "@/lib/invoice";
+import { isUpcoming } from "@/lib/product-status";
 
 export type PurchaseWithPage = {
   id: string;
@@ -65,6 +66,17 @@ export async function addPurchase(landingPageId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  // Block claiming a product that's still in its scheduled-upcoming window
+  // (defense in depth — the UI already hides the button for non-owners).
+  const { data: gate } = await supabase
+    .from("lp_landing_pages")
+    .select("available_at, user_id")
+    .eq("id", landingPageId)
+    .single();
+  if (isUpcoming(gate?.available_at, gate?.user_id === user.id)) {
+    throw new Error("Produk ini belum tersedia.");
+  }
 
   const { error } = await supabase.from("lp_purchases").insert({
     user_id: user.id,
