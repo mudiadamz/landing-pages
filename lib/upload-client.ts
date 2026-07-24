@@ -49,7 +49,9 @@ async function uploadPublic(
   const dir = subdir ? `${uid}/${pageId}/${subdir}` : `${uid}/${pageId}`;
   const path = `${dir}/${Date.now()}-${clean(file.name)}`;
 
-  const { error } = await supabase.storage.from(ASSETS).upload(path, file, { contentType, upsert: true });
+  // upsert:false → a plain INSERT. Paths are unique (timestamped), so there's no
+  // conflict; upsert would need an UPDATE RLS policy the buckets don't grant.
+  const { error } = await supabase.storage.from(ASSETS).upload(path, file, { contentType, upsert: false });
   if (error) return { error: error.message };
 
   if (previousUrl) {
@@ -74,7 +76,9 @@ async function uploadPrivate(
   const dir = subdir ? `${uid}/${pageId}/${subdir}` : `${uid}/${pageId}`;
   const path = `${dir}/${Date.now()}-${clean(file.name)}`;
 
-  const { error } = await supabase.storage.from(DOWNLOADS).upload(path, file, { contentType, upsert: true });
+  // upsert:false → plain INSERT (landing-downloads has no UPDATE policy, so an
+  // upsert's ON CONFLICT DO UPDATE would violate RLS). Paths are unique anyway.
+  const { error } = await supabase.storage.from(DOWNLOADS).upload(path, file, { contentType, upsert: false });
   if (error) return { error: error.message };
 
   if (previousPath) {
