@@ -77,6 +77,35 @@ export default function EpubViewer({
     rendition.themes.register("light", THEMES.light);
     rendition.themes.register("dark", THEMES.dark);
 
+    // Continuous scroll fix (Mac Chrome trackpad, and mouse wheels generally):
+    // each section renders inside an iframe that swallows wheel/two-finger
+    // events, so they never reach epub.js's scroll container and the page won't
+    // move. Forward wheel deltas from every content document to that scroller.
+    const isScrollable = (el: Element | null | undefined): el is Element =>
+      !!el && el.scrollHeight > el.clientHeight + 1;
+    const scrollerEl = (): (Element & { scrollBy?: (o: ScrollToOptions) => void }) => {
+      const mgr = (rendition as unknown as { manager?: { container?: Element | null } }).manager;
+      const inner = mgr?.container ?? null;
+      // The real scroller is whichever of these actually overflows: epub.js's
+      // overflow wrapper (parent of its container), the container, or the host.
+      const candidates = [inner?.parentElement ?? null, inner, host.firstElementChild, host];
+      return (candidates.find(isScrollable) ?? host) as Element & {
+        scrollBy?: (o: ScrollToOptions) => void;
+      };
+    };
+    rendition.hooks.content.register((contents: { document?: Document }) => {
+      const doc = contents?.document;
+      if (!doc) return;
+      doc.addEventListener(
+        "wheel",
+        (e: WheelEvent) => {
+          const el = scrollerEl();
+          el?.scrollBy?.({ top: e.deltaY, left: e.deltaX });
+        },
+        { passive: true },
+      );
+    });
+
     rendition
       .display(saved || undefined)
       .then(() => {
