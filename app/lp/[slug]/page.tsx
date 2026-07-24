@@ -14,6 +14,7 @@ import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { getMyLike } from "@/lib/actions/likes";
+import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
 
@@ -53,12 +54,31 @@ export default async function LandingPageView({ params }: Props) {
   // otherwise the inline HTML is rendered (with anti-copy guards).
   const previewUrl = page.preview_url?.trim() || null;
   const previewUrlDark = page.preview_url_dark?.trim() || null;
-  // A PDF preview needs at least one file; if only the dark one exists, use it
-  // as the default so the preview still renders.
-  const pdfLight = previewUrl ?? previewUrlDark;
-  const embedPdf = page.preview_type === "pdf" && !!pdfLight;
+
+  // "deliverable" preview reuses the product's own PDF/EPUB deliverable (private
+  // bucket) — sign it so the free preview can read the same file. EPUB wins when
+  // both exist.
+  let dvEpubUrl: string | null = null;
+  let dvPdfUrl: string | null = null;
+  let dvPdfUrlDark: string | null = null;
+  if (page.preview_type === "deliverable") {
+    if (page.story_epub_url) {
+      dvEpubUrl = await getSignedDownloadUrl(page.story_epub_url);
+    } else if (page.story_pdf_url) {
+      dvPdfUrl = await getSignedDownloadUrl(page.story_pdf_url);
+      if (page.story_pdf_url_dark) dvPdfUrlDark = await getSignedDownloadUrl(page.story_pdf_url_dark);
+    }
+  }
+
+  // Effective preview URLs (deliverable-signed when applicable). A PDF preview
+  // needs at least one file; if only the dark one exists, use it as the default.
+  const epubUrl = dvEpubUrl ?? (page.preview_type === "epub" ? previewUrl : null);
+  const pdfLight = dvPdfUrl ?? (page.preview_type === "pdf" ? previewUrl ?? previewUrlDark : null);
+  const pdfDark = dvPdfUrl ? dvPdfUrlDark : page.preview_type === "pdf" ? previewUrlDark : null;
+
+  const embedEpub = !!epubUrl;
+  const embedPdf = !!pdfLight && !embedEpub;
   const embedLink = page.preview_type === "link" && !!previewUrl;
-  const embedEpub = page.preview_type === "epub" && !!previewUrl;
 
   // Pricing for the sticky buy CTA (mirrors the checkout page's display logic).
   const checkout = await getCheckoutData(slug);
@@ -137,13 +157,13 @@ export default async function LandingPageView({ params }: Props) {
       <ProductTracker slug={slug} page="preview" />
       <PreviewSurface mode={embedPdf ? "pdf" : embedEpub ? "epub" : embedLink ? "link" : "html"}>
         {embedEpub ? (
-          <EpubReader url={previewUrl as string} title={page.title} storageKey={`lp-epub:${slug}`} />
+          <EpubReader url={epubUrl as string} title={page.title} storageKey={`lp-epub:${slug}`} />
         ) : embedPdf ? (
           // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
           // streams in as the user scrolls instead of loading all at once.
           <PdfPreview
             url={pdfLight as string}
-            urlDark={previewUrlDark}
+            urlDark={pdfDark}
             title={page.title}
             storageKey={`lp-pdf:${slug}`}
             revealAt={revealAt}

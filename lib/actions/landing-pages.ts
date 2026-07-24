@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
 
-export type PreviewType = "html" | "pdf" | "link" | "epub";
+export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable";
 
 function createAnonClient() {
   return createSupabaseJS(
@@ -154,7 +154,7 @@ export async function getLandingPageBySlug(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, like_count, related_product_ids, available_at, thumbnail_url, published, user_id")
+    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, story_pdf_url, story_pdf_url_dark, story_epub_url, like_count, related_product_ids, available_at, thumbnail_url, published, user_id")
     .eq("slug", slug)
     .single();
 
@@ -169,6 +169,9 @@ export async function getLandingPageBySlug(slug: string) {
     preview_type?: PreviewType | null;
     preview_url?: string | null;
     preview_url_dark?: string | null;
+    story_pdf_url?: string | null;
+    story_pdf_url_dark?: string | null;
+    story_epub_url?: string | null;
     like_count?: number;
     related_product_ids?: string[] | null;
     available_at?: string | null;

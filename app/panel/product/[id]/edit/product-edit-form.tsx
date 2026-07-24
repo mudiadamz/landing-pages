@@ -50,16 +50,22 @@ const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
   { value: "pdf", label: "PDF", hint: "Upload file PDF untuk di-embed di halaman preview." },
   { value: "epub", label: "EPUB", hint: "Upload file EPUB — pembaca bisa ganti tema terang/gelap langsung di reader." },
   { value: "link", label: "Link", hint: "Embed URL eksternal di halaman preview." },
+  {
+    value: "deliverable",
+    label: "Sama dgn deliverable",
+    hint: "Preview memakai file pembeli (PDF/EPUB) yang sama — tak perlu upload lagi. Seluruh isi bisa dibaca gratis di preview.",
+  },
 ];
 
 type DeliverableType = "zip" | "pdf" | "epub";
 
-type TabKey = "detail" | "preview" | "harga" | "pengiriman";
+type TabKey = "detail" | "preview" | "harga" | "pengiriman" | "terkait";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "detail", label: "Detail" },
   { key: "preview", label: "Preview" },
   { key: "harga", label: "Harga" },
   { key: "pengiriman", label: "Pengiriman" },
+  { key: "terkait", label: "Terkait" },
 ];
 const PANEL_CLASS =
   "rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-6";
@@ -593,6 +599,16 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       setMessage({ type: "err", text: "Isi URL link dulu." });
       return;
     }
+    if (
+      previewType === "deliverable" &&
+      !((deliverableType === "epub" && storyEpubUrl.trim()) || (deliverableType === "pdf" && storyUrl.trim()))
+    ) {
+      setMessage({
+        type: "err",
+        text: "Untuk preview 'sama dgn deliverable', set file PDF/EPUB pembeli dulu di tab Pengiriman.",
+      });
+      return;
+    }
     if (actionType === "link" && !purchaseLink.trim()) {
       setMessage({ type: "err", text: "Isi URL tujuan tombol beli dulu." });
       return;
@@ -613,7 +629,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         {
           title: trimmedTitle,
           preview_type: previewType,
-          preview_url: previewType === "html" ? null : previewUrl.trim() || null,
+          preview_url:
+            previewType === "html" || previewType === "deliverable" ? null : previewUrl.trim() || null,
           preview_url_dark: previewType === "pdf" ? previewUrlDark.trim() || null : null,
         },
         slug,
@@ -960,6 +977,26 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
           </div>
         )}
 
+        {/* Preview = deliverable — no separate upload; reuses the buyer's file. */}
+        {previewType === "deliverable" && (
+          <div className="space-y-2">
+            {(deliverableType === "epub" && storyEpubUrl.trim()) ||
+            (deliverableType === "pdf" && storyUrl.trim()) ? (
+              <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
+                Preview menampilkan file{" "}
+                <strong className="text-foreground">{deliverableType === "epub" ? "EPUB" : "PDF"}</strong> pembeli
+                yang Anda atur di tab <strong className="text-foreground">Pengiriman</strong>. Seluruh isi bisa
+                dibaca gratis di preview — cocok untuk produk gratis atau sampel penuh.
+              </p>
+            ) : (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                Belum ada file <strong>PDF</strong>/<strong>EPUB</strong> pembeli. Buka tab{" "}
+                <strong>Pengiriman</strong>, pilih tipe file PDF atau EPUB lalu upload — baru opsi ini bisa dipakai.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* External link */}
         {previewType === "link" && (
           <div className="space-y-1.5">
@@ -1295,8 +1332,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       {/* ========================= Tab: Pengiriman ========================= */}
       <section className={tab === "pengiriman" ? PANEL_CLASS : "hidden"}>
         <div>
-          <h2 className="text-base font-semibold text-foreground">Pengiriman &amp; terkait</h2>
-          <p className="text-sm text-[var(--muted)]">File yang diterima pembeli dan produk terkait.</p>
+          <h2 className="text-base font-semibold text-foreground">Pengiriman</h2>
+          <p className="text-sm text-[var(--muted)]">File yang diterima pembeli setelah membeli.</p>
         </div>
 
         {/* Deliverable — buyer receives one file, either ZIP or PDF. */}
@@ -1394,16 +1431,19 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
           )}
         </div>
 
-        {/* Related products — shown at the end of this product's preview (setelah
-            book end). Seller picks from their own products. */}
-        <div className="space-y-2">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">Produk terkait</h3>
-            <p className="text-xs text-[var(--muted)]">
-              Produk yang muncul di akhir preview (setelah halaman terakhir). Pilih dari produk Anda sendiri.
-            </p>
-          </div>
+      </section>
 
+      {/* ========================= Tab: Terkait ========================= */}
+      <section className={tab === "terkait" ? PANEL_CLASS : "hidden"}>
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Produk terkait</h2>
+          <p className="text-sm text-[var(--muted)]">
+            Muncul di akhir preview (setelah halaman terakhir). Pilih dari produk Anda sendiri.
+          </p>
+        </div>
+
+        {/* Related products picker */}
+        <div className="space-y-2">
           {relatedOptions.length === 0 ? (
             <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
               Belum ada produk lain untuk dijadikan produk terkait.
