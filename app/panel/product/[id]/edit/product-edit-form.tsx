@@ -54,6 +54,16 @@ const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
 
 type DeliverableType = "zip" | "pdf" | "epub";
 
+type TabKey = "detail" | "preview" | "harga" | "pengiriman";
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "detail", label: "Detail" },
+  { key: "preview", label: "Preview" },
+  { key: "harga", label: "Harga" },
+  { key: "pengiriman", label: "Pengiriman" },
+];
+const PANEL_CLASS =
+  "rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-6";
+
 type RelatedOption = { id: string; title: string; slug: string };
 
 type Props = {
@@ -379,6 +389,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  // Which form tab is showing. All panels stay mounted (hidden when inactive) so
+  // inputs + the Monaco editor never lose state; one Save persists everything.
+  const [tab, setTab] = useState<TabKey>("detail");
+
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
   const pNum = parseFloat(price);
@@ -646,12 +660,30 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   /* -------------------------------------------------------------------------- */
 
   return (
-    <div className="space-y-6 pb-4">
-      {/* ===================== Card 1: Informasi halaman landing =============== */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-5">
+    <div className="space-y-5 pb-4">
+      {/* Tabs */}
+      <div className="sticky top-0 z-20 -mx-3 flex gap-1 overflow-x-auto border-b border-[var(--border)] bg-[var(--card)]/95 px-3 py-1.5 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-1 sm:shadow-sm">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === t.key
+                ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ========================= Tab: Detail ========================= */}
+      <section className={tab === "detail" ? PANEL_CLASS : "hidden"}>
         <div>
-          <h2 className="text-base font-semibold text-foreground">Informasi halaman landing</h2>
-          <p className="text-sm text-[var(--muted)]">Atur konten dan tampilan halaman produk Anda.</p>
+          <h2 className="text-base font-semibold text-foreground">Detail produk</h2>
+          <p className="text-sm text-[var(--muted)]">Judul, kategori, thumbnail, dan deskripsi produk.</p>
         </div>
 
         {/* Title */}
@@ -669,6 +701,172 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             placeholder="Judul landing page"
           />
           <p className="text-right text-xs text-[var(--muted)]">{title.length}/100</p>
+        </div>
+
+        {/* Long description — rich text (WYSIWYG). Stored as HTML, sanitized on save. */}
+        <div className="space-y-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm font-medium text-foreground">
+              Deskripsi panjang <span className="text-[var(--muted)]">(tampil di kartu &amp; checkout)</span>
+            </span>
+            <span className="hidden text-xs text-[var(--muted)] sm:block">
+              Bantu pembeli memahami isi produk Anda.
+            </span>
+          </div>
+          <RichTextEditor
+            initialHtml={initial.long_description ?? ""}
+            onChange={setLongDescription}
+            placeholder="Penjelasan produk, fitur, atau manfaat…"
+          />
+          <p className="text-right text-xs text-[var(--muted)]">
+            {richTextToPlain(longDescription).length} karakter
+          </p>
+        </div>
+
+        {/* Category + display info */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label htmlFor="category" className="block text-sm font-medium text-foreground">
+              Kategori
+            </label>
+            <select
+              id="category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+            >
+              <option value="">— Pilih kategori —</option>
+              {categories
+                .filter((c) => !c.parent_id)
+                .map((parent) => {
+                  const children = categories.filter((c) => c.parent_id === parent.id);
+                  if (children.length === 0) {
+                    return (
+                      <option key={parent.id} value={parent.id}>
+                        {parent.name}
+                      </option>
+                    );
+                  }
+                  return (
+                    <optgroup key={parent.id} label={parent.name}>
+                      <option value={parent.id}>{parent.name} — semua</option>
+                      {children.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
+            </select>
+            <p className="text-xs text-[var(--muted)]">
+              Pilih kategori yang paling sesuai dengan produk Anda.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4">
+            <p className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+              <StoreIcon className="h-4 w-4 text-[var(--primary)]" />
+              Bagaimana produk ini akan ditampilkan?
+            </p>
+            <ul className="space-y-1.5 text-xs text-[var(--muted)]">
+              <CheckItem>Judul &amp; deskripsi tampil di kartu produk</CheckItem>
+              <CheckItem>Harga diskon akan ditampilkan (jika ada)</CheckItem>
+              <CheckItem>Thumbnail tampil di homepage</CheckItem>
+              {featured && <CheckItem>Produk akan di-pin di bagian paling depan</CheckItem>}
+            </ul>
+          </div>
+        </div>
+
+        {/* Thumbnail */}
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium text-foreground">
+            Thumbnail <span className="text-[var(--muted)]">(untuk preview di homepage)</span>
+          </span>
+          <input
+            ref={thumbInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadThumbFile(f);
+              e.target.value = "";
+            }}
+          />
+          {thumbnailUrl.trim() ? (
+            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={thumbnailUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                  }}
+                />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {thumbMeta?.name ?? fileNameFromUrl(thumbnailUrl)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => thumbInputRef.current?.click()}
+                  disabled={thumbUploading}
+                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
+                >
+                  {thumbUploading ? "Mengupload…" : "Ganti gambar"}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={removeThumb}
+                title="Hapus thumbnail"
+                aria-label="Hapus thumbnail"
+                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => thumbInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setThumbDragging(true);
+              }}
+              onDragLeave={() => setThumbDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setThumbDragging(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) uploadThumbFile(f);
+              }}
+              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+                thumbDragging
+                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
+                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
+                <ImageIcon className="h-4 w-4" />
+                {thumbUploading ? "Mengupload…" : "Pilih gambar"}
+              </span>
+              <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop gambar di sini</span>
+            </button>
+          )}
+          {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
+        </div>
+      </section>
+
+      {/* ========================= Tab: Preview ========================= */}
+      <section className={tab === "preview" ? PANEL_CLASS : "hidden"}>
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Preview / demo</h2>
+          <p className="text-sm text-[var(--muted)]">Sumber preview yang dilihat pengunjung sebelum membeli.</p>
         </div>
 
         {/* Preview source */}
@@ -798,42 +996,20 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             Teks tombol yang membuka halaman preview dari halaman checkout.
           </p>
         </div>
+
+        {/* Monaco editor — only for the HTML preview source. Keeps its own save. */}
+        {previewType === "html" && (
+          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] p-3 sm:p-4">
+            <Editor id={pageId} initialHtml={initialHtml} />
+          </div>
+        )}
       </section>
 
-      {/* Monaco editor — only for the HTML preview source. Keeps its own save. */}
-      {previewType === "html" && (
-        <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm sm:p-4">
-          <Editor id={pageId} initialHtml={initialHtml} />
-        </div>
-      )}
-
-      {/* ===================== Card 2: Pricing & Purchase ===================== */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-6">
+      {/* ========================= Tab: Harga ========================= */}
+      <section className={tab === "harga" ? PANEL_CLASS : "hidden"}>
         <div>
-          <h2 className="text-base font-semibold text-foreground">Pricing &amp; Purchase</h2>
-          <p className="text-sm text-[var(--muted)]">
-            Atur harga, file yang akan dikirim setelah pembelian, dan tampilan produk di homepage.
-          </p>
-        </div>
-
-        {/* Long description — rich text (WYSIWYG). Stored as HTML, sanitized on save. */}
-        <div className="space-y-1.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm font-medium text-foreground">
-              Deskripsi panjang <span className="text-[var(--muted)]">(tampil di kartu &amp; checkout)</span>
-            </span>
-            <span className="hidden text-xs text-[var(--muted)] sm:block">
-              Bantu pembeli memahami isi produk Anda.
-            </span>
-          </div>
-          <RichTextEditor
-            initialHtml={initial.long_description ?? ""}
-            onChange={setLongDescription}
-            placeholder="Penjelasan produk, fitur, atau manfaat…"
-          />
-          <p className="text-right text-xs text-[var(--muted)]">
-            {richTextToPlain(longDescription).length} karakter
-          </p>
+          <h2 className="text-base font-semibold text-foreground">Harga &amp; penjualan</h2>
+          <p className="text-sm text-[var(--muted)]">Harga, status, jadwal rilis, dan tombol beli.</p>
         </div>
 
         {/* Toggle cards */}
@@ -1114,6 +1290,15 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
           )}
         </div>
 
+      </section>
+
+      {/* ========================= Tab: Pengiriman ========================= */}
+      <section className={tab === "pengiriman" ? PANEL_CLASS : "hidden"}>
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Pengiriman &amp; terkait</h2>
+          <p className="text-sm text-[var(--muted)]">File yang diterima pembeli dan produk terkait.</p>
+        </div>
+
         {/* Deliverable — buyer receives one file, either ZIP or PDF. */}
         <div className="space-y-3">
           <div>
@@ -1207,144 +1392,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
               />
             </div>
           )}
-        </div>
-
-        {/* Thumbnail */}
-        <div className="space-y-1.5">
-          <span className="block text-sm font-medium text-foreground">
-            Thumbnail <span className="text-[var(--muted)]">(untuk preview di homepage)</span>
-          </span>
-          <input
-            ref={thumbInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) uploadThumbFile(f);
-              e.target.value = "";
-            }}
-          />
-          {thumbnailUrl.trim() ? (
-            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={thumbnailUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
-                  }}
-                />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {thumbMeta?.name ?? fileNameFromUrl(thumbnailUrl)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => thumbInputRef.current?.click()}
-                  disabled={thumbUploading}
-                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
-                >
-                  {thumbUploading ? "Mengupload…" : "Ganti gambar"}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={removeThumb}
-                title="Hapus thumbnail"
-                aria-label="Hapus thumbnail"
-                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => thumbInputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setThumbDragging(true);
-              }}
-              onDragLeave={() => setThumbDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setThumbDragging(false);
-                const f = e.dataTransfer.files?.[0];
-                if (f) uploadThumbFile(f);
-              }}
-              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
-                thumbDragging
-                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
-              }`}
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
-                <ImageIcon className="h-4 w-4" />
-                {thumbUploading ? "Mengupload…" : "Pilih gambar"}
-              </span>
-              <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop gambar di sini</span>
-            </button>
-          )}
-          {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
-        </div>
-
-        {/* Category + display info */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="category" className="block text-sm font-medium text-foreground">
-              Kategori
-            </label>
-            <select
-              id="category"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-            >
-              <option value="">— Pilih kategori —</option>
-              {categories
-                .filter((c) => !c.parent_id)
-                .map((parent) => {
-                  const children = categories.filter((c) => c.parent_id === parent.id);
-                  if (children.length === 0) {
-                    return (
-                      <option key={parent.id} value={parent.id}>
-                        {parent.name}
-                      </option>
-                    );
-                  }
-                  return (
-                    <optgroup key={parent.id} label={parent.name}>
-                      <option value={parent.id}>{parent.name} — semua</option>
-                      {children.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  );
-                })}
-            </select>
-            <p className="text-xs text-[var(--muted)]">
-              Pilih kategori yang paling sesuai dengan produk Anda.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4">
-            <p className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-              <StoreIcon className="h-4 w-4 text-[var(--primary)]" />
-              Bagaimana produk ini akan ditampilkan?
-            </p>
-            <ul className="space-y-1.5 text-xs text-[var(--muted)]">
-              <CheckItem>Judul &amp; deskripsi tampil di kartu produk</CheckItem>
-              <CheckItem>Harga diskon akan ditampilkan (jika ada)</CheckItem>
-              <CheckItem>Thumbnail tampil di homepage</CheckItem>
-              {featured && <CheckItem>Produk akan di-pin di bagian paling depan</CheckItem>}
-            </ul>
-          </div>
         </div>
 
         {/* Related products — shown at the end of this product's preview (setelah

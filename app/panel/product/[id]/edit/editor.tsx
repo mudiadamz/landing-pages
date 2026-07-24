@@ -150,6 +150,9 @@ export function Editor({
                 wordWrap: "on",
                 padding: { top: 12 },
                 scrollBeyondLastLine: false,
+                // Relayout when the container resizes — needed since the editor
+                // lives in a tab panel that's display:none until selected.
+                automaticLayout: true,
               }}
             />
           </div>
