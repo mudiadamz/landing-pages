@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
 
 const BUCKET = "landing-downloads";
 
@@ -43,6 +44,9 @@ export async function uploadZip(
   if (!file.type?.includes("zip") && !file.name.toLowerCase().endsWith(".zip")) {
     return { error: "Hanya file ZIP yang diizinkan" };
   }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { error: `Ukuran ZIP melebihi ${MAX_UPLOAD_LABEL}.` };
+  }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${user.id}/${pageId}/${Date.now()}-${sanitized}`;
@@ -78,8 +82,8 @@ export async function uploadStoryPdf(
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     return { error: "Hanya file PDF yang diizinkan" };
   }
-  if (file.size > 50 * 1024 * 1024) {
-    return { error: "Ukuran PDF maksimal 50MB" };
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { error: `Ukuran PDF maksimal ${MAX_UPLOAD_LABEL}` };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -120,8 +124,8 @@ export async function uploadStoryEpub(
   const okType =
     file.type === "application/epub+zip" || file.name.toLowerCase().endsWith(".epub");
   if (!okType) return { error: "Hanya file EPUB yang diizinkan" };
-  if (file.size > 50 * 1024 * 1024) {
-    return { error: "Ukuran EPUB maksimal 50MB" };
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { error: `Ukuran EPUB maksimal ${MAX_UPLOAD_LABEL}` };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");

@@ -62,7 +62,10 @@ export default function EpubViewer({
       /* storage unavailable (private mode) — position memory is best-effort */
     }
 
-    const book = ePub(url);
+    // Force archive mode: a private-deliverable signed URL ends in "…epub?token=…",
+    // so epub.js's extension sniffing would otherwise treat it as an unzipped
+    // directory and fail to load.
+    const book = ePub(url, { openAs: "epub" });
     const rendition = book.renderTo(host, {
       width: "100%",
       height: "100%",

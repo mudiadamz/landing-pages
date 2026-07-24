@@ -3,6 +3,7 @@
 import { unzipSync } from "fflate";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BUCKET = "landing-assets";
@@ -56,6 +57,9 @@ export async function uploadAsset(
   ];
   if (!allowed.includes(file.type)) {
     return { error: "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)." };
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { error: `Ukuran file melebihi ${MAX_UPLOAD_LABEL}.` };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -311,8 +315,8 @@ export async function uploadPreviewPdf(
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     return { error: "Hanya file PDF yang diperbolehkan." };
   }
-  if (file.size > 25 * 1024 * 1024) {
-    return { error: "Ukuran PDF melebihi 25 MB." };
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { error: `Ukuran PDF melebihi ${MAX_UPLOAD_LABEL}.` };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -352,8 +356,8 @@ export async function uploadPreviewEpub(
   const okType =
     file.type === "application/epub+zip" || file.name.toLowerCase().endsWith(".epub");
   if (!okType) return { error: "Hanya file EPUB yang diperbolehkan." };
-  if (file.size > 50 * 1024 * 1024) {
-    return { error: "Ukuran EPUB melebihi 50 MB." };
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { error: `Ukuran EPUB melebihi ${MAX_UPLOAD_LABEL}.` };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
