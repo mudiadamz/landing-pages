@@ -18,6 +18,24 @@ const THEMES = {
   },
 } as const;
 
+type FontLevel = "small" | "medium" | "large";
+const FONT_SIZES: Record<FontLevel, string> = {
+  small: "90%",
+  medium: "112%",
+  large: "140%",
+};
+const FONT_KEY = "lp-epub-font";
+
+function readFont(): FontLevel {
+  try {
+    const v = localStorage.getItem(FONT_KEY);
+    if (v === "small" || v === "medium" || v === "large") return v;
+  } catch {
+    /* storage unavailable */
+  }
+  return "medium";
+}
+
 export default function EpubViewer({
   url,
   storageKey,
@@ -32,9 +50,12 @@ export default function EpubViewer({
   const { dark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // ssr:false (see epub-reader), so reading localStorage in the initializer is
+  // safe — this component only ever renders on the client.
+  const [fontLevel, setFontLevel] = useState<FontLevel>(readFont);
 
-  // Build the book + rendition once per source. Theme is applied by the separate
-  // effect below (so toggling doesn't reload the book).
+  // Build the book + rendition once per source. Theme + font are applied by the
+  // separate effects below (so changing them doesn't reload the book).
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -51,14 +72,16 @@ export default function EpubViewer({
     const rendition = book.renderTo(host, {
       width: "100%",
       height: "100%",
-      spread: "auto",
+      // Continuous vertical scroll through the whole book (sections stream in as
+      // the reader scrolls) instead of paginated left/right flipping.
+      flow: "scrolled",
+      manager: "continuous",
       // Sandbox the seller-supplied EPUB — never run scripts it ships with.
       allowScriptedContent: false,
     });
     renditionRef.current = rendition;
     rendition.themes.register("light", THEMES.light);
     rendition.themes.register("dark", THEMES.dark);
-    rendition.themes.fontSize("112%");
 
     rendition
       .display(saved || undefined)
@@ -80,17 +103,8 @@ export default function EpubViewer({
       }
     });
 
-    // Arrow-key paging, both when focus is inside the reader iframe and outside.
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") rendition.prev();
-      else if (e.key === "ArrowRight") rendition.next();
-    };
-    rendition.on("keyup", onKey);
-    document.addEventListener("keyup", onKey);
-
     return () => {
       destroyed = true;
-      document.removeEventListener("keyup", onKey);
       try {
         book.destroy();
       } catch {
@@ -105,23 +119,21 @@ export default function EpubViewer({
     renditionRef.current?.themes.select(dark ? "dark" : "light");
   }, [dark]);
 
-  const page = (dir: "prev" | "next") => {
-    const r = renditionRef.current;
-    if (!r) return;
-    if (dir === "prev") r.prev();
-    else r.next();
-  };
+  // Apply + persist the font size (also runs on mount for the initial size).
+  useEffect(() => {
+    renditionRef.current?.themes.fontSize(FONT_SIZES[fontLevel]);
+    try {
+      localStorage.setItem(FONT_KEY, fontLevel);
+    } catch {
+      /* best-effort */
+    }
+  }, [fontLevel]);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fdfcfb] dark:bg-[#141414]">
       <div ref={hostRef} className="h-full w-full" />
 
-      {!loading && !error && (
-        <>
-          <NavButton side="left" onClick={() => page("prev")} />
-          <NavButton side="right" onClick={() => page("next")} />
-        </>
-      )}
+      {!loading && !error && <FontSizeControl level={fontLevel} onChange={setFontLevel} />}
 
       {loading && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">
@@ -137,25 +149,41 @@ export default function EpubViewer({
   );
 }
 
-function NavButton({ side, onClick }: { side: "left" | "right"; onClick: () => void }) {
+const FONT_BUTTONS: { level: FontLevel; label: string; cls: string }[] = [
+  { level: "small", label: "Kecil", cls: "text-[11px]" },
+  { level: "medium", label: "Sedang", cls: "text-sm" },
+  { level: "large", label: "Besar", cls: "text-lg" },
+];
+
+function FontSizeControl({
+  level,
+  onChange,
+}: {
+  level: FontLevel;
+  onChange: (l: FontLevel) => void;
+}) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={side === "left" ? "Halaman sebelumnya" : "Halaman berikutnya"}
-      className={`group absolute top-0 bottom-0 z-10 flex w-12 items-center justify-center ${
-        side === "left" ? "left-0" : "right-0"
-      }`}
-    >
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--card)]/70 text-[var(--muted)] opacity-0 shadow-sm ring-1 ring-[var(--border)] backdrop-blur transition-opacity group-hover:opacity-100">
-        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d={side === "left" ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"}
-          />
-        </svg>
-      </span>
-    </button>
+    <div className="absolute left-3 top-3 z-10 flex items-center gap-0.5 rounded-full border border-[var(--border)] bg-[var(--card)]/85 p-0.5 shadow-sm backdrop-blur">
+      {FONT_BUTTONS.map((b) => {
+        const active = b.level === level;
+        return (
+          <button
+            key={b.level}
+            type="button"
+            onClick={() => onChange(b.level)}
+            aria-pressed={active}
+            title={`Font ${b.label}`}
+            aria-label={`Ukuran font ${b.label}`}
+            className={`flex h-7 w-7 items-center justify-center rounded-full font-semibold leading-none transition-colors ${b.cls} ${
+              active
+                ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
+            }`}
+          >
+            A
+          </button>
+        );
+      })}
+    </div>
   );
 }
