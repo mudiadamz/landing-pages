@@ -251,7 +251,7 @@ export function ProductActionsMenu({
                 }}
                 aria-label={backLabel}
                 title={backLabel}
-                className="-ml-0.5 flex h-7 w-6 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+                className="-ml-0.5 flex h-7 w-6 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-all duration-150 hover:-translate-x-0.5 hover:bg-[var(--background)] hover:text-foreground active:scale-90"
               >
                 <ArrowLeftIcon className="h-4 w-4" />
               </button>
@@ -264,7 +264,7 @@ export function ProductActionsMenu({
                     setOpen(false);
                     router.push("/panel");
                   }}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-[var(--background)]"
+                  className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1.5 py-1 text-left transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-xs font-semibold text-[var(--primary)]">
                     {userName.trim().charAt(0).toUpperCase()}
@@ -280,7 +280,7 @@ export function ProductActionsMenu({
                     onClick={() => logCta("logout")}
                     aria-label="Logout"
                     title="Logout"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90"
                   >
                     <LogoutIcon className="h-4 w-4" />
                   </button>
@@ -300,11 +300,10 @@ export function ProductActionsMenu({
             <button
               type="submit"
               role="menuitem"
-              onClick={() => {
-                logCta("login_google");
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-foreground transition-colors hover:bg-[var(--background)]"
+              // NB: do not setOpen(false) here — closing the menu unmounts this
+              // form before the server action dispatches, killing the sign-in.
+              onClick={() => logCta("login_google")}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-foreground transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
             >
               <GoogleIcon className="h-4 w-4" />
               Masuk dengan Google
@@ -330,11 +329,11 @@ export function ProductActionsMenu({
             role="menuitem"
             onClick={onToggleLike}
             disabled={likePending}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-[var(--background)] disabled:opacity-60"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98] disabled:opacity-60"
           >
             <HeartIcon
               filled={liked}
-              className={`h-4 w-4 shrink-0 ${liked ? "text-red-500" : "text-[var(--muted)]"}`}
+              className={`h-4 w-4 shrink-0 transition-transform duration-150 ${liked ? "scale-110 text-red-500" : "text-[var(--muted)]"}`}
             />
             {liked ? "Disukai" : "Suka"} · {new Intl.NumberFormat("id-ID").format(likeCount)}
           </button>
@@ -345,7 +344,7 @@ export function ProductActionsMenu({
               type="submit"
               role="menuitem"
               onClick={() => logCta("like")}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-[var(--background)]"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
             >
               <HeartIcon filled={false} className="h-4 w-4 shrink-0 text-[var(--muted)]" />
               Suka · {new Intl.NumberFormat("id-ID").format(likeCount)}
@@ -377,7 +376,7 @@ export function ProductActionsMenu({
                   title={`Font ${f.label}`}
                   aria-label={`Ukuran font ${f.label}`}
                   onClick={() => onFont(f.level)}
-                  className={`flex flex-1 items-center justify-center rounded-md py-1 font-semibold leading-none transition-colors ${f.cls} ${
+                  className={`flex flex-1 items-center justify-center rounded-md py-1 font-semibold leading-none transition-all duration-150 active:scale-95 ${f.cls} ${
                     active
                       ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
                       : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
@@ -528,9 +527,11 @@ function MenuButton({
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-[var(--background)]"
+      className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
     >
-      <span className="shrink-0 text-[var(--muted)]">{icon}</span>
+      <span className="shrink-0 text-[var(--muted)] transition-transform duration-150 group-hover:scale-110 group-active:scale-95">
+        {icon}
+      </span>
       {label}
     </button>
   );
