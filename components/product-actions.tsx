@@ -6,6 +6,7 @@ import { useTheme } from "@/lib/use-theme";
 import { trackCta, type TrackPage } from "@/lib/track";
 import { signInWithGoogle } from "@/lib/actions/auth";
 import { toggleLike } from "@/lib/actions/likes";
+import { readEpubFont, setEpubFont, type EpubFontLevel } from "@/lib/epub-font";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -34,6 +35,8 @@ type Props = {
   pageId?: string;
   liked?: boolean;
   likeCount?: number;
+  /** When true (EPUB preview), the menu shows an EPUB font-size control. */
+  epub?: boolean;
 };
 
 /**
@@ -55,9 +58,19 @@ export function ProductActionsMenu({
   pageId,
   liked: likedInitial = false,
   likeCount: likeCountInitial = 0,
+  epub = false,
 }: Props) {
   const router = useRouter();
   const { dark, toggle } = useTheme();
+
+  // EPUB font size — the control the reader is driven by. Lazy init from
+  // localStorage is SSR-safe (readEpubFont guards); the font rows only render
+  // once the menu is opened, so there's no hydration mismatch.
+  const [fontLevel, setFontLevel] = useState<EpubFontLevel>(readEpubFont);
+  const onFont = useCallback((level: EpubFontLevel) => {
+    setFontLevel(level);
+    setEpubFont(level);
+  }, []);
   const logCta = useCallback(
     (action: string) => {
       if (slug) trackCta(slug, page, action);
@@ -327,6 +340,37 @@ export function ProductActionsMenu({
         icon={dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
         label={dark ? "Mode terang" : "Mode gelap"}
       />
+
+      {/* EPUB font size — only for EPUB previews. */}
+      {epub && (
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+          <TextSizeIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+          <div className="flex flex-1 items-center gap-1">
+            {FONT_LEVELS.map((f) => {
+              const active = f.level === fontLevel;
+              return (
+                <button
+                  key={f.level}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  title={`Font ${f.label}`}
+                  aria-label={`Ukuran font ${f.label}`}
+                  onClick={() => onFont(f.level)}
+                  className={`flex flex-1 items-center justify-center rounded-md py-1 font-semibold leading-none transition-colors ${f.cls} ${
+                    active
+                      ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                      : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
+                  }`}
+                >
+                  A
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {!standalone && (
         <MenuButton
           onClick={addToHome}
@@ -367,9 +411,8 @@ export function ProductActionsMenu({
   const body = (
     <div ref={rootRef} className="relative">
       {variant === "floating" ? (
-        <div className="flex items-center rounded-xl border border-[var(--border)]/50 bg-[var(--card)]/50 p-1 shadow-md backdrop-blur">
-          {trigger}
-        </div>
+        // Fully transparent wrapper — just the dots icon floats over the preview.
+        <div className="flex items-center bg-transparent p-1">{trigger}</div>
       ) : (
         trigger
       )}
@@ -440,6 +483,12 @@ export function ProductActionsMenu({
 }
 
 /* -------------------------------------------------------------------------- */
+
+const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
+  { level: "small", label: "Kecil", cls: "text-[11px]" },
+  { level: "medium", label: "Sedang", cls: "text-sm" },
+  { level: "large", label: "Besar", cls: "text-lg" },
+];
 
 function MenuButton({
   onClick,
@@ -526,6 +575,14 @@ function PanelIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+    </svg>
+  );
+}
+
+function TextSizeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7V5h10v2M9 5v14m-2 0h4M15 13v-1h6v1m-3-1v7m-1 0h2" />
     </svg>
   );
 }

@@ -177,6 +177,7 @@ export default async function LandingPageView({ params }: Props) {
         pageId={page.id}
         liked={liked}
         likeCount={page.like_count ?? 0}
+        epub={embedEpub}
       />
       <PreviewBuyBar
         href={buyHref}

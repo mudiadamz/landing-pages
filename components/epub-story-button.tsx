@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { EpubReader } from "./epub-reader";
 import { useTheme } from "@/lib/use-theme";
+import { readEpubFont, setEpubFont, type EpubFontLevel } from "@/lib/epub-font";
+
+const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
+  { level: "small", label: "Kecil", cls: "text-[11px]" },
+  { level: "medium", label: "Sedang", cls: "text-sm" },
+  { level: "large", label: "Besar", cls: "text-lg" },
+];
 
 // Lets a buyer read a product's EPUB deliverable in the same reader used on the
 // product preview. Fetches a gated signed URL on demand (see /api/story-epub).
@@ -20,6 +27,11 @@ export function EpubStoryButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { dark, toggle: toggleDark } = useTheme();
+  const [fontLevel, setFontLevel] = useState<EpubFontLevel>(readEpubFont);
+  const onFont = useCallback((level: EpubFontLevel) => {
+    setFontLevel(level);
+    setEpubFont(level);
+  }, []);
 
   async function openReader() {
     setOpen(true);
@@ -61,6 +73,28 @@ export function EpubStoryButton({
           <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[var(--card)] border-b border-[var(--border)]">
             <p className="font-medium text-foreground truncate">{title}</p>
             <div className="flex shrink-0 items-center gap-1">
+              <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5">
+                {FONT_LEVELS.map((f) => {
+                  const active = f.level === fontLevel;
+                  return (
+                    <button
+                      key={f.level}
+                      type="button"
+                      aria-pressed={active}
+                      title={`Font ${f.label}`}
+                      aria-label={`Ukuran font ${f.label}`}
+                      onClick={() => onFont(f.level)}
+                      className={`flex h-6 w-6 items-center justify-center rounded-md font-semibold leading-none transition-colors ${f.cls} ${
+                        active
+                          ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                          : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
+                      }`}
+                    >
+                      A
+                    </button>
+                  );
+                })}
+              </div>
               <button
                 type="button"
                 onClick={toggleDark}
