@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { trackCta } from "@/lib/track";
 import { useChromeHidden } from "@/lib/immersive";
 
@@ -43,11 +43,6 @@ type Props = {
  */
 export function PreviewBuyBar({ href, external, calendar, label, priceText, note, autoRevealMs, slug, ctaAction }: Props) {
   const [revealed, setRevealed] = useState(false);
-  const [hidden, setHidden] = useState(false);
-  // The collapsed handle sits in the same bottom-right corner as the bar's close
-  // (X) button. Showing it the instant the bar is dismissed makes it bloom right
-  // under the finger — a mis-tap trap. Delay it until the bar has slid away.
-  const [handleReady, setHandleReady] = useState(false);
 
   useEffect(() => {
     const reveal = () => setRevealed(true);
@@ -72,40 +67,20 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
     };
   }, [autoRevealMs]);
 
-  // Dismiss (X): hide the bar now, then bring the collapsed handle in ~half a
-  // second later — after the bar's 300ms slide-out — so it doesn't bloom right
-  // under the finger that just tapped X. Restore: drop the handle immediately.
-  const handleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dismiss = () => {
-    setHidden(true);
-    if (handleTimer.current) clearTimeout(handleTimer.current);
-    handleTimer.current = setTimeout(() => setHandleReady(true), 500);
-  };
-  const restore = () => {
-    if (handleTimer.current) clearTimeout(handleTimer.current);
-    setHandleReady(false);
-    setHidden(false);
-  };
-  useEffect(() => () => {
-    if (handleTimer.current) clearTimeout(handleTimer.current);
-  }, []);
-
-  // Focus mode: fade the whole CTA away with the rest of the chrome.
+  // Focus mode handles show/hide now (scroll hides, tap shows), so there's no
+  // manual dismiss/collapse — the CTA just fades with the rest of the chrome.
   const chromeHidden = useChromeHidden();
-  const showBar = revealed && !hidden && !chromeHidden;
-  const showHandle = revealed && hidden && handleReady && !chromeHidden;
+  const showBar = revealed && !chromeHidden;
 
+  // CTA bar — fully transparent wrapper so only the card floats over the reader.
+  // NO transform/slide: a translate near the bottom edge makes iOS Safari tint
+  // its toolbar with the CTA colour, so toggle by opacity only.
   return (
-    <>
-      {/* CTA bar — fully transparent wrapper so only the card floats over the
-          reader. NO transform/slide: a translate near the bottom edge makes iOS
-          Safari tint its toolbar with the CTA colour, so we toggle by opacity
-          only (and remove it from the layer when hidden). */}
-      <div
-        className={`fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 ${
-          showBar ? "opacity-100" : "invisible opacity-0 pointer-events-none"
-        }`}
-      >
+    <div
+      className={`fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 ${
+        showBar ? "opacity-100" : "invisible opacity-0 pointer-events-none"
+      }`}
+    >
         {/* No card/background — the whole CTA is one floating button that carries
             the price + note on the left and the label on the right. */}
         <div className="pointer-events-auto relative mx-auto flex max-w-md">
@@ -134,42 +109,8 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
               {label}
             </span>
           </a>
-
-          {/* Dismiss pinned to the top-right corner, floating just above the bar
-              over the preview. Big transparent hit area sits above the CTA, not
-              on it; drop-shadow keeps the bare icon legible. */}
-          <button
-            type="button"
-            onPointerDown={buzz}
-            onClick={dismiss}
-            aria-label="Sembunyikan tombol beli"
-            title="Sembunyikan"
-            className="absolute bottom-full right-0 mb-1 flex h-10 w-10 items-center justify-center text-foreground [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.45))] touch-manipulation transition-transform duration-150 active:scale-90"
-          >
-            <CloseIcon className="h-5 w-5" />
-          </button>
         </div>
       </div>
-
-      {/* Collapsed handle — brings the CTA back after it's dismissed. Opacity
-          only (no transform) so it doesn't tint the iOS Safari toolbar either. */}
-      <div
-        className={`fixed bottom-4 right-4 z-50 transition-opacity duration-200 ${
-          showHandle ? "opacity-100" : "invisible opacity-0 pointer-events-none"
-        }`}
-      >
-        <button
-          type="button"
-          onPointerDown={buzz}
-          onClick={restore}
-          aria-label="Tampilkan tombol beli"
-          title="Tampilkan tombol beli"
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/30 touch-manipulation transition-transform hover:scale-105 active:scale-95"
-        >
-          <CartIcon className="h-5 w-5" />
-        </button>
-      </div>
-    </>
   );
 }
 
@@ -199,10 +140,3 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
-}
