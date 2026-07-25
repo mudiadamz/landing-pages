@@ -55,6 +55,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
       { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
+      { href: "/panel/tracking", label: "Tracking", icon: TargetIcon, adminOnly: true },
     ],
   },
 ];
@@ -134,6 +135,14 @@ function PulseIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h4l3 8 4-16 3 8h4" />
+    </svg>
+  );
+}
+function TargetIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12m-9 0a9 9 0 1018 0 9 9 0 10-18 0" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12m-5 0a5 5 0 1010 0 5 5 0 10-10 0M12 12m-1 0a1 1 0 102 0 1 1 0 10-2 0" />
     </svg>
   );
 }

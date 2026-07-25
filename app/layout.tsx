@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
-import { getCustomJs } from "@/lib/actions/site-settings";
+import { getCustomJs, getTracking } from "@/lib/actions/site-settings";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -14,6 +14,7 @@ import { MarketingScripts } from "@/components/marketing-scripts";
 import { TawkChat } from "@/components/tawk-chat";
 import { PwaRegister } from "@/components/pwa-register";
 import { SessionTracker } from "@/components/session-tracker";
+import { GtmScripts } from "@/components/gtm-scripts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -95,7 +96,7 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme");
   const isDark = themeCookie?.value === "dark";
-  const customJs = await getCustomJs();
+  const [customJs, tracking] = await Promise.all([getCustomJs(), getTracking()]);
 
   return (
     <html lang="id" suppressHydrationWarning className={isDark ? "dark" : undefined}>
@@ -122,6 +123,7 @@ export default async function RootLayout({
         className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <JsonLd data={organizationJsonLd} />
+        <GtmScripts gtmId={tracking.gtmId} />
         <MarketingScripts />
         <TawkChat />
         <PwaRegister />
