@@ -212,7 +212,7 @@ export default function EpubInlineViewer({
         ref={contentRef}
         className="epub-inline mx-auto max-w-3xl"
         style={{
-          fontSize: `${(16 * fontPct) / 100}px`,
+          fontSize: `${(19 * fontPct) / 100}px`,
           paddingLeft: `${pad}px`,
           paddingRight: `${pad}px`,
           marginLeft: neg ? `${neg}px` : undefined,

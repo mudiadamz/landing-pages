@@ -6,7 +6,9 @@
 // Font size as a percent (applied via rendition.themes.fontSize).
 export const EPUB_FONT_KEY = "lp-epub-font";
 export const EPUB_FONT_EVENT = "lp-epub-font";
-export const EPUB_FONT_DEFAULT = 112;
+// 100% is the comfortable baseline (the reader applies it to an ~19px base, so
+// "100%" reads like the old ~118%).
+export const EPUB_FONT_DEFAULT = 100;
 export const EPUB_FONT_MIN = 70;
 export const EPUB_FONT_MAX = 240;
 export const EPUB_FONT_STEP = 6;
@@ -50,7 +52,7 @@ export function setEpubFont(pct: number): void {
 // column edges so it hugs (or bleeds past) the window; positive insets it.
 export const EPUB_MARGIN_KEY = "lp-epub-margin";
 export const EPUB_MARGIN_EVENT = "lp-epub-margin";
-export const EPUB_MARGIN_DEFAULT = 4;
+export const EPUB_MARGIN_DEFAULT = 14;
 export const EPUB_MARGIN_MIN = -48;
 export const EPUB_MARGIN_MAX = 200;
 export const EPUB_MARGIN_STEP = 4;

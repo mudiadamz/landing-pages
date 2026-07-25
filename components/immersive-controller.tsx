@@ -51,7 +51,7 @@ export function ImmersiveController() {
       hideTimer = setTimeout(() => {
         hideTimer = undefined;
         hideChrome();
-      }, 750);
+      }, 850);
     };
     const show = () => {
       if (hideTimer) {
