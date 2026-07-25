@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { hideChrome, showChrome, resetImmersive } from "@/lib/immersive";
+import { hideChrome, showChrome, resetImmersive, useChromeHidden } from "@/lib/immersive";
+
+type TawkApi = { hideWidget?: () => void; showWidget?: () => void };
+const getTawk = () => (window as Window & { Tawk_API?: TawkApi }).Tawk_API;
 
 /**
  * Focus mode on the preview: visible on load, a scroll/read gesture hides the
@@ -10,6 +13,30 @@ import { hideChrome, showChrome, resetImmersive } from "@/lib/immersive";
  * directly. Renders nothing.
  */
 export function ImmersiveController() {
+  const hidden = useChromeHidden();
+
+  // Third-party chat widgets (e.g. Tawk) live at the document root, outside
+  // React, so they don't fade with the rest of the chrome — drive them via
+  // their API so they respect focus mode. Retries while the widget loads.
+  useEffect(() => {
+    const apply = () => {
+      const api = getTawk();
+      if (!api || typeof api.hideWidget !== "function") return false;
+      if (hidden) api.hideWidget();
+      else api.showWidget?.();
+      return true;
+    };
+    if (apply()) return;
+    let tries = 0;
+    const id = window.setInterval(() => {
+      if (apply() || ++tries > 20) window.clearInterval(id);
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [hidden]);
+
+  // Restore the widget when leaving the reader.
+  useEffect(() => () => getTawk()?.showWidget?.(), []);
+
   useEffect(() => {
     resetImmersive();
 
