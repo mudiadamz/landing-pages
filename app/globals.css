@@ -49,6 +49,18 @@ body {
   font-family: var(--font-sans), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
 }
 
+/* Preview reader (/lp): the page is a touch taller than the visual viewport so
+   iOS Safari has room to shrink its address bar on scroll, while the reader
+   stays pinned and fills the dynamic viewport. lvh/dvh with a vh fallback. */
+.lp-page {
+  min-height: 100vh;
+  min-height: 100lvh;
+}
+.lp-reader {
+  height: 100vh;
+  height: 100dvh;
+}
+
 /* Mobile microinteractions: tap feedback, remove default highlight */
 a, button {
   -webkit-tap-highlight-color: transparent;
