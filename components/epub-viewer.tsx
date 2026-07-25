@@ -6,8 +6,12 @@ import { useTheme } from "@/lib/use-theme";
 import {
   EPUB_FONT_EVENT,
   EPUB_FONT_SIZES,
+  EPUB_MARGIN_EVENT,
+  EPUB_MARGIN_SIZES,
   readEpubFont,
+  readEpubMargin,
   type EpubFontLevel,
+  type EpubMarginLevel,
 } from "@/lib/epub-font";
 
 // Zero gutter — the text column runs edge to edge (no padding/margin between the
@@ -47,6 +51,7 @@ export default function EpubViewer({
   // safe — this component only ever renders on the client. The font-size UI
   // lives in the actions menu; it broadcasts changes via EPUB_FONT_EVENT.
   const [fontLevel, setFontLevel] = useState<EpubFontLevel>(readEpubFont);
+  const [marginLevel, setMarginLevel] = useState<EpubMarginLevel>(readEpubMargin);
 
   // Build the book + rendition once per source. Theme + font are applied by the
   // separate effects below (so changing them doesn't reload the book).
@@ -175,14 +180,31 @@ export default function EpubViewer({
     renditionRef.current?.themes.fontSize(EPUB_FONT_SIZES[fontLevel]);
   }, [fontLevel]);
 
-  // Follow font-size changes broadcast from the actions menu.
+  // Apply the horizontal display margin (padding on the content body, live).
+  useEffect(() => {
+    const r = renditionRef.current;
+    if (!r) return;
+    const val = EPUB_MARGIN_SIZES[marginLevel];
+    r.themes.override("padding-left", val, true);
+    r.themes.override("padding-right", val, true);
+  }, [marginLevel]);
+
+  // Follow font-size / margin changes broadcast from the actions menu.
   useEffect(() => {
     const onFont = (e: Event) => {
       const level = (e as CustomEvent).detail as EpubFontLevel;
       if (level === "small" || level === "medium" || level === "large") setFontLevel(level);
     };
+    const onMargin = (e: Event) => {
+      const level = (e as CustomEvent).detail as EpubMarginLevel;
+      if (level === "narrow" || level === "medium" || level === "wide") setMarginLevel(level);
+    };
     window.addEventListener(EPUB_FONT_EVENT, onFont);
-    return () => window.removeEventListener(EPUB_FONT_EVENT, onFont);
+    window.addEventListener(EPUB_MARGIN_EVENT, onMargin);
+    return () => {
+      window.removeEventListener(EPUB_FONT_EVENT, onFont);
+      window.removeEventListener(EPUB_MARGIN_EVENT, onMargin);
+    };
   }, []);
 
   return (

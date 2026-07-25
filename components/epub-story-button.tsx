@@ -3,12 +3,25 @@
 import { useCallback, useState } from "react";
 import { EpubReader } from "./epub-reader";
 import { useTheme } from "@/lib/use-theme";
-import { readEpubFont, setEpubFont, type EpubFontLevel } from "@/lib/epub-font";
+import {
+  readEpubFont,
+  setEpubFont,
+  readEpubMargin,
+  setEpubMargin,
+  type EpubFontLevel,
+  type EpubMarginLevel,
+} from "@/lib/epub-font";
 
 const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
   { level: "small", label: "Kecil", cls: "text-[11px]" },
   { level: "medium", label: "Sedang", cls: "text-sm" },
   { level: "large", label: "Besar", cls: "text-lg" },
+];
+
+const MARGIN_LEVELS: { level: EpubMarginLevel; label: string }[] = [
+  { level: "narrow", label: "S" },
+  { level: "medium", label: "M" },
+  { level: "wide", label: "L" },
 ];
 
 // Lets a buyer read a product's EPUB deliverable in the same reader used on the
@@ -31,6 +44,11 @@ export function EpubStoryButton({
   const onFont = useCallback((level: EpubFontLevel) => {
     setFontLevel(level);
     setEpubFont(level);
+  }, []);
+  const [marginLevel, setMarginLevel] = useState<EpubMarginLevel>(readEpubMargin);
+  const onMargin = useCallback((level: EpubMarginLevel) => {
+    setMarginLevel(level);
+    setEpubMargin(level);
   }, []);
 
   async function openReader() {
@@ -91,6 +109,28 @@ export function EpubStoryButton({
                       }`}
                     >
                       A
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5">
+                {MARGIN_LEVELS.map((m) => {
+                  const active = m.level === marginLevel;
+                  return (
+                    <button
+                      key={m.level}
+                      type="button"
+                      aria-pressed={active}
+                      title={`Margin ${m.label}`}
+                      aria-label={`Margin ${m.label}`}
+                      onClick={() => onMargin(m.level)}
+                      className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-semibold leading-none transition-colors ${
+                        active
+                          ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                          : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
+                      }`}
+                    >
+                      {m.label}
                     </button>
                   );
                 })}

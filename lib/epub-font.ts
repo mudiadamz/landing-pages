@@ -38,3 +38,39 @@ export function setEpubFont(level: EpubFontLevel): void {
     /* best-effort */
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Display margin (horizontal padding of the text column)                    */
+/* -------------------------------------------------------------------------- */
+
+export type EpubMarginLevel = "narrow" | "medium" | "wide";
+export const EPUB_MARGIN_SIZES: Record<EpubMarginLevel, string> = {
+  narrow: "0.5rem",
+  medium: "1.75rem",
+  wide: "3.5rem",
+};
+export const EPUB_MARGIN_KEY = "lp-epub-margin";
+export const EPUB_MARGIN_EVENT = "lp-epub-margin";
+
+export function readEpubMargin(): EpubMarginLevel {
+  try {
+    const v = localStorage.getItem(EPUB_MARGIN_KEY);
+    if (v === "narrow" || v === "medium" || v === "wide") return v;
+  } catch {
+    /* storage unavailable / SSR */
+  }
+  return "narrow";
+}
+
+export function setEpubMargin(level: EpubMarginLevel): void {
+  try {
+    localStorage.setItem(EPUB_MARGIN_KEY, level);
+  } catch {
+    /* best-effort */
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(EPUB_MARGIN_EVENT, { detail: level }));
+  } catch {
+    /* best-effort */
+  }
+}

@@ -6,7 +6,14 @@ import { useTheme } from "@/lib/use-theme";
 import { trackCta, type TrackPage } from "@/lib/track";
 import { signInWithGoogle, signOut } from "@/lib/actions/auth";
 import { toggleLike } from "@/lib/actions/likes";
-import { readEpubFont, setEpubFont, type EpubFontLevel } from "@/lib/epub-font";
+import {
+  readEpubFont,
+  setEpubFont,
+  readEpubMargin,
+  setEpubMargin,
+  type EpubFontLevel,
+  type EpubMarginLevel,
+} from "@/lib/epub-font";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -75,6 +82,11 @@ export function ProductActionsMenu({
   const onFont = useCallback((level: EpubFontLevel) => {
     setFontLevel(level);
     setEpubFont(level);
+  }, []);
+  const [marginLevel, setMarginLevel] = useState<EpubMarginLevel>(readEpubMargin);
+  const onMargin = useCallback((level: EpubMarginLevel) => {
+    setMarginLevel(level);
+    setEpubMargin(level);
   }, []);
   const logCta = useCallback(
     (action: string) => {
@@ -399,6 +411,36 @@ export function ProductActionsMenu({
         </div>
       )}
 
+      {/* EPUB display margin — only for EPUB previews. */}
+      {epub && (
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+          <MarginIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+          <div className="flex flex-1 items-center gap-1">
+            {MARGIN_LEVELS.map((m) => {
+              const active = m.level === marginLevel;
+              return (
+                <button
+                  key={m.level}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  title={`Margin ${m.label}`}
+                  aria-label={`Margin ${m.label}`}
+                  onClick={() => onMargin(m.level)}
+                  className={`flex flex-1 items-center justify-center rounded-md py-1 text-[11px] font-medium leading-none transition-all duration-150 active:scale-95 ${
+                    active
+                      ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                      : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="my-1 h-px bg-[var(--border)]" />
 
       <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
@@ -530,6 +572,12 @@ const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
   { level: "large", label: "Besar", cls: "text-lg" },
 ];
 
+const MARGIN_LEVELS: { level: EpubMarginLevel; label: string }[] = [
+  { level: "narrow", label: "Sempit" },
+  { level: "medium", label: "Sedang" },
+  { level: "wide", label: "Lebar" },
+];
+
 const SHARE_TARGETS: {
   key: ShareTarget;
   label: string;
@@ -643,6 +691,15 @@ function TextSizeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 7V5h10v2M9 5v14m-2 0h4M15 13v-1h6v1m-3-1v7m-1 0h2" />
+    </svg>
+  );
+}
+
+function MarginIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path strokeLinecap="round" strokeDasharray="0.1 3.2" d="M8 8v8M16 8v8" />
     </svg>
   );
 }
