@@ -99,6 +99,44 @@ export function ProductActionsMenu({
     setMarginPx(v);
     setEpubMargin(v);
   }, []);
+
+  // Fullscreen (hides the mobile address bar + status bar). Supported on Android
+  // Chrome / desktop; iOS Safari can't fullscreen a page (use Add to Home Screen).
+  const [fsSupported] = useState(() => {
+    if (typeof document === "undefined") return false;
+    const d = document as Document & { webkitFullscreenEnabled?: boolean };
+    return !!(d.fullscreenEnabled || d.webkitFullscreenEnabled);
+  });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const d = document as Document & { webkitFullscreenElement?: Element };
+    const onChange = () => setIsFullscreen(!!(d.fullscreenElement || d.webkitFullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange);
+    };
+  }, []);
+  const toggleFullscreen = useCallback(() => {
+    setOpen(false);
+    const el = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+    };
+    const d = document as Document & {
+      webkitFullscreenElement?: Element;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (d.fullscreenElement || d.webkitFullscreenElement) {
+        (d.exitFullscreen || d.webkitExitFullscreen)?.call(d);
+      } else {
+        (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+      }
+    } catch {
+      /* fullscreen may be blocked — no-op */
+    }
+  }, []);
   const logCta = useCallback(
     (action: string) => {
       if (slug) trackCta(slug, page, action);
@@ -391,6 +429,17 @@ export function ProductActionsMenu({
         icon={dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
         label={dark ? "Mode terang" : "Mode gelap"}
       />
+
+      {/* Fullscreen — hides the mobile address/status bar for a focused read. */}
+      {variant === "floating" && fsSupported && (
+        <MenuButton
+          onClick={toggleFullscreen}
+          icon={
+            isFullscreen ? <FullscreenExitIcon className="h-4 w-4" /> : <FullscreenIcon className="h-4 w-4" />
+          }
+          label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+        />
+      )}
 
       {/* EPUB font size (percent) — only for EPUB previews. */}
       {epub && (
@@ -685,6 +734,20 @@ function HomePlusIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3m6 0h3a1 1 0 001-1V10" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-6m-3 3h6" />
+    </svg>
+  );
+}
+function FullscreenIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+    </svg>
+  );
+}
+function FullscreenExitIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 4v4H4M16 4v4h4M8 20v-4H4M16 20v-4h4" />
     </svg>
   );
 }
