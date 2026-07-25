@@ -50,10 +50,10 @@ export function setEpubFont(pct: number): void {
 // column edges so it hugs (or bleeds past) the window; positive insets it.
 export const EPUB_MARGIN_KEY = "lp-epub-margin";
 export const EPUB_MARGIN_EVENT = "lp-epub-margin";
-export const EPUB_MARGIN_DEFAULT = 16;
+export const EPUB_MARGIN_DEFAULT = 4;
 export const EPUB_MARGIN_MIN = -48;
 export const EPUB_MARGIN_MAX = 200;
-export const EPUB_MARGIN_STEP = 2;
+export const EPUB_MARGIN_STEP = 4;
 
 export function clampEpubMargin(n: number): number {
   if (!Number.isFinite(n)) return EPUB_MARGIN_DEFAULT;
