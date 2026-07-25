@@ -40,21 +40,23 @@ export function ImmersiveController() {
   useEffect(() => {
     resetImmersive();
 
-    const onScroll = () => hideChrome();
+    // Scroll hides the chrome after a short delay (so a quick scroll doesn't
+    // snatch the tools away instantly); a single tap shows them again.
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleHide = () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(hideChrome, 1000);
+    };
+    const show = () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      showChrome();
+    };
+
+    const onScroll = () => scheduleHide();
+    const onTap = () => show();
     const onMessage = (e: MessageEvent) => {
       const d = e.data as { __lpPreview?: unknown; scrolled?: unknown } | null;
-      if (d && typeof d === "object" && d.__lpPreview && d.scrolled) hideChrome();
-    };
-    // Manual double-tap (touch-friendly) — two taps within 350ms show the chrome.
-    let lastTapAt = 0;
-    const onTap = () => {
-      const t = Date.now();
-      if (t - lastTapAt < 350) {
-        lastTapAt = 0;
-        showChrome();
-      } else {
-        lastTapAt = t;
-      }
+      if (d && typeof d === "object" && d.__lpPreview && d.scrolled) scheduleHide();
     };
 
     document.addEventListener("wheel", onScroll, { passive: true });
@@ -66,6 +68,7 @@ export function ImmersiveController() {
     document.addEventListener("click", onTap);
 
     return () => {
+      if (hideTimer) clearTimeout(hideTimer);
       document.removeEventListener("wheel", onScroll);
       document.removeEventListener("touchmove", onScroll);
       document.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);

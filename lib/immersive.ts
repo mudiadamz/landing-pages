@@ -8,10 +8,8 @@
 import { useSyncExternalStore } from "react";
 
 let hidden = false;
-let suppressUntil = 0;
 const listeners = new Set<() => void>();
 
-const now = () => (typeof performance !== "undefined" ? performance.now() : 0);
 const emit = () => listeners.forEach((l) => l());
 
 function subscribe(l: () => void): () => void {
@@ -21,31 +19,25 @@ function subscribe(l: () => void): () => void {
   };
 }
 
-/** Hide the floating chrome (called on a scroll/read gesture). */
+/** Hide the floating chrome. */
 export function hideChrome(): void {
-  if (now() < suppressUntil) return; // grace window (load / just-shown)
   if (!hidden) {
     hidden = true;
     emit();
   }
 }
 
-/** Show the floating chrome (called on a double-tap). */
+/** Show the floating chrome. */
 export function showChrome(): void {
-  suppressUntil = now() + 500; // don't let momentum scroll immediately re-hide
   if (hidden) {
     hidden = false;
     emit();
   }
 }
 
-/** Reset to visible with a load grace window (call when the preview mounts). */
+/** Reset to visible (call when the preview mounts). */
 export function resetImmersive(): void {
-  suppressUntil = now() + 800;
-  if (hidden) {
-    hidden = false;
-    emit();
-  }
+  showChrome();
 }
 
 /** Whether the floating chrome is currently hidden. */
