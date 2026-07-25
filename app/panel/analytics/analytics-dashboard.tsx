@@ -17,10 +17,10 @@ const TABS: { key: Tab; label: string }[] = [
 
 function fmtDuration(ms: number): string {
   const s = Math.round(ms / 1000);
-  if (s < 60) return `${s}d`;
+  if (s < 60) return `${s}sec`;
   const m = Math.floor(s / 60);
   const rem = s % 60;
-  return `${m}m ${rem}d`;
+  return rem ? `${m}min ${rem}sec` : `${m}min`;
 }
 
 function Card({ label, value, sub }: { label: string; value: string; sub?: string }) {
