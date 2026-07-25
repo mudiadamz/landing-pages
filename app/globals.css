@@ -61,6 +61,40 @@ body {
   height: 100dvh;
 }
 
+/* Inline EPUB reader — content rendered directly in the DOM (no iframe), so
+   styles are scoped here to avoid leaking into the app. */
+.epub-inline {
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.75;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.epub-inline img,
+.epub-inline svg,
+.epub-inline image {
+  max-width: 100%;
+  height: auto;
+}
+.epub-inline p {
+  margin: 0 0 1em;
+}
+.epub-inline h1,
+.epub-inline h2,
+.epub-inline h3,
+.epub-inline h4 {
+  line-height: 1.3;
+}
+.epub-inline a {
+  color: inherit;
+}
+.epub-chapter {
+  padding: 0.5rem 0 1.5rem;
+}
+.epub-chapter + .epub-chapter {
+  border-top: 1px solid rgba(128, 128, 128, 0.15);
+  padding-top: 1.5rem;
+}
+
 /* Mobile microinteractions: tap feedback, remove default highlight */
 a, button {
   -webkit-tap-highlight-color: transparent;

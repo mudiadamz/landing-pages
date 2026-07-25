@@ -170,7 +170,7 @@ export function EpubStoryButton({
               </button>
             </div>
           </div>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto bg-[#fdfcfb] dark:bg-[#141414]">
             {loading && (
               <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">
                 Memuat EPUB…

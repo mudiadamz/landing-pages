@@ -40,16 +40,6 @@ export function ImmersiveController() {
   useEffect(() => {
     resetImmersive();
 
-    // Nudge the window so iOS Safari shrinks its address bar (the .lp-page is a
-    // touch taller than the visual viewport). Best-effort — no-op elsewhere.
-    requestAnimationFrame(() => {
-      try {
-        window.scrollTo(0, document.documentElement.scrollHeight);
-      } catch {
-        /* ignore */
-      }
-    });
-
     const onScroll = () => hideChrome();
     const onMessage = (e: MessageEvent) => {
       const d = e.data as { __lpPreview?: unknown; scrolled?: unknown } | null;

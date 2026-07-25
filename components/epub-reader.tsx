@@ -2,12 +2,12 @@
 
 import dynamic from "next/dynamic";
 
-// epub.js touches browser-only APIs (iframes, workers, XHR), so load the viewer
-// client-side only — mirrors how the PDF viewer is wired.
-const EpubViewer = dynamic(() => import("./epub-viewer"), {
+// Inline EPUB renderer (no iframe): unzips + injects the book into the page DOM
+// so scroll, taps and styling are all native. Client-only (fflate + DOMParser).
+const EpubViewer = dynamic(() => import("./epub-inline-viewer"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center text-sm text-[var(--muted)]">
+    <div className="flex h-40 w-full items-center justify-center text-sm text-[var(--muted)]">
       Memuat EPUB…
     </div>
   ),

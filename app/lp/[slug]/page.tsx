@@ -145,7 +145,7 @@ export default async function LandingPageView({ params }: Props) {
   const isOwner = !!user && page.user_id === user.id;
   if (isUpcoming(page.available_at, isOwner)) {
     return (
-      <div className="flex h-full w-full items-center justify-center overflow-y-auto p-4">
+      <div className="lp-reader flex w-full items-center justify-center overflow-y-auto p-4">
         <ComingSoon title={page.title} thumbnailUrl={page.thumbnail_url} target={page.available_at!} />
       </div>
     );
@@ -157,36 +157,44 @@ export default async function LandingPageView({ params }: Props) {
       <ImmersiveController />
       <ViewTracker slug={slug} />
       <ProductTracker slug={slug} page="preview" />
-      <PreviewSurface mode={embedPdf ? "pdf" : embedEpub ? "epub" : embedLink ? "link" : "html"}>
-        {embedEpub ? (
+      {embedEpub ? (
+        // Inline EPUB — rendered directly in the DOM and flows in the window, so
+        // scroll, taps, focus mode and the iOS address bar are all native.
+        <div className="w-full">
           <EpubReader url={epubUrl as string} title={page.title} storageKey={`lp-epub:${slug}`} />
-        ) : embedPdf ? (
-          // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
-          // streams in as the user scrolls instead of loading all at once.
-          <PdfPreview
-            url={pdfLight as string}
-            urlDark={pdfDark}
-            title={page.title}
-            storageKey={`lp-pdf:${slug}`}
-            revealAt={revealAt}
-            related={related}
-          />
-        ) : embedLink ? (
-          <iframe
-            src={previewUrl ?? undefined}
-            title={page.title}
-            className="w-full h-full min-h-full border-0 block"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
-          />
-        ) : (
-          <iframe
-            srcDoc={guardPreviewHtml(page.html_content, revealAt)}
-            title={page.title}
-            className="w-full h-full min-h-full border-0 block"
-            sandbox="allow-scripts allow-same-origin allow-modals"
-          />
-        )}
-      </PreviewSurface>
+        </div>
+      ) : (
+        <div className="lp-reader sticky top-0 w-full overflow-hidden">
+          <PreviewSurface mode={embedPdf ? "pdf" : embedLink ? "link" : "html"}>
+            {embedPdf ? (
+              // Render with pdf.js (react-pdf), lazily page-by-page, so a heavy PDF
+              // streams in as the user scrolls instead of loading all at once.
+              <PdfPreview
+                url={pdfLight as string}
+                urlDark={pdfDark}
+                title={page.title}
+                storageKey={`lp-pdf:${slug}`}
+                revealAt={revealAt}
+                related={related}
+              />
+            ) : embedLink ? (
+              <iframe
+                src={previewUrl ?? undefined}
+                title={page.title}
+                className="w-full h-full min-h-full border-0 block"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
+              />
+            ) : (
+              <iframe
+                srcDoc={guardPreviewHtml(page.html_content, revealAt)}
+                title={page.title}
+                className="w-full h-full min-h-full border-0 block"
+                sandbox="allow-scripts allow-same-origin allow-modals"
+              />
+            )}
+          </PreviewSurface>
+        </div>
+      )}
       <ProductActionsMenu
         variant="floating"
         title={page.title}
