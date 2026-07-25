@@ -555,24 +555,31 @@ export function ProductActionsMenu({
 
   return (
     <>
-      {variant === "floating" ? (
+      {/* Back — its own glassy floating button at the very top-left. */}
+      {variant === "floating" && backHref && (
         <div
-          className={`fixed right-4 top-4 z-50 flex items-center gap-2 transition-opacity duration-300 ${
+          className={`fixed left-4 top-4 z-50 transition-opacity duration-300 ${
             chromeHidden && !open ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          {/* Back — its own glassy floating button next to the dots. */}
-          {backHref && (
-            <button
-              type="button"
-              onClick={() => router.push(backHref)}
-              aria-label={backLabel}
-              title={backLabel}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[var(--card)]/40 text-foreground shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all hover:bg-white/10 active:scale-95"
-            >
-              <ArrowLeftIcon className="h-4 w-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => router.push(backHref)}
+            aria-label={backLabel}
+            title={backLabel}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-[var(--card)]/40 text-foreground shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all hover:bg-white/10 active:scale-95"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {variant === "floating" ? (
+        <div
+          className={`fixed right-4 top-4 z-50 transition-opacity duration-300 ${
+            chromeHidden && !open ? "pointer-events-none opacity-0" : "opacity-100"
+          }`}
+        >
           {body}
         </div>
       ) : (

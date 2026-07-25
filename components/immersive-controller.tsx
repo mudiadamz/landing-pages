@@ -43,12 +43,21 @@ export function ImmersiveController() {
     // Scroll hides the chrome after a short delay (so a quick scroll doesn't
     // snatch the tools away instantly); a single tap shows them again.
     let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    // Schedule the hide ONCE per scroll burst (don't reset on every event), so
+    // it fires ~750ms after scrolling STARTS — even if the user keeps scrolling
+    // and never pauses.
     const scheduleHide = () => {
-      if (hideTimer) clearTimeout(hideTimer);
-      hideTimer = setTimeout(hideChrome, 1000);
+      if (hideTimer) return;
+      hideTimer = setTimeout(() => {
+        hideTimer = undefined;
+        hideChrome();
+      }, 750);
     };
     const show = () => {
-      if (hideTimer) clearTimeout(hideTimer);
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = undefined;
+      }
       showChrome();
     };
 
