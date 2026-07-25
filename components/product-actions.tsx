@@ -20,7 +20,7 @@ import {
   EPUB_MARGIN_MIN,
   EPUB_MARGIN_MAX,
 } from "@/lib/epub-font";
-import { useChromeHidden, showChrome } from "@/lib/immersive";
+import { useChromeHidden } from "@/lib/immersive";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -533,12 +533,7 @@ export function ProductActionsMenu({
   const trigger = (
     <button
       type="button"
-      onClick={() => {
-        // A single tap reveals the chrome (if faint) AND toggles the menu, so
-        // the dropdown opens in one tap even from focus mode.
-        if (chromeHidden) showChrome();
-        setOpen((v) => !v);
-      }}
+      onClick={() => setOpen((v) => !v)}
       aria-haspopup="menu"
       aria-expanded={open}
       aria-label="Menu tindakan"
@@ -581,7 +576,7 @@ export function ProductActionsMenu({
       {variant === "floating" ? (
         <div
           className={`fixed right-4 top-4 z-50 transition-opacity duration-300 ${
-            chromeHidden && !open ? "opacity-20 hover:opacity-100" : "opacity-100"
+            chromeHidden && !open ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
           {body}

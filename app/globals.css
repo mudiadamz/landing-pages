@@ -55,6 +55,9 @@ body {
 .lp-page {
   min-height: 100vh;
   min-height: 100lvh;
+  /* Disable double-tap-to-zoom so the double-tap toggles the reader chrome
+     (still allows scroll + pinch-zoom). */
+  touch-action: manipulation;
 }
 .lp-reader {
   height: 100vh;
