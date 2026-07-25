@@ -41,6 +41,40 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
   );
 }
 
+type SortKey = "duration" | "pageviews" | "time";
+
+function SortTh({
+  label,
+  col,
+  sort,
+  onSort,
+  right,
+}: {
+  label: string;
+  col: SortKey;
+  sort: { key: SortKey; dir: "asc" | "desc" };
+  onSort: (k: SortKey) => void;
+  right?: boolean;
+}) {
+  const active = sort.key === col;
+  return (
+    <th className={`px-3 py-2 text-xs font-medium ${right ? "text-right" : "text-left"}`}>
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        className={`inline-flex items-center gap-1 transition-colors hover:text-foreground ${
+          active ? "text-foreground" : "text-[var(--muted)]"
+        }`}
+      >
+        {label}
+        <span aria-hidden className={active ? "" : "opacity-30"}>
+          {active ? (sort.dir === "desc" ? "↓" : "↑") : "↕"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 function Td({ children, right, mono }: { children: React.ReactNode; right?: boolean; mono?: boolean }) {
   return (
     <td className={`px-3 py-2 ${right ? "text-right tabular-nums" : ""} ${mono ? "font-mono text-xs" : ""}`}>
@@ -75,14 +109,24 @@ function EngagementBar({ read, curious, left }: { read: number; curious: number;
 export function AnalyticsDashboard({ data }: { data: Analytics }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "time", dir: "desc" });
+
+  const sortBy = (key: SortKey) =>
+    setSort((prev) => (prev.key === key ? { key, dir: prev.dir === "desc" ? "asc" : "desc" } : { key, dir: "desc" }));
 
   if (!data.ok) return <Empty>Tidak ada akses atau data gagal dimuat.</Empty>;
 
   const { overview, campaigns, referrers, geography, entryPoints, engagement, sessions } = data;
 
-  const filteredSessions = q.trim()
+  const filtered = q.trim()
     ? sessions.filter((s) => matchSession(s, q.trim().toLowerCase()))
     : sessions;
+  const filteredSessions = [...filtered].sort((a, b) => {
+    const d = sort.dir === "asc" ? 1 : -1;
+    if (sort.key === "duration") return (a.durationMs - b.durationMs) * d;
+    if (sort.key === "pageviews") return (a.pageviews - b.pageviews) * d;
+    return (new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()) * d;
+  });
 
   return (
     <div className="space-y-5">
@@ -301,9 +345,9 @@ export function AnalyticsDashboard({ data }: { data: Analytics }) {
                     <Th>Sumber</Th>
                     <Th>Masuk via</Th>
                     <Th>Perangkat</Th>
-                    <Th right>Durasi</Th>
-                    <Th right>Hal.</Th>
-                    <Th>Waktu</Th>
+                    <SortTh right label="Durasi" col="duration" sort={sort} onSort={sortBy} />
+                    <SortTh right label="Hal." col="pageviews" sort={sort} onSort={sortBy} />
+                    <SortTh label="Waktu" col="time" sort={sort} onSort={sortBy} />
                   </tr>
                 </thead>
                 <tbody>
