@@ -207,7 +207,7 @@ export default function EpubInlineViewer({
   const neg = Math.min(0, marginPx);
 
   return (
-    <div className="min-h-full w-full bg-[#fdfcfb] text-[#1a1a1a] dark:bg-[#141414] dark:text-[#d4d4d4]">
+    <div className="epub-surface min-h-full w-full">
       <div
         ref={contentRef}
         className="epub-inline mx-auto max-w-3xl"

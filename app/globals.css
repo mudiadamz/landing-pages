@@ -64,6 +64,19 @@ body {
   height: 100dvh;
 }
 
+/* Inline EPUB reader surface — comfortable long-read colours that follow the
+   app's html.dark toggle (Tailwind's dark: variant here is OS-based, so we can't
+   use it). Warm paper in light; a soft (not pure-black) bg + muted (not pure-
+   white) text in dark to avoid glare/halation. */
+.epub-surface {
+  background: #faf7f1;
+  color: #35322c;
+}
+html.dark .epub-surface {
+  background: #17181a;
+  color: #c3beb4;
+}
+
 /* Inline EPUB reader — content rendered directly in the DOM (no iframe), so
    styles are scoped here to avoid leaking into the app. */
 .epub-inline {
