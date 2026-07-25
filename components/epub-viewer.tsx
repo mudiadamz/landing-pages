@@ -154,14 +154,27 @@ export default function EpubViewer({
       }
     };
 
+    // Manual double-tap detector: two taps within 350ms show the chrome.
+    // `dblclick` is unreliable on touch devices, so we track taps ourselves.
+    let lastTapAt = 0;
+    const onTap = () => {
+      const t = Date.now();
+      if (t - lastTapAt < 350) {
+        lastTapAt = 0;
+        showChrome();
+      } else {
+        lastTapAt = t;
+      }
+    };
+
     // Inside each section's iframe (the text column): forward wheel for scroll,
-    // and double-tap to toggle the reader chrome (focus mode).
+    // touchmove to hide, and a double-tap (click x2) to show the chrome.
     rendition.hooks.content.register((contents: { document?: Document }) => {
       const d = contents?.document;
       if (!d) return;
       d.addEventListener("wheel", handleWheel, { passive: true });
       d.addEventListener("touchmove", hideChrome, { passive: true });
-      d.addEventListener("dblclick", showChrome);
+      d.addEventListener("click", onTap);
     });
     // …and over the surrounding letterbox margins (host's parent), so scrolling
     // works anywhere in the reader, not just on the narrowed column.
