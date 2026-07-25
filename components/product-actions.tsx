@@ -304,56 +304,38 @@ export function ProductActionsMenu({
       role="menu"
       className="absolute right-0 mt-2 w-60 origin-top-right overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 shadow-xl"
     >
-      {/* Top row: back (icon only, far left) + signed-in profile (inline, opens
-          the panel) + logout on the right. */}
-      {(backHref || (isLoggedIn && userName)) && (
+      {/* Signed-in profile (opens the panel) + logout. Back has its own floating
+          button (see below), so it's no longer in this menu. */}
+      {isLoggedIn && userName && (
         <>
           <div className="flex items-center gap-1 px-1.5 py-1.5">
-            {backHref && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push("/panel");
+              }}
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1.5 py-1 text-left transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-xs font-semibold text-[var(--primary)]">
+                {userName.trim().charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
+                <span className="block text-[11px] text-[var(--muted)]">Profile</span>
+              </span>
+            </button>
+            <form action={signOut} className="shrink-0">
               <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  router.push(backHref);
-                }}
-                aria-label={backLabel}
-                title={backLabel}
-                className="-ml-0.5 flex h-7 w-6 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] transition-all duration-150 hover:-translate-x-0.5 hover:bg-[var(--background)] hover:text-foreground active:scale-90"
+                type="submit"
+                onClick={() => logCta("logout")}
+                aria-label="Logout"
+                title="Logout"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90"
               >
-                <ArrowLeftIcon className="h-4 w-4" />
+                <LogoutIcon className="h-4 w-4" />
               </button>
-            )}
-            {isLoggedIn && userName && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    router.push("/panel");
-                  }}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1.5 py-1 text-left transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/15 text-xs font-semibold text-[var(--primary)]">
-                    {userName.trim().charAt(0).toUpperCase()}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
-                    <span className="block text-[11px] text-[var(--muted)]">Profile</span>
-                  </span>
-                </button>
-                <form action={signOut} className="shrink-0">
-                  <button
-                    type="submit"
-                    onClick={() => logCta("logout")}
-                    aria-label="Logout"
-                    title="Logout"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90"
-                  >
-                    <LogoutIcon className="h-4 w-4" />
-                  </button>
-                </form>
-              </>
-            )}
+            </form>
           </div>
           <div className="my-1 h-px bg-[var(--border)]" />
         </>
@@ -575,10 +557,22 @@ export function ProductActionsMenu({
     <>
       {variant === "floating" ? (
         <div
-          className={`fixed right-4 top-4 z-50 transition-opacity duration-300 ${
+          className={`fixed right-4 top-4 z-50 flex items-center gap-2 transition-opacity duration-300 ${
             chromeHidden && !open ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
+          {/* Back — its own glassy floating button next to the dots. */}
+          {backHref && (
+            <button
+              type="button"
+              onClick={() => router.push(backHref)}
+              aria-label={backLabel}
+              title={backLabel}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[var(--card)]/40 text-foreground shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all hover:bg-white/10 active:scale-95"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+            </button>
+          )}
           {body}
         </div>
       ) : (
