@@ -485,12 +485,9 @@ export function ProductActionsMenu({
     <button
       type="button"
       onClick={() => {
-        // When faint (focus mode), the first tap just reveals the chrome;
-        // otherwise it toggles the menu as usual.
-        if (chromeHidden) {
-          showChrome();
-          return;
-        }
+        // A single tap reveals the chrome (if faint) AND toggles the menu, so
+        // the dropdown opens in one tap even from focus mode.
+        if (chromeHidden) showChrome();
         setOpen((v) => !v);
       }}
       aria-haspopup="menu"
