@@ -10,11 +10,21 @@ import { useEffect, useState } from "react";
 
 export const IMMERSIVE_STATE_EVENT = "lp-immersive-state"; // detail: { hidden: boolean }
 export const IMMERSIVE_TAP_EVENT = "lp-immersive-tap";
+export const IMMERSIVE_SCROLL_EVENT = "lp-immersive-scroll";
 
 /** Forward a double-tap (e.g. from inside an EPUB iframe) to the controller. */
 export function dispatchImmersiveTap(): void {
   try {
     window.dispatchEvent(new CustomEvent(IMMERSIVE_TAP_EVENT));
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Signal a scroll/read gesture (e.g. from inside an iframe) — hides the chrome. */
+export function dispatchImmersiveScroll(): void {
+  try {
+    window.dispatchEvent(new CustomEvent(IMMERSIVE_SCROLL_EVENT));
   } catch {
     /* best-effort */
   }

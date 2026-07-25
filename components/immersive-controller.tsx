@@ -1,19 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import { IMMERSIVE_STATE_EVENT, IMMERSIVE_TAP_EVENT } from "@/lib/immersive";
-
-const HIDE_MS = 4000;
+import {
+  IMMERSIVE_SCROLL_EVENT,
+  IMMERSIVE_STATE_EVENT,
+  IMMERSIVE_TAP_EVENT,
+} from "@/lib/immersive";
 
 /**
- * Drives focus mode on the preview: starts with the chrome visible, auto-hides
- * it after a few idle seconds, and toggles it on double-tap (from the page or
- * forwarded from a reader iframe). Renders nothing — it only broadcasts state.
+ * Focus mode on the preview: everything starts visible; the first scroll/read
+ * gesture hides the floating chrome so the reader can focus on the text, and a
+ * double-tap brings it back (until the next scroll hides it again). Renders
+ * nothing — it only broadcasts the hidden state.
  */
 export function ImmersiveController() {
   useEffect(() => {
     let hidden = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    // A short grace window after showing, so momentum/stray scroll right after a
+    // double-tap doesn't immediately hide the chrome again.
+    let suppressHideUntil = 0;
 
     const broadcast = () =>
       window.dispatchEvent(new CustomEvent(IMMERSIVE_STATE_EVENT, { detail: { hidden } }));
@@ -23,42 +28,45 @@ export function ImmersiveController() {
         broadcast();
       }
     };
-    const scheduleHide = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => set(true), HIDE_MS);
-    };
-    const reveal = () => {
+    const show = () => {
+      suppressHideUntil = performance.now() + 500;
       set(false);
-      scheduleHide();
     };
-    const toggle = () => {
-      if (hidden) reveal();
-      else {
-        if (timer) clearTimeout(timer);
-        set(true);
-      }
-    };
-    // Interaction while visible keeps the chrome alive; while hidden it stays
-    // hidden (so reading isn't interrupted — only a double-tap brings it back).
-    const keepAlive = () => {
-      if (!hidden) scheduleHide();
+    const hide = () => {
+      if (performance.now() < suppressHideUntil) return;
+      set(true);
     };
 
+    // Start visible.
     broadcast();
-    scheduleHide();
 
-    window.addEventListener(IMMERSIVE_TAP_EVENT, toggle);
-    document.addEventListener("dblclick", toggle);
-    document.addEventListener("pointermove", keepAlive, { passive: true });
-    document.addEventListener("pointerdown", keepAlive, { passive: true });
-    document.addEventListener("keydown", reveal);
+    // Hide on any scroll/read gesture (parent doc + forwarded from iframes).
+    const onScroll = () => hide();
+    const onMessage = (e: MessageEvent) => {
+      const d = e.data as { __lpPreview?: unknown; scrolled?: unknown } | null;
+      if (d && typeof d === "object" && d.__lpPreview && d.scrolled) hide();
+    };
+    // Show on double-tap (page dblclick + forwarded from iframes).
+    const onShow = () => show();
+
+    window.addEventListener(IMMERSIVE_SCROLL_EVENT, onScroll);
+    window.addEventListener("lp-preview-scroll", onScroll);
+    window.addEventListener("message", onMessage);
+    document.addEventListener("wheel", onScroll, { passive: true });
+    document.addEventListener("touchmove", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener(IMMERSIVE_TAP_EVENT, onShow);
+    document.addEventListener("dblclick", onShow);
+
     return () => {
-      if (timer) clearTimeout(timer);
-      window.removeEventListener(IMMERSIVE_TAP_EVENT, toggle);
-      document.removeEventListener("dblclick", toggle);
-      document.removeEventListener("pointermove", keepAlive);
-      document.removeEventListener("pointerdown", keepAlive);
-      document.removeEventListener("keydown", reveal);
+      window.removeEventListener(IMMERSIVE_SCROLL_EVENT, onScroll);
+      window.removeEventListener("lp-preview-scroll", onScroll);
+      window.removeEventListener("message", onMessage);
+      document.removeEventListener("wheel", onScroll);
+      document.removeEventListener("touchmove", onScroll);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener(IMMERSIVE_TAP_EVENT, onShow);
+      document.removeEventListener("dblclick", onShow);
     };
   }, []);
 
