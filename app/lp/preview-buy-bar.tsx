@@ -104,23 +104,9 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
           showBar ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
         }`}
       >
-        {/* Solid (no backdrop-blur): a fixed backdrop-filter at the bottom edge
-            makes iOS Safari frost its toolbar lighter. The card was already 95%
-            opaque, so an opaque bg looks the same without the side effect. */}
-        <div className="pointer-events-auto relative mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 pl-4 shadow-xl">
-          <div className="min-w-0 flex-1">
-            {priceText ? (
-              <p className="truncate text-sm font-semibold text-foreground">{priceText}</p>
-            ) : (
-              <p className="truncate text-sm font-semibold text-[var(--primary)]">Gratis</p>
-            )}
-            <p className="truncate text-xs text-[var(--muted)]">
-              {note ??
-                (priceText
-                  ? "Miliki sekarang — akses penuh, selamanya."
-                  : "Ambil sekarang — akses penuh, selamanya.")}
-            </p>
-          </div>
+        {/* No card/background — the whole CTA is one floating button that carries
+            the price + note on the left and the label on the right. */}
+        <div className="pointer-events-auto relative mx-auto flex max-w-md">
           <a
             href={href}
             {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
@@ -128,16 +114,28 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
             onClick={() => {
               if (slug) trackCta(slug, "preview", ctaAction || "buy");
             }}
-            className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-md shadow-[var(--primary)]/25 touch-manipulation transition-transform hover:scale-[1.02] active:scale-95"
+            className="flex w-full items-center gap-3 rounded-2xl bg-[var(--primary)] px-4 py-2.5 text-[var(--primary-foreground)] shadow-xl shadow-[var(--primary)]/30 touch-manipulation transition-transform hover:scale-[1.01] active:scale-[0.98]"
           >
-            {calendar ? <CalendarIcon className="h-4 w-4" /> : <CartIcon className="h-4 w-4" />}
-            {label}
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate text-sm font-bold leading-tight">
+                {priceText ?? "Gratis"}
+              </span>
+              <span className="block truncate text-[11px] font-medium leading-tight opacity-90">
+                {note ??
+                  (priceText
+                    ? "Miliki sekarang — akses penuh, selamanya."
+                    : "Ambil sekarang — akses penuh, selamanya.")}
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold">
+              {calendar ? <CalendarIcon className="h-4 w-4" /> : <CartIcon className="h-4 w-4" />}
+              {label}
+            </span>
           </a>
 
           {/* Dismiss pinned to the top-right corner, floating just above the bar
-              over the preview — no row column (takes no space) and no filled
-              bubble. Big transparent hit area sits above the CTA, not on it, so a
-              miss can't trigger "beli"; drop-shadow keeps the bare icon legible. */}
+              over the preview. Big transparent hit area sits above the CTA, not
+              on it; drop-shadow keeps the bare icon legible. */}
           <button
             type="button"
             onPointerDown={buzz}
