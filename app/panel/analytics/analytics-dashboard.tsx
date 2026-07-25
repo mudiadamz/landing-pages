@@ -2,17 +2,29 @@
 
 import { useState } from "react";
 import type { Analytics, SessionListRow } from "@/lib/actions/analytics";
+import type { ProductSummary } from "@/lib/actions/product-insights";
+import { ProductSummaryCard } from "@/components/product-summary-card";
 import { SessionRow } from "./session-row";
 
-type Tab = "overview" | "acquisition" | "geography" | "entry" | "engagement" | "sessions";
+type Tab = "overview" | "products" | "acquisition" | "geography" | "entry" | "engagement" | "sessions";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Ringkasan" },
+  { key: "products", label: "Produk" },
   { key: "acquisition", label: "Akuisisi / Iklan" },
   { key: "engagement", label: "Engagement Preview" },
   { key: "entry", label: "Entry Point" },
   { key: "geography", label: "Geografi" },
   { key: "sessions", label: "Sesi" },
+];
+
+type ProductFilter = "all" | "attention" | "converting" | "ignored";
+
+const PRODUCT_FILTERS: { key: ProductFilter; label: string }[] = [
+  { key: "all", label: "Semua" },
+  { key: "attention", label: "Perlu perhatian" },
+  { key: "converting", label: "Konversi" },
+  { key: "ignored", label: "Diabaikan" },
 ];
 
 function fmtDuration(ms: number): string {
@@ -106,9 +118,10 @@ function EngagementBar({ read, curious, left }: { read: number; curious: number;
   );
 }
 
-export function AnalyticsDashboard({ data }: { data: Analytics }) {
+export function AnalyticsDashboard({ data, products }: { data: Analytics; products: ProductSummary[] }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [q, setQ] = useState("");
+  const [productFilter, setProductFilter] = useState<ProductFilter>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "time", dir: "desc" });
 
   const sortBy = (key: SortKey) =>
@@ -117,6 +130,13 @@ export function AnalyticsDashboard({ data }: { data: Analytics }) {
   if (!data.ok) return <Empty>Tidak ada akses atau data gagal dimuat.</Empty>;
 
   const { overview, campaigns, referrers, geography, entryPoints, engagement, sessions } = data;
+
+  const filteredProducts = products.filter((p) => {
+    if (productFilter === "attention") return p.previews > 0 && p.stage !== "converting";
+    if (productFilter === "converting") return p.stage === "converting";
+    if (productFilter === "ignored") return p.previews === 0;
+    return true;
+  });
 
   const filtered = q.trim()
     ? sessions.filter((s) => matchSession(s, q.trim().toLowerCase()))
@@ -159,6 +179,46 @@ export function AnalyticsDashboard({ data }: { data: Analytics }) {
             label="Pageview / sesi"
             value={overview.sessions ? (overview.pageviews / overview.sessions).toFixed(1) : "0"}
           />
+        </div>
+      )}
+
+      {tab === "products" && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-[var(--muted)]">
+              Ringkasan perilaku per produk: apakah dapat perhatian, dibaca, dan berkonversi. Diurutkan dari
+              trafik terbanyak.
+            </p>
+            <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] p-0.5">
+              {PRODUCT_FILTERS.map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setProductFilter(f.key)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                    productFilter === f.key
+                      ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
+                      : "text-[var(--muted)] hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {filteredProducts.length === 0 ? (
+            <Empty>Tidak ada produk pada filter ini.</Empty>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              {filteredProducts.map((p) => (
+                <ProductSummaryCard
+                  key={p.slug}
+                  s={p}
+                  href={p.id ? `/panel/product/${p.id}/stats` : undefined}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

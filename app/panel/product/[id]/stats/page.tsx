@@ -3,7 +3,9 @@ import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById } from "@/lib/actions/landing-pages";
 import { getProductStats } from "@/lib/actions/product-stats";
+import { getProductSummary, type Range } from "@/lib/actions/product-insights";
 import { ProductStatsView } from "@/components/product-stats-view";
+import { ProductSummaryCard } from "@/components/product-summary-card";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -19,7 +21,11 @@ export default async function ProductStatsPage({ params, searchParams }: Props) 
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const days = RANGES.includes(Number(sp.days)) ? Number(sp.days) : 30;
 
-  const [page, stats] = await Promise.all([getLandingPageById(id), getProductStats(id, days)]);
+  const [page, stats, summary] = await Promise.all([
+    getLandingPageById(id),
+    getProductStats(id, days),
+    getProductSummary(id, days as Range),
+  ]);
   if (!page) notFound();
 
   return (
@@ -48,6 +54,9 @@ export default async function ProductStatsPage({ params, searchParams }: Props) 
           ))}
         </div>
       </div>
+
+      {/* Behaviour-derived summary — interest/intent/conversion, grade, insights. */}
+      {summary && <ProductSummaryCard s={summary} />}
 
       {/* Rendering + live polling happen client-side: each tick calls only the
           getProductStats action (not a full route refresh). Re-keyed on `days` so

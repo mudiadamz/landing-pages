@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getAnalytics, type Range } from "@/lib/actions/analytics";
+import { getProductSummaries } from "@/lib/actions/product-insights";
 import { AnalyticsDashboard } from "./analytics-dashboard";
 
 export const metadata = { title: "Analytics" };
@@ -19,7 +20,7 @@ export default async function AnalyticsPage({
   const parsed = Number(sp.range) as Range;
   const range: Range = RANGES.includes(parsed) ? parsed : 30;
 
-  const data = await getAnalytics(range);
+  const [data, products] = await Promise.all([getAnalytics(range), getProductSummaries(range)]);
 
   return (
     <div className="space-y-6">
@@ -50,7 +51,7 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
-      <AnalyticsDashboard data={data} />
+      <AnalyticsDashboard data={data} products={products} />
     </div>
   );
 }
