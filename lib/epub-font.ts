@@ -43,33 +43,39 @@ export function setEpubFont(level: EpubFontLevel): void {
 /*  Display margin (horizontal padding of the text column)                    */
 /* -------------------------------------------------------------------------- */
 
-export type EpubMarginLevel = "narrow" | "medium" | "wide";
-export const EPUB_MARGIN_SIZES: Record<EpubMarginLevel, string> = {
-  narrow: "0.5rem",
-  medium: "1.75rem",
-  wide: "3.5rem",
-};
+// Horizontal margin in px. Can go NEGATIVE — negative pulls the text past the
+// column edges so it hugs (or bleeds past) the window; positive insets it.
 export const EPUB_MARGIN_KEY = "lp-epub-margin";
 export const EPUB_MARGIN_EVENT = "lp-epub-margin";
+export const EPUB_MARGIN_DEFAULT = 16;
+export const EPUB_MARGIN_MIN = -48;
+export const EPUB_MARGIN_MAX = 200;
+export const EPUB_MARGIN_STEP = 8;
 
-export function readEpubMargin(): EpubMarginLevel {
+export function clampEpubMargin(n: number): number {
+  if (!Number.isFinite(n)) return EPUB_MARGIN_DEFAULT;
+  return Math.max(EPUB_MARGIN_MIN, Math.min(EPUB_MARGIN_MAX, Math.round(n)));
+}
+
+export function readEpubMargin(): number {
   try {
-    const v = localStorage.getItem(EPUB_MARGIN_KEY);
-    if (v === "narrow" || v === "medium" || v === "wide") return v;
+    const v = parseInt(localStorage.getItem(EPUB_MARGIN_KEY) ?? "", 10);
+    if (Number.isFinite(v)) return clampEpubMargin(v);
   } catch {
     /* storage unavailable / SSR */
   }
-  return "narrow";
+  return EPUB_MARGIN_DEFAULT;
 }
 
-export function setEpubMargin(level: EpubMarginLevel): void {
+export function setEpubMargin(px: number): void {
+  const v = clampEpubMargin(px);
   try {
-    localStorage.setItem(EPUB_MARGIN_KEY, level);
+    localStorage.setItem(EPUB_MARGIN_KEY, String(v));
   } catch {
     /* best-effort */
   }
   try {
-    window.dispatchEvent(new CustomEvent(EPUB_MARGIN_EVENT, { detail: level }));
+    window.dispatchEvent(new CustomEvent(EPUB_MARGIN_EVENT, { detail: v }));
   } catch {
     /* best-effort */
   }

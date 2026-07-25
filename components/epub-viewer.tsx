@@ -7,19 +7,20 @@ import {
   EPUB_FONT_EVENT,
   EPUB_FONT_SIZES,
   EPUB_MARGIN_EVENT,
-  EPUB_MARGIN_SIZES,
+  clampEpubMargin,
   readEpubFont,
   readEpubMargin,
   type EpubFontLevel,
-  type EpubMarginLevel,
 } from "@/lib/epub-font";
 
 // Zero gutter — the text column runs edge to edge (no padding/margin between the
 // reader and the EPUB content). Injected after the book's own CSS so it wins by
 // cascade order.
+// Horizontal inset is set live via the margin override; keep the base gutter at 0.
 const BODY_GUTTER = {
   margin: "0",
-  padding: "0",
+  "padding-top": "0.25rem",
+  "padding-bottom": "0.25rem",
 } as const;
 
 const THEMES = {
@@ -51,7 +52,7 @@ export default function EpubViewer({
   // safe — this component only ever renders on the client. The font-size UI
   // lives in the actions menu; it broadcasts changes via EPUB_FONT_EVENT.
   const [fontLevel, setFontLevel] = useState<EpubFontLevel>(readEpubFont);
-  const [marginLevel, setMarginLevel] = useState<EpubMarginLevel>(readEpubMargin);
+  const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
 
   // Build the book + rendition once per source. Theme + font are applied by the
   // separate effects below (so changing them doesn't reload the book).
@@ -180,14 +181,18 @@ export default function EpubViewer({
     renditionRef.current?.themes.fontSize(EPUB_FONT_SIZES[fontLevel]);
   }, [fontLevel]);
 
-  // Apply the horizontal display margin (padding on the content body, live).
+  // Apply the horizontal display margin live. Positive px = padding (inset);
+  // negative px = negative body margin so the text bleeds toward/past the edges.
   useEffect(() => {
     const r = renditionRef.current;
     if (!r) return;
-    const val = EPUB_MARGIN_SIZES[marginLevel];
-    r.themes.override("padding-left", val, true);
-    r.themes.override("padding-right", val, true);
-  }, [marginLevel]);
+    const pad = `${Math.max(0, marginPx)}px`;
+    const neg = `${Math.min(0, marginPx)}px`;
+    r.themes.override("padding-left", pad, true);
+    r.themes.override("padding-right", pad, true);
+    r.themes.override("margin-left", neg, true);
+    r.themes.override("margin-right", neg, true);
+  }, [marginPx]);
 
   // Follow font-size / margin changes broadcast from the actions menu.
   useEffect(() => {
@@ -196,8 +201,8 @@ export default function EpubViewer({
       if (level === "small" || level === "medium" || level === "large") setFontLevel(level);
     };
     const onMargin = (e: Event) => {
-      const level = (e as CustomEvent).detail as EpubMarginLevel;
-      if (level === "narrow" || level === "medium" || level === "wide") setMarginLevel(level);
+      const px = (e as CustomEvent).detail as number;
+      if (typeof px === "number") setMarginPx(clampEpubMargin(px));
     };
     window.addEventListener(EPUB_FONT_EVENT, onFont);
     window.addEventListener(EPUB_MARGIN_EVENT, onMargin);
@@ -209,9 +214,9 @@ export default function EpubViewer({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#fdfcfb] dark:bg-[#141414]">
-      {/* Cap the reading column on wide screens (~half a laptop screen) and
-          centre it; full width on mobile/tablet. */}
-      <div ref={hostRef} className="mx-auto h-full w-full max-w-3xl" />
+      {/* Full-width host — the horizontal inset is controlled by the margin
+          setting (px, can be negative), applied on the content body. */}
+      <div ref={hostRef} className="h-full w-full" />
 
       {loading && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">

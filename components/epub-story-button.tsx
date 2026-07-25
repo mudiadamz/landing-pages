@@ -8,20 +8,17 @@ import {
   setEpubFont,
   readEpubMargin,
   setEpubMargin,
+  clampEpubMargin,
+  EPUB_MARGIN_STEP,
+  EPUB_MARGIN_MIN,
+  EPUB_MARGIN_MAX,
   type EpubFontLevel,
-  type EpubMarginLevel,
 } from "@/lib/epub-font";
 
 const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
   { level: "small", label: "Kecil", cls: "text-[11px]" },
   { level: "medium", label: "Sedang", cls: "text-sm" },
   { level: "large", label: "Besar", cls: "text-lg" },
-];
-
-const MARGIN_LEVELS: { level: EpubMarginLevel; label: string }[] = [
-  { level: "narrow", label: "S" },
-  { level: "medium", label: "M" },
-  { level: "wide", label: "L" },
 ];
 
 // Lets a buyer read a product's EPUB deliverable in the same reader used on the
@@ -45,10 +42,11 @@ export function EpubStoryButton({
     setFontLevel(level);
     setEpubFont(level);
   }, []);
-  const [marginLevel, setMarginLevel] = useState<EpubMarginLevel>(readEpubMargin);
-  const onMargin = useCallback((level: EpubMarginLevel) => {
-    setMarginLevel(level);
-    setEpubMargin(level);
+  const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
+  const onMargin = useCallback((px: number) => {
+    const v = clampEpubMargin(px);
+    setMarginPx(v);
+    setEpubMargin(v);
   }, []);
 
   async function openReader() {
@@ -114,26 +112,32 @@ export function EpubStoryButton({
                 })}
               </div>
               <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5">
-                {MARGIN_LEVELS.map((m) => {
-                  const active = m.level === marginLevel;
-                  return (
-                    <button
-                      key={m.level}
-                      type="button"
-                      aria-pressed={active}
-                      title={`Margin ${m.label}`}
-                      aria-label={`Margin ${m.label}`}
-                      onClick={() => onMargin(m.level)}
-                      className={`flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-semibold leading-none transition-colors ${
-                        active
-                          ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                          : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => onMargin(marginPx - EPUB_MARGIN_STEP)}
+                  disabled={marginPx <= EPUB_MARGIN_MIN}
+                  aria-label="Kurangi margin"
+                  title="Kurangi margin"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span
+                  className="w-10 text-center text-[11px] font-medium tabular-nums text-foreground"
+                  title="Margin (px)"
+                >
+                  {marginPx}px
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onMargin(marginPx + EPUB_MARGIN_STEP)}
+                  disabled={marginPx >= EPUB_MARGIN_MAX}
+                  aria-label="Tambah margin"
+                  title="Tambah margin"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground disabled:opacity-40"
+                >
+                  +
+                </button>
               </div>
               <button
                 type="button"

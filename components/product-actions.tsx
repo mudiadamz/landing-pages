@@ -11,8 +11,11 @@ import {
   setEpubFont,
   readEpubMargin,
   setEpubMargin,
+  clampEpubMargin,
+  EPUB_MARGIN_STEP,
+  EPUB_MARGIN_MIN,
+  EPUB_MARGIN_MAX,
   type EpubFontLevel,
-  type EpubMarginLevel,
 } from "@/lib/epub-font";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
@@ -83,10 +86,11 @@ export function ProductActionsMenu({
     setFontLevel(level);
     setEpubFont(level);
   }, []);
-  const [marginLevel, setMarginLevel] = useState<EpubMarginLevel>(readEpubMargin);
-  const onMargin = useCallback((level: EpubMarginLevel) => {
-    setMarginLevel(level);
-    setEpubMargin(level);
+  const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
+  const onMargin = useCallback((px: number) => {
+    const v = clampEpubMargin(px);
+    setMarginPx(v);
+    setEpubMargin(v);
   }, []);
   const logCta = useCallback(
     (action: string) => {
@@ -411,32 +415,33 @@ export function ProductActionsMenu({
         </div>
       )}
 
-      {/* EPUB display margin — only for EPUB previews. */}
+      {/* EPUB horizontal margin (px, can be negative) — only for EPUB previews. */}
       {epub && (
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <MarginIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-          <div className="flex flex-1 items-center gap-1">
-            {MARGIN_LEVELS.map((m) => {
-              const active = m.level === marginLevel;
-              return (
-                <button
-                  key={m.level}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={active}
-                  title={`Margin ${m.label}`}
-                  aria-label={`Margin ${m.label}`}
-                  onClick={() => onMargin(m.level)}
-                  className={`flex flex-1 items-center justify-center rounded-md py-1 text-[11px] font-medium leading-none transition-all duration-150 active:scale-95 ${
-                    active
-                      ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                      : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              );
-            })}
+          <span className="text-sm text-foreground">Margin</span>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onMargin(marginPx - EPUB_MARGIN_STEP)}
+              disabled={marginPx <= EPUB_MARGIN_MIN}
+              aria-label="Kurangi margin"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90 disabled:opacity-40"
+            >
+              −
+            </button>
+            <span className="w-12 text-center text-sm font-medium tabular-nums text-foreground">
+              {marginPx}px
+            </span>
+            <button
+              type="button"
+              onClick={() => onMargin(marginPx + EPUB_MARGIN_STEP)}
+              disabled={marginPx >= EPUB_MARGIN_MAX}
+              aria-label="Tambah margin"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90 disabled:opacity-40"
+            >
+              +
+            </button>
           </div>
         </div>
       )}
@@ -570,12 +575,6 @@ const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
   { level: "small", label: "Kecil", cls: "text-[11px]" },
   { level: "medium", label: "Sedang", cls: "text-sm" },
   { level: "large", label: "Besar", cls: "text-lg" },
-];
-
-const MARGIN_LEVELS: { level: EpubMarginLevel; label: string }[] = [
-  { level: "narrow", label: "Sempit" },
-  { level: "medium", label: "Sedang" },
-  { level: "wide", label: "Lebar" },
 ];
 
 const SHARE_TARGETS: {
