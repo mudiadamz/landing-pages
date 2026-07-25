@@ -16,9 +16,10 @@ import {
 export function ImmersiveController() {
   useEffect(() => {
     let hidden = false;
-    // A short grace window after showing, so momentum/stray scroll right after a
-    // double-tap doesn't immediately hide the chrome again.
-    let suppressHideUntil = 0;
+    // Ignore scroll-hide during a short grace window: on load (so epub.js's
+    // initial layout / saved-position restore doesn't hide the chrome), and
+    // right after a double-tap (so momentum scroll doesn't instantly re-hide).
+    let suppressHideUntil = performance.now() + 800;
 
     const broadcast = () =>
       window.dispatchEvent(new CustomEvent(IMMERSIVE_STATE_EVENT, { detail: { hidden } }));
@@ -54,7 +55,10 @@ export function ImmersiveController() {
     window.addEventListener("message", onMessage);
     document.addEventListener("wheel", onScroll, { passive: true });
     document.addEventListener("touchmove", onScroll, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
+    // Capture phase catches scroll on ANY element (scroll doesn't bubble) — this
+    // is what reliably picks up epub.js's own scroll container, which lives in
+    // the parent DOM but never reaches a window-level scroll listener.
+    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
     window.addEventListener(IMMERSIVE_TAP_EVENT, onShow);
     document.addEventListener("dblclick", onShow);
 
@@ -64,7 +68,7 @@ export function ImmersiveController() {
       window.removeEventListener("message", onMessage);
       document.removeEventListener("wheel", onScroll);
       document.removeEventListener("touchmove", onScroll);
-      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);
       window.removeEventListener(IMMERSIVE_TAP_EVENT, onShow);
       document.removeEventListener("dblclick", onShow);
     };
