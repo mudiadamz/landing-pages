@@ -43,6 +43,7 @@ export default async function PrivacyPage() {
                 <li><strong className="text-foreground">Data pembelian</strong> — riwayat transaksi dan template yang Anda beli.</li>
                 <li><strong className="text-foreground">Data pembayaran</strong> — diproses oleh payment gateway kami; kami tidak menyimpan nomor kartu Anda.</li>
                 <li><strong className="text-foreground">Data penggunaan</strong> — interaksi dasar dengan situs untuk analitik dan peningkatan layanan.</li>
+                <li><strong className="text-foreground">Data sesi &amp; teknis</strong> — alamat IP dan perkiraan lokasi (negara/kota/ISP), sumber rujukan/kampanye (UTM), jenis perangkat/browser, halaman yang Anda kunjungi, dan lama kunjungan. Kami memakainya secara internal (first-party) untuk memahami minat pengunjung dan efektivitas promosi.</li>
               </ul>
 
               <h2 className="text-foreground font-medium text-base pt-2">Cara Kami Menggunakan Informasi Anda</h2>

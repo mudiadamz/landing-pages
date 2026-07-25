@@ -50,6 +50,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
       { href: "/panel/roles", label: "Roles", icon: ShieldIcon, adminOnly: true },
       { href: "/panel/storage", label: "Storage", icon: DatabaseIcon, adminOnly: true },
+      { href: "/panel/analytics", label: "Analytics", icon: PulseIcon, adminOnly: true },
       { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
       { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
@@ -126,6 +127,13 @@ function DatabaseIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7c0 1.657 3.582 3 8 3s8-1.343 8-3-3.582-3-8-3-8 1.343-8 3z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v5c0 1.657 3.582 3 8 3s8-1.343 8-3V7M4 12v5c0 1.657 3.582 3 8 3s8-1.343 8-3v-5" />
+    </svg>
+  );
+}
+function PulseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h4l3 8 4-16 3 8h4" />
     </svg>
   );
 }

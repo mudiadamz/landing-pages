@@ -13,6 +13,7 @@ import { JsonLd } from "@/components/json-ld";
 import { MarketingScripts } from "@/components/marketing-scripts";
 import { TawkChat } from "@/components/tawk-chat";
 import { PwaRegister } from "@/components/pwa-register";
+import { SessionTracker } from "@/components/session-tracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -127,6 +128,7 @@ export default async function RootLayout({
         <Suspense fallback={null}>
           <RouteProgress />
         </Suspense>
+        <SessionTracker />
         {children}
         <Analytics />
         <SpeedInsights />
