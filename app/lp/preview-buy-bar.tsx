@@ -98,10 +98,12 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
   return (
     <>
       {/* CTA bar — fully transparent wrapper so only the card floats over the
-          reader (no background fill behind it / near the Safari bar). */}
+          reader. NO transform/slide: a translate near the bottom edge makes iOS
+          Safari tint its toolbar with the CTA colour, so we toggle by opacity
+          only (and remove it from the layer when hidden). */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-all duration-300 ease-out ${
-          showBar ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+        className={`fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 ${
+          showBar ? "opacity-100" : "invisible opacity-0 pointer-events-none"
         }`}
       >
         {/* No card/background — the whole CTA is one floating button that carries
@@ -149,10 +151,11 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
         </div>
       </div>
 
-      {/* Collapsed handle — brings the CTA back after it's dismissed */}
+      {/* Collapsed handle — brings the CTA back after it's dismissed. Opacity
+          only (no transform) so it doesn't tint the iOS Safari toolbar either. */}
       <div
-        className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ease-out ${
-          showHandle ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+        className={`fixed bottom-4 right-4 z-50 transition-opacity duration-200 ${
+          showHandle ? "opacity-100" : "invisible opacity-0 pointer-events-none"
         }`}
       >
         <button
