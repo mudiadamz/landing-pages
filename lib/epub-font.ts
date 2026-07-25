@@ -53,7 +53,7 @@ export const EPUB_MARGIN_EVENT = "lp-epub-margin";
 export const EPUB_MARGIN_DEFAULT = 16;
 export const EPUB_MARGIN_MIN = -48;
 export const EPUB_MARGIN_MAX = 200;
-export const EPUB_MARGIN_STEP = 8;
+export const EPUB_MARGIN_STEP = 2;
 
 export function clampEpubMargin(n: number): number {
   if (!Number.isFinite(n)) return EPUB_MARGIN_DEFAULT;

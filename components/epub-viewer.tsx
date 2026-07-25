@@ -34,6 +34,25 @@ const THEMES = {
   },
 } as const;
 
+/**
+ * Apply the horizontal margin symmetrically. box-sizing:border-box + width:100%
+ * make padding shrink the text column on BOTH sides (instead of only shifting it
+ * right, which overflows). Negative px uses negative body margin to bleed past
+ * the edges. Overrides re-apply to each section via epub.js's content hook.
+ */
+function applyEpubMargin(rendition: Rendition, px: number): void {
+  const pad = `${Math.max(0, px)}px`;
+  const neg = `${Math.min(0, px)}px`;
+  const t = rendition.themes;
+  t.override("box-sizing", "border-box", true);
+  t.override("width", "100%", true);
+  t.override("max-width", "100%", true);
+  t.override("padding-left", pad, true);
+  t.override("padding-right", pad, true);
+  t.override("margin-left", neg, true);
+  t.override("margin-right", neg, true);
+}
+
 export default function EpubViewer({
   url,
   storageKey,
@@ -45,6 +64,7 @@ export default function EpubViewer({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const renditionRef = useRef<Rendition | null>(null);
+  const marginRef = useRef<number>(readEpubMargin());
   const { dark } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +105,9 @@ export default function EpubViewer({
     renditionRef.current = rendition;
     rendition.themes.register("light", THEMES.light);
     rendition.themes.register("dark", THEMES.dark);
+    // Re-apply the margin to every section as it renders (continuous scroll
+    // streams new sections in), so the setting affects the whole book.
+    rendition.on("rendered", () => applyEpubMargin(rendition, marginRef.current));
 
     // Continuous scroll fix (Mac Chrome trackpad, and mouse wheels generally):
     // each section renders inside an iframe that swallows wheel/two-finger
@@ -185,17 +208,12 @@ export default function EpubViewer({
     renditionRef.current?.themes.fontSize(`${fontPct}%`);
   }, [fontPct]);
 
-  // Apply the horizontal display margin live. Positive px = padding (inset);
-  // negative px = negative body margin so the text bleeds toward/past the edges.
+  // Apply the horizontal display margin live to every section. Positive px =
+  // symmetric padding (border-box so the right side shrinks too, not just a
+  // left shift); negative px = negative body margin so text bleeds past edges.
   useEffect(() => {
-    const r = renditionRef.current;
-    if (!r) return;
-    const pad = `${Math.max(0, marginPx)}px`;
-    const neg = `${Math.min(0, marginPx)}px`;
-    r.themes.override("padding-left", pad, true);
-    r.themes.override("padding-right", pad, true);
-    r.themes.override("margin-left", neg, true);
-    r.themes.override("margin-right", neg, true);
+    marginRef.current = marginPx;
+    if (renditionRef.current) applyEpubMargin(renditionRef.current, marginPx);
   }, [marginPx]);
 
   // Follow font-size / margin changes broadcast from the actions menu.
