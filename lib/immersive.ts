@@ -1,42 +1,58 @@
 "use client";
 
-// Focus/immersive mode for the preview: the floating chrome (⋯ menu, buy bar,
-// etc.) auto-hides so the reader can focus on the text, and a double-tap toggles
-// it back. The controller owns the state + timer and broadcasts it; consumers
-// read it via useChromeHidden(). Double-taps from inside reader iframes are
-// forwarded with dispatchImmersiveTap().
+// Focus/immersive mode for the preview. A tiny module-level store (no window
+// events) so callers from inside reader iframes just invoke hideChrome/showChrome
+// directly (those functions run in the parent realm), and the floating ornaments
+// read the state via useSyncExternalStore — no event-plumbing ambiguity.
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
-export const IMMERSIVE_STATE_EVENT = "lp-immersive-state"; // detail: { hidden: boolean }
-export const IMMERSIVE_TAP_EVENT = "lp-immersive-tap";
-export const IMMERSIVE_SCROLL_EVENT = "lp-immersive-scroll";
+let hidden = false;
+let suppressUntil = 0;
+const listeners = new Set<() => void>();
 
-/** Forward a double-tap (e.g. from inside an EPUB iframe) to the controller. */
-export function dispatchImmersiveTap(): void {
-  try {
-    window.dispatchEvent(new CustomEvent(IMMERSIVE_TAP_EVENT));
-  } catch {
-    /* best-effort */
+const now = () => (typeof performance !== "undefined" ? performance.now() : 0);
+const emit = () => listeners.forEach((l) => l());
+
+function subscribe(l: () => void): () => void {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+}
+
+/** Hide the floating chrome (called on a scroll/read gesture). */
+export function hideChrome(): void {
+  if (now() < suppressUntil) return; // grace window (load / just-shown)
+  if (!hidden) {
+    hidden = true;
+    emit();
   }
 }
 
-/** Signal a scroll/read gesture (e.g. from inside an iframe) — hides the chrome. */
-export function dispatchImmersiveScroll(): void {
-  try {
-    window.dispatchEvent(new CustomEvent(IMMERSIVE_SCROLL_EVENT));
-  } catch {
-    /* best-effort */
+/** Show the floating chrome (called on a double-tap). */
+export function showChrome(): void {
+  suppressUntil = now() + 500; // don't let momentum scroll immediately re-hide
+  if (hidden) {
+    hidden = false;
+    emit();
   }
 }
 
-/** Whether the floating chrome is currently hidden (updates on broadcasts). */
+/** Reset to visible with a load grace window (call when the preview mounts). */
+export function resetImmersive(): void {
+  suppressUntil = now() + 800;
+  if (hidden) {
+    hidden = false;
+    emit();
+  }
+}
+
+/** Whether the floating chrome is currently hidden. */
 export function useChromeHidden(): boolean {
-  const [hidden, setHidden] = useState(false);
-  useEffect(() => {
-    const onState = (e: Event) => setHidden(!!(e as CustomEvent).detail?.hidden);
-    window.addEventListener(IMMERSIVE_STATE_EVENT, onState);
-    return () => window.removeEventListener(IMMERSIVE_STATE_EVENT, onState);
-  }, []);
-  return hidden;
+  return useSyncExternalStore(
+    subscribe,
+    () => hidden,
+    () => false,
+  );
 }

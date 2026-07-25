@@ -11,7 +11,7 @@ import {
   readEpubFont,
   readEpubMargin,
 } from "@/lib/epub-font";
-import { dispatchImmersiveTap, dispatchImmersiveScroll } from "@/lib/immersive";
+import { hideChrome, showChrome } from "@/lib/immersive";
 
 // Zero gutter — the text column runs edge to edge (no padding/margin between the
 // reader and the EPUB content). Injected after the book's own CSS so it wins by
@@ -143,7 +143,7 @@ export default function EpubViewer({
     };
 
     const handleWheel = (e: WheelEvent) => {
-      dispatchImmersiveScroll(); // scrolling hides the reader chrome (focus mode)
+      hideChrome(); // scrolling hides the reader chrome (focus mode)
       const el = scrollerEl();
       const before = el.scrollTop;
       el.scrollBy?.({ top: e.deltaY, left: e.deltaX });
@@ -160,8 +160,8 @@ export default function EpubViewer({
       const d = contents?.document;
       if (!d) return;
       d.addEventListener("wheel", handleWheel, { passive: true });
-      d.addEventListener("touchmove", dispatchImmersiveScroll, { passive: true });
-      d.addEventListener("dblclick", dispatchImmersiveTap);
+      d.addEventListener("touchmove", hideChrome, { passive: true });
+      d.addEventListener("dblclick", showChrome);
     });
     // …and over the surrounding letterbox margins (host's parent), so scrolling
     // works anywhere in the reader, not just on the narrowed column.
