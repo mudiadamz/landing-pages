@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { unzipSync, strFromU8 } from "fflate";
+import { EpubSplash } from "./epub-splash";
 import {
   EPUB_FONT_EVENT,
   EPUB_MARGIN_EVENT,
@@ -174,12 +175,16 @@ function sanitizeChapters(chapters: string[]): string {
 export default function EpubInlineViewer({
   url,
   slug,
+  title,
+  thumbnailUrl,
   storageKey,
 }: {
   url: string;
   /** When set, fetch pre-unzipped chapters from the server (much faster). */
   slug?: string;
   title?: string;
+  /** Cover art for the loading splash. */
+  thumbnailUrl?: string | null;
   /** Reserved for future scroll-position memory. */
   storageKey?: string;
 }) {
@@ -279,11 +284,7 @@ export default function EpubInlineViewer({
           marginRight: neg ? `${neg}px` : undefined,
         }}
       />
-      {loading && (
-        <div className="pointer-events-none flex h-40 items-center justify-center text-sm text-[var(--muted)]">
-          Memuat EPUB…
-        </div>
-      )}
+      <EpubSplash thumbnailUrl={thumbnailUrl} title={title} ready={!loading || !!error} />
       {error && (
         <div className="flex h-40 items-center justify-center px-6 text-center text-sm text-red-500">
           {error}

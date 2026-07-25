@@ -77,6 +77,25 @@ html.dark .epub-surface {
   color: #c3beb4;
 }
 
+/* Book-cover splash shown while an EPUB loads (see EpubSplash). */
+@keyframes epub-splash-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes epub-splash-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+  40%           { opacity: 0.9;  transform: scale(1); }
+}
+.epub-splash-dot {
+  animation: epub-splash-pulse 1.2s ease-in-out infinite;
+}
+.epub-splash-dot:nth-child(2) { animation-delay: 0.15s; }
+.epub-splash-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .epub-splash-dot { animation: none; }
+}
+
 /* Inline EPUB reader — content rendered directly in the DOM (no iframe), so
    styles are scoped here to avoid leaking into the app. */
 .epub-inline {

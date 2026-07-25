@@ -161,6 +161,16 @@ export default async function LandingPageView({ params }: Props) {
       <ImmersiveController />
       <ViewTracker slug={slug} />
       <ProductTracker slug={slug} page="preview" />
+      {/* Visitors arriving straight from an ad have nothing cached, so fetch the
+          cover up front — it's the first thing the splash paints. */}
+      {embedEpub && (checkout?.thumbnail_url ?? page.thumbnail_url) && (
+        <link
+          rel="preload"
+          as="image"
+          href={(checkout?.thumbnail_url ?? page.thumbnail_url) as string}
+          fetchPriority="high"
+        />
+      )}
       {embedEpub ? (
         // Inline EPUB — rendered directly in the DOM and flows in the window, so
         // scroll, taps, focus mode and the iOS address bar are all native.
@@ -169,6 +179,7 @@ export default async function LandingPageView({ params }: Props) {
             url={epubUrl as string}
             slug={slug}
             title={page.title}
+            thumbnailUrl={checkout?.thumbnail_url ?? page.thumbnail_url}
             storageKey={`lp-epub:${slug}`}
           />
           {nextInSeries && (
