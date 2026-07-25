@@ -5,13 +5,13 @@ import ePub, { type Rendition } from "epubjs";
 import { useTheme } from "@/lib/use-theme";
 import {
   EPUB_FONT_EVENT,
-  EPUB_FONT_SIZES,
   EPUB_MARGIN_EVENT,
+  clampEpubFont,
   clampEpubMargin,
   readEpubFont,
   readEpubMargin,
-  type EpubFontLevel,
 } from "@/lib/epub-font";
+import { dispatchImmersiveTap } from "@/lib/immersive";
 
 // Zero gutter — the text column runs edge to edge (no padding/margin between the
 // reader and the EPUB content). Injected after the book's own CSS so it wins by
@@ -51,7 +51,7 @@ export default function EpubViewer({
   // ssr:false (see epub-reader), so reading localStorage in the initializer is
   // safe — this component only ever renders on the client. The font-size UI
   // lives in the actions menu; it broadcasts changes via EPUB_FONT_EVENT.
-  const [fontLevel, setFontLevel] = useState<EpubFontLevel>(readEpubFont);
+  const [fontPct, setFontPct] = useState<number>(readEpubFont);
   const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
 
   // Build the book + rendition once per source. Theme + font are applied by the
@@ -130,9 +130,13 @@ export default function EpubViewer({
       }
     };
 
-    // Inside each section's iframe (the text column)…
+    // Inside each section's iframe (the text column): forward wheel for scroll,
+    // and double-tap to toggle the reader chrome (focus mode).
     rendition.hooks.content.register((contents: { document?: Document }) => {
-      contents?.document?.addEventListener("wheel", handleWheel, { passive: true });
+      const d = contents?.document;
+      if (!d) return;
+      d.addEventListener("wheel", handleWheel, { passive: true });
+      d.addEventListener("dblclick", dispatchImmersiveTap);
     });
     // …and over the surrounding letterbox margins (host's parent), so scrolling
     // works anywhere in the reader, not just on the narrowed column.
@@ -178,8 +182,8 @@ export default function EpubViewer({
 
   // Apply the font size (also runs on mount for the initial size).
   useEffect(() => {
-    renditionRef.current?.themes.fontSize(EPUB_FONT_SIZES[fontLevel]);
-  }, [fontLevel]);
+    renditionRef.current?.themes.fontSize(`${fontPct}%`);
+  }, [fontPct]);
 
   // Apply the horizontal display margin live. Positive px = padding (inset);
   // negative px = negative body margin so the text bleeds toward/past the edges.
@@ -197,8 +201,8 @@ export default function EpubViewer({
   // Follow font-size / margin changes broadcast from the actions menu.
   useEffect(() => {
     const onFont = (e: Event) => {
-      const level = (e as CustomEvent).detail as EpubFontLevel;
-      if (level === "small" || level === "medium" || level === "large") setFontLevel(level);
+      const pct = (e as CustomEvent).detail as number;
+      if (typeof pct === "number") setFontPct(clampEpubFont(pct));
     };
     const onMargin = (e: Event) => {
       const px = (e as CustomEvent).detail as number;

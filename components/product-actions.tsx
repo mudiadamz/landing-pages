@@ -9,14 +9,18 @@ import { toggleLike } from "@/lib/actions/likes";
 import {
   readEpubFont,
   setEpubFont,
+  clampEpubFont,
+  EPUB_FONT_STEP,
+  EPUB_FONT_MIN,
+  EPUB_FONT_MAX,
   readEpubMargin,
   setEpubMargin,
   clampEpubMargin,
   EPUB_MARGIN_STEP,
   EPUB_MARGIN_MIN,
   EPUB_MARGIN_MAX,
-  type EpubFontLevel,
 } from "@/lib/epub-font";
+import { useChromeHidden } from "@/lib/immersive";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -81,10 +85,13 @@ export function ProductActionsMenu({
   // EPUB font size — the control the reader is driven by. Lazy init from
   // localStorage is SSR-safe (readEpubFont guards); the font rows only render
   // once the menu is opened, so there's no hydration mismatch.
-  const [fontLevel, setFontLevel] = useState<EpubFontLevel>(readEpubFont);
-  const onFont = useCallback((level: EpubFontLevel) => {
-    setFontLevel(level);
-    setEpubFont(level);
+  const chromeHidden = useChromeHidden();
+
+  const [fontPct, setFontPct] = useState<number>(readEpubFont);
+  const onFont = useCallback((pct: number) => {
+    const v = clampEpubFont(pct);
+    setFontPct(v);
+    setEpubFont(v);
   }, []);
   const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
   const onMargin = useCallback((px: number) => {
@@ -385,32 +392,33 @@ export function ProductActionsMenu({
         label={dark ? "Mode terang" : "Mode gelap"}
       />
 
-      {/* EPUB font size — only for EPUB previews. */}
+      {/* EPUB font size (percent) — only for EPUB previews. */}
       {epub && (
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <TextSizeIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-          <div className="flex flex-1 items-center gap-1">
-            {FONT_LEVELS.map((f) => {
-              const active = f.level === fontLevel;
-              return (
-                <button
-                  key={f.level}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={active}
-                  title={`Font ${f.label}`}
-                  aria-label={`Ukuran font ${f.label}`}
-                  onClick={() => onFont(f.level)}
-                  className={`flex flex-1 items-center justify-center rounded-md py-1 font-semibold leading-none transition-all duration-150 active:scale-95 ${f.cls} ${
-                    active
-                      ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                      : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
-                  }`}
-                >
-                  A
-                </button>
-              );
-            })}
+          <span className="text-sm text-foreground">Font</span>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onFont(fontPct - EPUB_FONT_STEP)}
+              disabled={fontPct <= EPUB_FONT_MIN}
+              aria-label="Perkecil font"
+              className={STEPPER_BTN}
+            >
+              −
+            </button>
+            <span className="w-12 text-center text-sm font-medium tabular-nums text-foreground">
+              {fontPct}%
+            </span>
+            <button
+              type="button"
+              onClick={() => onFont(fontPct + EPUB_FONT_STEP)}
+              disabled={fontPct >= EPUB_FONT_MAX}
+              aria-label="Perbesar font"
+              className={STEPPER_BTN}
+            >
+              +
+            </button>
           </div>
         </div>
       )}
@@ -426,7 +434,7 @@ export function ProductActionsMenu({
               onClick={() => onMargin(marginPx - EPUB_MARGIN_STEP)}
               disabled={marginPx <= EPUB_MARGIN_MIN}
               aria-label="Kurangi margin"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90 disabled:opacity-40"
+              className={STEPPER_BTN}
             >
               −
             </button>
@@ -438,7 +446,7 @@ export function ProductActionsMenu({
               onClick={() => onMargin(marginPx + EPUB_MARGIN_STEP)}
               disabled={marginPx >= EPUB_MARGIN_MAX}
               aria-label="Tambah margin"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90 disabled:opacity-40"
+              className={STEPPER_BTN}
             >
               +
             </button>
@@ -483,7 +491,7 @@ export function ProductActionsMenu({
       title="Menu tindakan"
       className={
         variant === "floating"
-          ? "flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-all hover:text-foreground active:scale-95"
+          ? "flex h-8 w-8 items-center justify-center rounded-full text-foreground transition-all hover:bg-white/10 active:scale-95"
           : "flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-foreground transition-all hover:bg-[var(--background)] active:scale-95"
       }
     >
@@ -498,8 +506,10 @@ export function ProductActionsMenu({
   const body = (
     <div ref={rootRef} className="relative">
       {variant === "floating" ? (
-        // Fully transparent wrapper — just the dots icon floats over the preview.
-        <div className="flex items-center bg-transparent p-1">{trigger}</div>
+        // Glassy round wrapper floating over the preview.
+        <div className="flex items-center rounded-full border border-white/15 bg-[var(--card)]/40 p-1 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
+          {trigger}
+        </div>
       ) : (
         trigger
       )}
@@ -515,7 +525,13 @@ export function ProductActionsMenu({
   return (
     <>
       {variant === "floating" ? (
-        <div className="fixed right-4 top-4 z-50">{body}</div>
+        <div
+          className={`fixed right-4 top-4 z-50 transition-opacity duration-300 ${
+            chromeHidden && !open ? "pointer-events-none opacity-0" : "opacity-100"
+          }`}
+        >
+          {body}
+        </div>
       ) : (
         body
       )}
@@ -571,11 +587,8 @@ export function ProductActionsMenu({
 
 /* -------------------------------------------------------------------------- */
 
-const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
-  { level: "small", label: "Kecil", cls: "text-[11px]" },
-  { level: "medium", label: "Sedang", cls: "text-sm" },
-  { level: "large", label: "Besar", cls: "text-lg" },
-];
+const STEPPER_BTN =
+  "flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-all duration-150 hover:bg-[var(--background)] hover:text-foreground active:scale-90 disabled:opacity-40";
 
 const SHARE_TARGETS: {
   key: ShareTarget;

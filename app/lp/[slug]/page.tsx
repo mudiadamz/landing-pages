@@ -17,6 +17,7 @@ import { getMyLike } from "@/lib/actions/likes";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
+import { ImmersiveController } from "@/components/immersive-controller";
 
 const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 const getCheckoutData = cache((slug: string) => getLandingPageForCheckout(slug));
@@ -153,6 +154,7 @@ export default async function LandingPageView({ params }: Props) {
   return (
     <>
       <PreviewGuardClient />
+      <ImmersiveController />
       <ViewTracker slug={slug} />
       <ProductTracker slug={slug} page="preview" />
       <PreviewSurface mode={embedPdf ? "pdf" : embedEpub ? "epub" : embedLink ? "link" : "html"}>

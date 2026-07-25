@@ -6,20 +6,20 @@ import { useTheme } from "@/lib/use-theme";
 import {
   readEpubFont,
   setEpubFont,
+  clampEpubFont,
+  EPUB_FONT_STEP,
+  EPUB_FONT_MIN,
+  EPUB_FONT_MAX,
   readEpubMargin,
   setEpubMargin,
   clampEpubMargin,
   EPUB_MARGIN_STEP,
   EPUB_MARGIN_MIN,
   EPUB_MARGIN_MAX,
-  type EpubFontLevel,
 } from "@/lib/epub-font";
 
-const FONT_LEVELS: { level: EpubFontLevel; label: string; cls: string }[] = [
-  { level: "small", label: "Kecil", cls: "text-[11px]" },
-  { level: "medium", label: "Sedang", cls: "text-sm" },
-  { level: "large", label: "Besar", cls: "text-lg" },
-];
+const STEPPER_BTN =
+  "flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground disabled:opacity-40";
 
 // Lets a buyer read a product's EPUB deliverable in the same reader used on the
 // product preview. Fetches a gated signed URL on demand (see /api/story-epub).
@@ -37,10 +37,11 @@ export function EpubStoryButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { dark, toggle: toggleDark } = useTheme();
-  const [fontLevel, setFontLevel] = useState<EpubFontLevel>(readEpubFont);
-  const onFont = useCallback((level: EpubFontLevel) => {
-    setFontLevel(level);
-    setEpubFont(level);
+  const [fontPct, setFontPct] = useState<number>(readEpubFont);
+  const onFont = useCallback((pct: number) => {
+    const v = clampEpubFont(pct);
+    setFontPct(v);
+    setEpubFont(v);
   }, []);
   const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
   const onMargin = useCallback((px: number) => {
@@ -90,26 +91,29 @@ export function EpubStoryButton({
             <p className="font-medium text-foreground truncate">{title}</p>
             <div className="flex shrink-0 items-center gap-1">
               <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5">
-                {FONT_LEVELS.map((f) => {
-                  const active = f.level === fontLevel;
-                  return (
-                    <button
-                      key={f.level}
-                      type="button"
-                      aria-pressed={active}
-                      title={`Font ${f.label}`}
-                      aria-label={`Ukuran font ${f.label}`}
-                      onClick={() => onFont(f.level)}
-                      className={`flex h-6 w-6 items-center justify-center rounded-md font-semibold leading-none transition-colors ${f.cls} ${
-                        active
-                          ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                          : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
-                      }`}
-                    >
-                      A
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => onFont(fontPct - EPUB_FONT_STEP)}
+                  disabled={fontPct <= EPUB_FONT_MIN}
+                  aria-label="Perkecil font"
+                  title="Perkecil font"
+                  className={STEPPER_BTN}
+                >
+                  −
+                </button>
+                <span className="w-10 text-center text-[11px] font-medium tabular-nums text-foreground" title="Ukuran font">
+                  {fontPct}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onFont(fontPct + EPUB_FONT_STEP)}
+                  disabled={fontPct >= EPUB_FONT_MAX}
+                  aria-label="Perbesar font"
+                  title="Perbesar font"
+                  className={STEPPER_BTN}
+                >
+                  +
+                </button>
               </div>
               <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5">
                 <button
@@ -118,7 +122,7 @@ export function EpubStoryButton({
                   disabled={marginPx <= EPUB_MARGIN_MIN}
                   aria-label="Kurangi margin"
                   title="Kurangi margin"
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground disabled:opacity-40"
+                  className={STEPPER_BTN}
                 >
                   −
                 </button>
@@ -134,7 +138,7 @@ export function EpubStoryButton({
                   disabled={marginPx >= EPUB_MARGIN_MAX}
                   aria-label="Tambah margin"
                   title="Tambah margin"
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-base font-semibold leading-none text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground disabled:opacity-40"
+                  className={STEPPER_BTN}
                 >
                   +
                 </button>

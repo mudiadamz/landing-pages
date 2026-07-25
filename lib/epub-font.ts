@@ -3,37 +3,40 @@
 // window CustomEvent plus a persisted localStorage value (so the choice sticks
 // across books/sessions). Both are SSR-safe (guarded reads).
 
-export type EpubFontLevel = "small" | "medium" | "large";
-
-export const EPUB_FONT_SIZES: Record<EpubFontLevel, string> = {
-  small: "90%",
-  medium: "112%",
-  large: "140%",
-};
-
+// Font size as a percent (applied via rendition.themes.fontSize).
 export const EPUB_FONT_KEY = "lp-epub-font";
 export const EPUB_FONT_EVENT = "lp-epub-font";
+export const EPUB_FONT_DEFAULT = 112;
+export const EPUB_FONT_MIN = 70;
+export const EPUB_FONT_MAX = 240;
+export const EPUB_FONT_STEP = 6;
 
-/** Current preference (falls back to "medium" on the server / when unset). */
-export function readEpubFont(): EpubFontLevel {
+export function clampEpubFont(n: number): number {
+  if (!Number.isFinite(n)) return EPUB_FONT_DEFAULT;
+  return Math.max(EPUB_FONT_MIN, Math.min(EPUB_FONT_MAX, Math.round(n)));
+}
+
+/** Current font percent (falls back to the default on the server / when unset). */
+export function readEpubFont(): number {
   try {
-    const v = localStorage.getItem(EPUB_FONT_KEY);
-    if (v === "small" || v === "medium" || v === "large") return v;
+    const v = parseInt(localStorage.getItem(EPUB_FONT_KEY) ?? "", 10);
+    if (Number.isFinite(v)) return clampEpubFont(v);
   } catch {
     /* storage unavailable / SSR */
   }
-  return "medium";
+  return EPUB_FONT_DEFAULT;
 }
 
 /** Persist + broadcast a new size so any open reader applies it immediately. */
-export function setEpubFont(level: EpubFontLevel): void {
+export function setEpubFont(pct: number): void {
+  const v = clampEpubFont(pct);
   try {
-    localStorage.setItem(EPUB_FONT_KEY, level);
+    localStorage.setItem(EPUB_FONT_KEY, String(v));
   } catch {
     /* best-effort */
   }
   try {
-    window.dispatchEvent(new CustomEvent(EPUB_FONT_EVENT, { detail: level }));
+    window.dispatchEvent(new CustomEvent(EPUB_FONT_EVENT, { detail: v }));
   } catch {
     /* best-effort */
   }

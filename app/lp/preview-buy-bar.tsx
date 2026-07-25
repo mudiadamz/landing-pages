@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { trackCta } from "@/lib/track";
+import { useChromeHidden } from "@/lib/immersive";
 
 /** Short buzz on tap where supported (Android Chrome; no-op on iOS). */
 function buzz() {
@@ -89,8 +90,10 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
     if (handleTimer.current) clearTimeout(handleTimer.current);
   }, []);
 
-  const showBar = revealed && !hidden;
-  const showHandle = revealed && hidden && handleReady;
+  // Focus mode: fade the whole CTA away with the rest of the chrome.
+  const chromeHidden = useChromeHidden();
+  const showBar = revealed && !hidden && !chromeHidden;
+  const showHandle = revealed && hidden && handleReady && !chromeHidden;
 
   return (
     <>
