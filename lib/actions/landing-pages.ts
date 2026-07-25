@@ -154,7 +154,7 @@ export async function getLandingPageBySlug(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, story_pdf_url, story_pdf_url_dark, story_epub_url, like_count, related_product_ids, available_at, thumbnail_url, published, user_id")
+    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, story_pdf_url, story_pdf_url_dark, story_epub_url, like_count, related_product_ids, next_product_id, available_at, thumbnail_url, published, user_id")
     .eq("slug", slug)
     .single();
 
@@ -174,9 +174,33 @@ export async function getLandingPageBySlug(slug: string) {
     story_epub_url?: string | null;
     like_count?: number;
     related_product_ids?: string[] | null;
+    next_product_id?: string | null;
     available_at?: string | null;
     thumbnail_url?: string | null;
     user_id?: string;
+  };
+}
+
+/**
+ * The next instalment in a series, for the "continue reading" CTA at the end of
+ * a preview. Readers who finish a part otherwise have nowhere to go.
+ */
+export async function getNextInSeries(nextProductId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lp_landing_pages")
+    .select("id, title, slug, thumbnail_url, price, price_discount, is_free, published")
+    .eq("id", nextProductId)
+    .maybeSingle();
+  if (!data || data.published === false) return null;
+  return data as {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail_url?: string | null;
+    price?: number | null;
+    price_discount?: number | null;
+    is_free?: boolean | null;
   };
 }
 
@@ -507,6 +531,7 @@ export async function updateLandingPagePricing(
     event_location?: string | null;
     event_description?: string | null;
     related_product_ids?: string[] | null;
+    next_product_id?: string | null;
     available_at?: string | null;
   }
 ) {

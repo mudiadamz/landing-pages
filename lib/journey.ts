@@ -103,7 +103,8 @@ export type JourneyPayload = {
   pageType: string;
   productSlug: string | null;
   dwellMs: number;
-  scrollDepth: number;
+  /** null when the page never became scrollable — depth is unknown, not 0/100. */
+  scrollDepth: number | null;
   reachedEnd: boolean;
   device: string;
   browser: string;

@@ -2,7 +2,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds } from "@/lib/actions/landing-pages";
+import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds, getNextInSeries } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
 import { ComingSoon } from "@/components/coming-soon";
 import { buildMetaDescription } from "@/lib/seo";
@@ -12,6 +12,7 @@ import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
+import { SeriesNextCta } from "@/components/series-next-cta";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { getMyLike } from "@/lib/actions/likes";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
@@ -76,6 +77,9 @@ export default async function LandingPageView({ params }: Props) {
   const epubUrl = dvEpubUrl ?? (page.preview_type === "epub" ? previewUrl : null);
   const pdfLight = dvPdfUrl ?? (page.preview_type === "pdf" ? previewUrl ?? previewUrlDark : null);
   const pdfDark = dvPdfUrl ? dvPdfUrlDark : page.preview_type === "pdf" ? previewUrlDark : null;
+
+  // Next instalment (if this product is part of a series) for the end-of-read CTA.
+  const nextInSeries = page.next_product_id ? await getNextInSeries(page.next_product_id) : null;
 
   const embedEpub = !!epubUrl;
   const embedPdf = !!pdfLight && !embedEpub;
@@ -161,7 +165,22 @@ export default async function LandingPageView({ params }: Props) {
         // Inline EPUB — rendered directly in the DOM and flows in the window, so
         // scroll, taps, focus mode and the iOS address bar are all native.
         <div className="w-full">
-          <EpubReader url={epubUrl as string} title={page.title} storageKey={`lp-epub:${slug}`} />
+          <EpubReader
+            url={epubUrl as string}
+            slug={slug}
+            title={page.title}
+            storageKey={`lp-epub:${slug}`}
+          />
+          {nextInSeries && (
+            <SeriesNextCta
+              slug={nextInSeries.slug}
+              title={nextInSeries.title}
+              thumbnailUrl={nextInSeries.thumbnail_url}
+              price={nextInSeries.price}
+              priceDiscount={nextInSeries.price_discount}
+              isFree={nextInSeries.is_free}
+            />
+          )}
         </div>
       ) : (
         <div className="lp-reader sticky top-0 w-full overflow-hidden">

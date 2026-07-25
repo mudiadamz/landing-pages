@@ -108,6 +108,7 @@ type Props = {
     event_location?: string | null;
     event_description?: string | null;
     related_product_ids?: string[] | null;
+    next_product_id?: string | null;
     available_at?: string | null;
   };
 };
@@ -340,6 +341,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     (initial.related_product_ids ?? []).filter((id) => validRelatedIds.has(id)),
   );
   const [relatedSearch, setRelatedSearch] = useState("");
+  // Series continuation: the part a reader should go to after finishing this one.
+  const [nextProductId, setNextProductId] = useState<string>(
+    initial.next_product_id && validRelatedIds.has(initial.next_product_id) ? initial.next_product_id : "",
+  );
 
   const toggleRelated = useCallback((id: string) => {
     setRelatedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -660,6 +665,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         long_description: longDescription.trim() || null,
         preview_label: previewLabel,
         related_product_ids: relatedIds,
+        next_product_id: nextProductId || null,
         available_at:
           scheduleEnabled && availableAt.trim()
             ? new Date(availableAt).toISOString()
@@ -1496,6 +1502,29 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
               </div>
             </div>
           )}
+        </div>
+
+        {/* Series continuation */}
+        <div className="space-y-2 border-t border-[var(--border)] pt-5">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Lanjutan seri</h2>
+            <p className="text-sm text-[var(--muted)]">
+              Kalau produk ini bagian dari seri, pilih part berikutnya. Tombol &ldquo;Baca
+              kelanjutannya&rdquo; akan muncul di akhir preview supaya pembaca tidak berhenti di sini.
+            </p>
+          </div>
+          <select
+            value={nextProductId}
+            onChange={(e) => setNextProductId(e.target.value)}
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          >
+            <option value="">— Tidak ada —</option>
+            {relatedOptions.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.title}
+              </option>
+            ))}
+          </select>
         </div>
       </section>
 

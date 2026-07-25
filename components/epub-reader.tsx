@@ -15,13 +15,16 @@ const EpubViewer = dynamic(() => import("./epub-inline-viewer"), {
 
 export function EpubReader({
   url,
+  slug,
   title,
   storageKey,
 }: {
   url: string;
+  /** Product slug — enables the fast server-unzipped chapter fetch. */
+  slug?: string;
   title?: string;
   storageKey?: string;
 }) {
   // Re-key on the source so switching files cleanly reloads the reader.
-  return <EpubViewer key={url} url={url} title={title} storageKey={storageKey} />;
+  return <EpubViewer key={url} url={url} slug={slug} title={title} storageKey={storageKey} />;
 }

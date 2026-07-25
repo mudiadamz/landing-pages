@@ -135,11 +135,50 @@ function buildEpubHtml(bytes: Uint8Array): { html: string; blobs: string[] } {
   return { html: chapters.join("\n"), blobs };
 }
 
+/**
+ * Sanitize raw chapter markup that the server already unzipped. Mirrors the
+ * client-side path in buildEpubHtml: strip scripts/handlers, keep images (they
+ * point at /api/epub-asset and stream in lazily after the text has painted).
+ */
+function sanitizeChapters(chapters: string[]): string {
+  const parser = new DOMParser();
+  const out: string[] = [];
+  for (const raw of chapters) {
+    try {
+      const doc = parser.parseFromString(`<body>${raw}</body>`, "text/html");
+      const body = doc.body;
+      if (!body) continue;
+      body
+        .querySelectorAll("script, style, link, title, meta, base, iframe, object, embed")
+        .forEach((n) => n.remove());
+      body.querySelectorAll("*").forEach((el) => {
+        for (const attr of Array.from(el.attributes)) {
+          if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
+          if (/^\s*javascript:/i.test(attr.value)) el.removeAttribute(attr.name);
+        }
+      });
+      // Never let a picture block the words.
+      body.querySelectorAll("img").forEach((img) => {
+        img.setAttribute("loading", "lazy");
+        img.setAttribute("decoding", "async");
+      });
+      out.push(`<section class="epub-chapter">${body.innerHTML}</section>`);
+    } catch {
+      /* skip an unreadable chapter */
+    }
+  }
+  if (out.length === 0) throw new Error("No readable chapters");
+  return out.join("\n");
+}
+
 export default function EpubInlineViewer({
   url,
+  slug,
   storageKey,
 }: {
   url: string;
+  /** When set, fetch pre-unzipped chapters from the server (much faster). */
+  slug?: string;
   title?: string;
   /** Reserved for future scroll-position memory. */
   storageKey?: string;
@@ -152,11 +191,32 @@ export default function EpubInlineViewer({
   const [error, setError] = useState<string | null>(null);
 
   // Fetch + parse + inject the book (no iframe).
+  //
+  // Fast path: the server hands us just the chapter markup (tens of KB) with
+  // images pointed at /api/epub-asset, so the first words paint almost at once.
+  // Fallback: download and unzip the whole archive in the browser — correct but
+  // slow, since a book's images can dwarf its text.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
     (async () => {
+      if (slug) {
+        try {
+          const res = await fetch(`/api/epub-text/${encodeURIComponent(slug)}`);
+          if (res.ok) {
+            const { chapters } = (await res.json()) as { chapters: string[] };
+            const html = sanitizeChapters(chapters);
+            if (cancelled) return;
+            if (contentRef.current) contentRef.current.innerHTML = html;
+            setLoading(false);
+            return;
+          }
+        } catch {
+          /* fall through to the client-side unzip */
+        }
+        if (cancelled) return;
+      }
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -181,7 +241,7 @@ export default function EpubInlineViewer({
       blobsRef.current.forEach(URL.revokeObjectURL);
       blobsRef.current = [];
     };
-  }, [url]);
+  }, [url, slug]);
 
   // Follow font-size / margin changes broadcast from the actions menu.
   useEffect(() => {

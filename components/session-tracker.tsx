@@ -25,10 +25,19 @@ type PageTrack = {
   kind: string;
   activeMs: number;
   lastResume: number | null; // ms timestamp while visible, else null
-  maxScroll: number; // 0..1
+  maxScroll: number | null; // 0..1, or null while depth is still unknown
   reachedEnd: boolean;
   sent: boolean;
 };
+
+/**
+ * A page that isn't scrollable yet tells us nothing: async content (the EPUB
+ * reader, embedded viewers) injects after mount, so an early measurement would
+ * score "100% read" on what is really a blank screen. Treat non-scrollable as
+ * unknown until the page has had time to settle; only then is a short page
+ * genuinely fully-seen.
+ */
+const SETTLE_MS = 4000;
 
 export function SessionTracker() {
   const pathname = usePathname();
@@ -51,10 +60,11 @@ export function SessionTracker() {
       kind: pageType(pathname),
       activeMs: 0,
       lastResume: document.visibilityState === "visible" ? now() : null,
-      maxScroll: 0,
+      maxScroll: null,
       reachedEnd: false,
       sent: false,
     };
+    const mountedAt = now();
 
     const accrue = () => {
       if (page.lastResume != null) {
@@ -66,8 +76,16 @@ export function SessionTracker() {
     const measureScroll = () => {
       const doc = document.documentElement;
       const scrollable = doc.scrollHeight - window.innerHeight;
-      const depth = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 1;
-      if (depth > page.maxScroll) page.maxScroll = depth;
+      if (scrollable <= 0) {
+        // Not scrollable: only trust it once the page has settled.
+        if (now() - mountedAt >= SETTLE_MS) {
+          page.maxScroll = 1;
+          page.reachedEnd = true;
+        }
+        return;
+      }
+      const depth = Math.min(1, Math.max(0, window.scrollY / scrollable));
+      if (page.maxScroll === null || depth > page.maxScroll) page.maxScroll = depth;
       if (depth >= 0.98) page.reachedEnd = true;
     };
 
@@ -85,7 +103,7 @@ export function SessionTracker() {
           pageType: page.kind,
           productSlug: page.productSlug,
           dwellMs: Math.round(page.activeMs),
-          scrollDepth: Math.round(page.maxScroll * 100),
+          scrollDepth: page.maxScroll === null ? null : Math.round(page.maxScroll * 100),
           reachedEnd: page.reachedEnd,
           device,
           browser,
@@ -108,12 +126,16 @@ export function SessionTracker() {
     const onPageHide = () => flush(true);
 
     measureScroll();
+    // Re-check once async content has had time to render, so a genuinely short
+    // page still records as fully seen even if the reader never scrolls.
+    const settleTimer = window.setTimeout(measureScroll, SETTLE_MS + 100);
     window.addEventListener("scroll", onScroll, { passive: true, capture: true });
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", onPageHide);
 
     return () => {
       // SPA route change → record the page we're leaving.
+      window.clearTimeout(settleTimer);
       flush(false);
       window.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);
       document.removeEventListener("visibilitychange", onVisibility);

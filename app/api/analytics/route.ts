@@ -79,9 +79,18 @@ async function lookupGeo(
   }
 }
 
-/** Preview engagement bucket from dwell + scroll depth. */
-function engagementOf(dwellMs: number, scroll: number, reachedEnd: boolean): string {
+/**
+ * Preview engagement bucket from dwell + scroll depth. `scroll` is null when the
+ * page never became scrollable (async readers), in which case we judge on dwell
+ * alone rather than inventing a depth.
+ */
+function engagementOf(dwellMs: number, scroll: number | null, reachedEnd: boolean): string {
   const sec = dwellMs / 1000;
+  if (scroll === null) {
+    if (sec < 8) return "left";
+    if (sec > 40) return "read";
+    return "curious";
+  }
   if (sec < 8 || scroll < 15) return "left";
   if (sec > 40 && (scroll > 60 || reachedEnd)) return "read";
   return "curious";
@@ -105,7 +114,9 @@ export async function POST(req: Request) {
     const productSlug = clamp(body.productSlug, 200);
 
     const dwellMs = num(body.dwellMs, 6 * 60 * 60 * 1000); // cap 6h
-    const scrollDepth = num(body.scrollDepth, 100);
+    // null = unknown (page never scrollable); distinct from a real 0.
+    const scrollDepth =
+      body.scrollDepth === null || body.scrollDepth === undefined ? null : num(body.scrollDepth, 100);
     const reachedEnd = body.reachedEnd === true;
     const engagement = pageKind === "preview" ? engagementOf(dwellMs, scrollDepth, reachedEnd) : null;
 

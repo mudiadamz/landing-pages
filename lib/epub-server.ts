@@ -1,0 +1,105 @@
+import { unzipSync, strFromU8 } from "fflate";
+
+/**
+ * Server-side EPUB unpacking. The client used to download the whole .epub and
+ * unzip it in the browser before a single word appeared — on a typical book the
+ * text is only ~2% of the archive (images are the rest), so that cost seconds of
+ * blank screen on mobile data. Here we unzip once on the server and hand the
+ * client just the chapter markup, with image srcs pointed at /api/epub-asset.
+ *
+ * The markup returned is still RAW (unsanitized) — the client sanitizes it with
+ * DOMParser exactly as before, so the security model is unchanged.
+ */
+
+export const IMG_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+
+const dirOf = (p: string) => p.split("/").slice(0, -1).join("/");
+
+export function resolveEpubPath(base: string, rel: string): string {
+  let r = rel.split("#")[0];
+  try {
+    r = decodeURIComponent(r);
+  } catch {
+    /* keep as-is */
+  }
+  if (r.startsWith("/")) r = r.slice(1);
+  const parts = base ? base.split("/") : [];
+  for (const s of r.split("/")) {
+    if (s === "..") parts.pop();
+    else if (s === "." || s === "") continue;
+    else parts.push(s);
+  }
+  return parts.join("/");
+}
+
+/** Extract one file from the archive (used by the image endpoint). */
+export function readEpubFile(bytes: Uint8Array, path: string): Uint8Array | null {
+  const files = unzipSync(bytes);
+  return files[path] ?? null;
+}
+
+export type EpubChapters = { chapters: string[] };
+
+/**
+ * Ordered spine chapters as raw HTML body markup. `assetUrl(path)` maps an
+ * in-archive image path to a URL the browser can fetch lazily.
+ */
+export function extractEpubChapters(
+  bytes: Uint8Array,
+  assetUrl: (path: string) => string,
+): EpubChapters {
+  const files = unzipSync(bytes);
+
+  const container = strFromU8(files["META-INF/container.xml"] ?? new Uint8Array());
+  const opfPath = container.match(/full-path="([^"]+)"/)?.[1];
+  if (!opfPath || !files[opfPath]) throw new Error("OPF not found");
+  const opfDir = dirOf(opfPath);
+  const opf = strFromU8(files[opfPath]);
+
+  const manifest = new Map<string, string>();
+  for (const m of opf.matchAll(/<item\b[^>]*>/g)) {
+    const tag = m[0];
+    const id = tag.match(/\bid="([^"]+)"/)?.[1];
+    const href = tag.match(/\bhref="([^"]+)"/)?.[1];
+    if (id && href) manifest.set(id, href);
+  }
+  const spine = [...opf.matchAll(/<itemref\b[^>]*\bidref="([^"]+)"/g)].map((m) => m[1]);
+
+  const chapters: string[] = [];
+  for (const idref of spine) {
+    const href = manifest.get(idref);
+    if (!href) continue;
+    const path = resolveEpubPath(opfDir, href);
+    const raw = files[path];
+    if (!raw) continue;
+
+    let html = strFromU8(raw);
+    // Keep only the body — the client injects this into its own container.
+    const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (body) html = body[1];
+
+    const chapterDir = dirOf(path);
+    // Point image references at the asset endpoint so the browser can stream
+    // them lazily instead of blocking the text on a multi-MB download.
+    html = html.replace(
+      /(<(?:img|image)\b[^>]*?\b(?:src|href|xlink:href)=)(["'])(.*?)\2/gi,
+      (full, prefix: string, quote: string, src: string) => {
+        if (!src || /^(data:|https?:|blob:)/i.test(src)) return full;
+        return `${prefix}${quote}${assetUrl(resolveEpubPath(chapterDir, src))}${quote}`;
+      },
+    );
+
+    chapters.push(html);
+  }
+
+  if (chapters.length === 0) throw new Error("No readable chapters");
+  return { chapters };
+}

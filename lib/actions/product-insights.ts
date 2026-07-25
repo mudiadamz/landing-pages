@@ -72,7 +72,7 @@ type EventRow = {
   product_slug: string | null;
   page_type: string | null;
   dwell_ms: number;
-  scroll_depth: number;
+  scroll_depth: number | null;
   reached_end: boolean;
   engagement: string | null;
   created_at: string;
@@ -138,6 +138,7 @@ function summarize(
     let curious = 0;
     let left = 0;
     let scrollSum = 0;
+    let scrollN = 0;
     let reachedEnd = 0;
     const dwells: number[] = [];
     const perVisitor = new Map<string, number>();
@@ -148,7 +149,10 @@ function summarize(
       if (e.engagement === "read") read++;
       else if (e.engagement === "curious") curious++;
       else left++;
-      scrollSum += e.scroll_depth || 0;
+      if (e.scroll_depth !== null) {
+        scrollSum += e.scroll_depth;
+        scrollN++;
+      }
       if (e.reached_end) reachedEnd++;
       dwells.push(e.dwell_ms || 0);
 
@@ -174,7 +178,7 @@ function summarize(
     const readRate = previews ? read / previews : 0;
     const bounceRate = previews ? left / previews : 0;
     const medianDwellMs = median(dwells);
-    const avgScroll = previews ? Math.round(scrollSum / previews) : 0;
+    const avgScroll = scrollN ? Math.round(scrollSum / scrollN) : 0;
     const reachedEndPct = previews ? pct(reachedEnd / previews) : 0;
 
     const sessionsWithPreview = previewSessions.size;

@@ -51,7 +51,7 @@ type EventRow = {
   product_slug: string | null;
   page_type: string | null;
   dwell_ms: number;
-  scroll_depth: number;
+  scroll_depth: number | null;
   reached_end: boolean;
   engagement: string | null;
   created_at: string;
@@ -270,20 +270,23 @@ export async function getAnalytics(range: Range = 30): Promise<Analytics> {
   const entryPoints = [...entryMap.values()].sort((a, b) => b.sessions - a.sessions).slice(0, 40);
 
   // Preview engagement per product.
-  type EngAgg = { read: number; curious: number; left: number; dwell: number; scroll: number; n: number };
+  type EngAgg = { read: number; curious: number; left: number; dwell: number; scroll: number; scrollN: number; n: number };
   const engMap = new Map<string, EngAgg>();
   for (const e of events) {
     if (e.page_type !== "preview" || !e.product_slug) continue;
     let agg = engMap.get(e.product_slug);
     if (!agg) {
-      agg = { read: 0, curious: 0, left: 0, dwell: 0, scroll: 0, n: 0 };
+      agg = { read: 0, curious: 0, left: 0, dwell: 0, scroll: 0, scrollN: 0, n: 0 };
       engMap.set(e.product_slug, agg);
     }
     if (e.engagement === "read") agg.read++;
     else if (e.engagement === "curious") agg.curious++;
     else agg.left++;
     agg.dwell += e.dwell_ms || 0;
-    agg.scroll += e.scroll_depth || 0;
+    if (e.scroll_depth !== null) {
+      agg.scroll += e.scroll_depth;
+      agg.scrollN++;
+    }
     agg.n++;
   }
   const engagement: EngagementRow[] = [...engMap.entries()]
@@ -295,7 +298,7 @@ export async function getAnalytics(range: Range = 30): Promise<Analytics> {
       left: a.left,
       total: a.n,
       avgDwellMs: a.n ? Math.round(a.dwell / a.n) : 0,
-      avgScroll: a.n ? Math.round(a.scroll / a.n) : 0,
+      avgScroll: a.scrollN ? Math.round(a.scroll / a.scrollN) : 0,
     }))
     .sort((a, b) => b.total - a.total);
 
@@ -345,7 +348,7 @@ export type JourneyStep = {
   productSlug: string | null;
   title: string | null;
   dwellMs: number;
-  scrollDepth: number;
+  scrollDepth: number | null;
   reachedEnd: boolean;
   engagement: string | null;
   createdAt: string;
@@ -377,7 +380,7 @@ export async function getSessionJourney(sessionId: string): Promise<JourneyStep[
     productSlug: e.product_slug,
     title: e.product_slug ? titleBySlug.get(e.product_slug) ?? null : null,
     dwellMs: e.dwell_ms || 0,
-    scrollDepth: e.scroll_depth || 0,
+    scrollDepth: e.scroll_depth,
     reachedEnd: e.reached_end,
     engagement: e.engagement,
     createdAt: e.created_at,

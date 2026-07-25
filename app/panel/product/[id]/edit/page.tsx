@@ -108,6 +108,7 @@ export default async function EditPage({
           event_location: (page as { event_location?: string | null }).event_location ?? null,
           event_description: (page as { event_description?: string | null }).event_description ?? null,
           related_product_ids: (page as { related_product_ids?: string[] | null }).related_product_ids ?? null,
+          next_product_id: (page as { next_product_id?: string | null }).next_product_id ?? null,
           available_at: (page as { available_at?: string | null }).available_at ?? null,
         }}
       />
