@@ -97,10 +97,10 @@ export function PreviewBuyBar({ href, external, calendar, label, priceText, note
 
   return (
     <>
-      {/* CTA bar. Solid gradient fills the bottom (incl. the iOS safe-area /
-          Safari address-bar zone) so there's no transparent strip behind it. */}
+      {/* CTA bar — fully transparent wrapper so only the card floats over the
+          reader (no background fill behind it / near the Safari bar). */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-[var(--background)] via-[var(--background)] to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-10 transition-all duration-300 ease-out ${
+        className={`fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-all duration-300 ease-out ${
           showBar ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
         }`}
       >
