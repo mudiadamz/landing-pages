@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/use-theme";
+import { detectInstallPlatform, type InstallPlatform } from "@/lib/install-platform";
 import { trackCta, type TrackPage } from "@/lib/track";
 import { signInWithGoogle, signOut } from "@/lib/actions/auth";
 import { toggleLike } from "@/lib/actions/likes";
@@ -186,15 +187,7 @@ export function ProductActionsMenu({
   // via lazy initializers (false during SSR) — they only affect menu content
   // that renders after the menu is opened, so there's no hydration mismatch.
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
-  const [isIOS] = useState(() => {
-    if (typeof navigator === "undefined") return false;
-    const ua = navigator.userAgent || "";
-    return (
-      /iphone|ipad|ipod/i.test(ua) ||
-      // iPadOS 13+ reports as Mac but is touch-capable.
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-    );
-  });
+  const [platform] = useState<InstallPlatform>(() => detectInstallPlatform());
   const [standalone] = useState(() => {
     if (typeof window === "undefined") return false;
     return (
@@ -600,27 +593,7 @@ export function ProductActionsMenu({
               <HomePlusIcon className="h-5 w-5 text-[var(--primary)]" />
               <h3 className="text-sm font-semibold text-foreground">Add to Home Screen</h3>
             </div>
-            {isIOS ? (
-              <ol className="space-y-2 text-sm text-[var(--muted)]">
-                <li>
-                  1. Ketuk tombol <strong className="text-foreground">Bagikan</strong> di Safari
-                  (ikon kotak dengan panah ke atas).
-                </li>
-                <li>
-                  2. Pilih <strong className="text-foreground">Tambahkan ke Layar Utama</strong>.
-                </li>
-                <li>
-                  3. Ketuk <strong className="text-foreground">Tambah</strong>.
-                </li>
-              </ol>
-            ) : (
-              <p className="text-sm text-[var(--muted)]">
-                Buka menu browser Anda lalu pilih{" "}
-                <strong className="text-foreground">Install</strong> atau{" "}
-                <strong className="text-foreground">Add to Home screen</strong>. Jika tidak ada,
-                halaman ini sudah terpasang atau browser Anda belum mendukungnya.
-              </p>
-            )}
+            <InstallSteps platform={platform} />
             <button
               type="button"
               onClick={() => setIosHelp(false)}
@@ -632,6 +605,98 @@ export function ProductActionsMenu({
         </div>
       )}
     </>
+  );
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Per-platform "add to home screen" steps. Android/desktop reach this only when
+ * the browser gave us no install prompt; iOS always does, since it has no
+ * install API at all.
+ */
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-2">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[11px] font-semibold text-[var(--primary)]">
+        {n}
+      </span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+function B({ children }: { children: React.ReactNode }) {
+  return <strong className="text-foreground">{children}</strong>;
+}
+
+function InstallSteps({ platform }: { platform: InstallPlatform }) {
+  if (platform === "ios-safari") {
+    return (
+      <ol className="space-y-2.5 text-sm text-[var(--muted)]">
+        <Step n={1}>
+          Ketuk tombol <B>Bagikan</B> di bawah layar (ikon kotak dengan panah ke atas).
+        </Step>
+        <Step n={2}>
+          Geser ke bawah, pilih <B>Tambahkan ke Layar Utama</B>.
+        </Step>
+        <Step n={3}>
+          Ketuk <B>Tambah</B> di pojok kanan atas.
+        </Step>
+      </ol>
+    );
+  }
+
+  if (platform === "ios-other") {
+    return (
+      <div className="space-y-3 text-sm text-[var(--muted)]">
+        <p>
+          Di iPhone/iPad, hanya <B>Safari</B> yang bisa memasang aplikasi ke layar utama.
+        </p>
+        <ol className="space-y-2.5">
+          <Step n={1}>
+            Buka halaman ini di <B>Safari</B>.
+          </Step>
+          <Step n={2}>
+            Ketuk <B>Bagikan</B> → <B>Tambahkan ke Layar Utama</B>.
+          </Step>
+        </ol>
+      </div>
+    );
+  }
+
+  if (platform === "android") {
+    return (
+      <ol className="space-y-2.5 text-sm text-[var(--muted)]">
+        <Step n={1}>
+          Ketuk menu <B>⋮</B> di pojok kanan atas browser.
+        </Step>
+        <Step n={2}>
+          Pilih <B>Tambahkan ke layar utama</B> atau <B>Instal aplikasi</B>.
+        </Step>
+        <Step n={3}>
+          Konfirmasi dengan <B>Tambah</B> / <B>Instal</B>.
+        </Step>
+      </ol>
+    );
+  }
+
+  return (
+    <div className="space-y-3 text-sm text-[var(--muted)]">
+      <ol className="space-y-2.5">
+        <Step n={1}>
+          Klik ikon <B>Instal</B> di ujung kanan address bar browser.
+        </Step>
+        <Step n={2}>
+          Atau buka menu browser lalu pilih <B>Install</B> / <B>Add to Home screen</B>.
+        </Step>
+      </ol>
+      <p className="text-xs">
+        Kalau pilihan itu tidak ada, aplikasi ini sudah terpasang atau browser kamu belum
+        mendukungnya.
+      </p>
+    </div>
   );
 }
 
