@@ -4,7 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPageForCheckout, getRelatedProducts } from "@/lib/actions/landing-pages";
+import { getLandingPageForCheckout, getRelatedProducts, getProductsByIds } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
 import { ComingSoon } from "@/components/coming-soon";
 import { getPublicReviews, getReviewCount } from "@/lib/actions/reviews";
@@ -96,12 +96,14 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   ]);
   if (!page) notFound();
   const adHeadline = sanitizeAdHeadline(sp.h);
-  const [{ data: { user } }, reviews, reviewCount, related, liked] = await Promise.all([
+  const [{ data: { user } }, reviews, reviewCount, related, liked, bundleItems] = await Promise.all([
     supabase.auth.getUser(),
     getPublicReviews(page.id, 5),
     getReviewCount(page.id),
     getRelatedProducts(page.id, page.category_id ?? null, 5),
     getMyLike(page.id),
+    // Products this bundle hands over — empty for a normal product.
+    getProductsByIds((page as { bundle_product_ids?: string[] | null }).bundle_product_ids ?? []),
   ]);
 
   const isOwner = !!user && page.user_id === user.id;
@@ -298,6 +300,39 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             {/* Description */}
             {page.long_description && (
               <RichText text={page.long_description} className="text-sm text-[var(--muted)]" />
+            )}
+
+            {/* Bundle contents */}
+            {bundleItems.length > 0 && (
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4">
+                <h2 className="text-sm font-semibold text-foreground">
+                  Isi bundle ({bundleItems.length} produk)
+                </h2>
+                {(page as { bundle_note?: string | null }).bundle_note && (
+                  <p className="mt-1 text-sm text-[var(--muted)]">{(page as { bundle_note?: string | null }).bundle_note}</p>
+                )}
+                <ul className="mt-3 space-y-2">
+                  {bundleItems.map((b) => (
+                    <li key={b.id} className="flex items-center gap-3">
+                      {b.thumbnail_url ? (
+                        <Image
+                          src={b.thumbnail_url}
+                          alt=""
+                          width={40}
+                          height={52}
+                          className="h-13 w-10 shrink-0 rounded object-cover"
+                        />
+                      ) : (
+                        <span className="h-13 w-10 shrink-0 rounded bg-[var(--card)]" aria-hidden />
+                      )}
+                      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{b.title}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-[var(--muted)]">
+                  Semua produk di atas otomatis masuk ke akunmu setelah pembayaran berhasil.
+                </p>
+              </div>
             )}
 
             {/* Verified buyer reviews */}

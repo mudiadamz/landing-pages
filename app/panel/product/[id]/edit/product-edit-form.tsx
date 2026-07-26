@@ -110,6 +110,8 @@ type Props = {
     event_description?: string | null;
     related_product_ids?: string[] | null;
     next_product_id?: string | null;
+    bundle_product_ids?: string[] | null;
+    bundle_note?: string | null;
     available_at?: string | null;
   };
 };
@@ -400,6 +402,13 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     (initial.related_product_ids ?? []).filter((id) => validRelatedIds.has(id)),
   );
   const [relatedSearch, setRelatedSearch] = useState("");
+  // Bundle: buying this product also hands over everything selected here.
+  const [bundleIds, setBundleIds] = useState<string[]>(
+    (initial.bundle_product_ids ?? []).filter((id) => validRelatedIds.has(id)),
+  );
+  const [bundleNote, setBundleNote] = useState(initial.bundle_note ?? "");
+  const [bundleSearch, setBundleSearch] = useState("");
+
   // Series continuation: the part a reader should go to after finishing this one.
   const [nextProductId, setNextProductId] = useState<string>(
     initial.next_product_id && validRelatedIds.has(initial.next_product_id) ? initial.next_product_id : "",
@@ -725,6 +734,8 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         preview_label: previewLabel,
         related_product_ids: relatedIds,
         next_product_id: nextProductId || null,
+        bundle_product_ids: bundleIds.length ? bundleIds : null,
+        bundle_note: bundleNote.trim() || null,
         available_at:
           scheduleEnabled && availableAt.trim()
             ? new Date(availableAt).toISOString()
@@ -1545,6 +1556,80 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
                 )}
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Bundle — buying this product grants everything listed here. */}
+        <div className="space-y-3 border-t border-[var(--border)] pt-5">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Bundle</h2>
+            <p className="text-sm text-[var(--muted)]">
+              Jadikan produk ini sebuah paket. Saat pembeli membelinya, semua produk yang
+              dipilih di bawah otomatis masuk ke akun mereka — bisa langsung dibuka &amp;
+              diunduh dari halaman &ldquo;Pembelian saya&rdquo;. Kosongkan kalau ini bukan bundle.
+            </p>
+          </div>
+
+          {relatedOptions.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
+              Belum ada produk lain untuk dimasukkan ke bundle.
+            </p>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="search"
+                  value={bundleSearch}
+                  onChange={(e) => setBundleSearch(e.target.value)}
+                  placeholder="Cari produk…"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                />
+                <span className="shrink-0 text-xs text-[var(--muted)]">{bundleIds.length} dipilih</span>
+              </div>
+              <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-[var(--border)] p-2">
+                {relatedOptions
+                  .filter((o) => o.title.toLowerCase().includes(bundleSearch.trim().toLowerCase()))
+                  .map((o) => {
+                    const checked = bundleIds.includes(o.id);
+                    return (
+                      <label
+                        key={o.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--background)]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setBundleIds((prev) =>
+                              e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id),
+                            )
+                          }
+                          className="h-4 w-4 shrink-0"
+                        />
+                        <span className="truncate">{o.title}</span>
+                      </label>
+                    );
+                  })}
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="bundle-note" className="block text-sm font-medium text-foreground">
+                  Teks bundle
+                </label>
+                <input
+                  id="bundle-note"
+                  type="text"
+                  value={bundleNote}
+                  maxLength={120}
+                  onChange={(e) => setBundleNote(e.target.value)}
+                  placeholder="Contoh: 3 buku sekaligus — hemat 40%"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                />
+                <p className="text-xs text-[var(--muted)]">
+                  Muncul di halaman checkout, di atas daftar isi bundle.
+                </p>
+              </div>
+            </>
           )}
         </div>
 

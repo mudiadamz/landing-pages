@@ -159,6 +159,11 @@ function PurchasesTab({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-foreground truncate">{p.title}</p>
+                      {p.bundle_parent_title && (
+                        <span className="mt-1 inline-block rounded bg-[var(--accent-subtle)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--primary)]">
+                          Dari bundle: {p.bundle_parent_title}
+                        </span>
+                      )}
                       <p className="mt-1 text-sm text-[var(--muted)]">{formatDate(p.purchased_at)}</p>
                     </div>
                     {review && <StarDisplay rating={review.rating} />}

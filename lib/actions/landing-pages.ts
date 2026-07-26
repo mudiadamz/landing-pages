@@ -405,7 +405,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note")
     .eq("slug", slug)
     .single();
 
@@ -532,6 +532,8 @@ export async function updateLandingPagePricing(
     event_description?: string | null;
     related_product_ids?: string[] | null;
     next_product_id?: string | null;
+    bundle_product_ids?: string[] | null;
+    bundle_note?: string | null;
     available_at?: string | null;
   }
 ) {

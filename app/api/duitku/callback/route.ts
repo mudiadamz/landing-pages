@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { grantBundleItems } from "@/lib/bundle";
 import { validateDuitkuCallback } from "@/lib/duitku";
 import { sendPurchaseConfirmationEmail } from "@/lib/email";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
@@ -95,6 +96,8 @@ export async function POST(req: NextRequest) {
         }
         console.error("Duitku callback purchase insert error:", error);
       } else {
+        // A bundle also hands over everything inside it.
+        await grantBundleItems(userId, landingPageId);
         const { data: page } = await supabase
           .from("lp_landing_pages")
           .select("title, slug, zip_url")

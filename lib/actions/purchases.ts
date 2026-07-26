@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { isUpcoming } from "@/lib/product-status";
+import { grantBundleItems } from "@/lib/bundle";
 
 export type PurchaseWithPage = {
   id: string;
@@ -16,6 +17,9 @@ export type PurchaseWithPage = {
   story_pdf_url?: string | null;
   story_epub_url?: string | null;
   thumbnail_url?: string | null;
+  /** Set when this item came from a bundle rather than a direct purchase. */
+  bundle_parent_id?: string | null;
+  bundle_parent_title?: string | null;
 };
 
 export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
@@ -31,7 +35,8 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       id,
       landing_page_id,
       purchased_at,
-      landing_pages:lp_landing_pages (title, slug, zip_url, story_pdf_url, story_epub_url, thumbnail_url)
+      bundle_parent_id,
+      landing_pages:lp_landing_pages!purchases_landing_page_id_fkey (title, slug, zip_url, story_pdf_url, story_epub_url, thumbnail_url)
     `)
     .eq("user_id", user.id)
     .order("purchased_at", { ascending: false });
@@ -43,10 +48,27 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
     id: string;
     landing_page_id: string;
     purchased_at: string;
+    bundle_parent_id: string | null;
     landing_pages: LP | LP[] | null;
   };
 
-  return (data ?? []).map((p: Row) => {
+  // Bundle titles are looked up separately: lp_purchases now has two foreign
+  // keys into lp_landing_pages, and a second embed would need a constraint-name
+  // hint that survived the table rename with its old name.
+  const rows = (data ?? []) as Row[];
+  const parentIds = [...new Set(rows.map((r) => r.bundle_parent_id).filter(Boolean) as string[])];
+  const parentTitles = new Map<string, string>();
+  if (parentIds.length) {
+    const { data: parents } = await supabase
+      .from("lp_landing_pages")
+      .select("id, title")
+      .in("id", parentIds);
+    for (const p of (parents ?? []) as { id: string; title: string }[]) {
+      parentTitles.set(p.id, p.title);
+    }
+  }
+
+  return rows.map((p: Row) => {
     const lp = Array.isArray(p.landing_pages) ? p.landing_pages[0] : p.landing_pages;
     return {
       id: p.id,
@@ -58,6 +80,8 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       story_pdf_url: lp?.story_pdf_url ?? null,
       story_epub_url: lp?.story_epub_url ?? null,
       thumbnail_url: lp?.thumbnail_url ?? null,
+      bundle_parent_id: p.bundle_parent_id ?? null,
+      bundle_parent_title: p.bundle_parent_id ? parentTitles.get(p.bundle_parent_id) ?? null : null,
     };
   });
 }
@@ -87,6 +111,9 @@ export async function addPurchase(landingPageId: string) {
     payment_method: "free",
     invoice_number: generateInvoiceNumber(),
   });
+
+  // A free bundle still hands over everything inside it.
+  if (!error) await grantBundleItems(user.id, landingPageId);
 
   if (error) {
     if (error.code === "23505") {
