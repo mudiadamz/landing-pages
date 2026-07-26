@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/lib/use-theme";
-import { detectInstallPlatform, type InstallPlatform } from "@/lib/install-platform";
+import {
+  detectInstallPlatform,
+  deviceMenuLanguage,
+  type InstallPlatform,
+} from "@/lib/install-platform";
 import { trackCta, type TrackPage } from "@/lib/track";
 import { signInWithGoogle, signOut } from "@/lib/actions/auth";
 import { toggleLike } from "@/lib/actions/likes";
@@ -188,6 +192,7 @@ export function ProductActionsMenu({
   // that renders after the menu is opened, so there's no hydration mismatch.
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
   const [platform] = useState<InstallPlatform>(() => detectInstallPlatform());
+  const [menuLang] = useState<"id" | "en">(() => deviceMenuLanguage());
   const [standalone] = useState(() => {
     if (typeof window === "undefined") return false;
     return (
@@ -593,7 +598,7 @@ export function ProductActionsMenu({
               <HomePlusIcon className="h-5 w-5 text-[var(--primary)]" />
               <h3 className="text-sm font-semibold text-foreground">Add to Home Screen</h3>
             </div>
-            <InstallSteps platform={platform} />
+            <InstallSteps platform={platform} menuLang={menuLang} />
             <button
               type="button"
               onClick={() => setIosHelp(false)}
@@ -627,22 +632,34 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
   );
 }
 
-function B({ children }: { children: React.ReactNode }) {
-  return <strong className="text-foreground">{children}</strong>;
+/**
+ * Names a button the way the visitor will actually see it: the device's menus
+ * follow the device's language, so when their phone is set to English we lead
+ * with the English label and keep the Indonesian in brackets.
+ */
+function MenuTerm({ en, id, lang }: { en: string; id: string; lang: "id" | "en" }) {
+  return <strong className="text-foreground">{lang === "en" ? `${en} (${id})` : id}</strong>;
 }
 
-function InstallSteps({ platform }: { platform: InstallPlatform }) {
+function InstallSteps({
+  platform,
+  menuLang,
+}: {
+  platform: InstallPlatform;
+  menuLang: "id" | "en";
+}) {
   if (platform === "ios-safari") {
     return (
       <ol className="space-y-2.5 text-sm text-[var(--muted)]">
         <Step n={1}>
-          Ketuk tombol <B>Bagikan</B> di bawah layar (ikon kotak dengan panah ke atas).
+          Ketuk tombol <MenuTerm en="Share" id="Bagikan" lang={menuLang} /> di bawah layar (ikon kotak dengan panah ke
+          atas).
         </Step>
         <Step n={2}>
-          Geser ke bawah, pilih <B>Tambahkan ke Layar Utama</B>.
+          Geser ke bawah, pilih <MenuTerm en="Add to Home Screen" id="Tambahkan ke Layar Utama" lang={menuLang} />.
         </Step>
         <Step n={3}>
-          Ketuk <B>Tambah</B> di pojok kanan atas.
+          Ketuk <MenuTerm en="Add" id="Tambah" lang={menuLang} /> di pojok kanan atas.
         </Step>
       </ol>
     );
@@ -652,14 +669,16 @@ function InstallSteps({ platform }: { platform: InstallPlatform }) {
     return (
       <div className="space-y-3 text-sm text-[var(--muted)]">
         <p>
-          Di iPhone/iPad, hanya <B>Safari</B> yang bisa memasang aplikasi ke layar utama.
+          Di iPhone/iPad, hanya <strong className="text-foreground">Safari</strong> yang bisa
+          memasang aplikasi ke layar utama.
         </p>
         <ol className="space-y-2.5">
           <Step n={1}>
-            Buka halaman ini di <B>Safari</B>.
+            Buka halaman ini di <strong className="text-foreground">Safari</strong>.
           </Step>
           <Step n={2}>
-            Ketuk <B>Bagikan</B> → <B>Tambahkan ke Layar Utama</B>.
+            Ketuk <MenuTerm en="Share" id="Bagikan" lang={menuLang} /> →{" "}
+            <MenuTerm en="Add to Home Screen" id="Tambahkan ke Layar Utama" lang={menuLang} />.
           </Step>
         </ol>
       </div>
@@ -670,13 +689,14 @@ function InstallSteps({ platform }: { platform: InstallPlatform }) {
     return (
       <ol className="space-y-2.5 text-sm text-[var(--muted)]">
         <Step n={1}>
-          Ketuk menu <B>⋮</B> di pojok kanan atas browser.
+          Ketuk menu <strong className="text-foreground">⋮</strong> di pojok kanan atas browser.
         </Step>
         <Step n={2}>
-          Pilih <B>Tambahkan ke layar utama</B> atau <B>Instal aplikasi</B>.
+          Pilih <MenuTerm en="Add to Home screen" id="Tambahkan ke layar utama" lang={menuLang} /> atau{" "}
+          <MenuTerm en="Install app" id="Instal aplikasi" lang={menuLang} />.
         </Step>
         <Step n={3}>
-          Konfirmasi dengan <B>Tambah</B> / <B>Instal</B>.
+          Konfirmasi dengan <MenuTerm en="Add" id="Tambah" lang={menuLang} /> / <MenuTerm en="Install" id="Instal" lang={menuLang} />.
         </Step>
       </ol>
     );
@@ -686,10 +706,11 @@ function InstallSteps({ platform }: { platform: InstallPlatform }) {
     <div className="space-y-3 text-sm text-[var(--muted)]">
       <ol className="space-y-2.5">
         <Step n={1}>
-          Klik ikon <B>Instal</B> di ujung kanan address bar browser.
+          Klik ikon <MenuTerm en="Install" id="Instal" lang={menuLang} /> di ujung kanan address bar browser.
         </Step>
         <Step n={2}>
-          Atau buka menu browser lalu pilih <B>Install</B> / <B>Add to Home screen</B>.
+          Atau buka menu browser lalu pilih <MenuTerm en="Install" id="Instal" lang={menuLang} /> /{" "}
+          <MenuTerm en="Add to Home screen" id="Tambahkan ke layar utama" lang={menuLang} />.
         </Step>
       </ol>
       <p className="text-xs">

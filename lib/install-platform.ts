@@ -35,3 +35,19 @@ export function detectInstallPlatform(): InstallPlatform {
 export function isIOSPlatform(p: InstallPlatform): boolean {
   return p === "ios-safari" || p === "ios-other";
 }
+
+/**
+ * Which language the device's own menus are in — the Share sheet and browser
+ * menu follow the OS/browser locale, not our page. Used to label the buttons
+ * the way the visitor will actually see them.
+ *
+ * Anything that isn't Indonesian is treated as English, which is what those
+ * menus fall back to for most other locales. Note older Android reports
+ * Indonesian with the legacy code "in" rather than "id".
+ */
+export function deviceMenuLanguage(): "id" | "en" {
+  if (typeof navigator === "undefined") return "id";
+  const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
+  const primary = (langs[0] || "").toLowerCase();
+  return primary.startsWith("id") || primary.startsWith("in-") || primary === "in" ? "id" : "en";
+}
