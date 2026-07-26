@@ -18,6 +18,7 @@ import {
 } from "@/lib/upload-client";
 import { Editor } from "./editor";
 import { Button } from "@/components/ui/button";
+import { PresetTextField } from "./preset-text-field";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { richTextToPlain } from "@/lib/html-sanitize";
 
@@ -261,6 +262,47 @@ function PdfPreviewSlot({
  * Monaco HTML editor keeps its own save (heavy, separate surface) and only shows
  * when the preview source is "HTML editor".
  */
+
+/* Ready-made CTA wording, so button copy stays consistent across products
+   instead of being retyped each time. "Lainnya…" still allows anything. */
+const CTA_LABELS_PAID = [
+  "Beli sekarang",
+  "Miliki sekarang",
+  "Dapatkan sekarang",
+  "Baca sekarang",
+  "Download sekarang",
+  "Checkout",
+];
+const CTA_LABELS_FREE = [
+  "Ambil gratis",
+  "Baca gratis",
+  "Download gratis",
+  "Mulai baca",
+  "Dapatkan sekarang",
+];
+const CTA_LABELS_CALENDAR = [
+  "Tambahkan ke kalender",
+  "Simpan tanggalnya",
+  "Ingatkan saya",
+];
+const CTA_NOTES_PAID = [
+  "Miliki sekarang — akses penuh, selamanya.",
+  "Bayar sekali, akses selamanya.",
+  "Langsung bisa diunduh setelah bayar.",
+  "Akses penuh, selamanya.",
+  "Dukung karya ini — akses penuh.",
+];
+const CTA_NOTES_FREE = [
+  "Ambil sekarang — akses penuh, selamanya.",
+  "Gratis — langsung baca.",
+  "Tanpa biaya, tanpa syarat.",
+  "Nikmati sekarang juga.",
+];
+const CTA_NOTES_CALENDAR = [
+  "Simpan tanggalnya biar tidak terlewat.",
+  "Kami ingatkan menjelang acara.",
+];
+
 export function ProductEditForm({ pageId, slug, initialHtml, categories, relatedOptions, initial }: Props) {
   const router = useRouter();
 
@@ -303,6 +345,9 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   // Preview buy-now card: optional text overrides + action (checkout | link | calendar).
   const [ctaLabel, setCtaLabel] = useState(initial.cta_label ?? "");
   const [ctaNote, setCtaNote] = useState(initial.cta_note ?? "");
+
+  // Presets + the wording used when left on "Bawaan" — both follow whether the
+  // product is free and which action the button performs.
   // When the sticky CTA reveals as the visitor scrolls the preview.
   const [ctaReveal, setCtaReveal] = useState<"start" | "middle" | "near" | "end">(
     initial.cta_reveal ?? "middle",
@@ -314,6 +359,20 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         ? "link"
         : "checkout",
   );
+
+  const defaultCtaLabel =
+    actionType === "calendar" ? "Tambahkan ke kalender" : isFree ? "Ambil gratis" : "Beli sekarang";
+  const defaultCtaNote = isFree
+    ? "Ambil sekarang — akses penuh, selamanya."
+    : "Miliki sekarang — akses penuh, selamanya.";
+  const labelPresets =
+    actionType === "calendar"
+      ? CTA_LABELS_CALENDAR
+      : isFree
+        ? CTA_LABELS_FREE
+        : CTA_LABELS_PAID;
+  const notePresets =
+    actionType === "calendar" ? CTA_NOTES_CALENDAR : isFree ? CTA_NOTES_FREE : CTA_NOTES_PAID;
   const [purchaseLink, setPurchaseLink] = useState(initial.purchase_link ?? "");
   // Calendar-event fields (used when actionType === "calendar").
   const [eventTitle, setEventTitle] = useState(initial.event_title ?? "");
@@ -1157,63 +1216,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label htmlFor="cta-label" className="block text-sm font-medium text-foreground">
-                Teks tombol
-              </label>
-              <input
-                id="cta-label"
-                type="text"
-                value={ctaLabel}
-                maxLength={40}
-                onChange={(e) => setCtaLabel(e.target.value)}
-                placeholder={
-                  actionType === "calendar"
-                    ? "Tambahkan ke kalender"
-                    : isFree
-                      ? "Ambil gratis"
-                      : "Beli sekarang"
-                }
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="cta-note" className="block text-sm font-medium text-foreground">
-                Teks keterangan
-              </label>
-              <input
-                id="cta-note"
-                type="text"
-                value={ctaNote}
-                maxLength={80}
-                onChange={(e) => setCtaNote(e.target.value)}
-                placeholder={isFree ? "Ambil sekarang — akses penuh, selamanya." : "Miliki sekarang — akses penuh, selamanya."}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="cta-reveal" className="block text-sm font-medium text-foreground">
-              Kapan tombol muncul
-            </label>
-            <select
-              id="cta-reveal"
-              value={ctaReveal}
-              onChange={(e) => setCtaReveal(e.target.value as "start" | "middle" | "near" | "end")}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
-            >
-              <option value="start">Dari awal</option>
-              <option value="middle">Tengah (default)</option>
-              <option value="near">Mendekati akhir</option>
-              <option value="end">Di akhir</option>
-            </select>
-            <p className="text-xs text-[var(--muted)]">
-              Seberapa jauh pengunjung harus scroll di halaman preview sebelum kartu beli muncul.
-            </p>
-          </div>
-
           <div className="space-y-1.5">
             <label htmlFor="cta-action" className="block text-sm font-medium text-foreground">
               Aksi tombol
@@ -1331,6 +1333,48 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
               </div>
             </div>
           )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <PresetTextField
+              id="cta-label"
+              label="Teks tombol"
+              value={ctaLabel}
+              onChange={setCtaLabel}
+              options={labelPresets}
+              placeholder={defaultCtaLabel}
+              maxLength={40}
+            />
+            <PresetTextField
+              id="cta-note"
+              label="Teks keterangan"
+              value={ctaNote}
+              onChange={setCtaNote}
+              options={notePresets}
+              placeholder={defaultCtaNote}
+              maxLength={80}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="cta-reveal" className="block text-sm font-medium text-foreground">
+              Kapan tombol muncul
+            </label>
+            <select
+              id="cta-reveal"
+              value={ctaReveal}
+              onChange={(e) => setCtaReveal(e.target.value as "start" | "middle" | "near" | "end")}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+            >
+              <option value="start">Dari awal</option>
+              <option value="middle">Tengah (default)</option>
+              <option value="near">Mendekati akhir</option>
+              <option value="end">Di akhir</option>
+            </select>
+            <p className="text-xs text-[var(--muted)]">
+              Seberapa jauh pengunjung harus scroll di halaman preview sebelum kartu beli muncul.
+            </p>
+          </div>
+
         </div>
 
       </section>
