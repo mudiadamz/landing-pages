@@ -79,7 +79,8 @@ html.dark .epub-surface {
 
 /* Server-rendered book-cover splash (see EpubBootSplash). Styled in plain CSS
    rather than utility classes so it paints from the very first HTML the browser
-   receives, with no JS and no hydration involved. */
+   receives, with no JS and no hydration involved. The cover fills the viewport
+   edge to edge, like opening the book itself. */
 .epub-boot {
   position: fixed;
   inset: 0;
@@ -88,7 +89,6 @@ html.dark .epub-surface {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 2rem;
   /* Safety net: if the reader script never runs (or the route 404s), don't
      leave the visitor staring at a cover. */
   animation: epub-boot-safety 0.4s ease-out 8s forwards;
@@ -102,6 +102,8 @@ html.dark .epub-surface {
 @keyframes epub-boot-safety {
   to { opacity: 0; visibility: hidden; }
 }
+/* Shown behind the cover so any letterboxing on an odd aspect ratio reads as
+   depth rather than empty bars. */
 .epub-boot-wash {
   position: absolute;
   inset: 0;
@@ -109,39 +111,53 @@ html.dark .epub-surface {
   background-position: center;
   filter: blur(40px);
   transform: scale(1.25);
-  opacity: 0.25;
-}
-.epub-boot-inner {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  opacity: 0.35;
 }
 .epub-boot-cover {
-  max-height: 46vh;
-  max-width: 68vw;
-  width: auto;
-  border-radius: 0.75rem;
-  object-fit: contain;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.45);
-  animation: epub-splash-in 400ms ease-out both;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  animation: epub-boot-in 500ms ease-out both;
+}
+@keyframes epub-boot-in {
+  from { opacity: 0; transform: scale(1.04); }
+  to   { opacity: 1; transform: none; }
+}
+/* Keeps the loading dots legible over a bright cover. */
+.epub-boot-scrim {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 38%;
+  background: linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.5));
 }
 .epub-boot-title {
+  position: relative;
   max-width: 24rem;
   text-align: center;
   font-size: 1.125rem;
   font-weight: 600;
+  padding: 0 2rem;
 }
 .epub-boot-dots {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 0.375rem;
-  margin-top: 1.75rem;
 }
 .epub-boot-dots > span {
   height: 0.375rem;
   width: 0.375rem;
   border-radius: 9999px;
   background: currentColor;
+}
+/* Over artwork the dots need their own colour rather than the page's ink. */
+.epub-boot-dots--over {
+  color: #fff;
 }
 
 /* Book-cover splash shown while an EPUB loads (see EpubSplash). */

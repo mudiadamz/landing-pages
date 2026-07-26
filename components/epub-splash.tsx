@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MIN_SPLASH_MS, SPLASH_FADE_MS } from "@/lib/boot-splash";
 
 /**
- * Cover splash shown while a book loads. The thumbnail is usually already in
- * cache from the grid the reader tapped, so it paints instantly and the preview
- * feels like opening a book rather than watching a spinner. Held for a moment
- * even on a fast load so it reads as intentional instead of flashing.
+ * Client-side twin of EpubBootSplash, for readers opened where there's no
+ * server-rendered shell to carry a splash — the purchased-book modal. Shares
+ * the same .epub-boot-* styles so the two look identical.
+ *
+ * On the /lp preview the server-rendered splash is used instead; see
+ * EpubBootSplash for why that one can't be a client component.
  */
-const MIN_VISIBLE_MS = 550;
-const FADE_MS = 400;
-
 export function EpubSplash({
   thumbnailUrl,
   title,
@@ -27,9 +27,9 @@ export function EpubSplash({
 
   useEffect(() => {
     if (!ready || gone) return;
-    const wait = Math.max(0, MIN_VISIBLE_MS - (Date.now() - mounted));
+    const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - mounted));
     const t1 = window.setTimeout(() => setFading(true), wait);
-    const t2 = window.setTimeout(() => setGone(true), wait + FADE_MS);
+    const t2 = window.setTimeout(() => setGone(true), wait + SPLASH_FADE_MS);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
@@ -41,46 +41,30 @@ export function EpubSplash({
   return (
     <div
       aria-hidden
-      className="epub-surface fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden px-8"
-      style={{
-        opacity: fading ? 0 : 1,
-        transition: `opacity ${FADE_MS}ms ease-out`,
-        pointerEvents: fading ? "none" : "auto",
-      }}
+      className={`epub-boot epub-surface${fading ? " is-done" : ""}`}
+      style={{ animation: "none" }}
     >
-      {/* Blurred wash of the cover so the screen isn't a flat slab of colour. */}
       {thumbnailUrl && (
-        <div
-          className="absolute inset-0 scale-125 opacity-25 blur-2xl"
-          style={{
-            backgroundImage: `url(${thumbnailUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
+        <div className="epub-boot-wash" style={{ backgroundImage: `url(${thumbnailUrl})` }} />
       )}
-
-      <div className="relative flex flex-col items-center">
-        {thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      {thumbnailUrl ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={thumbnailUrl}
             alt=""
             fetchPriority="high"
-            className="max-h-[46vh] w-auto max-w-[68vw] rounded-xl object-contain shadow-2xl ring-1 ring-black/10"
-            style={{
-              animation: `epub-splash-in ${FADE_MS}ms ease-out both`,
-            }}
+            className="epub-boot-cover"
           />
-        ) : (
-          title && <p className="max-w-sm text-center text-lg font-semibold">{title}</p>
-        )}
-
-        <div className="mt-7 flex items-center gap-1.5" role="status" aria-label="Memuat">
-          <span className="epub-splash-dot h-1.5 w-1.5 rounded-full bg-current opacity-40" />
-          <span className="epub-splash-dot h-1.5 w-1.5 rounded-full bg-current opacity-40" />
-          <span className="epub-splash-dot h-1.5 w-1.5 rounded-full bg-current opacity-40" />
-        </div>
+          <div className="epub-boot-scrim" />
+        </>
+      ) : (
+        title && <p className="epub-boot-title">{title}</p>
+      )}
+      <div className={`epub-boot-dots${thumbnailUrl ? " epub-boot-dots--over" : ""}`}>
+        <span className="epub-splash-dot" />
+        <span className="epub-splash-dot" />
+        <span className="epub-splash-dot" />
       </div>
     </div>
   );

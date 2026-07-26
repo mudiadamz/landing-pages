@@ -6,6 +6,9 @@
  * downloaded — by which time the book is nearly ready and the splash just
  * flashes.)
  *
+ * The cover fills the viewport edge to edge; a blurred copy sits behind it so
+ * an unusual aspect ratio reads as depth rather than empty bars.
+ *
  * EpubInlineViewer removes this node once the book is injected; the CSS also
  * self-dismisses after a while so a failed script can't trap the reader.
  */
@@ -20,17 +23,16 @@ export function EpubBootSplash({
   title?: string;
 }) {
   const src = coverUrl ?? thumbnailUrl;
+  const wash = thumbnailUrl ?? coverUrl;
+
   return (
     <div id="epub-boot" className="epub-boot epub-surface" aria-hidden>
-      {thumbnailUrl && (
-        <div
-          className="epub-boot-wash"
-          style={{ backgroundImage: `url(${thumbnailUrl})` }}
-        />
+      {wash && (
+        <div className="epub-boot-wash" style={{ backgroundImage: `url(${wash})` }} />
       )}
-      <div className="epub-boot-inner">
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      {src ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt=""
@@ -38,14 +40,15 @@ export function EpubBootSplash({
             decoding="sync"
             className="epub-boot-cover"
           />
-        ) : (
-          title && <p className="epub-boot-title">{title}</p>
-        )}
-        <div className="epub-boot-dots">
-          <span className="epub-splash-dot" />
-          <span className="epub-splash-dot" />
-          <span className="epub-splash-dot" />
-        </div>
+          <div className="epub-boot-scrim" />
+        </>
+      ) : (
+        title && <p className="epub-boot-title">{title}</p>
+      )}
+      <div className={`epub-boot-dots${src ? " epub-boot-dots--over" : ""}`}>
+        <span className="epub-splash-dot" />
+        <span className="epub-splash-dot" />
+        <span className="epub-splash-dot" />
       </div>
     </div>
   );
