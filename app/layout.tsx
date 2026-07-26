@@ -88,15 +88,32 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Tag-manager + custom JS, both of which need a settings lookup. Kept out of the
+ * layout body so a database round trip can't delay the document's first byte.
+ */
+async function DeferredScripts() {
+  const [customJs, tracking] = await Promise.all([getCustomJs(), getTracking()]);
+  return (
+    <>
+      <GtmScripts gtmId={tracking.gtmId} />
+      {customJs ? <CustomJsInjector script={customJs} /> : null}
+    </>
+  );
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Only the theme cookie is read inline — it's local to the request, so the
+  // document can start streaming straight away. The marketing/custom scripts
+  // need database round trips, so they stream in behind a Suspense boundary
+  // rather than holding up the first byte of every page.
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme");
   const isDark = themeCookie?.value === "dark";
-  const [customJs, tracking] = await Promise.all([getCustomJs(), getTracking()]);
 
   return (
     <html lang="id" suppressHydrationWarning className={isDark ? "dark" : undefined}>
@@ -123,7 +140,9 @@ export default async function RootLayout({
         className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <JsonLd data={organizationJsonLd} />
-        <GtmScripts gtmId={tracking.gtmId} />
+        <Suspense fallback={null}>
+          <DeferredScripts />
+        </Suspense>
         <MarketingScripts />
         <TawkChat />
         <PwaRegister />
@@ -134,7 +153,6 @@ export default async function RootLayout({
         {children}
         <Analytics />
         <SpeedInsights />
-        {customJs ? <CustomJsInjector script={customJs} /> : null}
       </body>
     </html>
   );
