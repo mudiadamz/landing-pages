@@ -39,7 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `Preview ${page.title} — template landing page siap pakai. Lihat demo langsung sebelum beli.`,
   );
   const url = `/lp/${slug}`;
-  const images = checkoutData?.thumbnail_url ? [checkoutData.thumbnail_url] : undefined;
+  const ogImage = checkoutData?.thumbnail_landscape_url || checkoutData?.thumbnail_url;
+  const images = ogImage ? [ogImage] : undefined;
   return {
     title: page.title,
     description,

@@ -77,7 +77,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${page.title} — produk digital siap pakai. Preview gratis, beli, download, pakai.`,
   );
   const url = `/checkout/${slug}`;
-  const images = page.thumbnail_url ? [page.thumbnail_url] : undefined;
+  const ogImage = page.thumbnail_landscape_url || page.thumbnail_url;
+  const images = ogImage ? [ogImage] : undefined;
   return {
     title: `Checkout — ${page.title}`,
     description,
@@ -108,6 +109,10 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     // Hand-picked "produk terkait" — these win over the category-based list.
     getProductsByIds((page as { related_product_ids?: string[] | null }).related_product_ids ?? []),
   ]);
+
+  // Listing-style frames (the 16:9 hero, social cards) prefer the landscape
+  // upload; it falls back to the portrait thumbnail when there isn't one.
+  const heroThumb = page.thumbnail_landscape_url || page.thumbnail_url;
 
   const isOwner = !!user && page.user_id === user.id;
   // Scheduled but not yet released: non-owners get a countdown, no buy/preview.
@@ -156,7 +161,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     "@type": "Product",
     name: page.title,
     description: metaDescription,
-    ...(page.thumbnail_url ? { image: [page.thumbnail_url] } : {}),
+    ...(heroThumb ? { image: [heroThumb] } : {}),
     url: canonicalUrl,
     brand: { "@type": "Brand", name: "ADM.UIUX" },
     offers: {
@@ -213,11 +218,11 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             </div>
           )}
 
-          {/* Thumbnail */}
+          {/* Thumbnail — 16:9 frame, so prefer the landscape upload. */}
           <div className="relative aspect-video bg-[var(--background)]">
-            {page.thumbnail_url ? (
+            {heroThumb ? (
               <Image
-                src={page.thumbnail_url}
+                src={heroThumb}
                 alt={page.title}
                 fill
                 sizes="(max-width: 640px) 100vw, 576px"
@@ -317,9 +322,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 <ul className="mt-3 space-y-2">
                   {bundleItems.map((b) => (
                     <li key={b.id} className="flex items-center gap-3">
-                      {b.thumbnail_url ? (
+                      {(b.thumbnail_landscape_url || b.thumbnail_url) ? (
                         <Image
-                          src={b.thumbnail_url}
+                          src={(b.thumbnail_landscape_url || b.thumbnail_url) as string}
                           alt=""
                           width={40}
                           height={52}
