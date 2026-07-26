@@ -112,6 +112,7 @@ export default async function EditPage({
           bundle_product_ids: (page as { bundle_product_ids?: string[] | null }).bundle_product_ids ?? null,
           bundle_note: (page as { bundle_note?: string | null }).bundle_note ?? null,
           thumbnail_landscape_url: (page as { thumbnail_landscape_url?: string | null }).thumbnail_landscape_url ?? null,
+          thumbnail_extra_urls: (page as { thumbnail_extra_urls?: string[] | null }).thumbnail_extra_urls ?? null,
           available_at: (page as { available_at?: string | null }).available_at ?? null,
         }}
       />

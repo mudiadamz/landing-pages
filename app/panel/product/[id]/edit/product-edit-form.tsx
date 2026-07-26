@@ -92,6 +92,7 @@ type Props = {
     featured?: boolean;
     thumbnail_url?: string | null;
     thumbnail_landscape_url?: string | null;
+    thumbnail_extra_urls?: string[] | null;
     zip_url?: string | null;
     story_pdf_url?: string | null;
     story_pdf_url_dark?: string | null;
@@ -399,6 +400,15 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   // Optional wide version used by the 16:9 listing cards.
   const [thumbWideUrl, setThumbWideUrl] = useState(initial.thumbnail_landscape_url ?? "");
+  // Extra checkout images (max 2 → three slides with the main thumbnail).
+  const [extraUrls, setExtraUrls] = useState<string[]>(
+    (initial.thumbnail_extra_urls ?? []).filter((u) => !!u && !!u.trim()).slice(0, 2),
+  );
+  const [extraSizes, setExtraSizes] = useState<Record<string, number>>({});
+  const [extraUploading, setExtraUploading] = useState(false);
+  const [extraError, setExtraError] = useState<string | null>(null);
+  const extraInputRef = useRef<HTMLInputElement>(null);
+
   const [thumbWideMeta, setThumbWideMeta] = useState<FileMeta | null>(
     initial.thumbnail_landscape_url
       ? { name: fileNameFromUrl(initial.thumbnail_landscape_url) }
@@ -680,6 +690,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       initial.story_pdf_url,
       initial.story_pdf_url_dark,
       initial.story_epub_url,
+      ...(initial.thumbnail_extra_urls ?? []),
     ].filter((r): r is string => !!r && !!r.trim());
     if (refs.length === 0) return;
 
@@ -702,6 +713,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       setStoryMeta(put(initial.story_pdf_url));
       setStoryMetaDark(put(initial.story_pdf_url_dark));
       setStoryEpubMeta(put(initial.story_epub_url));
+      setExtraSizes((prev) => ({ ...sizes, ...prev }));
     });
     return () => {
       cancelled = true;
@@ -731,6 +743,34 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     },
     [pageId, thumbWideUrl],
   );
+
+  const uploadExtraFile = useCallback(
+    async (file: File) => {
+      if (file.type && !file.type.startsWith("image/")) {
+        setExtraError("File harus berupa gambar.");
+        return;
+      }
+      setExtraUploading(true);
+      setExtraError(null);
+      try {
+        // No previous URL to replace — each extra is its own slot.
+        const res = await uploadThumbnailClient(pageId, file, null);
+        if ("error" in res) setExtraError(res.error);
+        else {
+          setExtraUrls((prev) => [...prev, res.url].slice(0, 2));
+          setExtraSizes((prev) => ({ ...prev, [res.url]: file.size }));
+        }
+      } finally {
+        setExtraUploading(false);
+      }
+    },
+    [pageId],
+  );
+
+  function removeExtra(url: string) {
+    setExtraUrls((prev) => prev.filter((u) => u !== url));
+    setExtraError(null);
+  }
 
   function removeThumbWide() {
     setThumbWideUrl("");
@@ -818,6 +858,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
         thumbnail_landscape_url: thumbWideUrl.trim() || null,
+        thumbnail_extra_urls: extraUrls.length ? extraUrls : null,
         zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
         story_pdf_url: deliverableType === "pdf" ? storyUrl.trim() || null : null,
         story_pdf_url_dark: deliverableType === "pdf" ? storyUrlDark.trim() || null : null,
@@ -964,92 +1005,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
           </div>
         </div>
 
-        {/* Thumbnail */}
-        <div className="space-y-1.5">
-          <span className="block text-sm font-medium text-foreground">
-            Thumbnail <span className="text-[var(--muted)]">(untuk preview di homepage)</span>
-          </span>
-          <input
-            ref={thumbInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) uploadThumbFile(f);
-              e.target.value = "";
-            }}
-          />
-          {thumbnailUrl.trim() ? (
-            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={thumbnailUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
-                  }}
-                />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {thumbMeta?.name ?? fileNameFromUrl(thumbnailUrl)}
-                </p>
-                {formatBytes(thumbMeta?.size) && (
-                  <p className="text-xs text-[var(--muted)]">{formatBytes(thumbMeta?.size)}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => thumbInputRef.current?.click()}
-                  disabled={thumbUploading}
-                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
-                >
-                  {thumbUploading ? "Mengupload…" : "Ganti gambar"}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={removeThumb}
-                title="Hapus thumbnail"
-                aria-label="Hapus thumbnail"
-                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => thumbInputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setThumbDragging(true);
-              }}
-              onDragLeave={() => setThumbDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setThumbDragging(false);
-                const f = e.dataTransfer.files?.[0];
-                if (f) uploadThumbFile(f);
-              }}
-              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
-                thumbDragging
-                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
-              }`}
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
-                <ImageIcon className="h-4 w-4" />
-                {thumbUploading ? "Mengupload…" : "Pilih gambar"}
-              </span>
-              <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop gambar di sini</span>
-            </button>
-          )}
-          {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
-        </div>
-
         {/* Landscape thumbnail — used by the 16:9 cards in listings. */}
         <div className="space-y-1.5">
           <span className="block text-sm font-medium text-foreground">
@@ -1140,6 +1095,164 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             </button>
           )}
           {thumbWideError && <p className="text-xs text-red-500">{thumbWideError}</p>}
+        </div>
+
+        {/* Extra images — become swipeable slides on the checkout page. */}
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium text-foreground">
+            Gambar tambahan{" "}
+            <span className="text-[var(--muted)]">(opsional — maks. 2, tampil sebagai slide)</span>
+          </span>
+          <p className="text-xs text-[var(--muted)]">
+            Di halaman checkout, gambar ini bisa digeser bersama thumbnail utama (maks. 3 slide).
+          </p>
+          <input
+            ref={extraInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadExtraFile(f);
+              e.target.value = "";
+            }}
+          />
+          {extraUrls.length > 0 && (
+            <ul className="space-y-2">
+              {extraUrls.map((u, i) => (
+                <li
+                  key={u}
+                  className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5"
+                >
+                  <span className="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt="" className="h-full w-full object-cover" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {fileNameFromUrl(u)}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">
+                      Slide {i + 2}
+                      {formatBytes(extraSizes[u]) ? ` · ${formatBytes(extraSizes[u])}` : ""}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeExtra(u)}
+                    title="Hapus gambar"
+                    aria-label="Hapus gambar"
+                    className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {extraUrls.length < 2 && (
+            <button
+              type="button"
+              onClick={() => extraInputRef.current?.click()}
+              disabled={extraUploading}
+              className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--border)] px-4 py-6 text-center transition-colors hover:border-[var(--primary)]/60 disabled:opacity-60"
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
+                <ImageIcon className="h-4 w-4" />
+                {extraUploading ? "Mengupload…" : "Tambah gambar"}
+              </span>
+              <span className="text-xs text-[var(--muted)]">
+                {2 - extraUrls.length} slot tersisa
+              </span>
+            </button>
+          )}
+          {extraError && <p className="text-xs text-red-500">{extraError}</p>}
+        </div>
+
+        {/* Thumbnail */}
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium text-foreground">
+            Thumbnail <span className="text-[var(--muted)]">(untuk preview di homepage)</span>
+          </span>
+          <input
+            ref={thumbInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadThumbFile(f);
+              e.target.value = "";
+            }}
+          />
+          {thumbnailUrl.trim() ? (
+            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={thumbnailUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                  }}
+                />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {thumbMeta?.name ?? fileNameFromUrl(thumbnailUrl)}
+                </p>
+                {formatBytes(thumbMeta?.size) && (
+                  <p className="text-xs text-[var(--muted)]">{formatBytes(thumbMeta?.size)}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => thumbInputRef.current?.click()}
+                  disabled={thumbUploading}
+                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
+                >
+                  {thumbUploading ? "Mengupload…" : "Ganti gambar"}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={removeThumb}
+                title="Hapus thumbnail"
+                aria-label="Hapus thumbnail"
+                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => thumbInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setThumbDragging(true);
+              }}
+              onDragLeave={() => setThumbDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setThumbDragging(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) uploadThumbFile(f);
+              }}
+              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+                thumbDragging
+                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
+                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
+                <ImageIcon className="h-4 w-4" />
+                {thumbUploading ? "Mengupload…" : "Pilih gambar"}
+              </span>
+              <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop gambar di sini</span>
+            </button>
+          )}
+          {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
         </div>
       </section>
 

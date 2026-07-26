@@ -19,6 +19,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
 import { RelatedProducts } from "@/components/related-products";
+import { ProductGallery } from "@/components/product-gallery";
 import { getMyLike } from "@/lib/actions/likes";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
@@ -113,6 +114,13 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   // Listing-style frames (the 16:9 hero, social cards) prefer the landscape
   // upload; it falls back to the portrait thumbnail when there isn't one.
   const heroThumb = page.thumbnail_landscape_url || page.thumbnail_url;
+  // Gallery slides: the main image first, then any extras — capped at three.
+  const gallery = [
+    heroThumb,
+    ...((page as { thumbnail_extra_urls?: string[] | null }).thumbnail_extra_urls ?? []),
+  ]
+    .filter((u): u is string => !!u && !!u.trim())
+    .slice(0, 3);
 
   const isOwner = !!user && page.user_id === user.id;
   // Scheduled but not yet released: non-owners get a countdown, no buy/preview.
@@ -218,23 +226,17 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             </div>
           )}
 
-          {/* Thumbnail — 16:9 frame, so prefer the landscape upload. */}
-          <div className="relative aspect-video bg-[var(--background)]">
-            {heroThumb ? (
-              <Image
-                src={heroThumb}
-                alt={page.title}
-                fill
-                sizes="(max-width: 640px) 100vw, 576px"
-                className="object-cover"
-                priority
-              />
-            ) : (
+          {/* Product images — 16:9 frame, so the landscape upload is preferred;
+              extra images become swipeable slides. */}
+          {gallery.length > 0 ? (
+            <ProductGallery images={gallery} alt={page.title} />
+          ) : (
+            <div className="relative aspect-video bg-[var(--background)]">
               <div className="absolute inset-0 flex items-center justify-center text-[var(--muted)] text-sm">
                 {page.title}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="p-5 sm:p-6 space-y-5">
             {/* Title (with optional ad-headline echo for ad->landing message match) */}
