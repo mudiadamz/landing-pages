@@ -15,6 +15,7 @@ import { TawkChat } from "@/components/tawk-chat";
 import { PwaRegister } from "@/components/pwa-register";
 import { SessionTracker } from "@/components/session-tracker";
 import { GtmScripts } from "@/components/gtm-scripts";
+import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -130,6 +131,19 @@ export default async function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="ADM.UIUX" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        {/* Launch images for an iOS home-screen install. iOS ignores the web
+            manifest here, so without an exactly-matching startup image it shows
+            a blank white screen while the app boots. */}
+        {IOS_SPLASH_TARGETS.map((t) =>
+          (["light", "dark"] as const).map((scheme) => (
+            <link
+              key={`${t.w}x${t.h}@${t.r}-${scheme}`}
+              rel="apple-touch-startup-image"
+              media={splashMedia(t, scheme)}
+              href={splashFile(t, scheme)}
+            />
+          )),
+        )}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
