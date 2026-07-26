@@ -13,6 +13,7 @@ import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
 import { SeriesNextCta } from "@/components/series-next-cta";
+import { EpubBootSplash } from "@/components/epub-boot-splash";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { getMyLike } from "@/lib/actions/likes";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
@@ -161,14 +162,12 @@ export default async function LandingPageView({ params }: Props) {
       <ImmersiveController />
       <ViewTracker slug={slug} />
       <ProductTracker slug={slug} page="preview" />
-      {/* Visitors arriving straight from an ad have nothing cached, so fetch the
-          cover up front — it's the first thing the splash paints. */}
-      {embedEpub && (checkout?.thumbnail_url ?? page.thumbnail_url) && (
-        <link
-          rel="preload"
-          as="image"
-          href={(checkout?.thumbnail_url ?? page.thumbnail_url) as string}
-          fetchPriority="high"
+      {/* Cover splash, server-rendered so it's on screen at first paint — the
+          reader bundle loads behind it. */}
+      {embedEpub && (
+        <EpubBootSplash
+          thumbnailUrl={checkout?.thumbnail_url ?? page.thumbnail_url}
+          title={page.title}
         />
       )}
       {embedEpub ? (

@@ -3,6 +3,28 @@
 import { useEffect, useRef, useState } from "react";
 import { unzipSync, strFromU8 } from "fflate";
 import { EpubSplash } from "./epub-splash";
+
+/**
+ * Keep the cover on screen for at least this long after navigation start. The
+ * book can now be ready in a few hundred ms, and a splash that vanishes the
+ * instant it appears just reads as a flicker.
+ */
+const MIN_SPLASH_MS = 1100;
+const SPLASH_FADE_MS = 400;
+
+/** Dismiss the server-rendered splash (components/epub-boot-splash.tsx). */
+function dismissBootSplash() {
+  const el = document.getElementById("epub-boot");
+  if (!el) return;
+  const elapsed = typeof performance !== "undefined" ? performance.now() : MIN_SPLASH_MS;
+  window.setTimeout(
+    () => {
+      el.classList.add("is-done");
+      window.setTimeout(() => el.remove(), SPLASH_FADE_MS + 50);
+    },
+    Math.max(0, MIN_SPLASH_MS - elapsed),
+  );
+}
 import {
   EPUB_FONT_EVENT,
   EPUB_MARGIN_EVENT,
@@ -194,6 +216,11 @@ export default function EpubInlineViewer({
   const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // When the page server-rendered a splash it already owns the loading visual —
+  // don't stack a second one on top of it.
+  const [hasBootSplash] = useState(
+    () => typeof document !== "undefined" && !!document.getElementById("epub-boot"),
+  );
 
   // Fetch + parse + inject the book (no iframe).
   //
@@ -248,6 +275,11 @@ export default function EpubInlineViewer({
     };
   }, [url, slug]);
 
+  // Hand off from the server-rendered cover to the book.
+  useEffect(() => {
+    if (!loading || error) dismissBootSplash();
+  }, [loading, error]);
+
   // Follow font-size / margin changes broadcast from the actions menu.
   useEffect(() => {
     const onFont = (e: Event) => {
@@ -284,7 +316,9 @@ export default function EpubInlineViewer({
           marginRight: neg ? `${neg}px` : undefined,
         }}
       />
-      <EpubSplash thumbnailUrl={thumbnailUrl} title={title} ready={!loading || !!error} />
+      {!hasBootSplash && (
+        <EpubSplash thumbnailUrl={thumbnailUrl} title={title} ready={!loading || !!error} />
+      )}
       {error && (
         <div className="flex h-40 items-center justify-center px-6 text-center text-sm text-red-500">
           {error}
