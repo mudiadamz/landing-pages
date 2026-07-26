@@ -10,12 +10,16 @@
  * self-dismisses after a while so a failed script can't trap the reader.
  */
 export function EpubBootSplash({
+  coverUrl,
   thumbnailUrl,
   title,
 }: {
+  /** The book's own cover (see /api/epub-cover); preferred over the listing art. */
+  coverUrl?: string | null;
   thumbnailUrl?: string | null;
   title?: string;
 }) {
+  const src = coverUrl ?? thumbnailUrl;
   return (
     <div id="epub-boot" className="epub-boot epub-surface" aria-hidden>
       {thumbnailUrl && (
@@ -25,10 +29,10 @@ export function EpubBootSplash({
         />
       )}
       <div className="epub-boot-inner">
-        {thumbnailUrl ? (
+        {src ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={thumbnailUrl}
+            src={src}
             alt=""
             fetchPriority="high"
             decoding="sync"

@@ -46,6 +46,68 @@ export function readEpubFile(bytes: Uint8Array, path: string): Uint8Array | null
   return files[path] ?? null;
 }
 
+/**
+ * Locate the book's cover image inside the archive. Checks the three ways EPUBs
+ * declare one, in order of reliability: the OPF `<meta name="cover">` pointer,
+ * a manifest item marked `properties="cover-image"`, then a filename that looks
+ * like a cover. Returns null when the book doesn't ship one.
+ */
+export function findEpubCoverPath(bytes: Uint8Array): string | null {
+  const files = unzipSync(bytes);
+  const container = strFromU8(files["META-INF/container.xml"] ?? new Uint8Array());
+  const opfPath = container.match(/full-path="([^"]+)"/)?.[1];
+  if (!opfPath || !files[opfPath]) return null;
+  const opfDir = dirOf(opfPath);
+  const opf = strFromU8(files[opfPath]);
+
+  const items = [...opf.matchAll(/<item\b[^>]*>/g)].map((m) => m[0]);
+  const attr = (tag: string, name: string) =>
+    tag.match(new RegExp(`\\b${name}="([^"]+)"`))?.[1] ?? null;
+
+  const isImage = (href: string) => /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(href);
+  const exists = (href: string) => {
+    const p = resolveEpubPath(opfDir, href);
+    return files[p] ? p : null;
+  };
+
+  // 1) <meta name="cover" content="itemId"/>
+  const metaId = opf.match(/<meta\b[^>]*\bname="cover"[^>]*\bcontent="([^"]+)"/i)?.[1];
+  if (metaId) {
+    for (const tag of items) {
+      if (attr(tag, "id") === metaId) {
+        const href = attr(tag, "href");
+        if (href) {
+          const p = exists(href);
+          if (p) return p;
+        }
+      }
+    }
+  }
+
+  // 2) properties="cover-image"
+  for (const tag of items) {
+    if (attr(tag, "properties")?.includes("cover-image")) {
+      const href = attr(tag, "href");
+      if (href) {
+        const p = exists(href);
+        if (p) return p;
+      }
+    }
+  }
+
+  // 3) an image whose id/href mentions "cover"
+  for (const tag of items) {
+    const href = attr(tag, "href");
+    const id = attr(tag, "id") ?? "";
+    if (href && isImage(href) && (/cover/i.test(href) || /cover/i.test(id))) {
+      const p = exists(href);
+      if (p) return p;
+    }
+  }
+
+  return null;
+}
+
 export type EpubChapters = { chapters: string[] };
 
 /**

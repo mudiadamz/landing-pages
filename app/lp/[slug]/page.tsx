@@ -166,6 +166,7 @@ export default async function LandingPageView({ params }: Props) {
           reader bundle loads behind it. */}
       {embedEpub && (
         <EpubBootSplash
+          coverUrl={`/api/epub-cover/${slug}`}
           thumbnailUrl={checkout?.thumbnail_url ?? page.thumbnail_url}
           title={page.title}
         />
