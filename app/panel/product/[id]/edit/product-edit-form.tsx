@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { getStoredFileSizes } from "@/lib/actions/file-sizes";
 import { useRouter } from "next/navigation";
 import {
   updateLandingPageSettings,
@@ -398,6 +399,11 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
   // Optional wide version used by the 16:9 listing cards.
   const [thumbWideUrl, setThumbWideUrl] = useState(initial.thumbnail_landscape_url ?? "");
+  const [thumbWideMeta, setThumbWideMeta] = useState<FileMeta | null>(
+    initial.thumbnail_landscape_url
+      ? { name: fileNameFromUrl(initial.thumbnail_landscape_url) }
+      : null,
+  );
   const [thumbWideUploading, setThumbWideUploading] = useState(false);
   const [thumbWideError, setThumbWideError] = useState<string | null>(null);
   const [thumbWideDragging, setThumbWideDragging] = useState(false);
@@ -661,6 +667,49 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     [pageId, thumbnailUrl],
   );
 
+
+  // Sizes for files that were already stored: the File object only exists for a
+  // fresh pick, so a reopened product would otherwise show a name with no size.
+  useEffect(() => {
+    const refs = [
+      initial.preview_url,
+      initial.preview_url_dark,
+      initial.thumbnail_url,
+      initial.thumbnail_landscape_url,
+      initial.zip_url,
+      initial.story_pdf_url,
+      initial.story_pdf_url_dark,
+      initial.story_epub_url,
+    ].filter((r): r is string => !!r && !!r.trim());
+    if (refs.length === 0) return;
+
+    let cancelled = false;
+    getStoredFileSizes(refs).then((sizes) => {
+      if (cancelled) return;
+      const put =
+        (ref: string | null | undefined) =>
+        (prev: FileMeta | null): FileMeta | null => {
+          const size = ref ? sizes[ref] : undefined;
+          if (!prev || size === undefined || prev.size !== undefined) return prev;
+          return { ...prev, size };
+        };
+      setPdfMeta(put(initial.preview_url));
+      setPdfMetaDark(put(initial.preview_url_dark));
+      setEpubMeta(put(initial.preview_url));
+      setThumbMeta(put(initial.thumbnail_url));
+      setThumbWideMeta(put(initial.thumbnail_landscape_url));
+      setZipMeta(put(initial.zip_url));
+      setStoryMeta(put(initial.story_pdf_url));
+      setStoryMetaDark(put(initial.story_pdf_url_dark));
+      setStoryEpubMeta(put(initial.story_epub_url));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Runs once for the product that was loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const uploadThumbWideFile = useCallback(
     async (file: File) => {
       if (file.type && !file.type.startsWith("image/")) {
@@ -672,7 +721,10 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       try {
         const res = await uploadThumbnailClient(pageId, file, thumbWideUrl || null);
         if ("error" in res) setThumbWideError(res.error);
-        else setThumbWideUrl(res.url);
+        else {
+          setThumbWideUrl(res.url);
+          setThumbWideMeta({ name: file.name, size: file.size });
+        }
       } finally {
         setThumbWideUploading(false);
       }
@@ -682,6 +734,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
 
   function removeThumbWide() {
     setThumbWideUrl("");
+    setThumbWideMeta(null);
     setThumbWideError(null);
   }
 
@@ -944,6 +997,9 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
                 <p className="truncate text-sm font-medium text-foreground">
                   {thumbMeta?.name ?? fileNameFromUrl(thumbnailUrl)}
                 </p>
+                {formatBytes(thumbMeta?.size) && (
+                  <p className="text-xs text-[var(--muted)]">{formatBytes(thumbMeta?.size)}</p>
+                )}
                 <button
                   type="button"
                   onClick={() => thumbInputRef.current?.click()}
@@ -1031,8 +1087,11 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
-                  {fileNameFromUrl(thumbWideUrl)}
+                  {thumbWideMeta?.name ?? fileNameFromUrl(thumbWideUrl)}
                 </p>
+                {formatBytes(thumbWideMeta?.size) && (
+                  <p className="text-xs text-[var(--muted)]">{formatBytes(thumbWideMeta?.size)}</p>
+                )}
                 <button
                   type="button"
                   onClick={() => thumbWideInputRef.current?.click()}
