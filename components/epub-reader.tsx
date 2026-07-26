@@ -15,15 +15,12 @@ export function EpubReader({
   url,
   slug,
   title,
-  thumbnailUrl,
   storageKey,
 }: {
   url: string;
   /** Product slug — enables the fast server-unzipped chapter fetch. */
   slug?: string;
   title?: string;
-  /** Cover art for the loading splash. */
-  thumbnailUrl?: string | null;
   storageKey?: string;
 }) {
   // Re-key on the source so switching files cleanly reloads the reader.
@@ -33,7 +30,6 @@ export function EpubReader({
       url={url}
       slug={slug}
       title={title}
-      thumbnailUrl={thumbnailUrl}
       storageKey={storageKey}
     />
   );

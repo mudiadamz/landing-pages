@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { unzipSync, strFromU8 } from "fflate";
-import { EpubSplash } from "./epub-splash";
-import { dismissBootSplash } from "@/lib/boot-splash";
+import { markBookReady } from "@/lib/boot-splash";
 
 
 import {
@@ -178,16 +177,12 @@ function sanitizeChapters(chapters: string[]): string {
 export default function EpubInlineViewer({
   url,
   slug,
-  title,
-  thumbnailUrl,
   storageKey,
 }: {
   url: string;
   /** When set, fetch pre-unzipped chapters from the server (much faster). */
   slug?: string;
   title?: string;
-  /** Cover art for the loading splash. */
-  thumbnailUrl?: string | null;
   /** Reserved for future scroll-position memory. */
   storageKey?: string;
 }) {
@@ -197,11 +192,6 @@ export default function EpubInlineViewer({
   const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // When the page server-rendered a splash it already owns the loading visual —
-  // don't stack a second one on top of it.
-  const [hasBootSplash] = useState(
-    () => typeof document !== "undefined" && !!document.getElementById("epub-boot"),
-  );
 
   // Fetch + parse + inject the book (no iframe).
   //
@@ -256,9 +246,9 @@ export default function EpubInlineViewer({
     };
   }, [url, slug]);
 
-  // Hand off from the server-rendered cover to the book.
+  // Hand off from the cover to the book.
   useEffect(() => {
-    if (!loading || error) dismissBootSplash();
+    if (!loading || error) markBookReady();
   }, [loading, error]);
 
   // Follow font-size / margin changes broadcast from the actions menu.
@@ -297,9 +287,6 @@ export default function EpubInlineViewer({
           marginRight: neg ? `${neg}px` : undefined,
         }}
       />
-      {!hasBootSplash && (
-        <EpubSplash thumbnailUrl={thumbnailUrl} title={title} ready={!loading || !!error} />
-      )}
       {error && (
         <div className="flex h-40 items-center justify-center px-6 text-center text-sm text-red-500">
           {error}

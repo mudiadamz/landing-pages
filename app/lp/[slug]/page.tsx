@@ -60,7 +60,7 @@ export default async function LandingPageView({ params }: Props) {
   const { slug } = await params;
   return (
     <>
-      <EpubBootSplash coverUrl={`/api/epub-cover/${slug}`} />
+      <EpubBootSplash key={slug} coverUrl={`/api/epub-cover/${slug}`} />
       <Suspense fallback={null}>
         <PreviewContent slug={slug} />
       </Suspense>
@@ -192,7 +192,6 @@ async function PreviewContent({ slug }: { slug: string }) {
             url={epubUrl as string}
             slug={slug}
             title={page.title}
-            thumbnailUrl={checkout?.thumbnail_url ?? page.thumbnail_url}
             storageKey={`lp-epub:${slug}`}
           />
           {nextInSeries && (
