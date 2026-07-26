@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +14,7 @@ import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
 import { SeriesNextCta } from "@/components/series-next-cta";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
+import { BootSplashDismiss } from "@/components/boot-splash-dismiss";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { getMyLike } from "@/lib/actions/likes";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
@@ -48,8 +49,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/**
+ * The shell renders with no data at all: the cover URL needs only the slug, so
+ * this flushes to the browser immediately while the (dynamic, auth-dependent)
+ * preview below streams in behind it. Previously every DB call had to finish
+ * before the first byte left the server — half a second of blank screen before
+ * the cover even existed in the HTML.
+ */
 export default async function LandingPageView({ params }: Props) {
   const { slug } = await params;
+  return (
+    <>
+      <EpubBootSplash coverUrl={`/api/epub-cover/${slug}`} />
+      <Suspense fallback={null}>
+        <PreviewContent slug={slug} />
+      </Suspense>
+    </>
+  );
+}
+
+async function PreviewContent({ slug }: { slug: string }) {
   const page = await getPageBySlug(slug);
   if (!page) notFound();
 
@@ -162,15 +181,9 @@ export default async function LandingPageView({ params }: Props) {
       <ImmersiveController />
       <ViewTracker slug={slug} />
       <ProductTracker slug={slug} page="preview" />
-      {/* Cover splash, server-rendered so it's on screen at first paint — the
-          reader bundle loads behind it. */}
-      {embedEpub && (
-        <EpubBootSplash
-          coverUrl={`/api/epub-cover/${slug}`}
-          thumbnailUrl={checkout?.thumbnail_url ?? page.thumbnail_url}
-          title={page.title}
-        />
-      )}
+      {/* Anything that isn't the EPUB reader owns its own loading UI, so retire
+          the shell's cover splash as soon as we know which preview this is. */}
+      {!embedEpub && <BootSplashDismiss />}
       {embedEpub ? (
         // Inline EPUB — rendered directly in the DOM and flows in the window, so
         // scroll, taps, focus mode and the iOS address bar are all native.

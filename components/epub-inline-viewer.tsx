@@ -3,28 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { unzipSync, strFromU8 } from "fflate";
 import { EpubSplash } from "./epub-splash";
+import { dismissBootSplash } from "@/lib/boot-splash";
 
-/**
- * Keep the cover on screen for at least this long after navigation start. The
- * book can now be ready in a few hundred ms, and a splash that vanishes the
- * instant it appears just reads as a flicker.
- */
-const MIN_SPLASH_MS = 1100;
-const SPLASH_FADE_MS = 400;
 
-/** Dismiss the server-rendered splash (components/epub-boot-splash.tsx). */
-function dismissBootSplash() {
-  const el = document.getElementById("epub-boot");
-  if (!el) return;
-  const elapsed = typeof performance !== "undefined" ? performance.now() : MIN_SPLASH_MS;
-  window.setTimeout(
-    () => {
-      el.classList.add("is-done");
-      window.setTimeout(() => el.remove(), SPLASH_FADE_MS + 50);
-    },
-    Math.max(0, MIN_SPLASH_MS - elapsed),
-  );
-}
 import {
   EPUB_FONT_EVENT,
   EPUB_MARGIN_EVENT,

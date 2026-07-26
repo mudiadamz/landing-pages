@@ -89,8 +89,9 @@ html.dark .epub-surface {
   justify-content: center;
   overflow: hidden;
   padding: 2rem;
-  /* Safety net: if the reader script never runs, don't trap the visitor. */
-  animation: epub-boot-safety 0.4s ease-out 20s forwards;
+  /* Safety net: if the reader script never runs (or the route 404s), don't
+     leave the visitor staring at a cover. */
+  animation: epub-boot-safety 0.4s ease-out 8s forwards;
 }
 .epub-boot.is-done {
   animation: none;
