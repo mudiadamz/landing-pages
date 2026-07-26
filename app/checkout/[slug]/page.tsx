@@ -96,7 +96,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   ]);
   if (!page) notFound();
   const adHeadline = sanitizeAdHeadline(sp.h);
-  const [{ data: { user } }, reviews, reviewCount, related, liked, bundleItems] = await Promise.all([
+  const [{ data: { user } }, reviews, reviewCount, related, liked, bundleItems, pickedRelated] =
+    await Promise.all([
     supabase.auth.getUser(),
     getPublicReviews(page.id, 5),
     getReviewCount(page.id),
@@ -104,6 +105,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     getMyLike(page.id),
     // Products this bundle hands over — empty for a normal product.
     getProductsByIds((page as { bundle_product_ids?: string[] | null }).bundle_product_ids ?? []),
+    // Hand-picked "produk terkait" — these win over the category-based list.
+    getProductsByIds((page as { related_product_ids?: string[] | null }).related_product_ids ?? []),
   ]);
 
   const isOwner = !!user && page.user_id === user.id;
@@ -411,8 +414,13 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
           </div>
         </div>
 
-        {/* Related products in the same parent category (+ link to that category) */}
-        <RelatedProducts items={related.items} parent={related.parent} />
+        {/* The seller's own picks when they've chosen any, otherwise others in
+            the same parent category (+ link to that category). */}
+        {pickedRelated.length > 0 ? (
+          <RelatedProducts items={pickedRelated} parent={null} />
+        ) : (
+          <RelatedProducts items={related.items} parent={related.parent} />
+        )}
       </main>
 
       <SiteFooter />

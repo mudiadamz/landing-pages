@@ -267,6 +267,14 @@ function PdfPreviewSlot({
 
 /* Ready-made CTA wording, so button copy stays consistent across products
    instead of being retyped each time. "Lainnya…" still allows anything. */
+const BUNDLE_NOTES = [
+  "Semua bagian sekaligus — lebih hemat.",
+  "Paket lengkap, satu kali bayar.",
+  "Hemat dibanding beli satuan.",
+  "Langsung dapat semuanya, tanpa nunggu.",
+  "Koleksi lengkap dalam satu paket.",
+];
+
 const CTA_LABELS_PAID = [
   "Beli sekarang",
   "Miliki sekarang",
@@ -1492,6 +1500,73 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
           )}
         </div>
 
+
+        {/* Bundle — buying this product grants everything listed here. */}
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Bundle</h2>
+            <p className="text-sm text-[var(--muted)]">
+              Jadikan produk ini sebuah paket. Saat pembeli membelinya, semua produk yang
+              dipilih di bawah otomatis masuk ke akun mereka — bisa langsung dibuka &amp;
+              diunduh dari halaman &ldquo;Pembelian saya&rdquo;. Kosongkan kalau ini bukan bundle.
+            </p>
+          </div>
+
+          {relatedOptions.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
+              Belum ada produk lain untuk dimasukkan ke bundle.
+            </p>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="search"
+                  value={bundleSearch}
+                  onChange={(e) => setBundleSearch(e.target.value)}
+                  placeholder="Cari produk…"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                />
+                <span className="shrink-0 text-xs text-[var(--muted)]">{bundleIds.length} dipilih</span>
+              </div>
+              <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-[var(--border)] p-2">
+                {relatedOptions
+                  .filter((o) => o.title.toLowerCase().includes(bundleSearch.trim().toLowerCase()))
+                  .map((o) => {
+                    const checked = bundleIds.includes(o.id);
+                    return (
+                      <label
+                        key={o.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--background)]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setBundleIds((prev) =>
+                              e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id),
+                            )
+                          }
+                          className="h-4 w-4 shrink-0"
+                        />
+                        <span className="truncate">{o.title}</span>
+                      </label>
+                    );
+                  })}
+              </div>
+
+              <PresetTextField
+                id="bundle-note"
+                label="Teks bundle"
+                value={bundleNote}
+                onChange={setBundleNote}
+                options={BUNDLE_NOTES}
+                placeholder="Tanpa teks tambahan"
+                maxLength={120}
+                hint="Muncul di halaman checkout, di atas daftar isi bundle."
+              />
+            </>
+          )}
+        </div>
       </section>
 
       {/* ========================= Tab: Terkait ========================= */}
@@ -1556,80 +1631,6 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
                 )}
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Bundle — buying this product grants everything listed here. */}
-        <div className="space-y-3 border-t border-[var(--border)] pt-5">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Bundle</h2>
-            <p className="text-sm text-[var(--muted)]">
-              Jadikan produk ini sebuah paket. Saat pembeli membelinya, semua produk yang
-              dipilih di bawah otomatis masuk ke akun mereka — bisa langsung dibuka &amp;
-              diunduh dari halaman &ldquo;Pembelian saya&rdquo;. Kosongkan kalau ini bukan bundle.
-            </p>
-          </div>
-
-          {relatedOptions.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
-              Belum ada produk lain untuk dimasukkan ke bundle.
-            </p>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <input
-                  type="search"
-                  value={bundleSearch}
-                  onChange={(e) => setBundleSearch(e.target.value)}
-                  placeholder="Cari produk…"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-                <span className="shrink-0 text-xs text-[var(--muted)]">{bundleIds.length} dipilih</span>
-              </div>
-              <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-[var(--border)] p-2">
-                {relatedOptions
-                  .filter((o) => o.title.toLowerCase().includes(bundleSearch.trim().toLowerCase()))
-                  .map((o) => {
-                    const checked = bundleIds.includes(o.id);
-                    return (
-                      <label
-                        key={o.id}
-                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--background)]"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) =>
-                            setBundleIds((prev) =>
-                              e.target.checked ? [...prev, o.id] : prev.filter((x) => x !== o.id),
-                            )
-                          }
-                          className="h-4 w-4 shrink-0"
-                        />
-                        <span className="truncate">{o.title}</span>
-                      </label>
-                    );
-                  })}
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="bundle-note" className="block text-sm font-medium text-foreground">
-                  Teks bundle
-                </label>
-                <input
-                  id="bundle-note"
-                  type="text"
-                  value={bundleNote}
-                  maxLength={120}
-                  onChange={(e) => setBundleNote(e.target.value)}
-                  placeholder="Contoh: 3 buku sekaligus — hemat 40%"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-                <p className="text-xs text-[var(--muted)]">
-                  Muncul di halaman checkout, di atas daftar isi bundle.
-                </p>
-              </div>
-            </>
           )}
         </div>
 
