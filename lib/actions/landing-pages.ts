@@ -39,6 +39,7 @@ export type LandingPageRow = {
   purchase_type?: "external" | "internal";
   featured?: boolean;
   thumbnail_url?: string | null;
+  thumbnail_landscape_url?: string | null;
   zip_url?: string | null;
   sold_count?: number;
   rating?: number | null;
@@ -63,6 +64,7 @@ export type LandingPagePublic = {
   purchase_link?: string | null;
   purchase_type?: "external" | "internal";
   thumbnail_url?: string | null;
+  thumbnail_landscape_url?: string | null;
   sold_count?: number;
   rating?: number | null;
   category?: LandingPageCategory | null;
@@ -83,6 +85,7 @@ export type LandingPageCheckout = {
   purchase_link: string | null;
   purchase_type?: "external" | "internal";
   thumbnail_url: string | null;
+  thumbnail_landscape_url?: string | null;
   zip_url: string | null;
   story_pdf_url?: string | null;
   story_epub_url?: string | null;
@@ -177,6 +180,7 @@ export async function getLandingPageBySlug(slug: string) {
     next_product_id?: string | null;
     available_at?: string | null;
     thumbnail_url?: string | null;
+  thumbnail_landscape_url?: string | null;
     user_id?: string;
   };
 }
@@ -189,7 +193,7 @@ export async function getNextInSeries(nextProductId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, thumbnail_url, price, price_discount, is_free, published")
+    .select("id, title, slug, thumbnail_url, thumbnail_landscape_url, price, price_discount, is_free, published")
     .eq("id", nextProductId)
     .maybeSingle();
   if (!data || data.published === false) return null;
@@ -198,6 +202,7 @@ export async function getNextInSeries(nextProductId: string) {
     title: string;
     slug: string;
     thumbnail_url?: string | null;
+  thumbnail_landscape_url?: string | null;
     price?: number | null;
     price_discount?: number | null;
     is_free?: boolean | null;
@@ -366,7 +371,7 @@ const getCachedHomepagePages = unstable_cache(
     let query = supabase
       .from("lp_landing_pages")
       .select(
-        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
+        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
       )
       // Pinned (featured) products always first, then the chosen sort:
       // "popular" = most sold, "newest" = most recently created.
@@ -405,7 +410,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids, thumbnail_landscape_url")
     .eq("slug", slug)
     .single();
 
@@ -440,6 +445,7 @@ export type RelatedProduct = {
   price_discount: number | null;
   is_free: boolean;
   thumbnail_url: string | null;
+  thumbnail_landscape_url?: string | null;
 };
 
 /**
@@ -468,7 +474,7 @@ export async function getRelatedProducts(
   const supabase = createAnonClient();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, thumbnail_url")
+    .select("id, title, slug, price, price_discount, is_free, thumbnail_url, thumbnail_landscape_url")
     .eq("published", true)
     .in("category_id", categoryIds)
     .neq("id", currentId)
@@ -513,6 +519,7 @@ export async function updateLandingPagePricing(
     purchase_type?: "external" | "internal";
     featured?: boolean;
     thumbnail_url?: string | null;
+    thumbnail_landscape_url?: string | null;
     zip_url?: string | null;
     story_pdf_url?: string | null;
     story_pdf_url_dark?: string | null;

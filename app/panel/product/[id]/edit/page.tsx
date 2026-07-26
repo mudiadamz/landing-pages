@@ -111,6 +111,7 @@ export default async function EditPage({
           next_product_id: (page as { next_product_id?: string | null }).next_product_id ?? null,
           bundle_product_ids: (page as { bundle_product_ids?: string[] | null }).bundle_product_ids ?? null,
           bundle_note: (page as { bundle_note?: string | null }).bundle_note ?? null,
+          thumbnail_landscape_url: (page as { thumbnail_landscape_url?: string | null }).thumbnail_landscape_url ?? null,
           available_at: (page as { available_at?: string | null }).available_at ?? null,
         }}
       />

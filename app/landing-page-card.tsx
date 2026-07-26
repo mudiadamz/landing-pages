@@ -28,6 +28,9 @@ function formatPrice(value: number): string {
 }
 
 export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Props) {
+  // Cards are 16:9, so a wide thumbnail is used when the seller uploaded one;
+  // portrait covers get badly cropped here otherwise.
+  const listThumb = page.thumbnail_landscape_url || page.thumbnail_url;
   const isFree = page.is_free === true;
   // Cards show a plain-text snippet — strip rich-text HTML, keep legacy markdown cleanup.
   const description = isProbablyHtml(page.long_description)
@@ -67,9 +70,9 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
               Segera
             </span>
           )}
-          {page.thumbnail_url ? (
+          {listThumb ? (
             <Image
-              src={page.thumbnail_url}
+              src={listThumb}
               alt={page.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

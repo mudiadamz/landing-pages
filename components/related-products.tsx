@@ -2,6 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import type { LandingPageCategory, RelatedProduct } from "@/lib/actions/landing-pages";
 
+/** Lists are wide, so prefer the landscape thumbnail when one exists. */
+function listThumbOf(p: { thumbnail_landscape_url?: string | null; thumbnail_url: string | null }) {
+  return p.thumbnail_landscape_url || p.thumbnail_url;
+}
+
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -48,9 +53,9 @@ export function RelatedProducts({
                 className="group flex items-center gap-3 py-3 transition-colors first:pt-0 last:pb-0"
               >
                 <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                  {p.thumbnail_url ? (
+                  {listThumbOf(p) ? (
                     <Image
-                      src={p.thumbnail_url}
+                      src={listThumbOf(p) as string}
                       alt={p.title}
                       fill
                       sizes="80px"

@@ -90,6 +90,7 @@ type Props = {
     is_free?: boolean;
     featured?: boolean;
     thumbnail_url?: string | null;
+    thumbnail_landscape_url?: string | null;
     zip_url?: string | null;
     story_pdf_url?: string | null;
     story_pdf_url_dark?: string | null;
@@ -395,6 +396,12 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     initial.price_discount != null ? String(initial.price_discount) : "",
   );
   const [thumbnailUrl, setThumbnailUrl] = useState(initial.thumbnail_url ?? "");
+  // Optional wide version used by the 16:9 listing cards.
+  const [thumbWideUrl, setThumbWideUrl] = useState(initial.thumbnail_landscape_url ?? "");
+  const [thumbWideUploading, setThumbWideUploading] = useState(false);
+  const [thumbWideError, setThumbWideError] = useState<string | null>(null);
+  const [thumbWideDragging, setThumbWideDragging] = useState(false);
+  const thumbWideInputRef = useRef<HTMLInputElement>(null);
   const [thumbMeta, setThumbMeta] = useState<FileMeta | null>(
     initial.thumbnail_url ? { name: fileNameFromUrl(initial.thumbnail_url) } : null,
   );
@@ -654,6 +661,30 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
     [pageId, thumbnailUrl],
   );
 
+  const uploadThumbWideFile = useCallback(
+    async (file: File) => {
+      if (file.type && !file.type.startsWith("image/")) {
+        setThumbWideError("File harus berupa gambar.");
+        return;
+      }
+      setThumbWideUploading(true);
+      setThumbWideError(null);
+      try {
+        const res = await uploadThumbnailClient(pageId, file, thumbWideUrl || null);
+        if ("error" in res) setThumbWideError(res.error);
+        else setThumbWideUrl(res.url);
+      } finally {
+        setThumbWideUploading(false);
+      }
+    },
+    [pageId, thumbWideUrl],
+  );
+
+  function removeThumbWide() {
+    setThumbWideUrl("");
+    setThumbWideError(null);
+  }
+
   function removeThumb() {
     setThumbnailUrl("");
     setThumbMeta(null);
@@ -733,6 +764,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         event_description: actionType === "calendar" ? eventDescription.trim() || null : null,
         featured,
         thumbnail_url: thumbnailUrl.trim() || null,
+        thumbnail_landscape_url: thumbWideUrl.trim() || null,
         zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
         story_pdf_url: deliverableType === "pdf" ? storyUrl.trim() || null : null,
         story_pdf_url_dark: deliverableType === "pdf" ? storyUrlDark.trim() || null : null,
@@ -960,6 +992,95 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             </button>
           )}
           {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
+        </div>
+
+        {/* Landscape thumbnail — used by the 16:9 cards in listings. */}
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium text-foreground">
+            Thumbnail landscape{" "}
+            <span className="text-[var(--muted)]">(opsional — untuk kartu di daftar produk)</span>
+          </span>
+          <p className="text-xs text-[var(--muted)]">
+            Kartu di homepage &amp; kategori berbentuk lebar (16:9). Kalau thumbnail utamamu
+            portrait, upload versi lebar di sini biar tidak terpotong. Dikosongkan = pakai
+            thumbnail utama.
+          </p>
+          <input
+            ref={thumbWideInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadThumbWideFile(f);
+              e.target.value = "";
+            }}
+          />
+          {thumbWideUrl.trim() ? (
+            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
+              <span className="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={thumbWideUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                  }}
+                />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {fileNameFromUrl(thumbWideUrl)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => thumbWideInputRef.current?.click()}
+                  disabled={thumbWideUploading}
+                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
+                >
+                  {thumbWideUploading ? "Mengupload…" : "Ganti gambar"}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={removeThumbWide}
+                title="Hapus thumbnail landscape"
+                aria-label="Hapus thumbnail landscape"
+                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => thumbWideInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setThumbWideDragging(true);
+              }}
+              onDragLeave={() => setThumbWideDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setThumbWideDragging(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) uploadThumbWideFile(f);
+              }}
+              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
+                thumbWideDragging
+                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
+                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
+                <ImageIcon className="h-4 w-4" />
+                {thumbWideUploading ? "Mengupload…" : "Pilih gambar landscape"}
+              </span>
+              <span className="text-xs text-[var(--muted)]">Rasio 16:9 paling pas</span>
+            </button>
+          )}
+          {thumbWideError && <p className="text-xs text-red-500">{thumbWideError}</p>}
         </div>
       </section>
 

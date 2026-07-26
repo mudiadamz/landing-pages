@@ -4,6 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import type { RelatedProduct } from "@/lib/actions/landing-pages";
 
+/** Lists are wide, so prefer the landscape thumbnail when one exists. */
+function listThumbOf(p: { thumbnail_landscape_url?: string | null; thumbnail_url: string | null }) {
+  return p.thumbnail_landscape_url || p.thumbnail_url;
+}
+
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -45,9 +50,9 @@ export function PreviewRelated({ items }: { items: RelatedProduct[] }) {
                 className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-shadow hover:shadow-md"
               >
                 <span className="relative block aspect-[4/3] w-full overflow-hidden bg-[var(--background)]">
-                  {p.thumbnail_url ? (
+                  {listThumbOf(p) ? (
                     <Image
-                      src={p.thumbnail_url}
+                      src={listThumbOf(p) as string}
                       alt={p.title}
                       fill
                       sizes="(max-width: 640px) 50vw, 240px"
