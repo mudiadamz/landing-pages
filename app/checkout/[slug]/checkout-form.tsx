@@ -95,6 +95,7 @@ export function CheckoutForm({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memproses");
       setLoading(false);
+      setAutoContinuing(false);
     }
   }, [fireBeginCheckout, page.slug]);
 
@@ -108,11 +109,13 @@ export function CheckoutForm({
   // button a second time: Duitku for a paid item, the claim for a free one.
   const freeFormRef = useRef<HTMLFormElement>(null);
   const autoPaidRef = useRef(false);
+  const [autoContinuing, setAutoContinuing] = useState(false);
   useEffect(() => {
     if (autoPaidRef.current) return;
     if (!isLoggedIn || purchaseLink || calendarHref) return;
     if (new URLSearchParams(window.location.search).get("pay") !== "1") return;
     autoPaidRef.current = true;
+    setAutoContinuing(true);
     if (showAsFree) {
       fireBeginCheckout();
       freeFormRef.current?.requestSubmit();
@@ -121,6 +124,54 @@ export function CheckoutForm({
     void startDuitku();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Continuing automatically after login would otherwise look like a dead page
+  // while the invoice is created — show what's happening, and keep it on screen
+  // through the redirect to Duitku.
+  const overlay = autoContinuing ? (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/85 px-6 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <span className="relative flex h-12 w-12">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-25" />
+          <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)]/10">
+            <svg
+              className="h-6 w-6 animate-spin text-[var(--primary)]"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden
+            >
+              <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path
+                d="M22 12a10 10 0 0 1-10 10"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-foreground">
+            {showAsFree ? "Menyiapkan produkmu…" : "Menyiapkan pembayaran…"}
+          </p>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            {showAsFree
+              ? "Sebentar, produk sedang dimasukkan ke akunmu."
+              : "Sebentar, kamu akan diarahkan ke halaman pembayaran."}
+          </p>
+        </div>
+        {error && (
+          <button
+            type="button"
+            onClick={() => setAutoContinuing(false)}
+            className="text-xs font-medium text-red-500 underline underline-offset-2"
+          >
+            {error} — ketuk untuk coba lagi
+          </button>
+        )}
+      </div>
+    </div>
+  ) : null;
 
   // Calendar action replaces the purchase CTA entirely: no login, no payment —
   // just hand the visitor an .ics event that works on iOS/Android/desktop.
@@ -148,6 +199,7 @@ export function CheckoutForm({
     if (isLoggedIn) {
       return (
         <form ref={freeFormRef} action={addPurchaseAction} className="space-y-3" data-checkout-form>
+          {overlay}
           <input type="hidden" name="landing_page_id" value={page.id} />
           <Button
             type="submit"
@@ -233,6 +285,7 @@ export function CheckoutForm({
 
   return (
     <form onSubmit={handleDuitku} className="space-y-4" data-checkout-form>
+      {overlay}
       {error && (
         <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
       )}

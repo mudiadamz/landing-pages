@@ -2,7 +2,7 @@ import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds, getNextInSeries } from "@/lib/actions/landing-pages";
+import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds, getNextInSeries, getBundleContaining } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
 import { ComingSoon } from "@/components/coming-soon";
 import { buildMetaDescription } from "@/lib/seo";
@@ -13,6 +13,7 @@ import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
 import { SeriesNextCta } from "@/components/series-next-cta";
+import { ReaderEndCta } from "@/components/reader-end-cta";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
 import { BootSplashDismiss } from "@/components/boot-splash-dismiss";
 import { ProductActionsMenu } from "@/components/product-actions";
@@ -101,6 +102,8 @@ async function PreviewContent({ slug }: { slug: string }) {
 
   // Next instalment (if this product is part of a series) for the end-of-read CTA.
   const nextInSeries = page.next_product_id ? await getNextInSeries(page.next_product_id) : null;
+  // A bundle that includes this product — offered at the end of the read.
+  const bundleOffer = await getBundleContaining(page.id);
 
   const embedEpub = !!epubUrl;
   const embedPdf = !!pdfLight && !embedEpub;
@@ -171,10 +174,14 @@ async function PreviewContent({ slug }: { slug: string }) {
   // directly, with the product carried along and ?pay=1 so the purchase (or the
   // free claim) continues by itself as soon as they're in. Free products need an
   // account too, so they take the same path.
-  const needsLogin = !user && !calendarMode && !externalBuyLink;
-  const effectiveBuyHref = needsLogin
-    ? `/login?next=${encodeURIComponent(`/checkout/${slug}?pay=1`)}`
-    : buyHref;
+  const internalCheckout = !calendarMode && !externalBuyLink;
+  // ?pay=1 continues the action on arrival rather than showing the same button
+  // again — for a signed-in visitor that means going straight to payment.
+  const effectiveBuyHref = !internalCheckout
+    ? buyHref
+    : user
+      ? `/checkout/${slug}?pay=1`
+      : `/login?next=${encodeURIComponent(`/checkout/${slug}?pay=1`)}`;
 
   // Scheduled but not yet released: non-owners see a countdown, not the preview.
   const isOwner = !!user && page.user_id === user.id;
@@ -205,6 +212,35 @@ async function PreviewContent({ slug }: { slug: string }) {
             title={page.title}
             storageKey={`lp-epub:${slug}`}
           />
+          {(() => {
+            const b = bundleOffer;
+            const bPrice = b
+              ? b.is_free || ((b.price_discount ?? 0) <= 0 && (b.price ?? 0) <= 0)
+                ? "Gratis"
+                : `Rp ${((b.price_discount ?? 0) > 0 ? b.price_discount! : b.price ?? 0).toLocaleString("id-ID")}`
+              : null;
+            return (
+              <ReaderEndCta
+                title={page.title}
+                priceText={priceText}
+                label={buyLabel}
+                note={buyNote}
+                href={effectiveBuyHref}
+                bundle={
+                  b
+                    ? {
+                        title: b.title,
+                        slug: b.slug,
+                        itemCount: b.bundle_product_ids?.length ?? 0,
+                        note: b.bundle_note,
+                        priceText: bPrice,
+                        href: `/checkout/${b.slug}`,
+                      }
+                    : null
+                }
+              />
+            );
+          })()}
           {nextInSeries && (
             <SeriesNextCta
               slug={nextInSeries.slug}

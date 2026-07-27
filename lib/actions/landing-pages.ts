@@ -186,6 +186,34 @@ export async function getLandingPageBySlug(slug: string) {
 }
 
 /**
+ * A published bundle that contains this product, for the end-of-preview upsell —
+ * someone finishing a free part is the best moment to offer the complete set.
+ */
+export async function getBundleContaining(productId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lp_landing_pages")
+    .select("id, title, slug, thumbnail_url, thumbnail_landscape_url, price, price_discount, is_free, bundle_product_ids, bundle_note, published")
+    .contains("bundle_product_ids", [productId])
+    .eq("published", true)
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return data as {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail_url?: string | null;
+    thumbnail_landscape_url?: string | null;
+    price?: number | null;
+    price_discount?: number | null;
+    is_free?: boolean | null;
+    bundle_product_ids?: string[] | null;
+    bundle_note?: string | null;
+  };
+}
+
+/**
  * The next instalment in a series, for the "continue reading" CTA at the end of
  * a preview. Readers who finish a part otherwise have nowhere to go.
  */
