@@ -210,8 +210,8 @@ html.dark .epub-surface {
 }
 
 /* "3/50" — the reader's place in the text, in the space the floating buy CTA
-   used to occupy (see ReaderPageIndicator). Deliberately dim and small: it is a
-   readout, not an action, and it stays put while scrolling. */
+   used to occupy (see ReaderPageIndicator). Dim and small: it's a readout, not an
+   action. Fades with the back arrow and actions menu (300ms, same as theirs). */
 .reader-place {
   position: fixed;
   left: 50%;
@@ -228,9 +228,10 @@ html.dark .epub-surface {
   color: var(--muted);
   background: color-mix(in srgb, var(--card) 72%, transparent);
   backdrop-filter: blur(6px);
-  transition: opacity 200ms ease-out;
+  transition: opacity 300ms ease-out;
 }
-/* At the very end the end-panel CTA owns the bottom of the screen. */
+/* Hidden either by focus mode or by reaching the end, where the end-panel CTA
+   owns the bottom of the screen. */
 .reader-place.is-hidden {
   opacity: 0;
 }

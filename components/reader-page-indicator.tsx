@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { getScrolled, getScrolledServer, subscribeFirstScroll } from "@/lib/first-scroll";
+import { useChromeHidden } from "@/lib/immersive";
 
 /**
  * Quiet "3/50" readout at the bottom of a preview, in the space the floating buy
@@ -13,9 +14,12 @@ import { getScrolled, getScrolledServer, subscribeFirstScroll } from "@/lib/firs
  * also a reason to keep going — a visible denominator makes the remaining
  * distance feel finite.
  *
- * Unlike the rest of the chrome it does NOT fade while scrolling. Chrome hides to
- * get out of the way of reading; a position readout is most useful precisely
- * while moving, so it stays put and earns its keep by being small and dim.
+ * Visibility follows the floating chrome exactly — the same `useChromeHidden`
+ * store that drives the back arrow and the actions menu, so all three fade
+ * together ~850ms into a scroll and all three return on a tap. The reader gets
+ * one uninterrupted surface while moving, and one consistent set of controls when
+ * they ask for it; a readout that lingered after its neighbours left would just
+ * look like a bug.
  *
  * Two sources, because the three preview kinds scroll in different places:
  *  • "window" — the inline EPUB reader flows in the document, so it is measured
@@ -42,6 +46,8 @@ export function ReaderPageIndicator({ mode }: { mode: "window" | "event" }) {
   // would put a pill directly under ReaderScrollHint's chevron, which occupies
   // the same patch of screen until the first scroll.
   const scrolled = useSyncExternalStore(subscribeFirstScroll, getScrolled, getScrolledServer);
+  // Same signal as the back arrow and the actions menu (see product-actions).
+  const chromeHidden = useChromeHidden();
 
   // EPUB: measure the book itself, not the document. The end panel lives in the
   // same scroll flow, and counting it would inflate every book by a page or two.
@@ -113,7 +119,7 @@ export function ReaderPageIndicator({ mode }: { mode: "window" | "event" }) {
 
   return (
     <div
-      className={`reader-place${atEnd ? " is-hidden" : ""}`}
+      className={`reader-place${atEnd || chromeHidden ? " is-hidden" : ""}`}
       role="status"
       aria-live="off"
       aria-label={`Halaman ${place.page} dari ${place.total}`}
