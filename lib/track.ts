@@ -41,12 +41,35 @@ export function getSessionId(): string {
 /** Coarse device / browser / OS from the UA string. */
 export function detectClient(): { device: string; browser: string; os: string } {
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
-  const isTablet = /iPad|Tablet|PlayBook|Silk|(Android(?!.*Mobile))/i.test(ua);
-  const isMobile = /Mobi|Android|iPhone|iPod|IEMobile|Opera Mini/i.test(ua);
+
+  // In-app browsers first: they're the majority of ad traffic and they lie about
+  // the rest. Instagram's Android webview omits the "Mobile" token, so the old
+  // "Android without Mobile = tablet" rule filed most of a campaign's phones as
+  // tablets — which made every device segment in the analytics wrong.
+  const inApp =
+    /FBAN|FBAV|FB_IAB/i.test(ua)
+      ? "Facebook app"
+      : /Instagram/i.test(ua)
+        ? "Instagram app"
+        : /\bLine\//i.test(ua)
+          ? "LINE app"
+          : /TikTok|musical_ly/i.test(ua)
+            ? "TikTok app"
+            : /Twitter/i.test(ua)
+              ? "X app"
+              : null;
+
+  // Only call it a tablet on positive evidence, never on a missing token.
+  const isTablet =
+    /iPad/i.test(ua) ||
+    /\bTablet\b|PlayBook|Silk/i.test(ua) ||
+    /\bSM-T|\bGT-P|Nexus (?:7|9|10)\b/i.test(ua);
+  const isMobile = /Mobi|Android|iPhone|iPod|IEMobile|Opera Mini/i.test(ua) || !!inApp;
   const device = isTablet ? "tablet" : isMobile ? "mobile" : "desktop";
 
   let browser = "Lainnya";
-  if (/Edg\//.test(ua)) browser = "Edge";
+  if (inApp) browser = inApp;
+  else if (/Edg\//.test(ua)) browser = "Edge";
   else if (/OPR\/|Opera/.test(ua)) browser = "Opera";
   else if (/SamsungBrowser/.test(ua)) browser = "Samsung";
   else if (/Chrome\//.test(ua)) browser = "Chrome";
