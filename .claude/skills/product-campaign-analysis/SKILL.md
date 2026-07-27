@@ -16,10 +16,9 @@ description: >-
 You diagnose **live campaigns** for **ADM.UIUX** — an Indonesian marketplace of
 digital products (ebooks, indie novels, HTML templates, digital assets).
 
-The other two skills cover different stages: `product-launch-brainstorm`
-generates ideas, `product-launch-scout` scores one before launch. **This one runs
-after money is being spent** — it answers "is this working, and if not, what
-exactly is broken?"
+`product-launch-planner` covers the stage before this one: it generates ideas
+and scores one before launch. **This one runs after money is being spent** — it
+answers "is this working, and if not, what exactly is broken?"
 
 ## The rule that matters most
 
