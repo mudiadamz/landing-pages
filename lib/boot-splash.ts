@@ -12,11 +12,14 @@
 export const SPLASH_FADE_MS = 400;
 
 /**
- * Hold the cover for at least this long after the splash mounts. The book can
- * be ready in a few hundred ms, and a cover that vanishes the instant it
- * appears reads as a flicker rather than a title card.
+ * Hold the cover for at least this long after the splash mounts.
+ *
+ * Kept deliberately short: 48% of ad traffic was leaving before any text
+ * rendered, and a 1.1s hold was a large share of that. This is now only long
+ * enough to stop the cover flashing on a fast connection — the moment the book
+ * is ready, the words win.
  */
-export const MIN_SPLASH_MS = 1100;
+export const MIN_SPLASH_MS = 350;
 
 /**
  * 0 = still loading · 1 = ready (hold the cover for MIN_SPLASH_MS) · 2 = ready,

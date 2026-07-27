@@ -26,6 +26,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     const { chapters } = extractEpubChapters(
       bytes,
       (path) => `/api/epub-asset/${encodeURIComponent(slug)}?p=${encodeURIComponent(path)}`,
+      // Start the preview on the writing, not a second copy of the cover.
+      { dropLeadingImageOnly: true },
     );
 
     return NextResponse.json(

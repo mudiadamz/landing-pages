@@ -117,6 +117,7 @@ export type EpubChapters = { chapters: string[] };
 export function extractEpubChapters(
   bytes: Uint8Array,
   assetUrl: (path: string) => string,
+  opts: { dropLeadingImageOnly?: boolean } = {},
 ): EpubChapters {
   const files = unzipSync(bytes);
 
@@ -163,5 +164,19 @@ export function extractEpubChapters(
   }
 
   if (chapters.length === 0) throw new Error("No readable chapters");
+
+  // A free preview opens with the splash already showing the cover, so the
+  // book's own cover page just repeats it — and because it fills the screen,
+  // the visitor has to scroll before seeing a single word. Skip the leading
+  // image-only pages so the preview starts on prose. The owner's reader keeps
+  // them: they've paid for the whole book, cover included.
+  if (opts.dropLeadingImageOnly) {
+    const textLength = (html: string) =>
+      html.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;|&#\d+;/gi, " ").trim().length;
+    let start = 0;
+    while (start < chapters.length - 1 && textLength(chapters[start]) < 40) start++;
+    if (start > 0) return { chapters: chapters.slice(start) };
+  }
+
   return { chapters };
 }
