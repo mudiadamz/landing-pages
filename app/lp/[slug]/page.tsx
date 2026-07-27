@@ -12,8 +12,7 @@ import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
-import { SeriesNextCta } from "@/components/series-next-cta";
-import { ReaderEndCta } from "@/components/reader-end-cta";
+import { ReaderEndPanel } from "@/components/reader-end-panel";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
 import { BootSplashDismiss } from "@/components/boot-splash-dismiss";
 import { ProductActionsMenu } from "@/components/product-actions";
@@ -27,6 +26,17 @@ const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 const getCheckoutData = cache((slug: string) => getLandingPageForCheckout(slug));
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** "Gratis" or a formatted rupiah price, using the discount when there is one. */
+function priceTextOf(
+  isFree?: boolean | null,
+  price?: number | null,
+  discount?: number | null,
+): string {
+  const display = (discount ?? 0) > 0 ? discount! : price ?? 0;
+  if (isFree || display <= 0) return "Gratis";
+  return `Rp ${display.toLocaleString("id-ID")}`;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -212,45 +222,47 @@ async function PreviewContent({ slug }: { slug: string }) {
             title={page.title}
             storageKey={`lp-epub:${slug}`}
           />
-          {(() => {
-            const b = bundleOffer;
-            const bPrice = b
-              ? b.is_free || ((b.price_discount ?? 0) <= 0 && (b.price ?? 0) <= 0)
-                ? "Gratis"
-                : `Rp ${((b.price_discount ?? 0) > 0 ? b.price_discount! : b.price ?? 0).toLocaleString("id-ID")}`
-              : null;
-            return (
-              <ReaderEndCta
-                title={page.title}
-                priceText={priceText}
-                label={buyLabel}
-                note={buyNote}
-                href={effectiveBuyHref}
-                bundle={
-                  b
-                    ? {
-                        title: b.title,
-                        slug: b.slug,
-                        itemCount: b.bundle_product_ids?.length ?? 0,
-                        note: b.bundle_note,
-                        priceText: bPrice,
-                        href: `/checkout/${b.slug}`,
-                      }
-                    : null
-                }
-              />
-            );
-          })()}
-          {nextInSeries && (
-            <SeriesNextCta
-              slug={nextInSeries.slug}
-              title={nextInSeries.title}
-              thumbnailUrl={nextInSeries.thumbnail_url}
-              price={nextInSeries.price}
-              priceDiscount={nextInSeries.price_discount}
-              isFree={nextInSeries.is_free}
-            />
-          )}
+          <ReaderEndPanel
+            next={
+              nextInSeries
+                ? {
+                    slug: nextInSeries.slug,
+                    title: nextInSeries.title,
+                    thumbnailUrl: nextInSeries.thumbnail_url,
+                    priceText: priceTextOf(
+                      nextInSeries.is_free,
+                      nextInSeries.price,
+                      nextInSeries.price_discount,
+                    ),
+                  }
+                : null
+            }
+            related={related.map((r) => ({
+              slug: r.slug,
+              title: r.title,
+              thumbnailUrl: r.thumbnail_url,
+              priceText: priceTextOf(r.is_free, r.price, r.price_discount),
+            }))}
+            bundle={
+              bundleOffer
+                ? {
+                    title: bundleOffer.title,
+                    slug: bundleOffer.slug,
+                    itemCount: bundleOffer.bundle_product_ids?.length ?? 0,
+                    note: bundleOffer.bundle_note,
+                    priceText: priceTextOf(
+                      bundleOffer.is_free,
+                      bundleOffer.price,
+                      bundleOffer.price_discount,
+                    ),
+                  }
+                : null
+            }
+            buyHref={effectiveBuyHref}
+            buyLabel={buyLabel}
+            priceText={priceText}
+            note={buyNote}
+          />
         </div>
       ) : (
         <div className="lp-reader sticky top-0 w-full overflow-hidden">
