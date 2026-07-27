@@ -311,7 +311,9 @@ async function PreviewContent({ slug }: { slug: string }) {
       />
       {/* Where the buy CTA used to float: the reader's place in the text. A
           cross-origin link preview can't be measured, so it gets nothing. */}
-      {!embedLink && <ReaderPageIndicator mode={embedEpub ? "window" : "event"} />}
+      {!embedLink && (
+        <ReaderPageIndicator mode={embedEpub ? "window" : "event"} slug={slug} />
+      )}
     </>
   );
 }

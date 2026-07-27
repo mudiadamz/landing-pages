@@ -12,6 +12,7 @@ const CTA_LABELS: Record<string, string> = {
   share_threads: "Share — Threads",
   share_x: "Share — X",
   share_native: "Share — lainnya",
+  toc: "Buka daftar bab",
   bookmark: "Simpan (bookmark)",
   add_to_home: "Tambah ke layar utama",
   login_google: "Login Google",
