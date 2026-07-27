@@ -15,6 +15,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isPanelRoute = pathname.startsWith("/panel");
+  // The owner's reader. Guarded here so a signed-out visitor gets a real 307
+  // before anything renders — the page streams, so a redirect thrown inside it
+  // would arrive after the 200 was already committed.
+  const isReadRoute = pathname.startsWith("/read/");
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   if (!isPanelRoute && !isAuthRoute) {
@@ -52,9 +56,11 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (isPanelRoute && !user) {
+  if ((isPanelRoute || isReadRoute) && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    // Come back to the book after signing in.
+    if (isReadRoute) url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
