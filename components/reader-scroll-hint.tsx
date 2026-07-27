@@ -24,12 +24,14 @@ import { trackFirstScroll } from "@/lib/track";
  *
  *  1. a soft fade at the bottom edge, so the last visible line dissolves instead
  *     of ending flat (a hard cut reads as "that's all there is");
- *  2. a chevron that appears only after the visitor has sat still for a moment,
- *     pulses a few times, and never comes back once they scroll.
+ *  2. a chevron that appears with the text, pulses a few times, and never comes
+ *     back once they scroll.
  *
- * The chevron is idle-triggered on purpose. An always-on arrow becomes furniture
- * within one session and stops being read; one that appears exactly when someone
- * has stalled is a response to their behaviour, not decoration.
+ * The chevron shows immediately rather than waiting for the visitor to stall.
+ * Median dwell on this page is 1.6s, so a hint held back for an idle beat would
+ * have arrived after most of the audience had already gone — the gesture has to be
+ * suggested while there is still someone to suggest it to. It still retires on its
+ * own after a few pulses, so it can't settle into being furniture.
  *
  * Nothing here can delay the words: it mounts after the reader signals ready, and
  * the whole component renders nothing at all until then. That ordering is not
@@ -37,8 +39,6 @@ import { trackFirstScroll } from "@/lib/track";
  * sentence, and this must never repeat it.
  */
 
-/** How long a visitor may sit unmoving before we suggest the gesture. */
-const IDLE_MS = 1500;
 /** Pulse, then stop nagging — three beats is plenty (see CSS animation). */
 const HINT_LIFE_MS = 6000;
 /** Below this much off-screen content there's nothing worth pointing at. */
@@ -48,7 +48,7 @@ export function ReaderScrollHint({ slug }: { slug: string }) {
   const ready = useSyncExternalStore(subscribeBookReady, getBookReady, getBookReadyServer);
   const scrolled = useSyncExternalStore(subscribeFirstScroll, getScrolled, getScrolledServer);
   const readyAtRef = useRef<number | null>(null);
-  const [showChevron, setShowChevron] = useState(false);
+  const [spent, setSpent] = useState(false);
   const [scrollable, setScrollable] = useState(false);
 
   // Navigating preview → preview reuses this component; the next book gets a
@@ -91,15 +91,13 @@ export function ReaderScrollHint({ slug }: { slug: string }) {
     trackFirstScroll(slug, "preview", Date.now() - readyAt);
   }, [scrolled, slug]);
 
-  // Idle → hint. Any scroll kills it for good (the store never un-sets itself).
+  // The chevron shows as soon as there's something to point at; this only sets
+  // the moment it gives up. Any scroll retires it too, for good (the first-scroll
+  // store never un-sets itself).
   useEffect(() => {
     if (ready === 0 || scrolled || !scrollable) return;
-    const show = window.setTimeout(() => setShowChevron(true), IDLE_MS);
-    const hide = window.setTimeout(() => setShowChevron(false), IDLE_MS + HINT_LIFE_MS);
-    return () => {
-      window.clearTimeout(show);
-      window.clearTimeout(hide);
-    };
+    const done = window.setTimeout(() => setSpent(true), HINT_LIFE_MS);
+    return () => window.clearTimeout(done);
   }, [ready, scrolled, scrollable]);
 
   if (ready === 0 || !scrollable || scrolled) return null;
@@ -107,7 +105,7 @@ export function ReaderScrollHint({ slug }: { slug: string }) {
   return (
     <>
       <div className="reader-fade" aria-hidden />
-      {showChevron && (
+      {!spent && (
         <div className="reader-scroll-hint" aria-hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />

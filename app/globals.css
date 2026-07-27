@@ -380,8 +380,8 @@ html.dark .epub-surface {
   .reader-toc { animation: none; }
 }
 
-/* Idle-triggered scroll chevron (see ReaderScrollHint). Rides just above the
-   fade, centred, and pulses downward three times before retiring. */
+/* Scroll chevron (see ReaderScrollHint). Appears with the first words, rides just
+   above the fade, and pulses downward three times before retiring. */
 .reader-scroll-hint {
   position: fixed;
   left: 50%;
