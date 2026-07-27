@@ -179,6 +179,49 @@ Averages hide the answer. Split by:
 - Be honest when timing is *not* the problem. It's a comfortable explanation and
   frequently the wrong one — the opening example proves it.
 
+## Step 8 — Compare against the last report, then save this one
+
+Reports are kept in `docs/campaign-reports/` as
+`YYYY-MM-DD-<product-slug>.md`. They turn one-off opinions into a time series:
+without the previous numbers you can't tell whether a fix worked or the traffic
+just changed.
+
+**Before writing the analysis**, read the most recent report for this product
+(if any) and diff the headline metrics against it. Lead the output with what
+moved, and say plainly whether the last round of fixes helped, did nothing, or
+made things worse — including your own.
+
+**After presenting the analysis**, always save it to that path. Open with a
+frontmatter block so later runs can compare without re-parsing prose:
+
+```markdown
+---
+product: sampai-hujan-reda
+window_start: 2026-07-25T16:07Z
+window_end: 2026-07-27T15:46Z
+sessions: 642
+preview_views: 610
+engaged: 75
+read: 16
+checkout_views: 17
+purchases: 0
+bounce_under_8s: 0.73
+median_dwell_ms: 2300
+read_rate: 0.025
+top_source: "120248086701560423"
+verdict: "paid placement quality — organic reads 19x better"
+fixes_shipped_since_last: ["server-side epub text", "hnd1 region", "streamed shell"]
+---
+```
+
+Keep the frontmatter keys stable across reports — a renamed key breaks the
+comparison. Add new ones freely; don't repurpose old ones.
+
+Note in the report which fixes had been shipped during the window, so a later
+reader can attribute changes. Segment the metrics by deploy time when a fix
+landed mid-window (`git log --date=format-local:'%Y-%m-%dT%H:%M' --format="%cd  %s"`),
+rather than reporting one blended average that hides the effect.
+
 ## Output format
 
 ```
@@ -212,7 +255,13 @@ FUNNEL
 
 ⏭ NEXT
   <what to measure after the fixes, and when to re-check>
+
+📁 Saved to docs/campaign-reports/<YYYY-MM-DD>-<slug>.md
 ```
+
+When a previous report exists, put a short delta table directly under the
+verdict — previous vs now for the headline metrics, with the fixes shipped in
+between — before the full funnel.
 
 ## Principles
 
