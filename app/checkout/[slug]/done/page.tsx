@@ -151,7 +151,7 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
             )
           ) : (
             <>
-              <Button size="md" href={`/checkout/${slug}`}>
+              <Button size="md" href={`/checkout/${slug}?pay=1`}>
                 Coba lagi
               </Button>
               <Button variant="secondary" size="md" href="/">
