@@ -103,14 +103,21 @@ export function CheckoutForm({
     await startDuitku();
   }
 
-  // After logging in via the buttons on this page (?pay=1), go straight to
-  // the Duitku payment instead of making the user click "Bayar sekarang" again.
+  // Arriving back here after logging in (?pay=1) continues what the visitor
+  // already chose on the preview, instead of asking them to press the same
+  // button a second time: Duitku for a paid item, the claim for a free one.
+  const freeFormRef = useRef<HTMLFormElement>(null);
   const autoPaidRef = useRef(false);
   useEffect(() => {
     if (autoPaidRef.current) return;
-    if (!isLoggedIn || showAsFree || purchaseLink || calendarHref) return;
+    if (!isLoggedIn || purchaseLink || calendarHref) return;
     if (new URLSearchParams(window.location.search).get("pay") !== "1") return;
     autoPaidRef.current = true;
+    if (showAsFree) {
+      fireBeginCheckout();
+      freeFormRef.current?.requestSubmit();
+      return;
+    }
     void startDuitku();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -140,7 +147,7 @@ export function CheckoutForm({
   if (showAsFree) {
     if (isLoggedIn) {
       return (
-        <form action={addPurchaseAction} className="space-y-3" data-checkout-form>
+        <form ref={freeFormRef} action={addPurchaseAction} className="space-y-3" data-checkout-form>
           <input type="hidden" name="landing_page_id" value={page.id} />
           <Button
             type="submit"
@@ -158,10 +165,12 @@ export function CheckoutForm({
         </form>
       );
     }
+    // ?pay=1 so the claim runs by itself once they're back here logged in.
+    const nextAfterLogin = `/checkout/${page.slug}?pay=1`;
     return (
       <div data-checkout-form className="space-y-3">
         <GoogleSignInButton
-          next={`/checkout/${page.slug}`}
+          next={nextAfterLogin}
           label="Ambil gratis dengan Google"
           variant="primary"
           size="lg"
@@ -169,7 +178,7 @@ export function CheckoutForm({
           className="gap-3 py-4 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
         />
         <Link
-          href={`/login?next=${encodeURIComponent(`/checkout/${page.slug}`)}`}
+          href={`/login?next=${encodeURIComponent(nextAfterLogin)}`}
           className="block text-center text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
           atau masuk dengan email

@@ -166,10 +166,12 @@ async function PreviewContent({ slug }: { slug: string }) {
     getProductsByIds(page.related_product_ids ?? []),
   ]);
 
-  // A logged-out visitor tapping "beli" would land on a checkout page whose only
-  // content is a login prompt — so send them to the login screen directly, with
-  // the product carried along and ?pay=1 so payment starts as soon as they're in.
-  const needsLogin = !user && !showAsFree && !calendarMode && !externalBuyLink;
+  // A logged-out visitor tapping the buy button would land on a checkout page
+  // whose only content is a login prompt — so send them to the login screen
+  // directly, with the product carried along and ?pay=1 so the purchase (or the
+  // free claim) continues by itself as soon as they're in. Free products need an
+  // account too, so they take the same path.
+  const needsLogin = !user && !calendarMode && !externalBuyLink;
   const effectiveBuyHref = needsLogin
     ? `/login?next=${encodeURIComponent(`/checkout/${slug}?pay=1`)}`
     : buyHref;
