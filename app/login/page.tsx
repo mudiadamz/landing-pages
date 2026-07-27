@@ -3,6 +3,7 @@ import { login } from "@/lib/actions/auth";
 import { SubmitButton } from "./submit-button";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GoogleSignInButton } from "@/components/google-signin-button";
+import { CheckoutIntent } from "./checkout-intent";
 
 export default async function LoginPage({
   searchParams,
@@ -26,6 +27,9 @@ export default async function LoginPage({
         <ThemeSwitch />
       </div>
       <div className="w-full max-w-[400px]">
+        {/* When the visitor came from a buy button, lead with what they're
+            signing in for. */}
+        <CheckoutIntent next={next} />
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -89,7 +93,7 @@ export default async function LoginPage({
             <p className="mt-6 text-center text-sm text-[var(--muted)]">
             Belum punya akun?{" "}
             <Link
-              href="/signup"
+              href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
               className="font-medium text-[var(--primary)] hover:underline underline-offset-2 transition-colors duration-200 hover:opacity-90"
             >
               Daftar

@@ -27,21 +27,28 @@ export async function signup(formData: FormData) {
   const fullName = (formData.get("full_name") as string)?.trim() ?? "";
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // Carried through so someone who signs up mid-purchase lands back on the
+  // product they were buying rather than the panel.
+  const next = (formData.get("next") as string)?.trim();
+  const safeNext = next && next.startsWith("/") ? next : null;
+  const withNext = (path: string) =>
+    safeNext ? `${path}${path.includes("?") ? "&" : "?"}next=${encodeURIComponent(safeNext)}` : path;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${baseUrl}/login`,
+      emailRedirectTo: withNext(`${baseUrl}/login`),
     },
   });
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    redirect(withNext(`/signup?error=${encodeURIComponent(error.message)}`));
   }
 
   if (data.session) {
-    redirect("/panel");
+    redirect(safeNext ?? "/panel");
   }
 
   const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -50,10 +57,10 @@ export async function signup(formData: FormData) {
   });
 
   if (!signInError) {
-    redirect("/panel");
+    redirect(safeNext ?? "/panel");
   }
 
-  redirect("/signup?message=check_email");
+  redirect(withNext("/signup?message=check_email"));
 }
 
 export async function signOut() {

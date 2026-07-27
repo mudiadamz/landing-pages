@@ -3,13 +3,15 @@ import { signup } from "@/lib/actions/auth";
 import { SubmitButton } from "./submit-button";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GoogleSignInButton } from "@/components/google-signin-button";
+import { CheckoutIntent } from "../login/checkout-intent";
 
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; next?: string }>;
 }) {
   const params = await searchParams;
+  const next = params.next && params.next.startsWith("/") ? params.next : undefined;
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative">
       <Link
@@ -25,6 +27,7 @@ export default async function SignupPage({
         <ThemeSwitch />
       </div>
       <div className="w-full max-w-[400px]">
+        <CheckoutIntent next={next} />
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -46,7 +49,7 @@ export default async function SignupPage({
               </p>
             </div>
           )}
-          <GoogleSignInButton label="Daftar dengan Google" />
+          <GoogleSignInButton label="Daftar dengan Google" next={next} />
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[var(--border)]" />
@@ -56,6 +59,7 @@ export default async function SignupPage({
             </div>
           </div>
           <form action={signup} className="space-y-5">
+            {next && <input type="hidden" name="next" value={next} />}
             <div>
               <label
                 htmlFor="full_name"

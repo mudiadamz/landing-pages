@@ -166,6 +166,14 @@ async function PreviewContent({ slug }: { slug: string }) {
     getProductsByIds(page.related_product_ids ?? []),
   ]);
 
+  // A logged-out visitor tapping "beli" would land on a checkout page whose only
+  // content is a login prompt — so send them to the login screen directly, with
+  // the product carried along and ?pay=1 so payment starts as soon as they're in.
+  const needsLogin = !user && !showAsFree && !calendarMode && !externalBuyLink;
+  const effectiveBuyHref = needsLogin
+    ? `/login?next=${encodeURIComponent(`/checkout/${slug}?pay=1`)}`
+    : buyHref;
+
   // Scheduled but not yet released: non-owners see a countdown, not the preview.
   const isOwner = !!user && page.user_id === user.id;
   if (isUpcoming(page.available_at, isOwner)) {
@@ -253,7 +261,7 @@ async function PreviewContent({ slug }: { slug: string }) {
         epub={embedEpub}
       />
       <PreviewBuyBar
-        href={buyHref}
+        href={effectiveBuyHref}
         external={!!externalBuyLink}
         calendar={calendarMode}
         label={buyLabel}
