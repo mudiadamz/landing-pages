@@ -21,6 +21,9 @@ import {
   readEpubMargin,
   setEpubMargin,
   clampEpubMargin,
+  readEpubAlign,
+  setEpubAlign,
+  type EpubAlign,
   EPUB_MARGIN_STEP,
   EPUB_MARGIN_MIN,
   EPUB_MARGIN_MAX,
@@ -97,6 +100,11 @@ export function ProductActionsMenu({
     const v = clampEpubFont(pct);
     setFontPct(v);
     setEpubFont(v);
+  }, []);
+  const [align, setAlignState] = useState<EpubAlign>(readEpubAlign);
+  const onAlign = useCallback((a: EpubAlign) => {
+    setAlignState(a);
+    setEpubAlign(a);
   }, []);
   const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
   const onMargin = useCallback((px: number) => {
@@ -483,6 +491,41 @@ export function ProductActionsMenu({
         </div>
       )}
 
+      {/* Body-text alignment — justified reads like print, ragged-right avoids
+          the white rivers justification causes on a narrow screen. */}
+      {epub && (
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+          <AlignIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+          <span className="text-sm text-foreground">Perataan</span>
+          <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5">
+            <button
+              type="button"
+              onClick={() => onAlign("justify")}
+              aria-pressed={align === "justify"}
+              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                align === "justify"
+                  ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
+                  : "text-[var(--muted)] hover:text-foreground"
+              }`}
+            >
+              Rata kanan-kiri
+            </button>
+            <button
+              type="button"
+              onClick={() => onAlign("left")}
+              aria-pressed={align === "left"}
+              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                align === "left"
+                  ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
+                  : "text-[var(--muted)] hover:text-foreground"
+              }`}
+            >
+              Rata kiri
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="my-1 h-px bg-[var(--border)]" />
 
       <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
@@ -853,6 +896,14 @@ function TextSizeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 7V5h10v2M9 5v14m-2 0h4M15 13v-1h6v1m-3-1v7m-1 0h2" />
+    </svg>
+  );
+}
+
+function AlignIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" d="M4 6h16M4 10h16M4 14h16M4 18h10" />
     </svg>
   );
 }

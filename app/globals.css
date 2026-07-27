@@ -196,11 +196,81 @@ html.dark .epub-surface {
 .epub-inline p {
   margin: 0 0 1em;
 }
+/* The book's own stylesheet is stripped during sanitising, so headings arrive
+   as bare tags. These give them book typography — and the class names below are
+   the ones EPUB exporters conventionally emit, styled when present. */
 .epub-inline h1,
 .epub-inline h2,
 .epub-inline h3,
 .epub-inline h4 {
-  line-height: 1.3;
+  line-height: 1.25;
+  text-align: center;
+  text-wrap: balance;
+  font-weight: 600;
+}
+.epub-inline h1 { font-size: 1.5em; margin: 2em 0 0.9em; }
+.epub-inline h2 { font-size: 1.28em; margin: 1.8em 0 0.8em; }
+.epub-inline h3 { font-size: 1.12em; margin: 1.6em 0 0.7em; }
+
+/* "BAB 1" — a label above the title, not a heading in its own right. */
+.epub-inline .chapter-num {
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin: 2.4em 0 0.15em;
+}
+.epub-inline .chapter-title {
+  font-size: 1.45em;
+  font-weight: 600;
+  margin: 0 0 1.4em;
+  position: relative;
+  padding-bottom: 0.7em;
+}
+/* Hairline under the chapter title, sized to the text rather than the column. */
+.epub-inline .chapter-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 2.2em;
+  height: 1px;
+  transform: translateX(-50%);
+  background: currentColor;
+  opacity: 0.25;
+}
+/* A chapter-num immediately followed by a title is one unit — close the gap. */
+.epub-inline .chapter-num + .chapter-title { margin-top: 0; }
+
+.epub-inline .front-title {
+  font-size: 1.8em;
+  margin: 1.2em 0 0.6em;
+}
+.epub-inline .the-end {
+  text-align: center;
+  font-style: italic;
+  opacity: 0.6;
+  margin: 2.4em 0 1.2em;
+  letter-spacing: 0.08em;
+}
+/* Full-bleed-ish image pages (cover, illustrations). */
+.epub-inline .cover-page,
+.epub-inline .illus-page {
+  margin: 1.4em 0;
+  text-align: center;
+}
+.epub-inline .cover-page img,
+.epub-inline .illus-page img {
+  display: block;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+/* First line of a chapter shouldn't be indented after a heading. */
+.epub-inline h1 + p,
+.epub-inline h2 + p,
+.epub-inline h3 + p {
+  text-indent: 0;
 }
 .epub-inline a {
   color: inherit;

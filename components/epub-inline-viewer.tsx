@@ -6,12 +6,16 @@ import { markBookReady } from "@/lib/boot-splash";
 
 
 import {
+  EPUB_ALIGN_EVENT,
   EPUB_FONT_EVENT,
   EPUB_MARGIN_EVENT,
+  clampEpubAlign,
   clampEpubFont,
   clampEpubMargin,
+  readEpubAlign,
   readEpubFont,
   readEpubMargin,
+  type EpubAlign,
 } from "@/lib/epub-font";
 
 const IMG_MIME: Record<string, string> = {
@@ -190,6 +194,7 @@ export default function EpubInlineViewer({
   const blobsRef = useRef<string[]>([]);
   const [fontPct, setFontPct] = useState<number>(readEpubFont);
   const [marginPx, setMarginPx] = useState<number>(readEpubMargin);
+  const [align, setAlign] = useState<EpubAlign>(readEpubAlign);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -261,11 +266,14 @@ export default function EpubInlineViewer({
       const px = (e as CustomEvent).detail as number;
       if (typeof px === "number") setMarginPx(clampEpubMargin(px));
     };
+    const onAlign = (e: Event) => setAlign(clampEpubAlign((e as CustomEvent).detail));
     window.addEventListener(EPUB_FONT_EVENT, onFont);
     window.addEventListener(EPUB_MARGIN_EVENT, onMargin);
+    window.addEventListener(EPUB_ALIGN_EVENT, onAlign);
     return () => {
       window.removeEventListener(EPUB_FONT_EVENT, onFont);
       window.removeEventListener(EPUB_MARGIN_EVENT, onMargin);
+      window.removeEventListener(EPUB_ALIGN_EVENT, onAlign);
     };
   }, []);
 
@@ -280,6 +288,7 @@ export default function EpubInlineViewer({
         ref={contentRef}
         className="epub-inline mx-auto max-w-3xl"
         style={{
+          textAlign: align,
           fontSize: `${(19 * fontPct) / 100}px`,
           paddingLeft: `${pad}px`,
           paddingRight: `${pad}px`,

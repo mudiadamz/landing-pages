@@ -85,3 +85,38 @@ export function setEpubMargin(px: number): void {
     /* best-effort */
   }
 }
+
+/* ---------------------------------------------------------------------- */
+
+// Body-text alignment. Justified is the book-typography default; ragged-right
+// suits narrow screens, where justification opens up rivers of white space.
+export const EPUB_ALIGN_KEY = "lp-epub-align";
+export const EPUB_ALIGN_EVENT = "lp-epub-align";
+export type EpubAlign = "justify" | "left";
+export const EPUB_ALIGN_DEFAULT: EpubAlign = "justify";
+
+export function clampEpubAlign(v: unknown): EpubAlign {
+  return v === "left" || v === "justify" ? v : EPUB_ALIGN_DEFAULT;
+}
+
+export function readEpubAlign(): EpubAlign {
+  try {
+    return clampEpubAlign(localStorage.getItem(EPUB_ALIGN_KEY));
+  } catch {
+    return EPUB_ALIGN_DEFAULT;
+  }
+}
+
+export function setEpubAlign(align: EpubAlign): void {
+  const v = clampEpubAlign(align);
+  try {
+    localStorage.setItem(EPUB_ALIGN_KEY, v);
+  } catch {
+    /* best-effort */
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(EPUB_ALIGN_EVENT, { detail: v }));
+  } catch {
+    /* best-effort */
+  }
+}
