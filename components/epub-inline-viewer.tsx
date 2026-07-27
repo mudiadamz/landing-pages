@@ -181,11 +181,14 @@ function sanitizeChapters(chapters: string[]): string {
 export default function EpubInlineViewer({
   url,
   slug,
+  textEndpoint,
   storageKey,
 }: {
   url: string;
   /** When set, fetch pre-unzipped chapters from the server (much faster). */
   slug?: string;
+  /** Override the chapter source — the owner's reader uses a gated endpoint. */
+  textEndpoint?: string;
   title?: string;
   /** Reserved for future scroll-position memory. */
   storageKey?: string;
@@ -209,9 +212,10 @@ export default function EpubInlineViewer({
     setLoading(true);
     setError(null);
     (async () => {
-      if (slug) {
+      const chapterUrl = textEndpoint ?? (slug ? `/api/epub-text/${encodeURIComponent(slug)}` : null);
+      if (chapterUrl) {
         try {
-          const res = await fetch(`/api/epub-text/${encodeURIComponent(slug)}`);
+          const res = await fetch(chapterUrl);
           if (res.ok) {
             const { chapters } = (await res.json()) as { chapters: string[] };
             const html = sanitizeChapters(chapters);
@@ -249,7 +253,7 @@ export default function EpubInlineViewer({
       blobsRef.current.forEach(URL.revokeObjectURL);
       blobsRef.current = [];
     };
-  }, [url, slug]);
+  }, [url, slug, textEndpoint]);
 
   // Hand off from the cover to the book.
   useEffect(() => {

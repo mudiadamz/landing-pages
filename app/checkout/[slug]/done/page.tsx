@@ -4,13 +4,9 @@ import { getCategories, getLandingPageForCheckout } from "@/lib/actions/landing-
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PurchaseTracker } from "@/components/purchase-tracker";
-import { StoryPdfButton } from "@/components/story-pdf-button";
-import { EpubStoryButton } from "@/components/epub-story-button";
 
 // Matches the Button component's secondary + md variant, so the story reader
 // trigger sits inline with the other buttons.
-const SECONDARY_BTN =
-  "inline-flex items-center justify-center gap-1.5 font-medium select-none transition-all duration-150 border border-[var(--border)] text-foreground hover:bg-[var(--background)] active:scale-[0.98] px-4 py-2 text-sm rounded-lg";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -134,19 +130,10 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
                     Download
                   </Button>
                 )}
-                {checkoutData?.story_pdf_url && (
-                  <StoryPdfButton
-                    slug={slug}
-                    title={checkoutData.title}
-                    className={SECONDARY_BTN}
-                  />
-                )}
-                {checkoutData?.story_epub_url && (
-                  <EpubStoryButton
-                    slug={slug}
-                    title={checkoutData.title}
-                    className={SECONDARY_BTN}
-                  />
+                {(checkoutData?.story_epub_url || checkoutData?.story_pdf_url) && (
+                  <Button variant="secondary" size="md" href={`/read/${slug}`}>
+                    {checkoutData?.story_epub_url ? "Baca EPUB" : "Baca PDF"}
+                  </Button>
                 )}
                 <Button variant="secondary" size="md" href="/panel">
                   Ke Panel

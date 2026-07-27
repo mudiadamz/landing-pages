@@ -15,12 +15,15 @@ export function EpubReader({
   url,
   slug,
   title,
+  textEndpoint,
   storageKey,
 }: {
   url: string;
   /** Product slug — enables the fast server-unzipped chapter fetch. */
   slug?: string;
   title?: string;
+  /** Override the chapter source (owner's reader uses a gated endpoint). */
+  textEndpoint?: string;
   storageKey?: string;
 }) {
   // Re-key on the source so switching files cleanly reloads the reader.
@@ -30,6 +33,7 @@ export function EpubReader({
       url={url}
       slug={slug}
       title={title}
+      textEndpoint={textEndpoint}
       storageKey={storageKey}
     />
   );
