@@ -21,7 +21,9 @@ export async function updateSession(request: NextRequest) {
   const isReadRoute = pathname.startsWith("/read/");
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
-  if (!isPanelRoute && !isAuthRoute) {
+  // Everything else skips the session lookup entirely — it costs a request to
+  // Supabase, and public pages don't need it.
+  if (!isPanelRoute && !isAuthRoute && !isReadRoute) {
     return NextResponse.next({ request });
   }
 
