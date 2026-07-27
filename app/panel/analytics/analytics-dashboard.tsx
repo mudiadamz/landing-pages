@@ -400,14 +400,14 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)]">
+                    <SortTh label="Waktu" col="time" sort={sort} onSort={sortBy} />
                     <Th>Pengunjung</Th>
+                    <SortTh right label="Durasi" col="duration" sort={sort} onSort={sortBy} />
                     <Th>Lokasi</Th>
                     <Th>Sumber</Th>
                     <Th>Masuk via</Th>
                     <Th>Perangkat</Th>
-                    <SortTh right label="Durasi" col="duration" sort={sort} onSort={sortBy} />
                     <SortTh right label="Hal." col="pageviews" sort={sort} onSort={sortBy} />
-                    <SortTh label="Waktu" col="time" sort={sort} onSort={sortBy} />
                   </tr>
                 </thead>
                 <tbody>

@@ -20,6 +20,7 @@ export function ExcludedIps({ initial, myIp }: { initial: ExcludedIp[]; myIp: st
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  const [open, setOpen] = useState(false);
   const alreadyMine = !!myIp && rows.some((r) => r.ip === myIp);
 
   function add(value: string, label?: string) {
@@ -66,36 +67,50 @@ export function ExcludedIps({ initial, myIp }: { initial: ExcludedIp[]; myIp: st
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <div>
-        <h2 className="text-sm font-semibold text-foreground">IP yang dikecualikan</h2>
-        <p className="mt-0.5 text-xs text-[var(--muted)]">
-          Kunjungan dari alamat ini tidak dihitung. Berguna saat kamu membuka situs
-          sendiri <strong className="text-foreground">tanpa login</strong> — pengecualian
-          per-user hanya jalan kalau kamu login. Menambahkan IP juga menghapus sesi lamanya.
-        </p>
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)]">
+      {/* Collapsed: one line. The list is set-and-forget, so it shouldn't sit
+          above the numbers taking up room. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 text-xs">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1.5 font-medium text-foreground"
+          aria-expanded={open}
+        >
+          <span className={`transition-transform ${open ? "rotate-90" : ""}`} aria-hidden>
+            ›
+          </span>
+          IP dikecualikan
+          <span className="rounded bg-[var(--background)] px-1.5 py-0.5 tabular-nums text-[var(--muted)]">
+            {rows.length}
+          </span>
+        </button>
+
+        {myIp && !alreadyMine && (
+          <button
+            type="button"
+            onClick={() => add(myIp, "IP saya")}
+            disabled={pending}
+            className="rounded-lg bg-[var(--primary)] px-2 py-1 font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            Kecualikan IP saya ({myIp})
+          </button>
+        )}
+        {myIp && alreadyMine && (
+          <span className="text-[var(--muted)]">
+            IP kamu <code className="font-mono">{myIp}</code> sudah dikecualikan
+          </span>
+        )}
+        {msg && <span className="text-[var(--primary)]">{msg}</span>}
       </div>
 
-      {myIp && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[var(--background)] px-3 py-2">
-          <span className="text-xs text-[var(--muted)]">IP kamu sekarang:</span>
-          <code className="font-mono text-xs text-foreground">{myIp}</code>
-          {alreadyMine ? (
-            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-              sudah dikecualikan
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => add(myIp, "IP saya")}
-              disabled={pending}
-              className="rounded-lg bg-[var(--primary)] px-2.5 py-1 text-xs font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              Kecualikan IP ini
-            </button>
-          )}
-        </div>
-      )}
+      {open && (
+        <div className="space-y-3 border-t border-[var(--border)] px-3 py-3">
+          <p className="text-xs text-[var(--muted)]">
+            Kunjungan dari alamat ini tidak dihitung — berguna saat kamu membuka situs
+            sendiri <strong className="text-foreground">tanpa login</strong>. Menambahkan IP
+            juga menghapus sesi lamanya.
+          </p>
 
       <div className="flex flex-wrap gap-2">
         <input
@@ -119,8 +134,6 @@ export function ExcludedIps({ initial, myIp }: { initial: ExcludedIp[]; myIp: st
           Tambah
         </button>
       </div>
-
-      {msg && <p className="text-xs text-[var(--primary)]">{msg}</p>}
 
       {rows.length === 0 ? (
         <p className="text-xs text-[var(--muted)]">Belum ada IP yang dikecualikan.</p>
@@ -152,6 +165,8 @@ export function ExcludedIps({ initial, myIp }: { initial: ExcludedIp[]; myIp: st
             </li>
           ))}
         </ul>
+      )}
+        </div>
       )}
     </div>
   );

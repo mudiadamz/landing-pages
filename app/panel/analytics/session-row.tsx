@@ -65,13 +65,15 @@ export function SessionRow({
             <span className={`transition-transform ${open ? "rotate-90" : ""}`} aria-hidden>
               ›
             </span>
-            <span>
-              {s.email || s.name || (
-                <span className="text-[var(--muted)]">Anonim</span>
-              )}
+            <span className="whitespace-nowrap text-xs text-[var(--muted)]">
+              {fmtTime(s.startedAt)}
             </span>
           </div>
         </td>
+        <td className="px-3 py-2">
+          {s.email || s.name || <span className="text-[var(--muted)]">Anonim</span>}
+        </td>
+        <td className="px-3 py-2 text-right tabular-nums">{fmtDuration(s.durationMs)}</td>
         <td className="px-3 py-2">
           <span className="text-xs">
             {[s.city, s.country].filter(Boolean).join(", ") || "—"}
@@ -85,9 +87,7 @@ export function SessionRow({
         <td className="px-3 py-2 text-xs">
           {[s.device, s.browser].filter(Boolean).join(" · ") || "—"}
         </td>
-        <td className="px-3 py-2 text-right tabular-nums">{fmtDuration(s.durationMs)}</td>
         <td className="px-3 py-2 text-right tabular-nums">{s.pageviews}</td>
-        <td className="px-3 py-2 text-xs text-[var(--muted)]">{fmtTime(s.startedAt)}</td>
       </tr>
       {open && (
         <tr className="border-b border-[var(--border)] last:border-0 bg-[var(--background)]">
@@ -115,7 +115,9 @@ export function SessionRow({
                       </span>
                       <span className="font-medium">{st.title || st.path}</span>
                       <span className="text-[var(--muted)]">{fmtDuration(st.dwellMs)}</span>
-                      <span className="text-[var(--muted)]">scroll {st.scrollDepth}%</span>
+                      {st.scrollDepth !== null && (
+                        <span className="text-[var(--muted)]">scroll {st.scrollDepth}%</span>
+                      )}
                       {eng && (
                         <span className={`rounded px-1.5 py-0.5 font-medium ${eng.cls}`}>{eng.label}</span>
                       )}
