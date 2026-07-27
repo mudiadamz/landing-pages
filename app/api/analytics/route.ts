@@ -40,6 +40,28 @@ function clientIp(req: Request): string | null {
   return null;
 }
 
+/**
+ * Excluded IPs change rarely but are checked on every event, so the list is held
+ * in memory for a minute rather than queried each time.
+ */
+let ipDenyCache: { at: number; set: Set<string> } | null = null;
+const IP_DENY_TTL_MS = 60_000;
+
+async function isExcludedIp(
+  admin: ReturnType<typeof createAdminClient>,
+  ip: string,
+): Promise<boolean> {
+  try {
+    if (!ipDenyCache || Date.now() - ipDenyCache.at > IP_DENY_TTL_MS) {
+      const { data } = await admin.from("lp_excluded_ips").select("ip");
+      ipDenyCache = { at: Date.now(), set: new Set((data ?? []).map((r) => r.ip as string)) };
+    }
+    return ipDenyCache.set.has(ip);
+  } catch {
+    return false; // never drop real traffic because a lookup failed
+  }
+}
+
 type Geo = { country: string | null; region: string | null; city: string | null; isp: string | null };
 const EMPTY_GEO: Geo = { country: null, region: null, city: null, isp: null };
 
@@ -174,6 +196,9 @@ export async function POST(req: Request) {
 
     // IP + geo (best-effort; never blocks the write on failure).
     const ip = clientIp(req);
+    // Address-based exclusion — covers the owner browsing signed out, and
+    // office/staff networks, which the per-user flag can't reach.
+    if (ip && (await isExcludedIp(admin, ip))) return new NextResponse(null, { status: 204 });
     const geo = ip ? await lookupGeo(admin, ip) : EMPTY_GEO;
 
     await admin.rpc("lp_track_session", {

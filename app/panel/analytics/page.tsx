@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/actions/profiles";
 import { getAnalytics, type Range } from "@/lib/actions/analytics";
 import { getProductSummaries } from "@/lib/actions/product-insights";
 import { AnalyticsDashboard } from "./analytics-dashboard";
+import { ExcludedIps } from "./excluded-ips";
+import { listExcludedIps, getMyIp } from "@/lib/actions/excluded-ips";
 
 export const metadata = { title: "Analytics" };
 
@@ -20,7 +22,12 @@ export default async function AnalyticsPage({
   const parsed = Number(sp.range) as Range;
   const range: Range = RANGES.includes(parsed) ? parsed : 30;
 
-  const [data, products] = await Promise.all([getAnalytics(range), getProductSummaries(range)]);
+  const [data, products, excludedIps, myIp] = await Promise.all([
+    getAnalytics(range),
+    getProductSummaries(range),
+    listExcludedIps(),
+    getMyIp(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -50,6 +57,8 @@ export default async function AnalyticsPage({
           ))}
         </div>
       </div>
+
+      <ExcludedIps initial={excludedIps} myIp={myIp} />
 
       <AnalyticsDashboard data={data} products={products} />
     </div>
