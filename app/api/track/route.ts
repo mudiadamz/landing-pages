@@ -10,7 +10,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
  * validated/clamped before insert.
  */
 
-const KINDS = new Set(["view", "session", "cta"]);
+const KINDS = new Set(["view", "session", "cta", "scroll"]);
 const PAGES = new Set(["preview", "checkout"]);
 const DEVICES = new Set(["mobile", "tablet", "desktop"]);
 
@@ -76,7 +76,8 @@ export async function POST(req: Request) {
       device: device && DEVICES.has(device) ? device : null,
       browser: clamp(body.browser, 40),
       os: clamp(body.os, 40),
-      duration_ms: kind === "session" ? duration : null,
+      // 'session' stores active time; 'scroll' stores time-to-first-scroll.
+      duration_ms: kind === "session" || kind === "scroll" ? duration : null,
       cta_action: kind === "cta" ? clamp(body.ctaAction, 40) : null,
     });
 

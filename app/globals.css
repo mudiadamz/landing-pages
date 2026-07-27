@@ -184,6 +184,68 @@ html.dark .epub-surface {
   .epub-splash-dot { animation: none; }
 }
 
+/* "3 bab · ±40 menit baca" — the book saying what it is, in one line, in the
+   reading typeface. Sits in the flow above the first chapter and scrolls away. */
+.epub-identity {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+  text-align: center;
+  opacity: 0.5;
+  margin: 0.9rem auto 0;
+}
+
+/* The last visible line dissolves instead of ending flat, so the text reads as
+   continuing below the fold. Pointer-events off — it sits over live text. */
+.reader-fade {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5.5rem;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--background) 92%);
+}
+
+/* Idle-triggered scroll chevron (see ReaderScrollHint). Rides just above the
+   fade, centred, and pulses downward three times before retiring. */
+.reader-scroll-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 1.6rem;
+  z-index: 6;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-left: -1.125rem;
+  border-radius: 9999px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.14);
+  opacity: 0.85;
+  animation: reader-hint-in 260ms ease-out both, reader-hint-nudge 1.5s ease-in-out 260ms 3;
+}
+.reader-scroll-hint svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+@keyframes reader-hint-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.9); }
+  to   { opacity: 0.85; transform: none; }
+}
+@keyframes reader-hint-nudge {
+  0%, 60%, 100% { transform: none; }
+  30%           { transform: translateY(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-scroll-hint { animation: reader-hint-in 260ms ease-out both; }
+}
+
 /* Inline EPUB reader — content rendered directly in the DOM (no iframe), so
    styles are scoped here to avoid leaking into the app. */
 .epub-inline {

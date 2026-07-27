@@ -11,6 +11,14 @@ export type ProductStats = {
   avgSessionSec: number;
   previewViews: number;
   checkoutViews: number;
+  /** Distinct sessions that opened a preview — the denominator for scrollRate. */
+  previewSessions: number;
+  /** Of those, how many scrolled the reader at least once. */
+  scrollSessions: number;
+  /** 0..1. Low = the first screen isn't read as scrollable; see trackFirstScroll. */
+  scrollRate: number;
+  /** Median ms from "text visible" to first scroll, over sessions that scrolled. */
+  medianFirstScrollMs: number;
   devices: Bucket[];
   browsers: Bucket[];
   os: Bucket[];
@@ -94,6 +102,10 @@ export async function getProductStats(
   const sessions = new Set<string>();
   const dailyMap = new Map<string, number>();
   const durationBySession = new Map<string, number>();
+  // First-scroll telemetry, deduped by session (the client fires once, but a
+  // beacon retry or a second tab would otherwise double-count).
+  const previewSessionIds = new Set<string>();
+  const firstScrollBySession = new Map<string, number>();
 
   let totalViews = 0;
   let previewViews = 0;
@@ -119,7 +131,10 @@ export async function getProductStats(
     if (r.kind === "view") {
       totalViews++;
       if (r.page === "checkout") checkoutViews++;
-      else previewViews++;
+      else {
+        previewViews++;
+        if (r.session_id) previewSessionIds.add(r.session_id);
+      }
       bump(devices, r.device, "Lainnya");
       bump(browsers, r.browser, "Lainnya");
       bump(os, r.os, "Lainnya");
@@ -136,6 +151,9 @@ export async function getProductStats(
         r.session_id,
         (durationBySession.get(r.session_id) ?? 0) + r.duration_ms,
       );
+    } else if (r.kind === "scroll" && r.session_id) {
+      // Rows arrive newest-first, so keep the earliest reading for a session.
+      firstScrollBySession.set(r.session_id, r.duration_ms ?? 0);
     } else if (r.kind === "cta") {
       bump(ctas, r.cta_action, "lainnya");
     }
@@ -145,6 +163,19 @@ export async function getProductStats(
   const avgSessionSec = durations.length
     ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length / 1000)
     : 0;
+
+  // Median, not mean: one visitor who left the tab open skews an average badly.
+  const scrollTimes = [...firstScrollBySession.values()].sort((a, b) => a - b);
+  const medianFirstScrollMs = scrollTimes.length
+    ? scrollTimes.length % 2
+      ? scrollTimes[(scrollTimes.length - 1) / 2]
+      : Math.round((scrollTimes[scrollTimes.length / 2 - 1] + scrollTimes[scrollTimes.length / 2]) / 2)
+    : 0;
+  // Only sessions we actually saw open a preview can be scored on scrolling.
+  const scrollSessions = [...firstScrollBySession.keys()].filter((id) =>
+    previewSessionIds.has(id),
+  ).length;
+  const previewSessions = previewSessionIds.size;
 
   // Last `sinceDays` days as a dense series (fill gaps with 0), in local days.
   const daily: { date: string; views: number }[] = [];
@@ -160,6 +191,10 @@ export async function getProductStats(
     avgSessionSec,
     previewViews,
     checkoutViews,
+    previewSessions,
+    scrollSessions,
+    scrollRate: previewSessions ? scrollSessions / previewSessions : 0,
+    medianFirstScrollMs,
     devices: topBuckets(devices),
     browsers: topBuckets(browsers),
     os: topBuckets(os),

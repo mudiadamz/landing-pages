@@ -30,6 +30,13 @@ function humanDuration(sec: number) {
   return m > 0 ? `${m}m ${s}d` : `${s} dtk`;
 }
 
+/** Sub-minute durations, where a tenth of a second is the interesting digit. */
+function humanMs(ms: number) {
+  if (ms <= 0) return "0 dtk";
+  if (ms < 10_000) return `${(ms / 1000).toFixed(1)} dtk`;
+  return humanDuration(Math.round(ms / 1000));
+}
+
 /**
  * Client-side stats view. Renders the aggregated numbers and (when live) polls
  * the getProductStats server action every 5s, updating ONLY the data — no full
@@ -130,6 +137,25 @@ export function ProductStatsView({
         />
         <StatCard label={`Sesi unik · ${stats.sinceDays} hari`} value={fmt(stats.sessions)} />
         <StatCard label="Durasi rata-rata" value={humanDuration(stats.avgSessionSec)} />
+      </div>
+
+      {/* Reading engagement. Splits "tidak tahu bisa digulir" from "sudah baca
+          lalu pergi" — the two need opposite fixes. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
+        <StatCard
+          label="Mulai menggulir"
+          value={stats.previewSessions ? `${Math.round(stats.scrollRate * 100)}%` : "—"}
+          sub={
+            stats.previewSessions
+              ? `${fmt(stats.scrollSessions)} dari ${fmt(stats.previewSessions)} sesi preview`
+              : "belum ada sesi preview"
+          }
+        />
+        <StatCard
+          label="Waktu ke gulir pertama"
+          value={stats.scrollSessions ? humanMs(stats.medianFirstScrollMs) : "—"}
+          sub={stats.scrollSessions ? "median, sejak teks tampil" : "belum ada yang menggulir"}
+        />
       </div>
 
       {stats.totalViews === 0 && (

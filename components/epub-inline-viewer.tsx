@@ -30,6 +30,14 @@ const IMG_MIME: Record<string, string> = {
 
 const dirOf = (p: string) => p.split("/").slice(0, -1).join("/");
 
+/** Words per minute for Indonesian prose — deliberately conservative. */
+const WPM = 200;
+
+const countWords = (text: string) => {
+  const t = text.trim();
+  return t ? t.split(/\s+/).length : 0;
+};
+
 function resolvePath(base: string, rel: string): string {
   let r = rel.split("#")[0];
   try {
@@ -200,6 +208,10 @@ export default function EpubInlineViewer({
   const [align, setAlign] = useState<EpubAlign>(readEpubAlign);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Chapter count + reading time for the identity line (see below). Set in the
+  // same state batch as `loading`, so it paints WITH the first words rather than
+  // dropping in afterwards and shoving the opening line down the screen.
+  const [meta, setMeta] = useState<{ chapters: number; words: number } | null>(null);
 
   // Fetch + parse + inject the book (no iframe).
   //
@@ -221,6 +233,11 @@ export default function EpubInlineViewer({
             const html = sanitizeChapters(chapters);
             if (cancelled) return;
             if (contentRef.current) contentRef.current.innerHTML = html;
+            // innerHTML is synchronous, so the text is readable right away.
+            setMeta({
+              chapters: chapters.length,
+              words: countWords(contentRef.current?.textContent ?? ""),
+            });
             setLoading(false);
             return;
           }
@@ -240,6 +257,10 @@ export default function EpubInlineViewer({
         }
         blobsRef.current = blobs;
         if (contentRef.current) contentRef.current.innerHTML = html;
+        setMeta({
+          chapters: contentRef.current?.querySelectorAll(".epub-chapter").length ?? 0,
+          words: countWords(contentRef.current?.textContent ?? ""),
+        });
         setLoading(false);
       } catch {
         if (!cancelled) {
@@ -286,8 +307,30 @@ export default function EpubInlineViewer({
   const pad = Math.max(0, marginPx);
   const neg = Math.min(0, marginPx);
 
+  // One quiet line telling the visitor what they've opened: how many chapters,
+  // and how long it takes to read. Nearly half of paid visitors used to leave
+  // without learning this was a book at all, and the fix for that was to show
+  // text instead of a cover — but a wall of prose still doesn't announce its
+  // shape. This does, in the words' own typeface, costing one line.
+  //
+  // It stays in the flow and simply scrolls away: fading it out would mean
+  // removing a laid-out element while someone is reading the line beneath it.
+  // Derived from the book itself — no genre label, because nothing in the schema
+  // actually records the format, and a guessed "Novel" would sometimes be a lie.
+  const identity = (() => {
+    if (!meta || meta.words === 0) return null;
+    const minutes = Math.max(1, Math.round(meta.words / WPM));
+    const readTime = `±${minutes} menit baca`;
+    return meta.chapters > 1 ? `${meta.chapters} bab · ${readTime}` : readTime;
+  })();
+
   return (
     <div className="epub-surface min-h-full w-full">
+      {identity && (
+        <p className="epub-identity mx-auto max-w-3xl" style={{ paddingLeft: pad, paddingRight: pad }}>
+          {identity}
+        </p>
+      )}
       <div
         ref={contentRef}
         className="epub-inline mx-auto max-w-3xl"

@@ -14,6 +14,7 @@ import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
 import { ReaderEndPanel } from "@/components/reader-end-panel";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
+import { ReaderScrollHint } from "@/components/reader-scroll-hint";
 import { BootSplashDismiss } from "@/components/boot-splash-dismiss";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { getMyLike } from "@/lib/actions/likes";
@@ -222,6 +223,10 @@ async function PreviewContent({ slug }: { slug: string }) {
             title={page.title}
             storageKey={`lp-epub:${slug}`}
           />
+          {/* Bottom fade + idle chevron, and the first-scroll event they're
+              judged by. Only for the inline reader: it's the one preview that
+              flows in the document, so window scroll is observable. */}
+          <ReaderScrollHint slug={slug} />
           <ReaderEndPanel
             next={
               nextInSeries

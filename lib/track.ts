@@ -9,7 +9,7 @@ export type TrackPage = "preview" | "checkout";
 export type TrackPayload = {
   slug: string;
   sessionId: string;
-  kind: "view" | "session" | "cta";
+  kind: "view" | "session" | "cta" | "scroll";
   page: TrackPage;
   referrerHost?: string | null;
   device?: string;
@@ -116,6 +116,34 @@ export function sendTrack(payload: TrackPayload, beacon = false): void {
   } catch {
     /* never throw */
   }
+}
+
+/**
+ * The visitor scrolled the reader for the first time, `msSinceReady` after the
+ * text became visible.
+ *
+ * Fires at most once per session, and only on a real scroll — so a session with
+ * no `scroll` event means the visitor never moved the page. That absence is the
+ * point: it separates "read a line and left" (scrolled, then gone) from "never
+ * realised there was more" (no scroll at all), which the previous telemetry
+ * couldn't distinguish — 64% of paid preview events had unknown scroll depth
+ * because visitors left before the page was even scrollable.
+ */
+export function trackFirstScroll(slug: string, page: TrackPage, msSinceReady: number): void {
+  const { device, browser, os } = detectClient();
+  sendTrack(
+    {
+      slug,
+      sessionId: getSessionId(),
+      kind: "scroll",
+      page,
+      durationMs: Math.max(0, Math.round(msSinceReady)),
+      device,
+      browser,
+      os,
+    },
+    true,
+  );
 }
 
 /** Convenience for CTA clicks (buy, share, add-to-home, etc.). */
