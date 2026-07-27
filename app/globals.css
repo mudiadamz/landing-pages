@@ -248,6 +248,28 @@ html.dark .epub-surface {
 .reader-place.is-button:hover {
   color: var(--foreground);
 }
+/* One pulse, on first appearance only, to say "this is a button" — a small dim
+   pill otherwise reads as a label. Single iteration by design: the ring expands
+   out once and the pill never asks for attention again (see PING_MS). */
+.reader-place.is-button.is-new {
+  animation: reader-place-ping 900ms ease-out 1;
+}
+@keyframes reader-place-ping {
+  0% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent);
+  }
+  35% {
+    transform: translateX(-50%) scale(1.09);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 0 13px color-mix(in srgb, var(--primary) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader-place.is-button.is-new { animation: none; }
+}
 .reader-place.is-button:active {
   transform: translateX(-50%) scale(0.96);
 }

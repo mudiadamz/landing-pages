@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { getScrolled, getScrolledServer, subscribeFirstScroll } from "@/lib/first-scroll";
 import { showChrome, useChromeHidden } from "@/lib/immersive";
 import { trackCta } from "@/lib/track";
@@ -51,6 +51,9 @@ const CURRENT_AT = 0.3;
 /** Breathing room above a chapter heading after jumping to it. */
 const CHAPTER_OFFSET = 12;
 
+/** Length of the one-off "this is a button" pulse; matches the CSS animation. */
+const PING_MS = 900;
+
 /**
  * The book's own table of contents, read back out of the rendered chapters.
  *
@@ -97,6 +100,8 @@ export function ReaderPageIndicator({
   const [place, setPlace] = useState<Place>(null);
   const [atEnd, setAtEnd] = useState(false);
   const [chapterCount, setChapterCount] = useState(0);
+  const [pinged, setPinged] = useState(false);
+  const pingStartedRef = useRef(false);
   // Open sheet: the chapters as measured at open time, plus which one was being
   // read. Null when closed.
   const [toc, setToc] = useState<{ items: ChapterItem[]; current: number } | null>(null);
@@ -178,6 +183,21 @@ export function ReaderPageIndicator({
   // position but has no structure behind it, so its readout stays a readout.
   const hasChapters = mode === "window" && chapterCount > 1;
 
+  const shown = !!place && place.total >= 2 && (mode !== "window" || scrolled);
+  const hidden = (atEnd || chromeHidden) && !toc;
+
+  // A single pulse the first time the readout is on screen, to say that this one
+  // is a button. Fires exactly once per mount: `startedRef` means a chrome fade
+  // mid-animation can't restart it, and the CSS animation runs one iteration, so
+  // a small target that would otherwise look like a label announces itself and
+  // then stops asking for attention.
+  useEffect(() => {
+    if (!hasChapters || !shown || hidden || pingStartedRef.current) return;
+    pingStartedRef.current = true;
+    const done = window.setTimeout(() => setPinged(true), PING_MS);
+    return () => window.clearTimeout(done);
+  }, [hasChapters, shown, hidden]);
+
   const open = () => {
     const items = readChapters();
     if (items.length < 2) return;
@@ -209,12 +229,11 @@ export function ReaderPageIndicator({
 
   // Nothing to say until something has been measured, and a one-page preview has
   // no position worth reporting.
-  if (!place || place.total < 2) return null;
-  if (mode === "window" && !scrolled) return null;
+  if (!shown || !place) return null;
 
-  // While the sheet is open the trigger stays put, even if focus mode would
-  // otherwise have taken it (mirrors `chromeHidden && !open` in product-actions).
-  const hide = (atEnd || chromeHidden) && !toc;
+  // `hidden` keeps the trigger in place while the sheet is open, even if focus
+  // mode would have taken it (mirrors `chromeHidden && !open` in product-actions).
+  const hide = hidden;
   const readout = `${place.page}/${place.total}`;
 
   return (
@@ -226,7 +245,9 @@ export function ReaderPageIndicator({
           aria-haspopup="dialog"
           aria-expanded={!!toc}
           aria-label={`Halaman ${place.page} dari ${place.total} — buka daftar bab`}
-          className={`reader-place is-button${hide ? " is-hidden" : ""}`}
+          className={`reader-place is-button${hide ? " is-hidden" : ""}${
+            pinged ? "" : " is-new"
+          }`}
         >
           {readout}
         </button>
