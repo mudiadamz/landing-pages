@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { EndCtaLink } from "./end-cta-link";
 
 /**
  * Everything that follows the last page of a preview, as one panel.
@@ -62,6 +63,9 @@ export function ReaderEndPanel({
   buyLabel,
   priceText,
   note,
+  external,
+  slug,
+  ctaAction,
 }: {
   /** The next instalment, when this product is part of a series. */
   next?: NextItem | null;
@@ -72,6 +76,11 @@ export function ReaderEndPanel({
   buyLabel: string;
   priceText: string | null;
   note?: string | null;
+  /** External purchase link — opens in a new tab. */
+  external?: boolean;
+  /** Slug + action name for the CTA click event (see EndCtaLink). */
+  slug?: string;
+  ctaAction?: string;
 }) {
   // One continuation block, not three. A next part always wins; otherwise show
   // a couple of related titles.
@@ -111,15 +120,17 @@ export function ReaderEndPanel({
         </div>
       )}
 
-      {/* The purchase sits last and is the only loud thing here. */}
+      {/* The purchase sits last and is the only loud thing here — and, since the
+          floating bar was removed, the only purchase prompt on the page at all. */}
       <div className="mt-6">
-        <Link
+        <EndCtaLink
           href={buyHref}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-4 text-base font-semibold text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/20 transition-all hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]"
-        >
-          {buyLabel}
-          {priceText && <span className="opacity-80">· {priceText}</span>}
-        </Link>
+          label={buyLabel}
+          priceText={priceText}
+          external={external}
+          slug={slug}
+          ctaAction={ctaAction}
+        />
         {note && <p className="mt-2 text-center text-xs text-[var(--muted)]">{note}</p>}
       </div>
     </section>

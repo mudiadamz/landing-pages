@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { PreviewRelated } from "./preview-related";
-import type { RelatedProduct } from "@/lib/actions/landing-pages";
 
 // Use the worker that ships with the installed pdfjs-dist (kept in version sync).
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -112,29 +110,30 @@ function LazyPage({
 export default function PdfViewer({
   url,
   storageKey,
-  revealAt = 0.4,
-  related = [],
+  endPanel,
 }: {
   url: string;
   title?: string;
   /** When set, scroll position is saved/restored under this key (survives the
    *  mobile-Safari crash-reload). Should be stable across reloads for one PDF. */
   storageKey?: string;
-  /** Scroll-progress fraction (0..1) at which to signal the buy CTA to reveal. */
-  revealAt?: number;
-  /** Seller-curated related products shown after the last page ("book end"). */
-  related?: RelatedProduct[];
+  /** End-of-read panel (continuation + the single buy CTA), rendered after the
+   *  last page. Passed in as a slot because the PDF scrolls inside this
+   *  container — anything placed after the viewer would be unreachable. */
+  endPanel?: React.ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const pagesRef = useRef<HTMLDivElement>(null);
   const scrollTick = useRef(false);
   const restored = useRef(false);
   const [numPages, setNumPages] = useState(0);
   const [width, setWidth] = useState(720);
   const [dpr, setDpr] = useState(1);
 
-  // Report scroll depth so the sticky "Beli sekarang" CTA can reveal itself
-  // once the visitor has scrolled a few screens into the document, and remember
-  // the position so a crash-reload lands back where they were.
+  // Report position so the page readout at the bottom can show it — a PDF is the
+  // one preview with real page numbers, so they're derived from the pages
+  // themselves rather than from screenfuls. Also remembers the scroll offset so a
+  // crash-reload lands back where the reader was.
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       if (scrollTick.current) return;
@@ -144,8 +143,27 @@ export default function PdfViewer({
         scrollTick.current = false;
         const max = el.scrollHeight - el.clientHeight;
         const prog = max > 0 ? el.scrollTop / max : 1;
-        const past = prog >= revealAt;
-        window.dispatchEvent(new CustomEvent("lp-preview-scroll", { detail: { past } }));
+        // Which page is under the middle of the viewport. The end panel sits in
+        // the same scroll flow, so measure against the pages' own extent.
+        const pagesEl = pagesRef.current;
+        const pagesHeight = pagesEl?.offsetHeight ?? 0;
+        const page =
+          numPages > 0 && pagesHeight > 0
+            ? Math.min(
+                numPages,
+                Math.max(
+                  1,
+                  Math.ceil(
+                    ((el.scrollTop + el.clientHeight / 2 - (pagesEl?.offsetTop ?? 0)) /
+                      pagesHeight) *
+                      numPages,
+                  ),
+                ),
+              )
+            : 1;
+        window.dispatchEvent(
+          new CustomEvent("lp-preview-scroll", { detail: { prog, page, total: numPages } }),
+        );
         if (storageKey) {
           try {
             sessionStorage.setItem(storageKey, String(Math.round(el.scrollTop)));
@@ -155,7 +173,7 @@ export default function PdfViewer({
         }
       });
     },
-    [storageKey, revealAt],
+    [storageKey, numPages],
   );
 
   // Fit page width to the container (capped for readability on wide screens) and
@@ -204,25 +222,28 @@ export default function PdfViewer({
       // a dark frame in dark mode (which suits a seller's dark-version PDF).
       className="w-full h-full overflow-y-auto overflow-x-hidden bg-[#fdfcfb] dark:bg-[#141414] py-4"
     >
-      <Document
-        file={url}
-        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-        loading={
-          <div className="px-3">
-            <Placeholder />
-          </div>
-        }
-        error={<OpenPdfLink url={url} />}
-        noData={<OpenPdfLink url={url} />}
-        className="flex flex-col items-center gap-4"
-      >
-        {Array.from({ length: numPages }, (_, i) => (
-          <LazyPage key={i + 1} pageNumber={i + 1} width={width} dpr={dpr} eager={i === 0} />
-        ))}
-      </Document>
+      <div ref={pagesRef}>
+        <Document
+          file={url}
+          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          loading={
+            <div className="px-3">
+              <Placeholder />
+            </div>
+          }
+          error={<OpenPdfLink url={url} />}
+          noData={<OpenPdfLink url={url} />}
+          className="flex flex-col items-center gap-4"
+        >
+          {Array.from({ length: numPages }, (_, i) => (
+            <LazyPage key={i + 1} pageNumber={i + 1} width={width} dpr={dpr} eager={i === 0} />
+          ))}
+        </Document>
+      </div>
 
-      {/* Related products at the end of the book — only once the PDF is loaded. */}
-      {numPages > 0 && <PreviewRelated items={related} />}
+      {/* The read ends here: continuation, then the one buy CTA. Only once the
+          PDF has loaded, so it never appears above a still-blank document. */}
+      {numPages > 0 && endPanel}
     </div>
   );
 }

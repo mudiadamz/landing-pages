@@ -99,8 +99,6 @@ export type LandingPageCheckout = {
   preview_label?: "product" | "buku" | "pages" | null;
   cta_label?: string | null;
   cta_note?: string | null;
-  /** When the sticky CTA reveals on scroll: "start"|"middle"(default)|"near"|"end". */
-  cta_reveal?: "start" | "middle" | "near" | "end" | null;
   /** Buy-button action: "checkout" (default) | "link" | "calendar". */
   cta_action?: "checkout" | "link" | "calendar" | null;
   event_title?: string | null;
@@ -438,7 +436,7 @@ export async function getLandingPageForCheckout(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_reveal, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids, thumbnail_landscape_url, thumbnail_extra_urls")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids, thumbnail_landscape_url, thumbnail_extra_urls")
     .eq("slug", slug)
     .single();
 
@@ -559,7 +557,6 @@ export async function updateLandingPagePricing(
     preview_label?: "product" | "buku" | "pages" | null;
     cta_label?: string | null;
     cta_note?: string | null;
-    cta_reveal?: "start" | "middle" | "near" | "end" | null;
     cta_action?: "checkout" | "link" | "calendar" | null;
     event_title?: string | null;
     event_start?: string | null;

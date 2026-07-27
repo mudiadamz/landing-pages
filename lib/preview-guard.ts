@@ -28,15 +28,9 @@ const GUARD_STYLE = `
 </style>
 `;
 
-/**
- * The guard script is parameterized by REVEAL_AT — the scroll-progress fraction
- * (0..1 of the document's scrollable height) at which the sticky buy CTA reveals.
- * The `__REVEAL_AT__` token is replaced by the numeric threshold at build time.
- */
 const GUARD_SCRIPT = `
 <script>
 (function () {
-  var __lpRevealAt = __REVEAL_AT__;
   function isEditable(t) {
     if (!t || !t.tagName) return false;
     var tag = t.tagName.toUpperCase();
@@ -85,8 +79,10 @@ const GUARD_SCRIPT = `
     }
   }, true);
 
-  // Report scroll depth to the parent so it can reveal the sticky "Beli
-  // sekarang" CTA once the visitor has scrolled a few screens into the demo.
+  // Report position to the parent: it drives the page readout at the bottom of
+  // the preview, and tells the host chrome that scrolling is happening (the
+  // preview scrolls inside this iframe, where the host can't observe it).
+  // Screenfuls, not pages — an HTML demo has no page structure to count.
   var __lpTick = false;
   function __lpReport() {
     __lpTick = false;
@@ -98,7 +94,9 @@ const GUARD_SCRIPT = `
       var max = sh - vh;
       // Fraction scrolled through the whole document (1 when it doesn't scroll).
       var prog = max > 0 ? y / max : 1;
-      window.parent.postMessage({ __lpPreview: 1, scrolled: prog >= __lpRevealAt }, "*");
+      var total = vh > 0 ? Math.max(1, Math.ceil(sh / vh)) : 1;
+      var page = vh > 0 ? Math.min(total, Math.max(1, Math.ceil((y + vh) / vh))) : 1;
+      window.parent.postMessage({ __lpPreview: 1, prog: prog, page: page, total: total }, "*");
     } catch (err) {}
   }
   window.addEventListener("scroll", function () {
@@ -135,15 +133,9 @@ const GUARD_SCRIPT = `
 </script>
 `;
 
-/**
- * Inject anti-copy/download guards into an arbitrary HTML document string.
- * `revealAt` is the scroll-progress fraction (0..1) at which the sticky buy CTA
- * is reported as revealed — 0 means "reveal as soon as the visitor scrolls".
- */
-export function guardPreviewHtml(html: string, revealAt = 0.4): string {
-  const clamped = Number.isFinite(revealAt) ? Math.min(Math.max(revealAt, 0), 1) : 0.4;
-  const script = GUARD_SCRIPT.replace("__REVEAL_AT__", String(clamped));
-  const injection = GUARD_STYLE + script;
+/** Inject anti-copy/download guards into an arbitrary HTML document string. */
+export function guardPreviewHtml(html: string): string {
+  const injection = GUARD_STYLE + GUARD_SCRIPT;
 
   if (/<\/head>/i.test(html)) {
     return html.replace(/<\/head>/i, injection + "</head>");

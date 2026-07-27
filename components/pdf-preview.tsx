@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useTheme } from "@/lib/use-theme";
-import type { RelatedProduct } from "@/lib/actions/landing-pages";
 
 // pdf.js touches browser-only APIs (canvas, workers), so load the viewer
 // client-side only.
@@ -20,8 +19,7 @@ export function PdfPreview({
   urlDark,
   title,
   storageKey,
-  revealAt,
-  related,
+  endPanel,
 }: {
   /** Light / default PDF. Always set (the caller falls back to the dark one). */
   url: string;
@@ -30,10 +28,8 @@ export function PdfPreview({
   title?: string;
   /** Stable key to remember scroll position across reloads (see PdfViewer). */
   storageKey?: string;
-  /** Scroll-progress fraction (0..1) at which the buy CTA reveals. */
-  revealAt?: number;
-  /** Seller-curated related products shown after the last page. */
-  related?: RelatedProduct[];
+  /** End-of-read panel rendered after the last page (see PdfViewer). */
+  endPanel?: React.ReactNode;
 }) {
   const { dark } = useTheme();
   // Follow the theme only when a dark variant exists; otherwise the single
@@ -48,8 +44,7 @@ export function PdfPreview({
         url={effectiveUrl}
         title={title}
         storageKey={storageKey}
-        revealAt={revealAt}
-        related={related}
+        endPanel={endPanel}
       />
     </div>
   );

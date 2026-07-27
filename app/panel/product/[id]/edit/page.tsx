@@ -100,7 +100,6 @@ export default async function EditPage({
           cta_note: (page as { cta_note?: string | null }).cta_note ?? null,
           purchase_link: (page as { purchase_link?: string | null }).purchase_link ?? null,
           purchase_type: (page as { purchase_type?: "external" | "internal" }).purchase_type,
-          cta_reveal: (page as { cta_reveal?: "start" | "middle" | "near" | "end" | null }).cta_reveal ?? null,
           cta_action: (page as { cta_action?: "checkout" | "link" | "calendar" | null }).cta_action ?? null,
           event_title: (page as { event_title?: string | null }).event_title ?? null,
           event_start: (page as { event_start?: string | null }).event_start ?? null,

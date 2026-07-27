@@ -63,9 +63,13 @@ export function ImmersiveController() {
 
     const onScroll = () => scheduleHide();
     const onTap = () => show();
+    // Any position report from inside a preview iframe means the visitor is
+    // scrolling in there, where our own listeners can't see it. (This used to
+    // require a `scrolled` flag that only went true past the buy CTA's reveal
+    // threshold — that CTA is gone, and chrome should yield to any scroll.)
     const onMessage = (e: MessageEvent) => {
-      const d = e.data as { __lpPreview?: unknown; scrolled?: unknown } | null;
-      if (d && typeof d === "object" && d.__lpPreview && d.scrolled) scheduleHide();
+      const d = e.data as { __lpPreview?: unknown } | null;
+      if (d && typeof d === "object" && d.__lpPreview) scheduleHide();
     };
 
     document.addEventListener("wheel", onScroll, { passive: true });

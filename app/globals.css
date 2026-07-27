@@ -209,6 +209,32 @@ html.dark .epub-surface {
   background: linear-gradient(to bottom, transparent, var(--background) 92%);
 }
 
+/* "3/50" — the reader's place in the text, in the space the floating buy CTA
+   used to occupy (see ReaderPageIndicator). Deliberately dim and small: it is a
+   readout, not an action, and it stays put while scrolling. */
+.reader-place {
+  position: fixed;
+  left: 50%;
+  bottom: max(0.85rem, env(safe-area-inset-bottom));
+  z-index: 40;
+  transform: translateX(-50%);
+  pointer-events: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  backdrop-filter: blur(6px);
+  transition: opacity 200ms ease-out;
+}
+/* At the very end the end-panel CTA owns the bottom of the screen. */
+.reader-place.is-hidden {
+  opacity: 0;
+}
+
 /* Idle-triggered scroll chevron (see ReaderScrollHint). Rides just above the
    fade, centred, and pulses downward three times before retiring. */
 .reader-scroll-hint {

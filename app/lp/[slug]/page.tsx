@@ -7,7 +7,6 @@ import { isUpcoming } from "@/lib/product-status";
 import { ComingSoon } from "@/components/coming-soon";
 import { buildMetaDescription } from "@/lib/seo";
 import { guardPreviewHtml } from "@/lib/preview-guard";
-import { PreviewBuyBar } from "../preview-buy-bar";
 import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
@@ -15,6 +14,7 @@ import { EpubReader } from "@/components/epub-reader";
 import { ReaderEndPanel } from "@/components/reader-end-panel";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
 import { ReaderScrollHint } from "@/components/reader-scroll-hint";
+import { ReaderPageIndicator } from "@/components/reader-page-indicator";
 import { BootSplashDismiss } from "@/components/boot-splash-dismiss";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { getMyLike } from "@/lib/actions/likes";
@@ -151,23 +151,6 @@ async function PreviewContent({ slug }: { slug: string }) {
     ? `/api/calendar/${slug}`
     : externalBuyLink ?? `/checkout/${slug}`;
 
-  // When the sticky CTA reveals as the visitor scrolls the preview. The keyword
-  // maps to a scroll-progress fraction (0..1); the HTML guard + PdfViewer report
-  // "revealed" once the visitor passes it. "start" reveals as soon as they
-  // scroll at all (0) and also auto-shows shortly after load.
-  const revealKey = checkout?.cta_reveal ?? "middle";
-  const revealAt = { start: 0, middle: 0.4, near: 0.75, end: 0.92 }[revealKey] ?? 0.4;
-  // External-link previews are cross-origin, so scroll can't be observed — map
-  // the reveal point to a timed fallback instead. For scroll-observable previews
-  // only "start" gets an auto-reveal (so it shows without needing a scroll).
-  // EPUB pages inside sandboxed iframes can't report scroll either, so it uses
-  // the same timed reveal fallback as external links.
-  const autoRevealMs =
-    embedLink || embedEpub
-      ? { start: 1200, middle: 5000, near: 9000, end: 13000 }[revealKey] ?? 5000
-      : revealKey === "start"
-        ? 1200
-        : undefined;
 
   const viewCount = checkout?.view_count ?? 0;
 
@@ -204,6 +187,58 @@ async function PreviewContent({ slug }: { slug: string }) {
     );
   }
 
+  // The one and only purchase prompt, at the end of the read. There is no longer
+  // a floating CTA over the preview: reading is the product, and a card parked on
+  // top of it was interrupting the thing the visitor came for. Shared by the EPUB
+  // and PDF readers — the PDF takes it as a slot, since it scrolls inside its own
+  // container and anything after the viewer would be unreachable.
+  const endPanel = (
+    <ReaderEndPanel
+      next={
+        nextInSeries
+          ? {
+              slug: nextInSeries.slug,
+              title: nextInSeries.title,
+              thumbnailUrl: nextInSeries.thumbnail_url,
+              priceText: priceTextOf(
+                nextInSeries.is_free,
+                nextInSeries.price,
+                nextInSeries.price_discount,
+              ),
+            }
+          : null
+      }
+      related={related.map((r) => ({
+        slug: r.slug,
+        title: r.title,
+        thumbnailUrl: r.thumbnail_url,
+        priceText: priceTextOf(r.is_free, r.price, r.price_discount),
+      }))}
+      bundle={
+        bundleOffer
+          ? {
+              title: bundleOffer.title,
+              slug: bundleOffer.slug,
+              itemCount: bundleOffer.bundle_product_ids?.length ?? 0,
+              note: bundleOffer.bundle_note,
+              priceText: priceTextOf(
+                bundleOffer.is_free,
+                bundleOffer.price,
+                bundleOffer.price_discount,
+              ),
+            }
+          : null
+      }
+      buyHref={effectiveBuyHref}
+      buyLabel={buyLabel}
+      priceText={priceText}
+      note={buyNote}
+      external={!!externalBuyLink}
+      slug={slug}
+      ctaAction={calendarMode ? "calendar" : externalBuyLink ? "buy_link" : "buy"}
+    />
+  );
+
   return (
     <>
       <PreviewGuardClient />
@@ -227,47 +262,7 @@ async function PreviewContent({ slug }: { slug: string }) {
               judged by. Only for the inline reader: it's the one preview that
               flows in the document, so window scroll is observable. */}
           <ReaderScrollHint slug={slug} />
-          <ReaderEndPanel
-            next={
-              nextInSeries
-                ? {
-                    slug: nextInSeries.slug,
-                    title: nextInSeries.title,
-                    thumbnailUrl: nextInSeries.thumbnail_url,
-                    priceText: priceTextOf(
-                      nextInSeries.is_free,
-                      nextInSeries.price,
-                      nextInSeries.price_discount,
-                    ),
-                  }
-                : null
-            }
-            related={related.map((r) => ({
-              slug: r.slug,
-              title: r.title,
-              thumbnailUrl: r.thumbnail_url,
-              priceText: priceTextOf(r.is_free, r.price, r.price_discount),
-            }))}
-            bundle={
-              bundleOffer
-                ? {
-                    title: bundleOffer.title,
-                    slug: bundleOffer.slug,
-                    itemCount: bundleOffer.bundle_product_ids?.length ?? 0,
-                    note: bundleOffer.bundle_note,
-                    priceText: priceTextOf(
-                      bundleOffer.is_free,
-                      bundleOffer.price,
-                      bundleOffer.price_discount,
-                    ),
-                  }
-                : null
-            }
-            buyHref={effectiveBuyHref}
-            buyLabel={buyLabel}
-            priceText={priceText}
-            note={buyNote}
-          />
+          {endPanel}
         </div>
       ) : (
         <div className="lp-reader sticky top-0 w-full overflow-hidden">
@@ -280,8 +275,7 @@ async function PreviewContent({ slug }: { slug: string }) {
                 urlDark={pdfDark}
                 title={page.title}
                 storageKey={`lp-pdf:${slug}`}
-                revealAt={revealAt}
-                related={related}
+                endPanel={endPanel}
               />
             ) : embedLink ? (
               <iframe
@@ -292,7 +286,7 @@ async function PreviewContent({ slug }: { slug: string }) {
               />
             ) : (
               <iframe
-                srcDoc={guardPreviewHtml(page.html_content, revealAt)}
+                srcDoc={guardPreviewHtml(page.html_content)}
                 title={page.title}
                 className="w-full h-full min-h-full border-0 block"
                 sandbox="allow-scripts allow-same-origin allow-modals"
@@ -315,17 +309,9 @@ async function PreviewContent({ slug }: { slug: string }) {
         likeCount={page.like_count ?? 0}
         epub={embedEpub}
       />
-      <PreviewBuyBar
-        href={effectiveBuyHref}
-        external={!!externalBuyLink}
-        calendar={calendarMode}
-        label={buyLabel}
-        priceText={priceText}
-        note={buyNote}
-        autoRevealMs={autoRevealMs}
-        slug={slug}
-        ctaAction={calendarMode ? "calendar" : externalBuyLink ? "buy_link" : "buy"}
-      />
+      {/* Where the buy CTA used to float: the reader's place in the text. A
+          cross-origin link preview can't be measured, so it gets nothing. */}
+      {!embedLink && <ReaderPageIndicator mode={embedEpub ? "window" : "event"} />}
     </>
   );
 }

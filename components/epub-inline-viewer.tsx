@@ -348,8 +348,9 @@ export default function EpubInlineViewer({
           {error}
         </div>
       )}
-      {/* Reserve space so the last lines clear the floating buy bar. */}
-      {!loading && !error && <div aria-hidden style={{ height: 96 }} />}
+      {/* Clearance under the last lines. Was 96px to clear the floating buy bar;
+          all that sits down there now is the small page readout. */}
+      {!loading && !error && <div aria-hidden style={{ height: 40 }} />}
       {/* storageKey reserved for future scroll memory */}
       <span hidden>{storageKey}</span>
     </div>
