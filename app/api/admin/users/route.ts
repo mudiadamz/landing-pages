@@ -23,7 +23,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("lp_profiles")
-    .select("id, full_name, email, role, is_active")
+    .select("id, full_name, email, role, is_active, exclude_from_stats")
     .order("role", { ascending: true })
     .order("full_name", { ascending: true });
 
@@ -40,16 +40,21 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, role } = body as {
+  const { userId, active, role, excludeFromStats } = body as {
     userId: string;
     active?: boolean;
     role?: string;
+    excludeFromStats?: boolean;
   };
 
   if (!userId) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
   }
-  if (userId === user.id) {
+  // Guarding your own account applies to role and ban only. Excluding yourself
+  // from analytics is the common case — it's your own testing traffic — and
+  // carries no privilege risk.
+  const selfEdit = userId === user.id;
+  if (selfEdit && (typeof role === "string" || typeof active === "boolean")) {
     return NextResponse.json({ error: "Tidak bisa mengubah akun sendiri" }, { status: 400 });
   }
 
@@ -90,6 +95,18 @@ export async function PATCH(req: Request) {
     if (banError) {
       await admin.from("lp_profiles").update({ is_active: !active }).eq("id", userId);
       return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  // Exclude this account's traffic from analytics (own testing, staff browsing).
+  if (typeof excludeFromStats === "boolean") {
+    const { error } = await admin
+      .from("lp_profiles")
+      .update({ exclude_from_stats: excludeFromStats })
+      .eq("id", userId);
+    if (error) {
+      return NextResponse.json({ error: "Failed to update analytics exclusion" }, { status: 500 });
     }
     return NextResponse.json({ success: true });
   }

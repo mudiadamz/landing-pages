@@ -11,6 +11,7 @@ type UserRow = {
   email: string | null;
   role: Role;
   is_active: boolean;
+  exclude_from_stats?: boolean;
 };
 
 export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -44,6 +45,28 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
         const data = await res.json();
         alert(data.error ?? "Gagal mengubah role");
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, role: prev } : u)));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function toggleStats(user: UserRow) {
+    const next = !user.exclude_from_stats;
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, excludeFromStats: next }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUsers((list) =>
+          list.map((u) => (u.id === user.id ? { ...u, exclude_from_stats: next } : u)),
+        );
+      } else {
+        alert(data.error ?? "Gagal mengubah pengaturan statistik");
       }
     } finally {
       setUpdating(null);
@@ -162,6 +185,12 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Email</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Role</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Status</th>
+                <th
+                  className="text-center px-4 py-3 font-medium text-[var(--muted)]"
+                  title="Kunjungan user ini tidak dihitung di Analytics"
+                >
+                  Hitung statistik
+                </th>
                 <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Aksi</th>
               </tr>
             </thead>
@@ -179,6 +208,25 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                   <td className="px-4 py-3 text-center">
                     <StatusBadge active={u.is_active} />
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => toggleStats(u)}
+                      disabled={updating === u.id}
+                      title={
+                        u.exclude_from_stats
+                          ? "Kunjungan user ini TIDAK dihitung — klik untuk menghitung lagi"
+                          : "Kunjungan user ini dihitung — klik untuk mengecualikan"
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
+                        u.exclude_from_stats
+                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
+                          : "bg-[var(--background)] text-[var(--muted)] hover:text-foreground"
+                      }`}
+                    >
+                      {u.exclude_from_stats ? "Dikecualikan" : "Dihitung"}
+                    </button>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end">
                       <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
@@ -188,7 +236,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">
+                  <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
                     Tidak ada user ditemukan.
                   </td>
                 </tr>

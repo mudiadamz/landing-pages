@@ -132,6 +132,18 @@ export async function POST(req: Request) {
       /* anon */
     }
 
+    // Internal traffic (the team's own accounts) is dropped entirely rather
+    // than recorded and filtered later, so every downstream number — sessions,
+    // bounce, read rate — is clean by construction.
+    if (userId) {
+      const { data: prof } = await admin
+        .from("lp_profiles")
+        .select("exclude_from_stats")
+        .eq("id", userId)
+        .maybeSingle();
+      if (prof?.exclude_from_stats) return new NextResponse(null, { status: 204 });
+    }
+
     // Resolve product slug → id (for the FK / joins).
     let productId: string | null = null;
     if (productSlug) {

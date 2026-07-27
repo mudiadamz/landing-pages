@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 /**
  * Visitor analytics ingestion. Accepts a small JSON event from the preview /
@@ -34,6 +35,23 @@ export async function POST(req: Request) {
     }
 
     const supabase = createAdminClient();
+
+    // Skip internal traffic (team accounts flagged exclude_from_stats).
+    try {
+      const authed = await createServerClient();
+      const { data: auth } = await authed.auth.getUser();
+      if (auth.user) {
+        const { data: prof } = await supabase
+          .from("lp_profiles")
+          .select("exclude_from_stats")
+          .eq("id", auth.user.id)
+          .maybeSingle();
+        if (prof?.exclude_from_stats) return NextResponse.json({ ok: true }, { status: 200 });
+      }
+    } catch {
+      /* anonymous — nothing to exclude */
+    }
+
     const { data: page } = await supabase
       .from("lp_landing_pages")
       .select("id")
