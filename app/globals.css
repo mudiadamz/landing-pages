@@ -71,10 +71,15 @@ body {
 .epub-surface {
   background: #faf7f1;
   color: #35322c;
+  /* Emphasis tint: a warm sienna that sits with the paper rather than
+     interrupting it. Kept above 4.5:1 on the surface so it stays readable
+     for a whole paragraph, not just a word. */
+  --epub-em: #7d5537;
 }
 html.dark .epub-surface {
   background: #17181a;
   color: #c3beb4;
+  --epub-em: #c99a74;
 }
 
 /* Server-rendered book-cover splash (see EpubBootSplash). Styled in plain CSS
@@ -274,6 +279,12 @@ html.dark .epub-surface {
 }
 .epub-inline a {
   color: inherit;
+}
+/* Emphasis keeps its italic and picks up a restrained warm tint. */
+.epub-inline em,
+.epub-inline i {
+  color: var(--epub-em, inherit);
+  font-style: italic;
 }
 .epub-chapter {
   padding: 0.5rem 0 1.5rem;
