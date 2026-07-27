@@ -9,8 +9,12 @@ import {
   pageType,
   productSlugFromPath,
   sendJourney,
+  reportEngagedRead,
   type JourneyEntry,
 } from "@/lib/journey";
+
+/** Active time on a preview that counts as a genuine read (mirrors the server). */
+const READ_THRESHOLD_MS = 30_000;
 
 /**
  * Tracks the visitor's journey across the whole app: one page_event per page
@@ -73,6 +77,18 @@ export function SessionTracker() {
       }
     };
 
+    // Once someone has genuinely read, tell Meta — it's the only signal that can
+    // steer delivery toward readers rather than whoever taps most cheaply.
+    let readReported = false;
+    const checkRead = () => {
+      if (readReported || page.kind !== "preview" || !page.productSlug) return;
+      accrue();
+      if (page.activeMs < READ_THRESHOLD_MS) return;
+      readReported = true;
+      reportEngagedRead(page.productSlug, page.activeMs / 1000);
+    };
+    const readTimer = window.setInterval(checkRead, 5000);
+
     const measureScroll = () => {
       const doc = document.documentElement;
       const scrollable = doc.scrollHeight - window.innerHeight;
@@ -117,6 +133,7 @@ export function SessionTracker() {
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
         accrue();
+        checkRead();
         page.lastResume = null;
         flush(true); // mobile-safe: tab backgrounding is often the last signal
       } else {
@@ -136,6 +153,8 @@ export function SessionTracker() {
     return () => {
       // SPA route change → record the page we're leaving.
       window.clearTimeout(settleTimer);
+      window.clearInterval(readTimer);
+      checkRead();
       flush(false);
       window.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);
       document.removeEventListener("visibilitychange", onVisibility);

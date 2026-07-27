@@ -128,3 +128,38 @@ export function sendJourney(payload: JourneyPayload, beacon = false): void {
     /* best-effort */
   }
 }
+
+/**
+ * Reports a genuine read to Meta (30s+ of active time on a preview), once per
+ * product per session. Fires the browser pixel and the server CAPI with the
+ * same event id so Meta dedupes them into one event.
+ *
+ * This is the signal a campaign can be optimised for — see /api/meta/read.
+ */
+const READ_SENT_KEY = "lp-read-sent";
+
+export function reportEngagedRead(slug: string, seconds: number): void {
+  try {
+    const sent = new Set<string>(JSON.parse(sessionStorage.getItem(READ_SENT_KEY) || "[]"));
+    if (sent.has(slug)) return;
+    sent.add(slug);
+    sessionStorage.setItem(READ_SENT_KEY, JSON.stringify([...sent]));
+
+    const eventId = `read_${slug}_${getVisitorId()}_${Date.now()}`;
+
+    // Browser pixel — deduped against the server event by eventID.
+    const fbq = (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq;
+    if (typeof fbq === "function") {
+      fbq("trackCustom", "ReadEngaged", { content_name: slug, read_seconds: Math.round(seconds) }, { eventID: eventId });
+    }
+
+    void fetch("/api/meta/read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, eventId, seconds: Math.round(seconds) }),
+      keepalive: true,
+    });
+  } catch {
+    /* best-effort */
+  }
+}
