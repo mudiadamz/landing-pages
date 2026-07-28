@@ -20,6 +20,12 @@ import {
 import { Editor } from "./editor";
 import { Button } from "@/components/ui/button";
 import { PresetTextField } from "./preset-text-field";
+import {
+  DEFAULT_PREVIEW_LABEL,
+  PREVIEW_LABEL_MAX,
+  PREVIEW_LABEL_PRESETS,
+  previewLabelForEdit,
+} from "@/lib/preview-label";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { richTextToPlain } from "@/lib/html-sanitize";
 
@@ -99,7 +105,7 @@ type Props = {
     story_epub_url?: string | null;
     category_id?: string | null;
     long_description?: string | null;
-    preview_label?: "product" | "buku" | "pages" | null;
+    preview_label?: string | null;
     cta_label?: string | null;
     cta_note?: string | null;
     purchase_link?: string | null;
@@ -321,9 +327,11 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   // --- Page info ---
   const [title, setTitle] = useState(initial.title);
   const [previewType, setPreviewType] = useState<PreviewType>(initial.preview_type);
-  // Label of the "Preview Product" button on the checkout page.
-  const [previewLabel, setPreviewLabel] = useState<"product" | "buku" | "pages">(
-    initial.preview_label ?? "product",
+  // Label of the "Preview Product" button on the checkout page. Free text;
+  // legacy keyword rows are translated to their wording on the way in, so the
+  // dropdown matches a preset instead of dropping into the custom box.
+  const [previewLabel, setPreviewLabel] = useState(() =>
+    previewLabelForEdit(initial.preview_label),
   );
   const [previewUrl, setPreviewUrl] = useState(initial.preview_url ?? "");
   const [pdfMeta, setPdfMeta] = useState<FileMeta | null>(
@@ -439,6 +447,11 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   const [nextProductId, setNextProductId] = useState<string>(
     initial.next_product_id && validRelatedIds.has(initial.next_product_id) ? initial.next_product_id : "",
   );
+  const [seriesSearch, setSeriesSearch] = useState("");
+  const seriesMatches = relatedOptions.filter((o) =>
+    o.title.toLowerCase().includes(seriesSearch.trim().toLowerCase()),
+  );
+  const selectedNext = relatedOptions.find((o) => o.id === nextProductId) ?? null;
 
   const toggleRelated = useCallback((id: string) => {
     setRelatedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -859,7 +872,7 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         story_epub_url: deliverableType === "epub" ? storyEpubUrl.trim() || null : null,
         category_id: categoryId.trim() || null,
         long_description: longDescription.trim() || null,
-        preview_label: previewLabel,
+        preview_label: previewLabel.trim() || null,
         related_product_ids: relatedIds,
         next_product_id: nextProductId || null,
         bundle_product_ids: bundleIds.length ? bundleIds : null,
@@ -1386,23 +1399,17 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         )}
 
         {/* Label of the "Preview" button shown on the checkout page. */}
-        <div className="space-y-1.5">
-          <label htmlFor="preview-label" className="block text-sm font-medium text-foreground">
-            Teks tombol preview
-          </label>
-          <select
+        <div className="sm:max-w-xs">
+          <PresetTextField
             id="preview-label"
+            label="Teks tombol preview"
             value={previewLabel}
-            onChange={(e) => setPreviewLabel(e.target.value as "product" | "buku" | "pages")}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
-          >
-            <option value="product">Preview Product (default)</option>
-            <option value="buku">Preview Buku</option>
-            <option value="pages">Preview Pages</option>
-          </select>
-          <p className="text-xs text-[var(--muted)]">
-            Teks tombol yang membuka halaman preview dari halaman checkout.
-          </p>
+            onChange={setPreviewLabel}
+            options={PREVIEW_LABEL_PRESETS}
+            placeholder={DEFAULT_PREVIEW_LABEL}
+            maxLength={PREVIEW_LABEL_MAX}
+            hint="Teks tombol yang membuka halaman preview dari halaman checkout."
+          />
         </div>
 
         {/* Monaco editor — only for the HTML preview source. Keeps its own save. */}
@@ -1915,18 +1922,72 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
               kelanjutannya&rdquo; akan muncul di akhir preview supaya pembaca tidak berhenti di sini.
             </p>
           </div>
-          <select
-            value={nextProductId}
-            onChange={(e) => setNextProductId(e.target.value)}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-          >
-            <option value="">— Tidak ada —</option>
-            {relatedOptions.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.title}
-              </option>
-            ))}
-          </select>
+          {relatedOptions.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
+              Belum ada produk lain untuk dijadikan lanjutan seri.
+            </p>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-[var(--border)] p-3">
+              <input
+                type="text"
+                value={seriesSearch}
+                onChange={(e) => setSeriesSearch(e.target.value)}
+                placeholder="Cari produk…"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              />
+
+              {/* The pick stays visible even when the search hides its row —
+                  otherwise typing looks like it cleared the selection. */}
+              {selectedNext && (
+                <div className="flex items-center gap-2 rounded-lg bg-[var(--primary)]/5 px-2.5 py-2 text-sm">
+                  <span className="min-w-0 flex-1 truncate text-foreground">
+                    {selectedNext.title}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setNextProductId("")}
+                    className="shrink-0 rounded-md px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              )}
+
+              <div className="max-h-56 space-y-0.5 overflow-y-auto">
+                {seriesMatches.map((o) => {
+                  const checked = nextProductId === o.id;
+                  return (
+                    <label
+                      key={o.id}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
+                        checked ? "bg-[var(--primary)]/5" : "hover:bg-[var(--background)]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="next-product"
+                        checked={checked}
+                        // Picking the current one again clears it, so the only
+                        // way out isn't hunting for the "Hapus" button.
+                        onClick={() => setNextProductId(checked ? "" : o.id)}
+                        onChange={() => {}}
+                        className="h-4 w-4 shrink-0 accent-[var(--primary)]"
+                      />
+                      <span className="min-w-0 flex-1 truncate text-foreground">{o.title}</span>
+                      <span className="shrink-0 font-mono text-xs text-[var(--muted)]">
+                        {o.slug}
+                      </span>
+                    </label>
+                  );
+                })}
+                {seriesMatches.length === 0 && (
+                  <p className="px-2.5 py-3 text-center text-xs text-[var(--muted)]">
+                    Tidak ada produk yang cocok.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

@@ -95,7 +95,7 @@ export default async function EditPage({
           story_epub_url: (page as { story_epub_url?: string | null }).story_epub_url ?? null,
           category_id: (page as { category_id?: string | null }).category_id ?? null,
           long_description: (page as { long_description?: string | null }).long_description ?? null,
-          preview_label: (page as { preview_label?: "product" | "buku" | "pages" | null }).preview_label ?? null,
+          preview_label: (page as { preview_label?: string | null }).preview_label ?? null,
           cta_label: (page as { cta_label?: string | null }).cta_label ?? null,
           cta_note: (page as { cta_note?: string | null }).cta_note ?? null,
           purchase_link: (page as { purchase_link?: string | null }).purchase_link ?? null,

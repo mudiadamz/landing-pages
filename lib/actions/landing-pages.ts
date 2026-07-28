@@ -95,8 +95,8 @@ export type LandingPageCheckout = {
   rating?: number | null;
   view_count?: number;
   like_count?: number;
-  /** Preview-button label keyword: "product"(default)|"buku"|"pages". */
-  preview_label?: "product" | "buku" | "pages" | null;
+  /** Preview-button text. Free text; see lib/preview-label. */
+  preview_label?: string | null;
   cta_label?: string | null;
   cta_note?: string | null;
   /** Buy-button action: "checkout" (default) | "link" | "calendar". */
@@ -554,7 +554,7 @@ export async function updateLandingPagePricing(
     rating?: number | null;
     category_id?: string | null;
     long_description?: string | null;
-    preview_label?: "product" | "buku" | "pages" | null;
+    preview_label?: string | null;
     cta_label?: string | null;
     cta_note?: string | null;
     cta_action?: "checkout" | "link" | "calendar" | null;

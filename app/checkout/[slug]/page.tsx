@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPageForCheckout, getRelatedProducts, getProductsByIds } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
+import { previewLabelText } from "@/lib/preview-label";
 import { ComingSoon } from "@/components/coming-soon";
 import { getPublicReviews, getReviewCount } from "@/lib/actions/reviews";
 import { VerifiedReviews } from "@/components/verified-reviews";
@@ -151,10 +152,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const rating = page.rating != null && page.rating > 0 ? Number(page.rating) : null;
 
   // Publisher-configurable preview-button label + the CTA note shown above the buy button.
-  const previewButtonLabel =
-    { product: "Preview Product", buku: "Preview Buku", pages: "Preview Pages" }[
-      page.preview_label ?? "product"
-    ] ?? "Preview Product";
+  const previewButtonLabel = previewLabelText(page.preview_label);
   const ctaNote = page.cta_note?.trim() || null;
 
   const canonicalUrl = `${SITE_URL}/checkout/${page.slug}`;
