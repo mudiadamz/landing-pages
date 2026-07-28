@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 type Role = "admin" | "customer" | "publisher";
 type RoleFilter = "all" | Role;
+type VerifyFilter = "all" | "unverified" | "verified";
 
 type UserRow = {
   id: string;
@@ -12,6 +13,12 @@ type UserRow = {
   role: Role;
   is_active: boolean;
   exclude_from_stats?: boolean;
+  /**
+   * When they proved they own the address, null if never. Since signup stopped
+   * waiting on confirmation, an account can be fully usable and still unproven —
+   * so this is worth seeing here, next to the ban control.
+   */
+  email_verified_at?: string | null;
 };
 
 export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -20,6 +27,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [verifyFilter, setVerifyFilter] = useState<VerifyFilter>("all");
 
   useEffect(() => {
     fetch("/api/admin/users")
@@ -96,8 +104,12 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
     }
   }
 
+  const unverifiedCount = users.filter((u) => !u.email_verified_at).length;
+
   const filtered = users.filter((u) => {
     if (roleFilter !== "all" && u.role !== roleFilter) return false;
+    if (verifyFilter === "unverified" && u.email_verified_at) return false;
+    if (verifyFilter === "verified" && !u.email_verified_at) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -146,7 +158,31 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
           <option value="publisher">Publisher</option>
           <option value="customer">Customer</option>
         </select>
-        <span className="text-xs text-[var(--muted)]">{filtered.length} user</span>
+        <select
+          value={verifyFilter}
+          onChange={(e) => setVerifyFilter(e.target.value as VerifyFilter)}
+          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+          aria-label="Filter verifikasi email"
+        >
+          <option value="all">Semua email</option>
+          <option value="unverified">Belum verifikasi</option>
+          <option value="verified">Sudah verifikasi</option>
+        </select>
+        <span className="text-xs text-[var(--muted)]">
+          {filtered.length} user
+          {unverifiedCount > 0 && (
+            <>
+              {" · "}
+              <button
+                type="button"
+                onClick={() => setVerifyFilter("unverified")}
+                className="font-medium text-amber-700 underline-offset-2 hover:underline dark:text-amber-400"
+              >
+                {unverifiedCount} belum verifikasi
+              </button>
+            </>
+          )}
+        </span>
       </div>
 
       {/* Mobile cards */}
@@ -159,6 +195,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <p className="text-sm text-[var(--muted)] truncate">{u.email || "—"}</p>
               </div>
               <div className="flex items-center gap-2">
+                <VerifyBadge verifiedAt={u.email_verified_at} />
                 <StatusBadge active={u.is_active} />
                 <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
               </div>
@@ -184,6 +221,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Nama</th>
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Email</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Role</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Verifikasi</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Status</th>
                 <th
                   className="text-center px-4 py-3 font-medium text-[var(--muted)]"
@@ -204,6 +242,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                   <td className="px-4 py-3 text-[var(--muted)]">{u.email || "—"}</td>
                   <td className="px-4 py-3 text-center">
                     <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <VerifyBadge verifiedAt={u.email_verified_at} />
                   </td>
                   <td className="px-4 py-3 text-center">
                     <StatusBadge active={u.is_active} />
@@ -314,6 +355,31 @@ function RoleBadge({ role }: { role: Role }) {
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
         : "bg-[var(--accent-subtle)] text-[var(--muted)]";
   return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{role}</span>;
+}
+
+/**
+ * Whether the address was ever proven. Amber rather than red: an unverified
+ * account is a loose end to chase, not a banned one — they can still buy and
+ * download, and most simply haven't got round to clicking the link.
+ */
+function VerifyBadge({ verifiedAt }: { verifiedAt?: string | null }) {
+  const done = !!verifiedAt;
+  return (
+    <span
+      title={
+        verifiedAt
+          ? `Terverifikasi ${new Date(verifiedAt).toLocaleDateString("id-ID")}`
+          : "Belum pernah membuka link verifikasi"
+      }
+      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
+        done
+          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+          : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+      }`}
+    >
+      {done ? "Terverifikasi" : "Belum"}
+    </span>
+  );
 }
 
 function StatusBadge({ active }: { active: boolean }) {

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { guardSignup } from "@/lib/signup-guard";
+import { sendVerificationEmail } from "@/lib/email-verify";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -59,6 +60,13 @@ export async function signup(formData: FormData) {
     redirect(withNext(`/signup?error=${encodeURIComponent(error.message)}`));
   }
 
+  // Our own verification mail, sent alongside the session rather than in front
+  // of it — the account works immediately and the panel nags until it's done.
+  // Awaited so a Vercel function isn't frozen mid-send, but never fatal.
+  if (data.user) {
+    await sendVerificationEmail({ to: email, userId: data.user.id, name: fullName });
+  }
+
   if (data.session) {
     redirect(safeNext ?? "/panel");
   }
@@ -108,12 +116,29 @@ export async function signInWithGoogle(formData?: FormData) {
   redirect("/login?error=Could not initiate Google sign in");
 }
 
-export async function resendVerification(_formData?: FormData) {
+/**
+ * Re-send our verification link (banner button). Goes through Resend, not
+ * supabase.auth.resend — Supabase's mailer is capped at 2 messages an hour for
+ * the whole project, so that button used to be a no-op most of the time.
+ */
+export type ResendState = { ok: boolean; message: string } | null;
+
+export async function resendVerification(
+  _prev: ResendState,
+  _formData: FormData,
+): Promise<ResendState> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.email) return;
-  await supabase.auth.resend({
-    type: "signup",
-    email: user.email,
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return { ok: false, message: "Sesi berakhir. Muat ulang halaman." };
+
+  const sent = await sendVerificationEmail({
+    to: user.email,
+    userId: user.id,
+    name: (user.user_metadata?.full_name as string | undefined) ?? null,
   });
+  return sent
+    ? { ok: true, message: `Link verifikasi dikirim ke ${user.email}.` }
+    : { ok: false, message: "Gagal mengirim. Coba lagi sebentar lagi." };
 }

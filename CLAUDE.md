@@ -70,6 +70,13 @@ middleware.ts                    # refresh sesi + proteksi /panel
 
 - **Middleware** (`middleware.ts`): refresh sesi Supabase tiap request. `/panel/*` butuh login (redirect ke `/login`); user login yang buka `/login`/`/signup` diarahkan ke `/panel`.
 - **Sign-in**: email/password (`lib/actions/auth.ts: login`) atau Google OAuth (`signInWithGoogle` → `/auth/callback` `exchangeCodeForSession`).
+- **Verifikasi email**: signup **tidak** menunggu verifikasi — project Supabase pakai
+  `mailer_autoconfirm=true`, jadi `auth.users.email_confirmed_at` cuma berarti "boleh
+  login". Bukti kepemilikan alamat ada di `lp_profiles.email_verified_at`, diisi lewat
+  email Resend sendiri (`lib/email-verify.ts` → `/auth/verify-email`, token HMAC 24 jam).
+  Signup Google langsung terverifikasi (lihat trigger `lp_handle_new_user`). Selama belum
+  verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +
+  filter "Belum verifikasi" di `/panel/users`.
 - **Profiles** (`lp_profiles`: `id`, `full_name`, `role`): `role ∈ {admin, customer}`. `getProfile()` cached; profil dibuat otomatis sebagai `customer` saat pertama diakses. `requireAdmin()` menjaga route admin.
 - **Hanya admin** boleh buat/edit landing page & akses Dashboard/Users/Categories/Contacts/Inbox/Custom JS. Customer melihat pembelian, invoice, review.
 - Role dinormalisasi case-insensitive via `lib/profile-utils.ts: normalizeRole()`.

@@ -24,6 +24,12 @@ export type Profile = {
   full_name: string | null;
   role: Role;
   publisher_status: PublisherStatus;
+  /**
+   * When they proved they own the address, or null if they never have.
+   * Not auth.users.email_confirmed_at — that only means "allowed to sign in"
+   * now (see the 20260729 migration). Google signups arrive already verified.
+   */
+  email_verified_at: string | null;
 };
 
 /** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
@@ -98,7 +104,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role, publisher_status")
+    .select("id, full_name, role, publisher_status, email_verified_at")
     .eq("id", user.id)
     .single();
 
@@ -108,6 +114,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
     full_name: data.full_name ?? null,
     role: normalizeRole(data.role),
     publisher_status: normalizePublisherStatus(data.publisher_status),
+    email_verified_at: data.email_verified_at ?? null,
   } as Profile;
 });
 

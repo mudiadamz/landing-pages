@@ -23,7 +23,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("lp_profiles")
-    .select("id, full_name, email, role, is_active, exclude_from_stats")
+    .select("id, full_name, email, role, is_active, exclude_from_stats, email_verified_at")
     .order("role", { ascending: true })
     .order("full_name", { ascending: true });
 
