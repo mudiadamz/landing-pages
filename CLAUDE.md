@@ -168,8 +168,10 @@ RESEND_API_KEY
 RESEND_FROM                        # default onboarding@resend.dev
 RESEND_WEBHOOK_SECRET              # verifikasi inbound webhook
 
-# Signup
+# Signup (bot protection — lib/signup-guard.ts)
 SIGNUP_FORM_SECRET                 # opsional; HMAC token form (default: service role key)
+NEXT_PUBLIC_TURNSTILE_SITE_KEY     # captcha Cloudflare Turnstile; kosong = captcha mati
+TURNSTILE_SECRET_KEY               # pasangannya; keduanya wajib agar captcha aktif
 
 # Meta / tracking
 NEXT_PUBLIC_FB_PIXEL_ID

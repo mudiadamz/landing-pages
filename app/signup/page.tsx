@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { signup } from "@/lib/actions/auth";
 import {
+  captchaSiteKey,
+  CAPTCHA_FIELD,
   issueSignupToken,
   SIGNUP_HONEYPOT_FIELD,
   SIGNUP_TOKEN_FIELD,
 } from "@/lib/signup-guard";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 import { SubmitButton } from "./submit-button";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GoogleSignInButton } from "@/components/google-signin-button";
@@ -17,6 +20,8 @@ export default async function SignupPage({
 }) {
   const params = await searchParams;
   const next = params.next && params.next.startsWith("/") ? params.next : undefined;
+  // Null until Turnstile is configured; the guard skips the check to match.
+  const siteKey = captchaSiteKey();
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative">
       <Link
@@ -134,6 +139,7 @@ export default async function SignupPage({
               />
               <p className="mt-1 text-xs text-[var(--muted)]">Minimal 6 karakter</p>
             </div>
+            {siteKey && <TurnstileWidget siteKey={siteKey} field={CAPTCHA_FIELD} />}
             <SubmitButton />
           </form>
             <p className="mt-6 text-center text-sm text-[var(--muted)]">
