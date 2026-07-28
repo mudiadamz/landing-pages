@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { signup } from "@/lib/actions/auth";
+import {
+  issueSignupToken,
+  SIGNUP_HONEYPOT_FIELD,
+  SIGNUP_TOKEN_FIELD,
+} from "@/lib/signup-guard";
 import { SubmitButton } from "./submit-button";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GoogleSignInButton } from "@/components/google-signin-button";
@@ -60,6 +65,23 @@ export default async function SignupPage({
           </div>
           <form action={signup} className="space-y-5">
             {next && <input type="hidden" name="next" value={next} />}
+            {/* Signed render time — proves the form is ours and how long it was
+                open. See lib/signup-guard. */}
+            <input type="hidden" name={SIGNUP_TOKEN_FIELD} value={issueSignupToken()} />
+            {/* Honeypot: off-screen, unreachable by keyboard; bots fill it. */}
+            <div
+              className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden opacity-0 pointer-events-none"
+              aria-hidden
+            >
+              <label htmlFor={SIGNUP_HONEYPOT_FIELD}>Jangan isi</label>
+              <input
+                id={SIGNUP_HONEYPOT_FIELD}
+                name={SIGNUP_HONEYPOT_FIELD}
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
             <div>
               <label
                 htmlFor="full_name"

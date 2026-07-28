@@ -168,6 +168,9 @@ RESEND_API_KEY
 RESEND_FROM                        # default onboarding@resend.dev
 RESEND_WEBHOOK_SECRET              # verifikasi inbound webhook
 
+# Signup
+SIGNUP_FORM_SECRET                 # opsional; HMAC token form (default: service role key)
+
 # Meta / tracking
 NEXT_PUBLIC_FB_PIXEL_ID
 META_CAPI_ACCESS_TOKEN

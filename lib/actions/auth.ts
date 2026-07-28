@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { guardSignup } from "@/lib/signup-guard";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -33,6 +34,17 @@ export async function signup(formData: FormData) {
   const safeNext = next && next.startsWith("/") ? next : null;
   const withNext = (path: string) =>
     safeNext ? `${path}${path.includes("?") ? "&" : "?"}next=${encodeURIComponent(safeNext)}` : path;
+
+  // Before auth, always: a rejected attempt must not cost us a confirmation
+  // email or a row in lp_profiles. "silent" lands on the same screen a real
+  // signup does, so a script can't tell it was caught.
+  const guard = await guardSignup(formData);
+  if (guard.verdict === "silent") {
+    redirect(withNext("/signup?message=check_email"));
+  }
+  if (guard.verdict === "reject") {
+    redirect(withNext(`/signup?error=${encodeURIComponent(guard.message)}`));
+  }
 
   const { data, error } = await supabase.auth.signUp({
     email,
