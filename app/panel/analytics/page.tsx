@@ -41,24 +41,27 @@ export default async function AnalyticsPage({
             sesi &amp; perjalanan pengunjung
           </span>
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] p-0.5">
-          {RANGES.map((r) => (
-            <Link
-              key={r}
-              href={`/panel/analytics?range=${r}`}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                r === range
-                  ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
-                  : "text-[var(--muted)] hover:text-foreground"
-              }`}
-            >
-              {r} hari
-            </Link>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Popup trigger — sits inline with the range picker so the exclusion
+              list costs no vertical space above the numbers. */}
+          <ExcludedIps initial={excludedIps} myIp={myIp} />
+          <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] p-0.5">
+            {RANGES.map((r) => (
+              <Link
+                key={r}
+                href={`/panel/analytics?range=${r}`}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  r === range
+                    ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
+                    : "text-[var(--muted)] hover:text-foreground"
+                }`}
+              >
+                {r} hari
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
-
-      <ExcludedIps initial={excludedIps} myIp={myIp} />
 
       <AnalyticsDashboard data={data} products={products} />
     </div>
