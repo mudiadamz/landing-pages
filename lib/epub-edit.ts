@@ -61,8 +61,33 @@ function bodyOf(xhtml: string): string {
   return m ? m[1] : xhtml;
 }
 
-/** First heading, else <title>, else the filename. */
+/** Text of the first element carrying the given class, if any. */
+function byClass(xhtml: string, cls: string): string {
+  const re = new RegExp(
+    `<([a-z0-9]+)\\b[^>]*class="[^"]*\\b${cls}\\b[^"]*"[^>]*>([\\s\\S]*?)</\\1>`,
+    "i",
+  );
+  const m = xhtml.match(re);
+  return m ? stripTags(m[2]) : "";
+}
+
+/**
+ * A chapter's display name.
+ *
+ * Taking "the first heading" is wrong for these books: they open with TWO
+ * headings, `<h1 class="chapter-num">BAB 1</h1>` followed by
+ * `<h1 class="chapter-title">Langit yang Menahan Napas</h1>`, so the naive read
+ * labelled every chapter "BAB 1", "BAB 2" … and the list was useless for finding
+ * anything. The reader's own chapter list already prefers `.chapter-title`
+ * (see components/reader-page-indicator.tsx); this matches it, and keeps the
+ * number as a prefix so the two views agree.
+ */
 function titleOf(xhtml: string, path: string): string {
+  const num = byClass(xhtml, "chapter-num");
+  const named = byClass(xhtml, "chapter-title");
+  if (named) return (num && num !== named ? `${num} · ${named}` : named).slice(0, 120);
+  if (num) return num.slice(0, 120);
+
   const heading = xhtml.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1];
   const fromHeading = heading ? stripTags(heading) : "";
   if (fromHeading) return fromHeading.slice(0, 120);
