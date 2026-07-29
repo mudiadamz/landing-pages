@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAllRows } from "@/lib/paginate";
 import { requireAdmin } from "@/lib/actions/profiles";
 
 /**
@@ -114,6 +115,8 @@ export type SessionListRow = {
 };
 
 export type Analytics = {
+  /** Hit the row ceiling — the numbers below describe a slice, not everything. */
+  capped?: boolean;
   ok: boolean;
   range: Range;
   overview: Overview;
@@ -127,6 +130,7 @@ export type Analytics = {
 
 const EMPTY: Analytics = {
   ok: false,
+  capped: false,
   range: 30,
   overview: { sessions: 0, visitors: 0, loggedIn: 0, anon: 0, avgDurationMs: 0, pageviews: 0 },
   campaigns: [],
@@ -143,26 +147,41 @@ export async function getAnalytics(range: Range = 30): Promise<Analytics> {
   const admin = createAdminClient();
   const since = sinceIso(range);
 
-  const [{ data: sessRaw }, { data: evRaw }, { data: prodRaw }] = await Promise.all([
-    admin
-      .from("lp_sessions")
-      .select(
-        "session_id, visitor_id, user_id, ip, country, region, city, isp, referrer, referrer_host, landing_path, entry_product_id, utm_source, utm_medium, utm_campaign, utm_term, utm_content, device, browser, os, pageviews, active_ms, started_at, last_seen_at",
-      )
-      .gte("started_at", since)
-      .order("started_at", { ascending: false })
-      .limit(CAP_SESSIONS),
-    admin
-      .from("lp_page_events")
-      .select("session_id, path, product_slug, page_type, dwell_ms, scroll_depth, reached_end, engagement, created_at")
-      .gte("created_at", since)
-      .order("created_at", { ascending: true })
-      .limit(CAP_EVENTS),
+  // Paged, not .limit()ed — PostgREST caps a single response at max_rows (1000
+  // here) no matter what limit is asked for, so the old query reported 1000
+  // sessions forever and every number below it was computed from that slice.
+  // `id` is the tiebreaker that keeps paging stable across equal timestamps.
+  const [sessRes, evRes, { data: prodRaw }] = await Promise.all([
+    fetchAllRows<SessionRow>(
+      (from, to) =>
+        admin
+          .from("lp_sessions")
+          .select(
+            "session_id, visitor_id, user_id, ip, country, region, city, isp, referrer, referrer_host, landing_path, entry_product_id, utm_source, utm_medium, utm_campaign, utm_term, utm_content, device, browser, os, pageviews, active_ms, started_at, last_seen_at",
+          )
+          .gte("started_at", since)
+          .order("started_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(from, to),
+      CAP_SESSIONS,
+    ),
+    fetchAllRows<EventRow>(
+      (from, to) =>
+        admin
+          .from("lp_page_events")
+          .select("session_id, path, product_slug, page_type, dwell_ms, scroll_depth, reached_end, engagement, created_at")
+          .gte("created_at", since)
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to),
+      CAP_EVENTS,
+    ),
     admin.from("lp_landing_pages").select("slug, title"),
   ]);
 
-  const sessions = (sessRaw ?? []) as SessionRow[];
-  const events = (evRaw ?? []) as EventRow[];
+  const sessions = sessRes.rows;
+  const events = evRes.rows;
+  const capped = sessRes.capped || evRes.capped;
   const titleBySlug = new Map<string, string>();
   for (const p of (prodRaw ?? []) as { slug: string; title: string }[]) titleBySlug.set(p.slug, p.title);
 
@@ -331,6 +350,7 @@ export async function getAnalytics(range: Range = 30): Promise<Analytics> {
 
   return {
     ok: true,
+    capped,
     range,
     overview,
     campaigns,

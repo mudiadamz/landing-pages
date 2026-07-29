@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/paginate";
 
 export type Bucket = { key: string; count: number };
 
@@ -83,16 +84,22 @@ export async function getProductStats(
   const sinceDays = [7, 30, 90].includes(days) ? days : 30;
   const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data, error } = await supabase
-    .from("lp_product_events")
-    .select("session_id, kind, page, referrer_host, device, browser, os, duration_ms, cta_action, created_at")
-    .eq("landing_page_id", pageId)
-    .gte("created_at", since)
-    .order("created_at", { ascending: false })
-    .limit(MAX_ROWS);
-
-  if (error) return null;
-  const rows = (data ?? []) as EventRow[];
+  // Paged — .limit(MAX_ROWS) was quietly served 1000 rows by PostgREST, which
+  // also made `capped: rows.length >= MAX_ROWS` permanently false, so the
+  // "partial data" warning in the UI could never fire.
+  const { rows: raw, capped } = await fetchAllRows<EventRow>(
+    (from, to) =>
+      supabase
+        .from("lp_product_events")
+        .select("session_id, kind, page, referrer_host, device, browser, os, duration_ms, cta_action, created_at")
+        .eq("landing_page_id", pageId)
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, to),
+    MAX_ROWS,
+  );
+  const rows = raw;
 
   const devices = new Map<string, number>();
   const browsers = new Map<string, number>();
@@ -203,6 +210,6 @@ export async function getProductStats(
     daily,
     hourlyToday,
     todayViews,
-    capped: rows.length >= MAX_ROWS,
+    capped,
   };
 }

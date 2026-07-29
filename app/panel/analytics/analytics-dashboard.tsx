@@ -168,6 +168,16 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
         ))}
       </div>
 
+      {/* Truncation must never be silent again: this page reported exactly 1000
+          sessions for as long as there were more than 1000, and every number
+          beside it was computed from that slice. */}
+      {data.capped && (
+        <p className="rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/50 dark:bg-amber-900/15 dark:text-amber-200">
+          Data dibatasi demi performa — angka di bawah adalah sebagian dari rentang ini.
+          Perkecil rentang untuk hasil yang utuh.
+        </p>
+      )}
+
       {tab === "overview" && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Card label="Sesi" value={String(overview.sessions)} />

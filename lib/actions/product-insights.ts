@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAllRows } from "@/lib/paginate";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/actions/profiles";
 
@@ -381,18 +382,25 @@ async function buildSummaries(
   const boundaryIso = nowMinus(range);
   const windowStartIso = nowMinus(range * 2); // include previous window for trend
 
-  let evQuery = admin
-    .from("lp_page_events")
-    .select("session_id, visitor_id, product_slug, page_type, dwell_ms, scroll_depth, reached_end, engagement, created_at")
-    .in("page_type", ["preview", "checkout"])
-    .gte("created_at", windowStartIso)
-    .order("created_at", { ascending: false })
-    .limit(CAP_EVENTS);
-  if (slugFilter) evQuery = evQuery.eq("product_slug", slugFilter);
+  // Paged: a single PostgREST response is capped at max_rows (1000) whatever
+  // .limit() says, so this used to summarise the newest 1000 events and call it
+  // the window. `id` keeps paging stable when timestamps tie.
+  const pageEvents = (from: number, to: number) => {
+    let q = admin
+      .from("lp_page_events")
+      .select("session_id, visitor_id, product_slug, page_type, dwell_ms, scroll_depth, reached_end, engagement, created_at")
+      .in("page_type", ["preview", "checkout"])
+      .gte("created_at", windowStartIso)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to);
+    if (slugFilter) q = q.eq("product_slug", slugFilter);
+    return q;
+  };
 
   const productIds = products.map((p) => p.id);
-  const [{ data: evRaw }, { data: purRaw }] = await Promise.all([
-    evQuery,
+  const [{ rows: evRaw }, { data: purRaw }] = await Promise.all([
+    fetchAllRows<EventRow>(pageEvents, CAP_EVENTS),
     admin
       .from("lp_purchases")
       .select("landing_page_id, amount")
