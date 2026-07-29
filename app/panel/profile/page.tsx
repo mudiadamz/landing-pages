@@ -1,102 +1,208 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeRole, normalizePublisherStatus, roleLabel as roleLabelFor } from "@/lib/profile-utils";
+import { signOut } from "@/lib/actions/auth";
+import { getPurchasesForUser } from "@/lib/actions/purchases";
+import { getMyFavorites } from "@/lib/actions/likes";
+import {
+  normalizeRole,
+  normalizePublisherStatus,
+  roleLabel as roleLabelFor,
+  type PublisherStatus,
+} from "@/lib/profile-utils";
 import { ProfileForm } from "./profile-form";
 import { PublisherApply } from "./publisher-apply";
+import { VerifyEmailRow } from "./verify-email-row";
+
+/**
+ * Account page: who you are, what state the account is in, and the two things
+ * you can change about it.
+ *
+ * Previously one card holding an email, a role chip, a name field and the
+ * publisher application in a single column — which meant the page answered
+ * "what is my name" and nothing else. It now leads with an identity header and
+ * separates the questions people actually arrive with: is my email sorted, what
+ * have I bought, can I sell here.
+ */
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("id-ID", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+const PUBLISHER_BADGE: Record<PublisherStatus, { text: string; className: string } | null> = {
+  none: null,
+  approved: null, // already carried by the role badge
+  pending: {
+    text: "Pengajuan publisher ditinjau",
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+  },
+  rejected: {
+    text: "Pengajuan publisher ditolak",
+    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  },
+};
 
 export default async function ProfilePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: row, error: profileError } = await supabase
-    .from("lp_profiles")
-    .select("id, full_name, role, publisher_status, publisher_reject_note")
-    .eq("id", user.id)
-    .single();
+  const [{ data: row }, purchases, favorites] = await Promise.all([
+    supabase
+      .from("lp_profiles")
+      .select("id, full_name, role, publisher_status, publisher_reject_note, email_verified_at")
+      .eq("id", user.id)
+      .single(),
+    getPurchasesForUser(),
+    getMyFavorites(),
+  ]);
 
-  const rawRole = row?.role;
-  const normalizedRole = row ? normalizeRole(rawRole) : "customer";
+  const role = row ? normalizeRole(row.role) : "customer";
   const publisherStatus = normalizePublisherStatus(row?.publisher_status);
-  const profile = row
-    ? {
-        id: row.id,
-        full_name: row.full_name ?? null,
-        role: normalizedRole,
-        email: user.email ?? null,
-      }
-    : {
-        id: user.id,
-        full_name: (user.user_metadata?.full_name as string) ?? null,
-        role: "customer" as const,
-        email: user.email ?? null,
-      };
+  const fullName =
+    row?.full_name?.trim() || (user.user_metadata?.full_name as string | undefined)?.trim() || "";
+  const email = user.email ?? null;
+  const verified = !!row?.email_verified_at;
+  const publisherBadge = PUBLISHER_BADGE[publisherStatus];
 
-  console.info("[profile-page] debug", {
-    user_id: user.id,
-    user_email: user.email,
-    profile_row: row ?? null,
-    profile_error: profileError ? { message: profileError.message, code: profileError.code } : null,
-    raw_role: rawRole,
-    normalized_role: normalizedRole,
-    final_role: profile.role,
-  });
-
-  const roleLabel = roleLabelFor(profile.role);
+  const roleClass =
+    role === "admin"
+      ? "bg-[var(--primary)]/15 text-[var(--primary)]"
+      : role === "publisher"
+        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+        : "bg-[var(--accent-subtle)] text-[var(--muted)]";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <Link
           href="/panel"
-          className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
+          className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
         >
           ← Kembali
         </Link>
         <h1 className="text-xl font-semibold tracking-tight">Profil</h1>
       </div>
 
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm">
-        <div className="p-4 sm:p-6 border-b border-[var(--border)] bg-[var(--background)]/50">
-          <h2 className="text-base font-semibold text-foreground">Detail akun</h2>
-          <p className="text-sm text-[var(--muted)] mt-0.5">Informasi dan peran Anda di panel.</p>
-        </div>
-        <div className="p-4 sm:p-6 space-y-6">
-          <dl className="grid gap-4 sm:grid-cols-1">
-            <div>
-              <dt className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1">Email</dt>
-              <dd className="text-sm text-foreground font-medium">
-                {profile.email || "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1">Peran (role)</dt>
-              <dd>
+      {/* Identity header */}
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <span
+            aria-hidden
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-2xl font-semibold uppercase text-[var(--primary)]"
+          >
+            {(fullName || email || "?").charAt(0)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lg font-semibold text-foreground">
+              {fullName || "Tanpa nama"}
+            </p>
+            <p className="mt-0.5 break-all text-sm text-[var(--muted)]">{email || "—"}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${roleClass}`}>
+                {roleLabelFor(role)}
+              </span>
+              {publisherBadge && (
                 <span
-                  className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium ${
-                    profile.role === "admin"
-                      ? "bg-[var(--primary)]/15 text-[var(--primary)]"
-                      : profile.role === "publisher"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-                        : "bg-[var(--accent-subtle)] text-[var(--muted)]"
-                  }`}
+                  className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${publisherBadge.className}`}
                 >
-                  {roleLabel}
+                  {publisherBadge.text}
                 </span>
-              </dd>
+              )}
+              <span className="text-xs text-[var(--muted)]">
+                Bergabung {formatDate(user.created_at)}
+              </span>
             </div>
-          </dl>
-
-          <ProfileForm initialFullName={profile.full_name ?? ""} />
-
-          <PublisherApply
-            role={profile.role}
-            status={publisherStatus}
-            rejectNote={(row as { publisher_reject_note?: string | null } | null)?.publisher_reject_note ?? null}
-          />
+          </div>
         </div>
       </div>
+
+      {/* What the account actually has in it — and a way through to it. */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/panel/purchases"
+          className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-colors hover:bg-[var(--background)]/50"
+        >
+          <p className="text-xs font-medium text-[var(--muted)]">Pembelian</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{purchases.length}</p>
+          <p className="mt-0.5 text-xs text-[var(--primary)]">Lihat semua →</p>
+        </Link>
+        <Link
+          href="/panel/favorites"
+          className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-colors hover:bg-[var(--background)]/50"
+        >
+          <p className="text-xs font-medium text-[var(--muted)]">Favorit</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{favorites.length}</p>
+          <p className="mt-0.5 text-xs text-[var(--primary)]">Lihat semua →</p>
+        </Link>
+      </div>
+
+      {/* Email + verification, next to the address it concerns. */}
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
+          <h2 className="text-base font-semibold text-foreground">Email</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            Dipakai untuk masuk, invoice, dan link download.
+          </p>
+        </header>
+        <div className="space-y-3 p-4 sm:p-6">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+              Alamat
+            </p>
+            <p className="mt-1 break-all text-sm font-medium text-foreground">{email || "—"}</p>
+          </div>
+          <VerifyEmailRow verified={verified} />
+        </div>
+      </section>
+
+      {/* Name */}
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
+          <h2 className="text-base font-semibold text-foreground">Nama tampilan</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            Nama yang muncul di panel dan pada ulasan Anda.
+          </p>
+        </header>
+        <div className="p-4 sm:p-6">
+          <ProfileForm initialFullName={fullName} />
+        </div>
+      </section>
+
+      {/* Publisher */}
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
+          <h2 className="text-base font-semibold text-foreground">Publisher</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            Status Anda sebagai penjual produk digital di sini.
+          </p>
+        </header>
+        <div className="p-4 sm:p-6">
+          <PublisherApply
+            role={role}
+            status={publisherStatus}
+            rejectNote={row?.publisher_reject_note ?? null}
+          />
+        </div>
+      </section>
+
+      {/* On mobile the sidebar is behind a menu, so the obvious place to look
+          for "log me out" is the account page. */}
+      <form action={signOut}>
+        <button
+          type="submit"
+          className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-medium text-[var(--muted)] shadow-sm transition-colors hover:border-red-500/40 hover:text-red-600 dark:hover:text-red-400"
+        >
+          Keluar dari akun
+        </button>
+      </form>
     </div>
   );
 }

@@ -25,13 +25,11 @@ export function PublisherApply({
   // Admins and existing publishers never see the apply CTA.
   if (role === "admin" || role === "publisher") {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--background)]/50 p-4">
-        <p className="text-sm text-[var(--muted)]">
-          {role === "admin"
-            ? "Sebagai admin, Anda dapat mengelola & menjual produk."
-            : "Anda adalah publisher — buka menu Produk digital untuk mulai menjual."}
-        </p>
-      </div>
+      <p className="text-sm text-[var(--muted)]">
+        {role === "admin"
+          ? "Sebagai admin, Anda dapat mengelola & menjual produk."
+          : "Anda adalah publisher — buka menu Produk digital untuk mulai menjual."}
+      </p>
     );
   }
 
@@ -52,9 +50,8 @@ export function PublisherApply({
   }
 
   return (
-    <div className="rounded-lg border border-[var(--border)] p-4">
-      <h3 className="text-sm font-semibold text-foreground">Jadi publisher</h3>
-      <p className="mt-1 text-sm text-[var(--muted)]">
+    <div>
+      <p className="text-sm text-[var(--muted)]">
         Ingin menjual produk digital Anda sendiri di sini? Ajukan menjadi publisher.
         Setelah disetujui admin, Anda bisa membuat &amp; menjual produk.
       </p>
