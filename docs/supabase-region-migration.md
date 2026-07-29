@@ -27,10 +27,32 @@ Sisa (dashboard, belum bisa diotomasi — management token ada di keyring):
       `lib/actions/auth.ts:74` gagal dengan "Email not confirmed", dan user
       mendarat di `/signup?message=check_email` — plus menerima dua email
       (verifikasi Resend milik sendiri + konfirmasi bawaan Supabase).
-- [ ] **Site URL + redirect allow-list** — pastikan `https://admuiux.com`.
-      Terkait langsung dengan poin di atas: `emailRedirectTo` pada signup
-      menunjuk `${baseUrl}/login`, jadi kalau Site URL masih bawaan, link
-      konfirmasi mengarah ke localhost.
+- [ ] **Site URL salah skema — ini yang mematikan login Google.**
+      Authentication → URL Configuration:
+      1. Site URL: `http://admuiux.com` → **`https://admuiux.com`**
+      2. Redirect URLs: tambahkan **`https://admuiux.com/**`**
+
+      Gejalanya menyesatkan: Google-nya sendiri sudah benar (authorize membalas
+      302 ke Google, `redirect_uri` sudah project baru). Yang gagal ada di
+      langkah balik — Supabase menolak `redirect_to`
+      `https://admuiux.com/auth/callback` karena tidak ada di allow-list, lalu
+      jatuh ke Site URL `http://admuiux.com` **tanpa `code`**. Route
+      `/auth/callback` tidak pernah jalan, `exchangeCodeForSession` tidak pernah
+      dipanggil, session tidak terbentuk — terlihat seperti "login Google gagal"
+      padahal konfigurasi Google-nya benar.
+
+      Cara memeriksa tanpa akun Google (token bohongan, tidak merusak apa pun):
+      ```bash
+      curl -s -o /dev/null -D - \
+        "https://<ref>.supabase.co/auth/v1/verify?token=x&type=signup&redirect_to=https%3A%2F%2Fadmuiux.com%2Fauth%2Fcallback" \
+        | grep -i '^location:'
+      ```
+      Kalau `location` memantulkan `redirect_to` apa adanya → allow-list benar.
+      Kalau berubah jadi sesuatu yang lain → itulah Site URL, dan `redirect_to`
+      sedang ditolak. Project lama dipakai sebagai pembanding: dia mengembalikan
+      `https://admuiux.com/auth/callback` utuh. Diprobe juga di project lama —
+      `localhost`, `*.vercel.app`, dan `www.admuiux.com` semuanya diblokir, jadi
+      `https://admuiux.com/**` memang seluruh isi allow-list yang perlu ditiru.
 
 Project lama `ogjydcyccrnoxdtakizs` **masih hidup dan utuh** — jangan dihapus
 minimal satu minggu.
