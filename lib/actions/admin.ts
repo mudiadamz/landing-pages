@@ -155,9 +155,22 @@ export type PublisherApplication = {
   full_name: string | null;
   email: string | null;
   publisher_applied_at: string | null;
+  /** Short-lived signed URLs for the identity photos; null if never submitted. */
+  ktp_url: string | null;
+  selfie_url: string | null;
 };
 
-/** Pending publisher applications, newest first — for the admin review screen. */
+/** How long a KYC photo link stays valid — long enough to review, not to keep. */
+const KYC_URL_TTL_SECONDS = 10 * 60;
+
+/**
+ * Pending publisher applications, oldest first — for the admin review screen.
+ *
+ * The identity photos live in a private bucket with no storage policies at all,
+ * so they are reachable only through signed URLs minted here, behind the same
+ * admin check as the rest of the row. Applications submitted before the KYC
+ * step existed simply have no photos.
+ */
 export async function getPublisherApplications(): Promise<PublisherApplication[]> {
   const isAdmin = await requireFeature("users");
   if (!isAdmin) return [];
@@ -165,12 +178,30 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, email, publisher_applied_at")
+    .select("id, full_name, email, publisher_applied_at, publisher_ktp_path, publisher_selfie_path")
     .eq("publisher_status", "pending")
     .order("publisher_applied_at", { ascending: true });
 
   if (error) return [];
-  return (data ?? []) as PublisherApplication[];
+
+  const sign = async (path: string | null) => {
+    if (!path) return null;
+    const { data: signed } = await supabase.storage
+      .from("publisher-kyc")
+      .createSignedUrl(path, KYC_URL_TTL_SECONDS);
+    return signed?.signedUrl ?? null;
+  };
+
+  return Promise.all(
+    (data ?? []).map(async (r) => ({
+      id: r.id,
+      full_name: r.full_name ?? null,
+      email: r.email ?? null,
+      publisher_applied_at: r.publisher_applied_at ?? null,
+      ktp_url: await sign(r.publisher_ktp_path ?? null),
+      selfie_url: await sign(r.publisher_selfie_path ?? null),
+    })),
+  );
 }
 
 /** Approve an application: promote the user to publisher. */
@@ -186,6 +217,8 @@ export async function approvePublisher(userId: string): Promise<{ ok: boolean; e
       role: "publisher",
       publisher_status: "approved",
       publisher_reviewed_at: new Date().toISOString(),
+      publisher_reviewed_by: (await getProfile())?.id ?? null,
+      publisher_reject_note: null,
     })
     .eq("id", userId)
     .eq("publisher_status", "pending");
@@ -199,25 +232,54 @@ export async function approvePublisher(userId: string): Promise<{ ok: boolean; e
 }
 
 /** Reject an application: keep the user a customer, mark as rejected. */
-export async function rejectPublisher(userId: string): Promise<{ ok: boolean; error?: string }> {
+export async function rejectPublisher(
+  userId: string,
+  note?: string,
+): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireFeature("users");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
   if (!userId) return { ok: false, error: "User tidak valid." };
 
   const supabase = createAdminClient();
-  const { error } = await supabase
+  const reviewer = await getProfile();
+
+  const { data: row, error } = await supabase
     .from("lp_profiles")
     .update({
       publisher_status: "rejected",
       publisher_reviewed_at: new Date().toISOString(),
+      publisher_reviewed_by: reviewer?.id ?? null,
+      publisher_reject_note: note?.trim().slice(0, 500) || null,
     })
     .eq("id", userId)
-    .eq("publisher_status", "pending");
+    .eq("publisher_status", "pending")
+    .select("publisher_ktp_path, publisher_selfie_path")
+    .maybeSingle();
 
   if (error) {
     console.error("rejectPublisher error:", error);
     return { ok: false, error: "Gagal menolak." };
   }
+
+  // Drop the ID photos on rejection. They were collected to answer one question,
+  // that question has been answered, and keeping a stranger's KTP on a decision
+  // that went against them is a liability with no upside — a re-application
+  // takes fresh photos anyway. Approvals keep theirs as the record of the check.
+  const paths = [row?.publisher_ktp_path, row?.publisher_selfie_path].filter(
+    Boolean,
+  ) as string[];
+  if (paths.length) {
+    const { error: rmErr } = await supabase.storage.from("publisher-kyc").remove(paths);
+    if (rmErr) console.error("rejectPublisher photo cleanup error:", rmErr);
+    else {
+      await supabase
+        .from("lp_profiles")
+        .update({ publisher_ktp_path: null, publisher_selfie_path: null })
+        .eq("id", userId);
+    }
+  }
+
   revalidatePath("/panel/users");
+  revalidatePath("/panel/profile");
   return { ok: true };
 }

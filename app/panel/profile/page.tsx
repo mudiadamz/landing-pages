@@ -12,7 +12,7 @@ export default async function ProfilePage() {
 
   const { data: row, error: profileError } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role, publisher_status")
+    .select("id, full_name, role, publisher_status, publisher_reject_note")
     .eq("id", user.id)
     .single();
 
@@ -90,7 +90,11 @@ export default async function ProfilePage() {
 
           <ProfileForm initialFullName={profile.full_name ?? ""} />
 
-          <PublisherApply role={profile.role} status={publisherStatus} />
+          <PublisherApply
+            role={profile.role}
+            status={publisherStatus}
+            rejectNote={(row as { publisher_reject_note?: string | null } | null)?.publisher_reject_note ?? null}
+          />
         </div>
       </div>
     </div>

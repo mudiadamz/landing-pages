@@ -123,12 +123,40 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
  * can review it (role stays "customer" until approved). Idempotent-ish: only
  * customers who are not already pending/approved may apply.
  */
-export async function applyAsPublisher(): Promise<{ ok: boolean; error?: string }> {
+/** Bytes of a `data:image/jpeg;base64,...` string, or null if it isn't one. */
+function decodeJpegDataUrl(value: unknown): Buffer | null {
+  if (typeof value !== "string") return null;
+  const m = value.match(/^data:image\/jpe?g;base64,([A-Za-z0-9+/=]+)$/);
+  if (!m) return null;
+  const buf = Buffer.from(m[1], "base64");
+  // Real JPEG, and within the bucket's own 5MB ceiling.
+  if (buf.length < 1024 || buf.length > 5 * 1024 * 1024) return null;
+  if (buf[0] !== 0xff || buf[1] !== 0xd8) return null;
+  return buf;
+}
+
+/**
+ * Submit a publisher application with the two identity photos.
+ *
+ * The photos arrive as data URLs and are written with the service role, so the
+ * `publisher-kyc` bucket needs no storage policy at all — no signed-in user,
+ * the applicant included, can read or overwrite an ID photo through the public
+ * API. Only this action writes them and only the admin screen reads them.
+ */
+export async function applyAsPublisher(
+  ktp?: string,
+  selfie?: string,
+): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Belum masuk." };
+
+  const ktpBytes = decodeJpegDataUrl(ktp);
+  const selfieBytes = decodeJpegDataUrl(selfie);
+  if (!ktpBytes) return { ok: false, error: "Foto KTP belum diambil." };
+  if (!selfieBytes) return { ok: false, error: "Foto selfie belum diambil." };
 
   const { data: current } = await supabase
     .from("lp_profiles")
@@ -149,9 +177,39 @@ export async function applyAsPublisher(): Promise<{ ok: boolean; error?: string 
   // client. Still safe — the action authenticated the user and only touches
   // their own id, keeping status at "pending" (admin decides approval).
   const admin = createAdminClient();
+
+  // Timestamped names so a re-application never overwrites the photos an admin
+  // may still be looking at, and so a stale signed URL can't resolve to a new
+  // person's document.
+  const stamp = Date.now();
+  const ktpPath = `${user.id}/ktp-${stamp}.jpg`;
+  const selfiePath = `${user.id}/selfie-${stamp}.jpg`;
+
+  for (const [path, bytes] of [
+    [ktpPath, ktpBytes],
+    [selfiePath, selfieBytes],
+  ] as const) {
+    const { error: upErr } = await admin.storage
+      .from("publisher-kyc")
+      .upload(path, bytes, { contentType: "image/jpeg", upsert: false });
+    if (upErr) {
+      console.error("applyAsPublisher upload error:", upErr);
+      return { ok: false, error: "Gagal mengunggah foto. Coba lagi." };
+    }
+  }
+
   const { error } = await admin
     .from("lp_profiles")
-    .update({ publisher_status: "pending", publisher_applied_at: new Date().toISOString() })
+    .update({
+      publisher_status: "pending",
+      publisher_applied_at: new Date().toISOString(),
+      publisher_ktp_path: ktpPath,
+      publisher_selfie_path: selfiePath,
+      // A fresh application starts with a clean slate.
+      publisher_reject_note: null,
+      publisher_reviewed_at: null,
+      publisher_reviewed_by: null,
+    })
     .eq("id", user.id);
 
   if (error) {
