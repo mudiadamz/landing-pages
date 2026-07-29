@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment, useState } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
@@ -22,40 +22,72 @@ type NavItem = {
   sellerOnly?: boolean;
   publisherToo?: boolean;
   adminOnly?: boolean;
+  /** Match the path exactly — for /panel, which is a prefix of every other route. */
+  exact?: boolean;
+  /** Opens a popup instead of navigating. */
+  action?: "assets";
 };
 
+/**
+ * Six small groups by what you came to do, rather than two plus a bin.
+ *
+ * "Lainnya" used to hold eleven unrelated things — inbox next to Roles next to
+ * Custom JS — which is the shape a nav takes when items are appended as they're
+ * built. Anything past about five entries in one list stops being scanned and
+ * starts being searched, and an admin here has every one of them.
+ *
+ * Assets is a real entry now instead of a special case rendered outside the
+ * loop, and /panel itself finally appears: it was reachable only by clicking the
+ * logo, which is not a thing most people try.
+ */
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
-    // Publisher-facing: managing and tracking what you sell. Renders nothing
-    // for a plain customer (both items are seller/publisher gated).
-    label: "Sebagai Publisher",
+    label: "Utama",
     items: [
-      { href: "/panel/products", label: "Produk digital", icon: LayoutIcon, sellerOnly: true },
-      { href: "/panel/stats", label: "Stats", icon: ChartIcon, feature: "stats", publisherToo: true },
-    ],
-  },
-  {
-    // Customer-facing: what you've bought.
-    label: "Sebagai Pembeli",
-    items: [
+      { href: "/panel", label: "Dashboard", icon: HomeIcon, everyone: true, exact: true },
       { href: "/panel/purchases", label: "Pembelian saya", icon: ReceiptIcon, everyone: true },
       { href: "/panel/favorites", label: "Favorit", icon: HeartIcon, everyone: true },
     ],
   },
   {
-    label: "Lainnya",
+    // Everything you touch to sell something, in the order you touch it.
+    label: "Jualan",
+    items: [
+      { href: "/panel/products", label: "Produk digital", icon: LayoutIcon, sellerOnly: true },
+      { href: "#assets", label: "Assets", icon: ImageIcon, sellerOnly: true, action: "assets" },
+      { href: "/panel/stats", label: "Penjualan", icon: ChartIcon, feature: "stats", publisherToo: true },
+    ],
+  },
+  {
+    label: "Pengguna",
+    items: [
+      { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
+      { href: "/panel/roles", label: "Roles", icon: ShieldIcon, adminOnly: true },
+    ],
+  },
+  {
+    label: "Pesan",
     items: [
       { href: "/panel/contacts", label: "Kontak", icon: MailIcon, feature: "contacts" },
       { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, feature: "inbox" },
-      { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
-      { href: "/panel/roles", label: "Roles", icon: ShieldIcon, adminOnly: true },
-      { href: "/panel/storage", label: "Storage", icon: DatabaseIcon, adminOnly: true },
-      { href: "/panel/analytics", label: "Analytics", icon: PulseIcon, adminOnly: true },
+    ],
+  },
+  {
+    label: "Situs",
+    items: [
       { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
       { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
-      { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
+    ],
+  },
+  {
+    // Measurement and plumbing — rarely opened, so it sits last.
+    label: "Sistem",
+    items: [
+      { href: "/panel/analytics", label: "Analytics", icon: PulseIcon, adminOnly: true },
       { href: "/panel/tracking", label: "Tracking", icon: TargetIcon, adminOnly: true },
+      { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
+      { href: "/panel/storage", label: "Storage", icon: DatabaseIcon, adminOnly: true },
     ],
   },
 ];
@@ -160,13 +192,6 @@ function TagIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-function UserIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  );
-}
 function UsersIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,13 +203,6 @@ function ReceiptIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-    </svg>
-  );
-}
-function BellIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
     </svg>
   );
 }
@@ -230,30 +248,39 @@ function NavContent({
 
   return (
     <>
-      <nav className="flex flex-col gap-6 py-4">
+      <nav aria-label="Menu panel" className="flex flex-col gap-5 py-3">
         {navGroups.map((group) => {
           const visibleItems = group.items.filter(isVisible);
           if (visibleItems.length === 0) return null;
+
           return (
-            <Fragment key={group.label}>
-            <div>
-              <p className="px-3 mb-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
+            <div key={group.label}>
+              <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]/70">
                 {group.label}
               </p>
               <div className="flex flex-col gap-0.5">
                 {visibleItems.map((item) => {
-                  const active = !item.external && (pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)));
+                  // Exact for /panel — as a prefix it would light up on every page.
+                  // Elsewhere the trailing slash keeps /panel/product off /panel/products.
+                  const active =
+                    !item.action &&
+                    !item.external &&
+                    (item.exact
+                      ? pathname === item.href
+                      : pathname === item.href || pathname.startsWith(`${item.href}/`));
                   const Icon = item.icon;
-                  const linkClass = `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  // Roomier rows on touch, where the drawer has space to spare and
+                  // a thumb is a blunter instrument than a cursor.
+                  const linkClass = `flex items-center gap-3 rounded-lg px-3 py-3 text-[15px] transition-colors md:py-2.5 md:text-sm ${
                     active
-                      ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
-                      : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+                      ? "bg-[var(--accent-subtle)] font-medium text-[var(--primary)]"
+                      : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
                   }`;
                   const badgeCount = item.href === "/panel/users" ? pendingActions : 0;
                   const content = (
                     <>
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.label}</span>
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="truncate">{item.label}</span>
                       {badgeCount > 0 && (
                         <span
                           className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white"
@@ -264,6 +291,23 @@ function NavContent({
                       )}
                     </>
                   );
+
+                  if (item.action === "assets") {
+                    return (
+                      <button
+                        key={item.href}
+                        type="button"
+                        onClick={() => {
+                          onOpenAssets?.();
+                          onItemClick?.();
+                        }}
+                        className={linkClass}
+                      >
+                        {content}
+                      </button>
+                    );
+                  }
+
                   return item.external ? (
                     <a
                       key={item.href}
@@ -276,54 +320,38 @@ function NavContent({
                       {content}
                     </a>
                   ) : (
-                    <Link key={item.href} href={item.href} onClick={onItemClick} className={linkClass}>
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onItemClick}
+                      aria-current={active ? "page" : undefined}
+                      className={linkClass}
+                    >
                       {content}
                     </Link>
                   );
                 })}
               </div>
             </div>
-
-            {/* Assets library sits with the publisher tools it belongs to. */}
-            {group.label === "Sebagai Publisher" && canSell && onOpenAssets && (
-              <div>
-                <p className="px-3 mb-1.5 text-xs font-medium text-[var(--muted)] uppercase tracking-wider">
-                  Media
-                </p>
-                <div className="flex flex-col gap-0.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onOpenAssets();
-                      onItemClick?.();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
-                  >
-                    <ImageIcon className="w-5 h-5 shrink-0" />
-                    <span>Assets</span>
-                  </button>
-                </div>
-              </div>
-            )}
-            </Fragment>
           );
         })}
       </nav>
-      <div className="mt-auto pt-4 border-t border-[var(--border)] flex items-center gap-2">
+
+      <div className="mt-auto flex items-center gap-2 border-t border-[var(--border)] pt-3">
         <Link
           href="/"
           onClick={onItemClick}
-          className="flex flex-1 items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-3 text-[15px] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
         >
-          <HomeIcon className="w-5 h-5 shrink-0" />
-          <span>View home</span>
+          <HomeIcon className="h-5 w-5 shrink-0" />
+          <span>Lihat situs</span>
         </Link>
         <form action={signOut} className="flex-1">
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)] transition-colors"
+            className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-[15px] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
           >
-            <LogoutIcon className="w-5 h-5 shrink-0" />
+            <LogoutIcon className="h-5 w-5 shrink-0" />
             <span>Keluar</span>
           </button>
         </form>
@@ -335,19 +363,37 @@ function NavContent({
 export function PanelSidebar({ role, canSell, displayName, pendingActions, features }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
+  const close = () => setMobileOpen(false);
+
+  // Escape closes the drawer, and the page behind it stops scrolling while it is
+  // open — without that, dragging the drawer scrolls the content underneath and
+  // you return to a page that has moved.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
 
   return (
     <>
       {/* Mobile: top bar with menu button */}
-      <div className="md:hidden sticky top-0 z-20 flex items-center justify-between h-14 px-4 border-b border-[var(--border)] bg-[var(--card)]">
+      <div className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--card)] px-3 md:hidden">
         <button
           type="button"
-          aria-label="Menu"
+          aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="relative p-2 -ml-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
+          className="relative rounded-lg p-2.5 text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {mobileOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             ) : (
@@ -355,74 +401,87 @@ export function PanelSidebar({ role, canSell, displayName, pendingActions, featu
             )}
           </svg>
           {!mobileOpen && !!pendingActions && pendingActions > 0 && (
-            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)]" aria-hidden />
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)]" aria-hidden />
           )}
         </button>
-        <div className="flex items-center gap-0.5">
-          <ThemeSwitch />
-          <button
-            type="button"
-            aria-label="Notifikasi"
-            className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
-          >
-            <BellIcon className="w-5 h-5" />
-          </button>
-        </div>
+        <Link href="/panel" className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <BrandMark className="h-6 w-6" />
+          ADM.UIUX
+        </Link>
+        <ThemeSwitch />
       </div>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-30 bg-black/50"
-          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={close}
           aria-hidden
         />
       )}
 
-      {/* Sidebar: desktop fixed, mobile as drawer */}
+      {/* Sidebar: desktop fixed, mobile as drawer.
+          Wider on mobile — a 224px drawer left long labels truncating against a
+          strip of dimmed page nobody was going to read. */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full w-56 flex flex-col border-r border-[var(--border)] bg-[var(--card)] transition-transform duration-200 ease-out md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-40 flex h-full w-[86vw] max-w-sm flex-col border-r border-[var(--border)] bg-[var(--card)] transition-transform duration-200 ease-out md:w-64 md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-14 items-center justify-between px-4 border-b border-[var(--border)] md:border-0">
-          <Link href="/panel" className="flex items-center gap-2 text-base font-semibold text-foreground" onClick={() => setMobileOpen(false)}>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border)] px-4 md:border-0">
+          <Link href="/panel" className="flex items-center gap-2 text-base font-semibold text-foreground" onClick={close}>
             <BrandMark className="h-6 w-6" />
             ADM.UIUX
           </Link>
-          <div className="hidden md:flex items-center gap-0.5">
+          <div className="hidden md:block">
             <ThemeSwitch />
-            <button
-              type="button"
-              aria-label="Notifikasi"
-              className="p-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--background)]"
-            >
-              <BellIcon className="w-5 h-5" />
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Tutup menu"
+            className="rounded-lg p-2 text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground md:hidden"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
+
+        {/* The whole card is the profile link — the old "View Profile" was a
+            12px text link, which on a phone is a target you aim at. */}
         {displayName && (
-          <div className="px-4 pb-2">
-            <p className="text-xs text-[var(--muted)]">Halo, <span className="font-medium text-foreground">{displayName}</span></p>
-            <Link href="/panel/profile" className="text-xs font-medium text-[var(--primary)] hover:underline" onClick={() => setMobileOpen(false)}>
-              View Profile
-            </Link>
-          </div>
+          <Link
+            href="/panel/profile"
+            onClick={close}
+            className="mx-3 mt-3 flex shrink-0 items-center gap-3 rounded-lg border border-[var(--border)] px-3 py-2.5 transition-colors hover:bg-[var(--background)]"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-sm font-semibold uppercase text-[var(--primary)]">
+              {displayName.trim().charAt(0) || "?"}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium text-foreground">{displayName}</span>
+              <span className="block text-xs text-[var(--muted)]">
+                {role === "admin" ? "Admin" : role === "publisher" ? "Publisher" : "Pembeli"} · Lihat profil
+              </span>
+            </span>
+          </Link>
         )}
-        <div className="flex flex-1 flex-col overflow-y-auto px-3">
+
+        <div className="flex flex-1 flex-col overflow-y-auto px-3 pb-[env(safe-area-inset-bottom)]">
           <NavContent
             role={role}
             features={features}
             canSell={canSell}
             pendingActions={pendingActions}
-            onItemClick={() => setMobileOpen(false)}
+            onItemClick={close}
             onOpenAssets={() => setAssetsOpen(true)}
           />
         </div>
       </aside>
 
       {/* Spacer for desktop: takes space so main content is beside sidebar */}
-      <div className="hidden md:block w-56 shrink-0" aria-hidden />
+      <div className="hidden w-64 shrink-0 md:block" aria-hidden />
 
       <AssetLibraryModal open={assetsOpen} onClose={() => setAssetsOpen(false)} />
     </>
