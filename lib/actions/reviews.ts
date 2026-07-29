@@ -30,6 +30,14 @@ export type PublicReview = {
   rating: number;
   review_text: string;
   created_at: string;
+  /**
+   * The product being reviewed, for linking back to it.
+   *
+   * Null when the product is unpublished or unreadable: hidden pages 404 on
+   * /lp/[slug] for anyone but the owner, so a link there would be a dead end.
+   * Callers render the review without a link in that case.
+   */
+  product: { slug: string; title: string } | null;
 };
 
 const getCachedPublicReviews = unstable_cache(
@@ -37,7 +45,7 @@ const getCachedPublicReviews = unstable_cache(
     const supabase = createAnonClient();
     let query = supabase
       .from("lp_reviews")
-      .select("id, rating, review_text, created_at")
+      .select("id, rating, review_text, created_at, lp_landing_pages(slug, title, published)")
       .not("review_text", "is", null)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -45,9 +53,24 @@ const getCachedPublicReviews = unstable_cache(
 
     const { data, error } = await query;
     if (error) return [];
-    return ((data ?? []) as PublicReview[]).filter(
-      (r) => typeof r.review_text === "string" && r.review_text.trim().length > 0,
-    );
+
+    type Embedded = { slug: string; title: string; published: boolean };
+    // The generated types model this embed as an array, but a to-one foreign key
+    // makes PostgREST return a bare object. Accept either so a supabase-js
+    // change on that inference can't silently drop every link.
+    type Row = Omit<PublicReview, "product"> & {
+      lp_landing_pages: Embedded | Embedded[] | null;
+    };
+
+    return ((data ?? []) as unknown as Row[])
+      .filter((r) => typeof r.review_text === "string" && r.review_text.trim().length > 0)
+      .map(({ lp_landing_pages: rel, ...review }) => {
+        const page = Array.isArray(rel) ? (rel[0] ?? null) : rel;
+        return {
+          ...review,
+          product: page?.published ? { slug: page.slug, title: page.title } : null,
+        };
+      });
   },
   ["public-reviews"],
   { revalidate: 60 },

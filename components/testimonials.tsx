@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import type { PublicReview } from "@/lib/actions/reviews";
 import { VerifiedBadge, formatReviewMonth } from "@/components/verified-reviews";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,21 @@ export function Testimonials({ reviews }: { reviews: PublicReview[] }) {
               <footer className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <VerifiedBadge />
                 <span className="text-[var(--muted)]"> · {formatReviewMonth(t.created_at)}</span>
+                {/* Only rendered when the product is still published — a hidden
+                    page 404s for everyone but its owner. */}
+                {t.product && (
+                  <>
+                    <span className="text-[var(--muted)]" aria-hidden>
+                      ·
+                    </span>
+                    <Link
+                      href={`/lp/${t.product.slug}`}
+                      className="font-medium text-[var(--primary)] hover:underline"
+                    >
+                      {t.product.title}
+                    </Link>
+                  </>
+                )}
               </footer>
             </blockquote>
           ))}
