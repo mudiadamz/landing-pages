@@ -8,67 +8,50 @@ ulang sebelum eksekusi kalau sudah lewat beberapa minggu.
 
 ## Status
 
-**Cutover selesai 2026-07-30.** Produksi (`admuiux.com`) berjalan di Singapore:
-function di `sin1`, database di `ap-southeast-1`, terverifikasi lewat probe row
-yang hanya ada di database baru.
+**Migrasi selesai 2026-07-30.** Produksi (`admuiux.com`) berjalan penuh di
+Singapore: function di `sin1`, database di `ap-southeast-1`.
 
-- [x] **Google provider aktif** — diverifikasi: `/auth/v1/authorize?provider=google`
-      membalas 302 ke Google dengan
-      `redirect_uri=https://uxizlsoggphacyvtshub.supabase.co/auth/v1/callback`.
-- [x] **Login user lama aman** — 20 user punya `email_confirmed_at`, 11 punya hash
-      password, 10 punya identity Google.
+| | |
+|---|---|
+| Produksi sekarang | `uxizlsoggphacyvtshub` · `admuiux-sg` · `ap-southeast-1` |
+| Project lama (masih hidup) | `ogjydcyccrnoxdtakizs` · `admuiux` · `ap-northeast-1` |
+| Kredensial | `.env.singapore` (gitignored lewat `.env*`, mode 600) |
 
-Sisa (dashboard, belum bisa diotomasi — management token ada di keyring):
+Semua terverifikasi, bukan diasumsikan:
 
-- [ ] **`mailer_autoconfirm` masih `false`** (produksi lama `true`).
-      Authentication → Sign In / Providers → Email → matikan **Confirm email**.
-      **User lama tidak terpengaruh.** Yang kena hanya signup baru: `signUp()`
-      tidak mengembalikan session, fallback `signInWithPassword` di
-      `lib/actions/auth.ts:74` gagal dengan "Email not confirmed", dan user
-      mendarat di `/signup?message=check_email` — plus menerima dua email
-      (verifikasi Resend milik sendiri + konfirmasi bawaan Supabase).
-- [x] **Site URL + redirect allow-list** — sudah `https://admuiux.com` dan
-      `https://admuiux.com/**`. Sempat dibuat `http://` (bukan `https://`), dan
-      itulah yang mematikan login Google: Google-nya sendiri benar, tapi
-      Supabase menolak `redirect_to` `https://admuiux.com/auth/callback` lalu
-      jatuh ke Site URL **tanpa `code`**, sehingga `/auth/callback` tidak pernah
-      jalan dan `exchangeCodeForSession` tidak pernah dipanggil.
-- [x] **`mailer_autoconfirm` = true** — signup baru langsung dapat session lagi.
+- [x] 60 migration ter-push; 16 tabel `lp_` lengkap
+- [x] Jumlah baris cocok dengan Tokyo di seluruh tabel
+- [x] 20 user pindah — 11 punya hash password, 10 punya identity Google,
+      semuanya `email_confirmed_at` terisi
+- [x] 147 file / 62,5 MB storage tersalin; setting bucket cocok persis
+- [x] URL absolut di dalam data ditulis ulang (45 baris / 8 kolom)
+- [x] Env Vercel ditukar (3 var × 3 environment) — dibuktikan lewat probe row
+      yang hanya ada di database Singapore lalu dirender di situs live
+- [x] `vercel.json` → `regions: ["sin1"]`
+- [x] Google provider aktif; authorize 302 ke Google dengan callback project baru
+- [x] Site URL `https://admuiux.com` + allow-list `https://admuiux.com/**`
+- [x] `mailer_autoconfirm = true`
 
-Cara cek ulang tanpa akun Google (token bohongan, tidak merusak apa pun):
+Cara memeriksa Site URL & allow-list tanpa management token atau akun Google
+(token bohongan, tidak merusak apa pun):
+
 ```bash
 curl -s -o /dev/null -D - \
   "https://<ref>.supabase.co/auth/v1/verify?token=x&type=signup&redirect_to=https%3A%2F%2Fadmuiux.com%2Fauth%2Fcallback" \
   | grep -i '^location:'
 ```
+
 `location` memantulkan `redirect_to` apa adanya → allow-list benar. Kalau
 berubah, nilai itulah Site URL dan `redirect_to` sedang ditolak.
 
-**Migrasi selesai.** Semua item cutover hijau.
+### Yang masih perlu diingat
 
-Project lama `ogjydcyccrnoxdtakizs` **masih hidup dan utuh** — jangan dihapus
-minimal satu minggu.
-
-| | |
-|---|---|
-| Project lama (produksi) | `ogjydcyccrnoxdtakizs` · `admuiux` · `ap-northeast-1` |
-| Project baru (kosong, siap) | `uxizlsoggphacyvtshub` · `admuiux-sg` · `ap-southeast-1` |
-| Kredensial project baru | `.env.singapore` (gitignored lewat `.env*`, mode 600) |
-
-Selesai:
-
-- [x] Project Singapore dibuat, `ACTIVE_HEALTHY`
-- [x] 60 migration di-push — skema `lp_`/`pp_`/`tp_` lengkap, terverifikasi
-- [x] 147 file / 62,5 MB storage tersalin; setting bucket (public, size limit,
-      MIME allowlist) cocok persis di keempat bucket
-- [x] CLI di-link balik ke project produksi
-
-Belum:
-
-- [ ] Google OAuth di project baru + redirect URI baru di Google Cloud Console
-- [ ] Auth settings: Site URL, redirect list, `mailer_autoconfirm`, template email
-- [ ] Staging env di tiga project Vercel
-- [ ] **Cutover** (bagian "Hari-H" di bawah) — belum dijadwalkan
+- **Jangan hapus project lama minimal satu minggu.** Rollback = kembalikan env
+  Vercel + `vercel.json` ke nilai lama lalu redeploy.
+- Supabase CLI sekarang ter-link ke `uxizlsoggphacyvtshub` — itu memang benar,
+  karena project itulah produksi sekarang.
+- `lp_received_emails` (2 baris) sengaja masih menyimpan URL project lama; itu
+  arsip email masuk, bukan pointer aset.
 
 ## Aturan yang paling penting
 
