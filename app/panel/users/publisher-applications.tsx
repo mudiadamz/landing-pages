@@ -85,6 +85,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                     }
                   />
                   <Row label="Nama sesuai KTP" value={a.real_name} />
+                  <Row label="Alamat" value={a.address} />
                   <Row label="Pemilik rekening" value={a.bank_holder} />
                 </dl>
                 <p className="mt-1.5 text-[11px]">

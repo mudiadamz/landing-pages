@@ -17,6 +17,7 @@ import type { PublisherStatus, Role } from "@/lib/profile-utils";
 export type PublisherInfo = {
   displayName: string | null;
   realName: string | null;
+  address: string | null;
   bankName: string | null;
   bankHolder: string | null;
   bankAccount: string | null;
@@ -123,6 +124,12 @@ export function PublisherCard({
             note="Tidak pernah ditampilkan ke pembeli."
           />
           <Item
+            label="Alamat tempat tinggal"
+            value={info.address}
+            note="Hanya dilihat admin."
+            multiline
+          />
+          <Item
             label="Rekening pencairan"
             value={
               info.bankName || info.bankAccount
@@ -140,7 +147,7 @@ export function PublisherCard({
       ) : (
         <p className="text-sm text-[var(--muted)]">
           Ingin menjual produk digital Anda sendiri di sini? Ajukan menjadi publisher —
-          perlu foto KTP, selfie, nama toko, dan rekening pencairan.
+          perlu foto KTP, selfie, nama toko, alamat tempat tinggal, dan rekening pencairan.
         </p>
       )}
 
@@ -172,11 +179,28 @@ export function PublisherCard({
   );
 }
 
-function Item({ label, value, note }: { label: string; value: string | null; note?: string }) {
+function Item({
+  label,
+  value,
+  note,
+  multiline,
+}: {
+  label: string;
+  value: string | null;
+  note?: string;
+  /** Addresses are written across lines; truncating one to a single row hides
+   *  the part that distinguishes it. */
+  multiline?: boolean;
+}) {
   return (
     <div className="min-w-0">
       <dt className="text-xs text-[var(--muted)]">{label}</dt>
-      <dd className="mt-0.5 truncate text-sm font-medium text-foreground" title={value ?? undefined}>
+      <dd
+        className={`mt-0.5 text-sm font-medium text-foreground ${
+          multiline ? "whitespace-pre-line break-words" : "truncate"
+        }`}
+        title={value ?? undefined}
+      >
         {value || "—"}
       </dd>
       {note && <p className="mt-0.5 text-[11px] text-[var(--muted)]">{note}</p>}

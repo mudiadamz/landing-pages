@@ -149,6 +149,8 @@ export type PublisherApplication = {
   realName: string;
   /** Public store name. May differ from the legal name; that is the point. */
   displayName: string;
+  /** Where the applicant currently lives — often not the KTP address. */
+  address: string;
   bankName: string;
   bankHolder: string;
   bankAccount: string;
@@ -177,12 +179,22 @@ export async function applyAsPublisher(
   const trim = (s: string | undefined) => (s ?? "").trim().replace(/\s+/g, " ");
   const realName = trim(application?.realName);
   const displayName = trim(application?.displayName);
+  // Newlines are meaningful in an address, so collapse spaces per line rather
+  // than flattening the whole thing into one run.
+  const address = (application?.address ?? "")
+    .split("\n")
+    .map((l) => l.trim().replace(/[ \t]+/g, " "))
+    .filter(Boolean)
+    .join("\n");
   const bankName = trim(application?.bankName);
   const bankHolder = trim(application?.bankHolder);
   const bankAccount = trim(application?.bankAccount);
 
   if (realName.length < 3) return { ok: false, error: "Nama sesuai KTP wajib diisi." };
   if (displayName.length < 3) return { ok: false, error: "Nama toko wajib diisi." };
+  if (address.length < 10)
+    return { ok: false, error: "Alamat tempat tinggal wajib diisi selengkapnya." };
+  if (address.length > 400) return { ok: false, error: "Alamat terlalu panjang." };
   if (!bankName) return { ok: false, error: "Nama bank wajib diisi." };
   if (!bankHolder) return { ok: false, error: "Nama pemilik rekening wajib diisi." };
   if (!bankAccount) return { ok: false, error: "Nomor rekening wajib diisi." };
@@ -244,6 +256,7 @@ export async function applyAsPublisher(
       publisher_ktp_path: ktpPath,
       publisher_selfie_path: selfiePath,
       publisher_real_name: realName,
+      publisher_address: address,
       publisher_display_name: displayName,
       publisher_bank_name: bankName,
       publisher_bank_holder: bankHolder,

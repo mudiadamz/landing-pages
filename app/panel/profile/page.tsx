@@ -60,7 +60,7 @@ export default async function ProfilePage() {
       // One string literal, deliberately: supabase-js infers the row type from
       // the literal, and a concatenated expression collapses it to an error type.
       .select(
-        "id, full_name, role, publisher_status, publisher_reject_note, email_verified_at, publisher_display_name, publisher_real_name, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
+        "id, full_name, role, publisher_status, publisher_reject_note, email_verified_at, publisher_display_name, publisher_real_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
       )
       .eq("id", user.id)
       .single(),
@@ -163,6 +163,7 @@ export default async function ProfilePage() {
             info={{
               displayName: row?.publisher_display_name ?? null,
               realName: row?.publisher_real_name ?? null,
+              address: row?.publisher_address ?? null,
               bankName: row?.publisher_bank_name ?? null,
               bankHolder: row?.publisher_bank_holder ?? null,
               bankAccount: row?.publisher_bank_account ?? null,

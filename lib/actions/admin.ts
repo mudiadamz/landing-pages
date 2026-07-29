@@ -176,6 +176,8 @@ export type PublisherApplication = {
   real_name: string | null;
   /** The public store name the applicant chose. */
   display_name: string | null;
+  /** Current residential address. Admin-facing only. */
+  address: string | null;
   bank_name: string | null;
   bank_holder: string | null;
   /** Payout account. Admin-facing only. */
@@ -205,7 +207,7 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, email, publisher_applied_at, publisher_ktp_path, publisher_selfie_path, publisher_real_name, publisher_display_name, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at")
+    .select("id, full_name, email, publisher_applied_at, publisher_ktp_path, publisher_selfie_path, publisher_real_name, publisher_display_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at")
     .eq("publisher_status", "pending")
     .order("publisher_applied_at", { ascending: true });
 
@@ -226,6 +228,7 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
       email: r.email ?? null,
       publisher_applied_at: r.publisher_applied_at ?? null,
       real_name: r.publisher_real_name ?? null,
+      address: r.publisher_address ?? null,
       display_name: r.publisher_display_name ?? null,
       bank_name: r.publisher_bank_name ?? null,
       bank_holder: r.publisher_bank_holder ?? null,

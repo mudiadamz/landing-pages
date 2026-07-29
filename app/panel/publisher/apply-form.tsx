@@ -8,6 +8,7 @@ import type { PublisherStatus, Role } from "@/lib/profile-utils";
 const EMPTY = {
   realName: "",
   displayName: "",
+  address: "",
   bankName: "",
   bankHolder: "",
   bankAccount: "",
@@ -45,6 +46,35 @@ function Field({
   );
 }
 
+function AreaField({
+  label,
+  hint,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-medium text-foreground">{label}</span>
+      {hint && <span className="mt-0.5 block text-[11px] text-[var(--muted)]">{hint}</span>}
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        maxLength={400}
+        className={`mt-1 resize-y ${inputClass}`}
+      />
+    </label>
+  );
+}
+
 export function PublisherApplyForm({
   role,
   status: initialStatus,
@@ -73,6 +103,7 @@ export function PublisherApplyForm({
   const filled =
     fields.realName.trim().length >= 3 &&
     fields.displayName.trim().length >= 3 &&
+    fields.address.trim().length >= 10 &&
     fields.bankName.trim() !== "" &&
     fields.bankHolder.trim() !== "" &&
     fields.bankAccount.trim() !== "";
@@ -182,6 +213,14 @@ export function PublisherApplyForm({
                 />
               </div>
 
+              <AreaField
+                label="Alamat tempat tinggal saat ini"
+                hint="Alamat Anda sekarang — boleh berbeda dari alamat di KTP. Hanya dilihat admin."
+                value={fields.address}
+                onChange={set("address")}
+                placeholder={"Jalan, nomor, RT/RW\nKelurahan, Kecamatan\nKota, Provinsi, Kode Pos"}
+              />
+
               <div className="rounded-lg border border-[var(--border)] p-3">
                 <p className="text-xs font-medium text-foreground">Rekening pencairan</p>
                 <p className="mt-0.5 text-[11px] text-[var(--muted)]">
@@ -252,7 +291,7 @@ export function PublisherApplyForm({
                     {!ktp || !selfie
                       ? "Kedua foto wajib diambil."
                       : !filled
-                        ? "Lengkapi nama dan data rekening."
+                        ? "Lengkapi nama, alamat, dan data rekening."
                         : "Centang persetujuan ketentuan publisher."}
                   </span>
                 )}
