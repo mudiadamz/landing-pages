@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { isUpcoming } from "@/lib/product-status";
 import { grantBundleItems } from "@/lib/bundle";
@@ -141,8 +142,18 @@ export type InvoiceRow = {
   payment_method: string | null;
   title: string;
   slug: string;
+  /** Access was taken back by an admin; the payment still happened. */
+  revoked_at: string | null;
 };
 
+/**
+ * Read through the service role, scoped by hand to the caller's own id.
+ *
+ * The RLS policy hides revoked purchases so that no ownership check can forget
+ * to — but a receipt is not access. Someone who paid keeps the record of having
+ * paid, marked as revoked; making it vanish would just mean a support ticket
+ * asking where it went.
+ */
 export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
   const supabase = await createClient();
   const {
@@ -150,7 +161,7 @@ export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await createAdminClient()
     .from("lp_purchases")
     .select(`
       id,
@@ -158,7 +169,8 @@ export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
       purchased_at,
       amount,
       payment_method,
-      landing_pages:lp_landing_pages (title, slug)
+      revoked_at,
+      landing_pages:lp_landing_pages!purchases_landing_page_id_fkey (title, slug)
     `)
     .eq("user_id", user.id)
     .order("purchased_at", { ascending: false });
@@ -171,6 +183,7 @@ export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
     purchased_at: string;
     amount: number;
     payment_method: string | null;
+    revoked_at: string | null;
     landing_pages:
       | { title: string; slug: string }
       | { title: string; slug: string }[]
@@ -187,6 +200,7 @@ export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
       payment_method: p.payment_method,
       title: lp?.title ?? "Unknown",
       slug: lp?.slug ?? "",
+      revoked_at: p.revoked_at ?? null,
     };
   });
 }
@@ -198,7 +212,9 @@ export async function getInvoiceById(id: string): Promise<(InvoiceRow & { user_n
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
+  // Service role, scoped by hand to the caller — same reasoning as the list
+  // above: the invoice for a revoked purchase must still open.
+  const { data, error } = await createAdminClient()
     .from("lp_purchases")
     .select(`
       id,
@@ -206,7 +222,8 @@ export async function getInvoiceById(id: string): Promise<(InvoiceRow & { user_n
       purchased_at,
       amount,
       payment_method,
-      landing_pages:lp_landing_pages (title, slug)
+      revoked_at,
+      landing_pages:lp_landing_pages!purchases_landing_page_id_fkey (title, slug)
     `)
     .eq("id", id)
     .eq("user_id", user.id)
@@ -230,6 +247,7 @@ export async function getInvoiceById(id: string): Promise<(InvoiceRow & { user_n
     payment_method: data.payment_method,
     title: lp?.title ?? "Unknown",
     slug: lp?.slug ?? "",
+    revoked_at: data.revoked_at ?? null,
     user_name: profile?.full_name ?? user.email ?? "",
     user_email: profile?.email ?? user.email ?? "",
   };

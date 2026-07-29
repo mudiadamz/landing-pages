@@ -92,6 +92,33 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         if (error.code === "23505") {
+          // A row already exists. Normally that's a retried callback and there
+          // is nothing to do — but it is also what a revoked buyer hits, since
+          // RLS hides the row from them and checkout therefore let them pay
+          // again. Taking the money and granting nothing is not an option, so a
+          // fresh payment restores access. (Free re-claims deliberately do NOT:
+          // see addPurchase, where undoing a revoke would cost nothing.)
+          const { data: existing } = await supabase
+            .from("lp_purchases")
+            .select("id, revoked_at")
+            .eq("user_id", userId)
+            .eq("landing_page_id", landingPageId)
+            .maybeSingle();
+
+          if (existing?.revoked_at) {
+            await supabase
+              .from("lp_purchases")
+              .update({
+                revoked_at: null,
+                revoked_by: null,
+                revoke_reason: null,
+                amount: Number(amount) || 0,
+                payment_method: paymentMethod,
+                purchased_at: new Date().toISOString(),
+              })
+              .eq("id", existing.id);
+            await grantBundleItems(userId, landingPageId);
+          }
           return new NextResponse("OK", { status: 200 });
         }
         console.error("Duitku callback purchase insert error:", error);

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireFeature, getProfile } from "@/lib/actions/profiles";
 import { getStats, getCustomers, getMyProductStats, type Stats, type CustomerRow, type PublisherStats } from "@/lib/actions/admin";
+import { CustomerPurchasesButton } from "./customer-purchases";
 
 export default async function StatsPage() {
   const [profile, hasGlobal] = await Promise.all([getProfile(), requireFeature("stats")]);
@@ -136,6 +137,13 @@ function GlobalStats({ stats, customers }: { stats: Stats; customers: CustomerRo
                   <p className="mt-2 text-xs text-[var(--muted)]">
                     {c.purchase_count} pembelian · Terakhir: {formatDate(c.last_purchase_at)}
                   </p>
+                  <div className="mt-3">
+                    <CustomerPurchasesButton
+                      userId={c.id}
+                      name={c.full_name || c.email || "pelanggan"}
+                      count={c.purchase_count}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -149,6 +157,7 @@ function GlobalStats({ stats, customers }: { stats: Stats; customers: CustomerRo
                       <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">Email</th>
                       <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">Pembelian</th>
                       <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">Pembelian terakhir</th>
+                      <th className="px-4 py-3.5 text-right text-sm font-medium text-foreground">Akses</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -158,6 +167,13 @@ function GlobalStats({ stats, customers }: { stats: Stats; customers: CustomerRo
                         <td className="px-4 py-3.5 text-sm text-[var(--muted)]">{c.email || "—"}</td>
                         <td className="px-4 py-3.5 text-sm text-foreground">{c.purchase_count}</td>
                         <td className="px-4 py-3.5 text-sm text-[var(--muted)]">{formatDate(c.last_purchase_at)}</td>
+                        <td className="px-4 py-3.5 text-right">
+                          <CustomerPurchasesButton
+                            userId={c.id}
+                            name={c.full_name || c.email || "pelanggan"}
+                            count={c.purchase_count}
+                          />
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -229,6 +229,23 @@ function PurchasesTab({
   );
 }
 
+/**
+ * The payment happened, the access didn't survive. Kept on the receipt rather
+ * than hidden with the purchase — someone who paid should still find the record
+ * of having paid, and an invoice that silently vanishes only produces a
+ * question we'd rather answer here.
+ */
+function RevokedTag() {
+  return (
+    <span
+      title="Akses ke produk ini dicabut oleh admin"
+      className="ml-2 inline-block rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+    >
+      Akses dicabut
+    </span>
+  );
+}
+
 function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
   if (invoices.length === 0) {
     return (
@@ -260,7 +277,10 @@ function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
                   <td className="px-4 py-3 font-mono text-xs text-[var(--muted)]">
                     {inv.invoice_number ?? "—"}
                   </td>
-                  <td className="px-4 py-3 font-medium text-foreground">{inv.title}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {inv.title}
+                    {inv.revoked_at && <RevokedTag />}
+                  </td>
                   <td className="px-4 py-3 text-[var(--muted)]">{formatDate(inv.purchased_at)}</td>
                   <td className="px-4 py-3 text-right font-medium text-foreground">
                     {formatPrice(inv.amount)}
@@ -294,7 +314,10 @@ function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
             className="block rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm hover:bg-[var(--background)]/30 transition-colors"
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-foreground">{inv.title}</span>
+              <span className="text-sm font-medium text-foreground">
+                {inv.title}
+                {inv.revoked_at && <RevokedTag />}
+              </span>
               <span className="text-sm font-medium text-foreground">
                 {formatPrice(inv.amount)}
               </span>
