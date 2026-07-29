@@ -7,6 +7,7 @@ import { PdfPreview } from "@/components/pdf-preview";
 import { PreviewSurface } from "../../lp/preview-surface";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ImmersiveController } from "@/components/immersive-controller";
+import { epubVersionToken } from "@/lib/epub-version";
 
 /**
  * Reader for a product the visitor already owns, opened from "Pembelian saya".
@@ -81,6 +82,7 @@ export default async function ReadPage({ params }: Props) {
             slug={slug}
             title={page.title}
             textEndpoint={`/api/epub-text-owned/${encodeURIComponent(slug)}`}
+            version={epubVersionToken(page.story_epub_url)}
             storageKey={`read-epub:${slug}`}
           />
         </div>

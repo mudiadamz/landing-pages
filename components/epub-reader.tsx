@@ -16,6 +16,7 @@ export function EpubReader({
   slug,
   title,
   textEndpoint,
+  version,
   storageKey,
 }: {
   url: string;
@@ -24,6 +25,8 @@ export function EpubReader({
   title?: string;
   /** Override the chapter source (owner's reader uses a gated endpoint). */
   textEndpoint?: string;
+  /** Content version — busts the edge cache when the book is edited. */
+  version?: string;
   storageKey?: string;
 }) {
   // Re-key on the source so switching files cleanly reloads the reader.
@@ -34,6 +37,7 @@ export function EpubReader({
       slug={slug}
       title={title}
       textEndpoint={textEndpoint}
+      version={version}
       storageKey={storageKey}
     />
   );

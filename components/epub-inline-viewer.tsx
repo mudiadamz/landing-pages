@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { withEpubVersion } from "@/lib/epub-version";
 import { unzipSync, strFromU8 } from "fflate";
 import { markBookReady } from "@/lib/boot-splash";
 
@@ -201,6 +202,7 @@ export default function EpubInlineViewer({
   url,
   slug,
   textEndpoint,
+  version,
   storageKey,
 }: {
   url: string;
@@ -208,6 +210,8 @@ export default function EpubInlineViewer({
   slug?: string;
   /** Override the chapter source — the owner's reader uses a gated endpoint. */
   textEndpoint?: string;
+  /** Changes when the book file changes; keeps the edge cache honest. */
+  version?: string;
   title?: string;
   /** Reserved for future scroll-position memory. */
   storageKey?: string;
@@ -235,7 +239,11 @@ export default function EpubInlineViewer({
     setLoading(true);
     setError(null);
     (async () => {
-      const chapterUrl = textEndpoint ?? (slug ? `/api/epub-text/${encodeURIComponent(slug)}` : null);
+      const base = textEndpoint ?? (slug ? `/api/epub-text/${encodeURIComponent(slug)}` : null);
+      // Version the URL rather than trying to purge the CDN: these routes set
+      // their own long s-maxage, so a new archive has to look like a new URL or
+      // readers keep getting yesterday's text (see lib/epub-version.ts).
+      const chapterUrl = base && version ? withEpubVersion(base, version) : base;
       if (chapterUrl) {
         try {
           const res = await fetch(chapterUrl);
@@ -287,7 +295,7 @@ export default function EpubInlineViewer({
       blobsRef.current.forEach(URL.revokeObjectURL);
       blobsRef.current = [];
     };
-  }, [url, slug, textEndpoint]);
+  }, [url, slug, textEndpoint, version]);
 
   // Hand off from the cover to the book.
   useEffect(() => {

@@ -11,6 +11,7 @@ import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
 import { PdfPreview } from "@/components/pdf-preview";
 import { EpubReader } from "@/components/epub-reader";
+import { epubVersionToken } from "@/lib/epub-version";
 import { ReaderEndPanel } from "@/components/reader-end-panel";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
 import { ReaderScrollHint } from "@/components/reader-scroll-hint";
@@ -115,6 +116,12 @@ async function PreviewContent({ slug }: { slug: string }) {
   const nextInSeries = page.next_product_id ? await getNextInSeries(page.next_product_id) : null;
   // A bundle that includes this product — offered at the end of the read.
   const bundleOffer = await getBundleContaining(page.id);
+
+  // Which file the chapters come from, so an edited book isn't served from a
+  // day-old edge cache (lib/epub-version.ts).
+  const epubVersion = epubVersionToken(
+    page.preview_type === "deliverable" ? page.story_epub_url : page.preview_url,
+  );
 
   const embedEpub = !!epubUrl;
   const embedPdf = !!pdfLight && !embedEpub;
@@ -256,6 +263,7 @@ async function PreviewContent({ slug }: { slug: string }) {
             url={epubUrl as string}
             slug={slug}
             title={page.title}
+            version={epubVersion}
             storageKey={`lp-epub:${slug}`}
           />
           {/* Bottom fade + idle chevron, and the first-scroll event they're
