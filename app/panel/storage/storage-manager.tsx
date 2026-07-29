@@ -50,6 +50,46 @@ function cmpDate(a: StorageFile, b: StorageFile): number {
   return a.updatedAt.localeCompare(b.updatedAt);
 }
 
+/** Split "a/b/c.png" into its folder and file name. Root files get "". */
+function splitPath(path: string): { dir: string; name: string } {
+  const i = path.lastIndexOf("/");
+  return i === -1 ? { dir: "", name: path } : { dir: path.slice(0, i), name: path.slice(i + 1) };
+}
+
+type FolderGroup = {
+  key: string;
+  bucket: string;
+  dir: string;
+  files: StorageFile[];
+  size: number;
+};
+
+/**
+ * Group the already-sorted, already-capped rows by bucket + folder.
+ *
+ * Deliberately downstream of both: group order follows the best-ranked file in
+ * each folder, so picking "Terbesar" floats the folder holding the biggest file
+ * rather than re-ranking folders by some aggregate the user never asked for —
+ * and the visible cap keeps meaning "top 500 by the chosen sort".
+ */
+function groupByFolder(rows: StorageFile[]): FolderGroup[] {
+  const out: FolderGroup[] = [];
+  const index = new Map<string, FolderGroup>();
+  for (const f of rows) {
+    const { dir } = splitPath(f.path);
+    const key = `${f.bucket}\n${dir}`;
+    let g = index.get(key);
+    if (!g) {
+      g = { key, bucket: f.bucket, dir, files: [], size: 0 };
+      index.set(key, g);
+      out.push(g);
+    }
+    g.files.push(f);
+    g.size += f.size ?? 0;
+  }
+  return out;
+}
+
 const selectClass =
   "rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
 
@@ -89,7 +129,8 @@ export function StorageManager({
   const sorted = useMemo(() => [...filtered].sort(SORTS[sort].cmp), [filtered, sort]);
 
   const totalSize = useMemo(() => filtered.reduce((n, f) => n + (f.size ?? 0), 0), [filtered]);
-  const shown = sorted.slice(0, VISIBLE_CAP);
+  const shown = useMemo(() => sorted.slice(0, VISIBLE_CAP), [sorted]);
+  const groups = useMemo(() => groupByFolder(shown), [shown]);
 
   async function onDelete(f: StorageFile) {
     const key = `${f.bucket}\n${f.path}`;
@@ -172,82 +213,109 @@ export function StorageManager({
         {error && <span className="text-red-500">{error}</span>}
       </div>
 
-      {shown.length === 0 ? (
+      {groups.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-10 text-center text-sm text-[var(--muted)]">
           Tidak ada file.
         </div>
       ) : (
-        <ul className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm divide-y divide-[var(--border)]">
-          {shown.map((f) => {
-            const key = `${f.bucket}\n${f.path}`;
-            const confirming = confirm === key;
-            const deleting = busy === key;
-            return (
-              <li key={key} className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                  {isImage(f) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={f.publicUrl!} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  ) : (
-                    <FileGlyph mimetype={f.mimetype} />
-                  )}
+        <div className="space-y-3">
+          {groups.map((g) => (
+            <section
+              key={g.key}
+              className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm"
+            >
+              <header className="flex items-center gap-2 border-b border-[var(--border)] bg-[var(--background)] px-3 py-2 sm:px-4">
+                <FolderIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+                <span className="shrink-0 rounded bg-[var(--card)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--muted)]">
+                  {g.bucket}
                 </span>
+                {/* Wrapped rather than truncated: these are UUID chains whose
+                    meaningful part is the tail, and a headline per folder is
+                    cheap — there is one of these, not one per file. */}
+                <span className="min-w-0 flex-1 break-all font-mono text-xs text-foreground">
+                  {g.dir || "/"}
+                </span>
+                <span className="shrink-0 text-[11px] text-[var(--muted)]">
+                  {g.files.length} file · {formatBytes(g.size)}
+                </span>
+              </header>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-mono text-xs text-foreground" title={f.path}>
-                    {f.path}
-                  </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--muted)]">
-                    <span className="rounded bg-[var(--background)] px-1.5 py-0.5 font-medium">{f.bucket}</span>
-                    <span>{formatBytes(f.size)}</span>
-                    <span>{formatDate(f.updatedAt)}</span>
-                    {f.publicUrl && (
-                      <a
-                        href={f.publicUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[var(--primary)] hover:underline"
-                      >
-                        Buka
-                      </a>
-                    )}
-                  </p>
-                </div>
+              <ul className="divide-y divide-[var(--border)]">
+                {g.files.map((f) => {
+                  const key = `${f.bucket}\n${f.path}`;
+                  const confirming = confirm === key;
+                  const deleting = busy === key;
+                  return (
+                    <li key={key} className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)]">
+                        {isImage(f) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={f.publicUrl!} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          <FileGlyph mimetype={f.mimetype} />
+                        )}
+                      </span>
 
-                {confirming ? (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => onDelete(f)}
-                      disabled={deleting}
-                      className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
-                    >
-                      {deleting ? "Menghapus…" : "Hapus"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirm(null)}
-                      disabled={deleting}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
-                    >
-                      Batal
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirm(key)}
-                    title="Hapus file"
-                    aria-label="Hapus file"
-                    className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                      <div className="min-w-0 flex-1">
+                        {/* Folder lives in the header, so the row shows only the
+                            file name — the paths here are UUID chains and the
+                            name was the one part being truncated away. */}
+                        <p className="truncate font-mono text-xs text-foreground" title={f.path}>
+                          {splitPath(f.path).name}
+                        </p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--muted)]">
+                          <span>{formatBytes(f.size)}</span>
+                          <span>{formatDate(f.updatedAt)}</span>
+                          {f.publicUrl && (
+                            <a
+                              href={f.publicUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[var(--primary)] hover:underline"
+                            >
+                              Buka
+                            </a>
+                          )}
+                        </p>
+                      </div>
+
+                      {confirming ? (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => onDelete(f)}
+                            disabled={deleting}
+                            className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+                          >
+                            {deleting ? "Menghapus…" : "Hapus"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirm(null)}
+                            disabled={deleting}
+                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirm(key)}
+                          title="Hapus file"
+                          aria-label="Hapus file"
+                          className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -265,6 +333,18 @@ function FileGlyph({ mimetype }: { mimetype: string | null }) {
           ? "VID"
           : (t.split("/")[1] || "FILE").slice(0, 4).toUpperCase();
   return <span className="text-[9px] font-bold text-[var(--muted)]">{label}</span>;
+}
+
+function FolderIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 7a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414a1 1 0 00.707.293H19a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+      />
+    </svg>
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
