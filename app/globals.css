@@ -198,12 +198,15 @@ html.dark .epub-surface {
    reading typeface. Sits in the flow above the first chapter and scrolls away. */
 .epub-identity {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
   text-transform: lowercase;
   text-align: center;
-  opacity: 0.5;
-  margin: 0.9rem auto 0;
+  /* Was 0.5 at 0.78rem, which on a dark page is invisible — and this line
+     answers the question a hesitant reader actually has at second four:
+     how much am I signing up for. It is reassurance, not decoration. */
+  opacity: 0.72;
+  margin: 1rem auto 0.2rem;
 }
 
 /* The last visible line dissolves instead of ending flat, so the text reads as
@@ -456,6 +459,10 @@ html.dark .epub-surface {
   line-height: 1.75;
   overflow-wrap: break-word;
   word-wrap: break-word;
+  /* Narrow phone column + long Indonesian words = rivers of white space,
+     especially when the reader chooses justify. Browsers without Indonesian
+     patterns simply don't hyphenate, so this can only help. */
+  hyphens: auto;
 }
 .epub-inline img,
 .epub-inline svg,
@@ -512,6 +519,24 @@ html.dark .epub-surface {
 }
 /* A chapter-num immediately followed by a title is one unit — close the gap. */
 .epub-inline .chapter-num + .chapter-title { margin-top: 0; }
+
+/* The opening chapter, compacted.
+   Later chapters keep the full header: by then it is a landmark the reader has
+   earned, and the pause is welcome. Here it sits in front of the only screen
+   that decides whether they stay, so it gives its room back to the prose. */
+.epub-inline .epub-first-chapter .chapter-num {
+  margin-top: 0.4em;
+  font-size: 0.7em;
+}
+.epub-inline .epub-first-chapter .chapter-title {
+  font-size: 1.2em;
+  margin-bottom: 0.8em;
+  padding-bottom: 0.4em;
+}
+.epub-inline .epub-first-chapter h1,
+.epub-inline .epub-first-chapter h2 {
+  margin-top: 0.6em;
+}
 
 .epub-inline .front-title {
   font-size: 1.8em;

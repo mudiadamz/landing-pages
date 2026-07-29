@@ -38,6 +38,17 @@ const countWords = (text: string) => {
   return t ? t.split(/\s+/).length : 0;
 };
 
+/**
+ * Mark the opening chapter so its header can be compacted (see .epub-first-chapter).
+ *
+ * Every other chapter heading is a landmark the reader has earned; the first one
+ * is a toll booth in front of the only screen that decides whether they stay —
+ * 26% of the first viewport was going to a label before a single story word.
+ */
+const markFirstChapter = (root: HTMLElement | null) => {
+  root?.querySelector(".epub-chapter")?.classList.add("epub-first-chapter");
+};
+
 function resolvePath(base: string, rel: string): string {
   let r = rel.split("#")[0];
   try {
@@ -233,6 +244,7 @@ export default function EpubInlineViewer({
             const html = sanitizeChapters(chapters);
             if (cancelled) return;
             if (contentRef.current) contentRef.current.innerHTML = html;
+            markFirstChapter(contentRef.current);
             // innerHTML is synchronous, so the text is readable right away.
             setMeta({
               chapters: chapters.length,
@@ -257,6 +269,7 @@ export default function EpubInlineViewer({
         }
         blobsRef.current = blobs;
         if (contentRef.current) contentRef.current.innerHTML = html;
+        markFirstChapter(contentRef.current);
         setMeta({
           chapters: contentRef.current?.querySelectorAll(".epub-chapter").length ?? 0,
           words: countWords(contentRef.current?.textContent ?? ""),

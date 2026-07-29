@@ -93,7 +93,12 @@ export function setEpubMargin(px: number): void {
 export const EPUB_ALIGN_KEY = "lp-epub-align";
 export const EPUB_ALIGN_EVENT = "lp-epub-align";
 export type EpubAlign = "justify" | "left";
-export const EPUB_ALIGN_DEFAULT: EpubAlign = "justify";
+/* Ragged-right by default.
+   Justified text in a phone-width column with long Indonesian words opens
+   rivers of white space between words — visible on the first screen of
+   "Sampai Hujan Reda" — and rivers read as effort. Readers who prefer
+   justified can still switch; the setting is remembered. */
+export const EPUB_ALIGN_DEFAULT: EpubAlign = "left";
 
 export function clampEpubAlign(v: unknown): EpubAlign {
   return v === "left" || v === "justify" ? v : EPUB_ALIGN_DEFAULT;
