@@ -26,6 +26,33 @@ const isImage = (f: StorageFile) => !!f.publicUrl && (f.mimetype?.startsWith("im
 
 const VISIBLE_CAP = 500;
 
+/**
+ * Sort orders offered in the toolbar.
+ *
+ * "recent" repeats the order listAllStorageFiles() already returns, so the
+ * default view is unchanged and picking it again is a way back.
+ */
+const SORTS = {
+  recent: { label: "Terbaru", cmp: (a: StorageFile, b: StorageFile) => cmpDate(b, a) },
+  oldest: { label: "Terlama", cmp: (a: StorageFile, b: StorageFile) => cmpDate(a, b) },
+  largest: { label: "Terbesar", cmp: (a: StorageFile, b: StorageFile) => (b.size ?? 0) - (a.size ?? 0) },
+  smallest: { label: "Terkecil", cmp: (a: StorageFile, b: StorageFile) => (a.size ?? 0) - (b.size ?? 0) },
+  path: { label: "Path A–Z", cmp: (a: StorageFile, b: StorageFile) => a.path.localeCompare(b.path) },
+} as const;
+
+type SortKey = keyof typeof SORTS;
+
+/** Undated files sort last in both directions rather than clumping at the top. */
+function cmpDate(a: StorageFile, b: StorageFile): number {
+  if (!a.updatedAt && !b.updatedAt) return 0;
+  if (!a.updatedAt) return -1;
+  if (!b.updatedAt) return 1;
+  return a.updatedAt.localeCompare(b.updatedAt);
+}
+
+const selectClass =
+  "rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
+
 export function StorageManager({
   initialFiles,
   buckets,
@@ -37,6 +64,7 @@ export function StorageManager({
 }) {
   const [files, setFiles] = useState(initialFiles);
   const [bucket, setBucket] = useState<string>("all");
+  const [sort, setSort] = useState<SortKey>("recent");
   const [query, setQuery] = useState("");
   const [confirm, setConfirm] = useState<string | null>(null); // "bucket\npath"
   const [busy, setBusy] = useState<string | null>(null);
@@ -55,8 +83,13 @@ export function StorageManager({
     );
   }, [files, bucket, query]);
 
+  // Sort the whole filtered set BEFORE the visible cap. Sorting the capped
+  // slice instead would make "Terbesar" mean "biggest of an arbitrary 500",
+  // which is precisely the question sorting by size is asked to answer.
+  const sorted = useMemo(() => [...filtered].sort(SORTS[sort].cmp), [filtered, sort]);
+
   const totalSize = useMemo(() => filtered.reduce((n, f) => n + (f.size ?? 0), 0), [filtered]);
-  const shown = filtered.slice(0, VISIBLE_CAP);
+  const shown = sorted.slice(0, VISIBLE_CAP);
 
   async function onDelete(f: StorageFile) {
     const key = `${f.bucket}\n${f.path}`;
@@ -85,14 +118,43 @@ export function StorageManager({
         </div>
       )}
 
-      {/* Bucket filter + search */}
+      {/* Bucket filter + sort + search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1 rounded-xl border border-[var(--border)] bg-[var(--background)] p-1">
-          <FilterTab active={bucket === "all"} onClick={() => setBucket("all")} label="Semua" count={files.length} />
-          {buckets.map((b) => (
-            <FilterTab key={b} active={bucket === b} onClick={() => setBucket(b)} label={b} count={counts.get(b) ?? 0} />
-          ))}
+        <div className="flex flex-wrap gap-2">
+          <label className="sr-only" htmlFor="storage-bucket">
+            Bucket
+          </label>
+          <select
+            id="storage-bucket"
+            value={bucket}
+            onChange={(e) => setBucket(e.target.value)}
+            className={selectClass}
+          >
+            <option value="all">Semua bucket ({files.length})</option>
+            {buckets.map((b) => (
+              <option key={b} value={b}>
+                {b} ({counts.get(b) ?? 0})
+              </option>
+            ))}
+          </select>
+
+          <label className="sr-only" htmlFor="storage-sort">
+            Urutkan
+          </label>
+          <select
+            id="storage-sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className={selectClass}
+          >
+            {(Object.keys(SORTS) as SortKey[]).map((k) => (
+              <option key={k} value={k}>
+                {SORTS[k].label}
+              </option>
+            ))}
+          </select>
         </div>
+
         <input
           type="search"
           value={query}
@@ -188,31 +250,6 @@ export function StorageManager({
         </ul>
       )}
     </div>
-  );
-}
-
-function FilterTab({
-  active,
-  onClick,
-  label,
-  count,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count: number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-        active ? "bg-[var(--card)] text-foreground shadow-sm ring-1 ring-[var(--border)]" : "text-[var(--muted)] hover:text-foreground"
-      }`}
-    >
-      {label}
-      <span className="rounded bg-[var(--background)] px-1.5 text-[11px] text-[var(--muted)]">{count}</span>
-    </button>
   );
 }
 
