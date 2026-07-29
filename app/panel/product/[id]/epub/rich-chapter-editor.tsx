@@ -24,6 +24,31 @@ export type RichEditorHandle = { getHtml: () => string | null };
 
 const FONT_STACK = `ui-serif, Georgia, "Times New Roman", serif`;
 
+/**
+ * Dark mode for the editing surface.
+ *
+ * The iframe is its own document, so the panel's `html.dark` never reaches it —
+ * which left a white slab glowing in the middle of a dark panel. Only COLOUR is
+ * overridden here: fonts, sizes, spacing and every class the book relies on are
+ * left exactly as the stylesheet defines them, so what's being edited still
+ * looks like the book. `!important` is needed because the books style colour on
+ * specific selectors (`h1.chapter-num`), which outranks a bare tag rule.
+ *
+ * Colour fidelity is deliberately traded for legibility here: this is an editing
+ * surface, not a preview of how a reader sees the page.
+ */
+const DARK_CSS = `
+  html, body { background: #17171a !important; }
+  body, p, div, span, li, blockquote, h1, h2, h3, h4, h5, h6,
+  em, strong, b, i, small { color: #e7e7ea !important; }
+  a { color: #7cc0ff !important; }
+  hr { border-color: #3a3a40 !important; }
+  ::selection { background: rgba(124, 192, 255, 0.3); }
+`;
+
+const isDark = () =>
+  typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+
 /** Chrome and Safari still emit <b>/<i>; EPUBs want semantic tags. */
 function normalizeSemantics(root: Document) {
   for (const [from, to] of [
@@ -96,6 +121,7 @@ export function RichChapterEditor({
   :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
   ::selection { background: rgba(37, 99, 235, 0.25); }
 </style>
+<style id="epub-editor-theme"></style>
 </head><body data-epub-editor="1">${body}</body></html>`;
   }, []);
 
@@ -133,10 +159,21 @@ export function RichChapterEditor({
       // Enter makes a new paragraph rather than a <div> or a stray <br>.
       doc.execCommand("defaultParagraphSeparator", false, "p");
 
+      // Follow the panel's theme, and keep following it if it's toggled while
+      // the editor is open.
+      const themeTag = doc.getElementById("epub-editor-theme");
+      const paint = () => {
+        if (themeTag) themeTag.textContent = isDark() ? DARK_CSS : "";
+      };
+      paint();
+      const obs = new MutationObserver(paint);
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
       setReady(true);
       return () => {
         doc.removeEventListener("input", onInput);
         doc.removeEventListener("paste", onPaste);
+        obs.disconnect();
       };
     };
 
@@ -236,7 +273,7 @@ export function RichChapterEditor({
         </ToolButton>
       </div>
 
-      <div className="relative bg-white">
+      <div className="relative bg-white dark:bg-[#17171a]">
         <iframe
           ref={frameRef}
           title="Editor bab"

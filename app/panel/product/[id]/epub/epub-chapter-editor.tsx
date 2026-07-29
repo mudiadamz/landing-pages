@@ -42,6 +42,25 @@ type Mode = "rich" | "source";
 type Loaded = { html: string; css: string; assets: ChapterAsset[] };
 
 /**
+ * Whether the panel is in dark mode, tracked live.
+ *
+ * The app drives dark mode with a class on <html> rather than the OS setting,
+ * so `prefers-color-scheme` is the wrong signal here — a user on a light OS with
+ * the panel toggled dark would still get a blinding editor.
+ */
+function useIsDark(): boolean {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const read = () => setDark(document.documentElement.classList.contains("dark"));
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+}
+
+/**
  * EPUB chapters are XHTML: a stray unclosed tag makes the whole book unreadable
  * in strict readers, not just the chapter. Catch it here, where the seller can
  * still fix it, rather than after it has been written into the archive.
@@ -71,6 +90,7 @@ export function EpubChapterEditor({
   hasPreview: boolean;
   hasDeliverable: boolean;
 }) {
+  const dark = useIsDark();
   const [target, setTarget] = useState<EpubTarget>(
     hasDeliverable ? "deliverable" : "preview",
   );
@@ -325,25 +345,9 @@ export function EpubChapterEditor({
             </div>
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                  {selected.title}
-                </p>
-                {dirty && (
-                  <span className="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                    Belum disimpan
-                  </span>
-                )}
-                <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5">
-                  <PillTab active={mode === "rich"} onClick={() => switchMode("rich")}>
-                    Teks
-                  </PillTab>
-                  <PillTab active={mode === "source"} onClick={() => switchMode("source")}>
-                    Sumber HTML
-                  </PillTab>
-                </div>
-              </div>
-
+              {/* No chapter title above the editor: the chapter is already
+                  selected and highlighted in the list beside it, and the book's
+                  own heading is the first thing inside the editor itself. */}
               {mode === "rich" ? (
                 <RichChapterEditor
                   // A new chapter is a new document — never reuse the iframe, or
@@ -359,7 +363,7 @@ export function EpubChapterEditor({
                 <MonacoEditor
                   height="60vh"
                   defaultLanguage="html"
-                  theme="vs-dark"
+                  theme={dark ? "vs-dark" : "light"}
                   path={`${target}:${selected.path}`}
                   value={source}
                   onChange={(v) => setSource(v ?? "")}
@@ -374,13 +378,18 @@ export function EpubChapterEditor({
                 />
               )}
 
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <Button size="md" onClick={() => void save()} disabled={saving || !dirty}>
                   {saving ? "Menyimpan…" : "Simpan bab"}
                 </Button>
                 <span className="text-xs text-[var(--muted)]">
                   atau tekan {navigatorIsMac() ? "⌘" : "Ctrl"}+S
                 </span>
+                {dirty && (
+                  <span className="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    Belum disimpan
+                  </span>
+                )}
                 {msg && (
                   <span
                     className={`text-sm ${
@@ -390,6 +399,16 @@ export function EpubChapterEditor({
                     {msg.text}
                   </span>
                 )}
+                {/* View switch sits with the action row, right-aligned — it's a
+                    control for the editor below it, not a page-level tab. */}
+                <div className="ml-auto inline-flex shrink-0 rounded-lg border border-[var(--border)] p-0.5">
+                  <PillTab active={mode === "rich"} onClick={() => switchMode("rich")}>
+                    Teks
+                  </PillTab>
+                  <PillTab active={mode === "source"} onClick={() => switchMode("source")}>
+                    Sumber HTML
+                  </PillTab>
+                </div>
               </div>
             </>
           )}
