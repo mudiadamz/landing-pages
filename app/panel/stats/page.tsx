@@ -37,7 +37,7 @@ function formatDate(s: string | null) {
   });
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-6 shadow-sm min-w-0">
       <p className="text-sm font-medium text-[var(--muted)]">{label}</p>
@@ -132,7 +132,23 @@ function GlobalStats({ stats, customers }: { stats: Stats; customers: CustomerRo
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard label="Landing pages" value={stats.totalLandingPages} />
-        <StatCard label="Total purchases" value={stats.totalPurchases} />
+        <StatCard
+          label="Total purchases"
+          value={
+            <>
+              {stats.totalPurchases}
+              {stats.totalRevoked > 0 && (
+                <span
+                  title={`${stats.totalRevoked} pembelian aksesnya dicabut`}
+                  className="text-red-600 dark:text-red-400"
+                >
+                  {" "}
+                  ({stats.totalRevoked})
+                </span>
+              )}
+            </>
+          }
+        />
         <StatCard label="Customers" value={stats.totalCustomers} />
       </div>
 

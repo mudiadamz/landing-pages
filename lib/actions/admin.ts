@@ -7,6 +7,8 @@ import { requireFeature, getProfile } from "./profiles";
 export type Stats = {
   totalLandingPages: number;
   totalPurchases: number;
+  /** Of those, how many an admin has taken access back on. */
+  totalRevoked: number;
   totalCustomers: number;
 };
 
@@ -28,9 +30,13 @@ export async function getStats(): Promise<Stats | null> {
 
   const supabase = createAdminClient();
 
-  const [pagesRes, purchasesRes, buyersRes] = await Promise.all([
+  const [pagesRes, purchasesRes, revokedRes, buyersRes] = await Promise.all([
     supabase.from("lp_landing_pages").select("id", { count: "exact", head: true }),
     supabase.from("lp_purchases").select("id", { count: "exact", head: true }),
+    supabase
+      .from("lp_purchases")
+      .select("id", { count: "exact", head: true })
+      .not("revoked_at", "is", null),
     supabase.from("lp_purchases").select("user_id"),
   ]);
 
@@ -39,6 +45,7 @@ export async function getStats(): Promise<Stats | null> {
   return {
     totalLandingPages: pagesRes.count ?? 0,
     totalPurchases: purchasesRes.count ?? 0,
+    totalRevoked: revokedRes.count ?? 0,
     totalCustomers: uniqueBuyers.size,
   };
 }
