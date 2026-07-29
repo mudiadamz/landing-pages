@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import {
   getEpubChapters,
   getEpubChapterSource,
@@ -60,11 +61,13 @@ function xhtmlError(body: string): string | null {
 export function EpubChapterEditor({
   pageId,
   title,
+  slug,
   hasPreview,
   hasDeliverable,
 }: {
   pageId: string;
   title: string;
+  slug: string;
   hasPreview: boolean;
   hasDeliverable: boolean;
 }) {
@@ -229,17 +232,30 @@ export function EpubChapterEditor({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          Menyimpan akan menulis ulang file EPUB-nya langsung — pembeli yang mengunduh
-          setelah ini mendapat versi baru. Preview dan file pembeli adalah dua file
-          berbeda dengan jumlah bab berbeda, jadi perbaikan yang sama perlu dilakukan di
-          masing-masing.
-        </p>
+      {/* One row: back, what you're editing, and which file. The explanatory
+          card that used to sit here is gone — the switcher labels already say
+          which file is which, and it cost a screenful on every visit. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Link
+          href={`/panel/product/${pageId}/edit`}
+          title="Kembali ke produk"
+          aria-label="Kembali ke produk"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </Link>
+
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-lg font-semibold leading-tight tracking-tight">
+            {title}
+          </h1>
+          <p className="truncate font-mono text-xs text-[var(--muted)]">{slug}</p>
+        </div>
 
         {hasPreview && hasDeliverable && (
-          <div className="mt-3 inline-flex rounded-lg border border-[var(--border)] p-0.5">
+          <div className="inline-flex shrink-0 rounded-lg border border-[var(--border)] p-0.5">
             <PillTab active={target === "deliverable"} onClick={() => switchTarget("deliverable")}>
               File pembeli
             </PillTab>
