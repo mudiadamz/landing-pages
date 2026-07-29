@@ -7,9 +7,12 @@ import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
 import {
   listEpubChapters,
   readEpubChapter,
+  readChapterStyles,
+  readChapterAssets,
   writeEpubChapter,
   isSpinePath,
   type EpubChapterInfo,
+  type ChapterAsset,
 } from "@/lib/epub-edit";
 
 /**
@@ -134,7 +137,9 @@ export async function getEpubChapterSource(
   pageId: string,
   target: EpubTarget,
   chapterPath: string,
-): Promise<{ html: string } | { error: string }> {
+): Promise<
+  { html: string; css: string; assets: ChapterAsset[] } | { error: string }
+> {
   const t = await resolveTarget(pageId, target);
   if ("error" in t) return t;
 
@@ -144,7 +149,13 @@ export async function getEpubChapterSource(
   try {
     const html = readEpubChapter(bytes, chapterPath);
     if (html === null) return { error: "Bab tidak ditemukan di file ini." };
-    return { html };
+    // The stylesheet and images travel with the markup so the rich editor can
+    // render the chapter as the book actually looks, not as bare tags.
+    return {
+      html,
+      css: readChapterStyles(bytes, chapterPath),
+      assets: readChapterAssets(bytes, chapterPath),
+    };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "EPUB tidak terbaca." };
   }

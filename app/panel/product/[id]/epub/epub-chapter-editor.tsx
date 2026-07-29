@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   getEpubChapters,
@@ -8,8 +8,9 @@ import {
   saveEpubChapter,
   type EpubTarget,
 } from "@/lib/actions/epub-chapters";
-import type { EpubChapterInfo } from "@/lib/epub-edit";
+import type { EpubChapterInfo, ChapterAsset } from "@/lib/epub-edit";
 import { Button } from "@/components/ui/button";
+import { RichChapterEditor, type RichEditorHandle } from "./rich-chapter-editor";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -28,9 +29,33 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
  * it reloads the chapter list rather than reusing indices. And an edit rewrites
  * the real archive, so a dirty buffer must never be lost silently — switching
  * chapter or target while unsaved asks first.
+ *
+ * Two modes, and the source view is not a leftover. The rich editor covers
+ * prose, which is nearly all of it; but these books hang their typography on
+ * classes (`chapter-num`, `first`, `illus-page`) that no toolbar button can
+ * express, so there has to be a way down to the markup.
  */
 
 type Msg = { ok: boolean; text: string } | null;
+type Mode = "rich" | "source";
+type Loaded = { html: string; css: string; assets: ChapterAsset[] };
+
+/**
+ * EPUB chapters are XHTML: a stray unclosed tag makes the whole book unreadable
+ * in strict readers, not just the chapter. Catch it here, where the seller can
+ * still fix it, rather than after it has been written into the archive.
+ */
+function xhtmlError(body: string): string | null {
+  if (typeof window === "undefined") return null;
+  const doc = new DOMParser().parseFromString(
+    `<root xmlns="http://www.w3.org/1999/xhtml">${body}</root>`,
+    "application/xhtml+xml",
+  );
+  const err = doc.querySelector("parsererror");
+  if (!err) return null;
+  const detail = (err.textContent ?? "").split("\n").find((l) => l.trim()) ?? "";
+  return detail.slice(0, 160) || "Markup tidak valid.";
+}
 
 export function EpubChapterEditor({
   pageId,
@@ -53,7 +78,9 @@ export function EpubChapterEditor({
   const loadingList = chapters === null && listError === null;
 
   const [selected, setSelected] = useState<EpubChapterInfo | null>(null);
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [source, setSource] = useState("");
+  const [mode, setMode] = useState<Mode>("rich");
   const [loadingSource, setLoadingSource] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
@@ -62,7 +89,21 @@ export function EpubChapterEditor({
   // merely opened. State rather than a ref: it's read during render to drive the
   // unsaved badge and the Save button's disabled state.
   const [saved, setSaved] = useState("");
-  const dirty = selected !== null && source !== saved;
+  // The rich editor is uncontrolled — reading its markup on every keystroke
+  // would be wasted work — so it reports "something changed" and the parent
+  // pulls the actual HTML only when saving or switching to the source view.
+  const [richDirty, setRichDirty] = useState(false);
+  const richRef = useRef<RichEditorHandle | null>(null);
+
+  const dirty = selected !== null && (richDirty || source !== saved);
+
+  const onRichChange = useCallback(() => setRichDirty(true), []);
+
+  /** The markup as it stands in whichever editor is showing. */
+  const currentHtml = useCallback(
+    () => (mode === "rich" ? richRef.current?.getHtml() ?? source : source),
+    [mode, source],
+  );
 
   // Reads the chapter list for whichever file is targeted. Nothing is set before
   // the first await, so switching target renders the loading state once rather
@@ -97,12 +138,15 @@ export function EpubChapterEditor({
     setSelected(ch);
     setMsg(null);
     setLoadingSource(true);
+    setLoaded(null);
     setSource("");
+    setRichDirty(false);
     const res = await getEpubChapterSource(pageId, target, ch.path);
     if ("error" in res) {
       setMsg({ ok: false, text: res.error });
       setSelected(null);
     } else {
+      setLoaded({ html: res.html, css: res.css, assets: res.assets });
       setSource(res.html);
       setSaved(res.html);
     }
@@ -119,31 +163,57 @@ export function EpubChapterEditor({
     setChapters(null);
     setListError(null);
     setSelected(null);
+    setLoaded(null);
     setSource("");
     setSaved("");
+    setRichDirty(false);
     setTarget(t);
+  }
+
+  function switchMode(m: Mode) {
+    if (m === mode) return;
+    // Carry the rich editor's work down into the source buffer before unmounting
+    // it, or switching views would silently discard the edit.
+    if (mode === "rich") {
+      const html = richRef.current?.getHtml();
+      if (html !== null && html !== undefined) {
+        setSource(html);
+        setRichDirty(false);
+      }
+    }
+    setMode(m);
   }
 
   const save = useCallback(async () => {
     if (!selected || saving) return;
-    if (source === saved) {
+    const html = currentHtml();
+    if (html === saved) {
       setMsg({ ok: true, text: "Tidak ada perubahan." });
       return;
     }
+
+    const bad = xhtmlError(html);
+    if (bad) {
+      setMsg({ ok: false, text: `Markup belum valid, belum disimpan — ${bad}` });
+      return;
+    }
+
     setSaving(true);
     setMsg(null);
-    const res = await saveEpubChapter(pageId, target, selected.path, source);
+    const res = await saveEpubChapter(pageId, target, selected.path, html);
     if ("error" in res) {
       setMsg({ ok: false, text: res.error });
     } else {
-      setSaved(source);
+      setSource(html);
+      setSaved(html);
+      setRichDirty(false);
       setMsg({ ok: true, text: "Tersimpan. File EPUB sudah ditulis ulang." });
       // Chapter lengths shift after an edit; keep the list honest.
       const fresh = await getEpubChapters(pageId, target);
       if (!("error" in fresh)) setChapters(fresh.chapters);
     }
     setSaving(false);
-  }, [pageId, target, selected, source, saved, saving]);
+  }, [pageId, target, selected, currentHtml, saved, saving]);
 
   // Cmd/Ctrl+S, matching the template editor.
   useEffect(() => {
@@ -170,12 +240,12 @@ export function EpubChapterEditor({
 
         {hasPreview && hasDeliverable && (
           <div className="mt-3 inline-flex rounded-lg border border-[var(--border)] p-0.5">
-            <TargetTab active={target === "deliverable"} onClick={() => switchTarget("deliverable")}>
+            <PillTab active={target === "deliverable"} onClick={() => switchTarget("deliverable")}>
               File pembeli
-            </TargetTab>
-            <TargetTab active={target === "preview"} onClick={() => switchTarget("preview")}>
+            </PillTab>
+            <PillTab active={target === "preview"} onClick={() => switchTarget("preview")}>
               Preview gratis
-            </TargetTab>
+            </PillTab>
           </div>
         )}
       </div>
@@ -233,7 +303,7 @@ export function EpubChapterEditor({
                 Pilih bab di sebelah kiri untuk mulai mengedit.
               </p>
             </div>
-          ) : loadingSource ? (
+          ) : loadingSource || !loaded ? (
             <div className="flex h-[60vh] min-h-[280px] items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--background)]">
               <p className="text-sm text-[var(--muted)]">Membuka bab…</p>
             </div>
@@ -248,24 +318,45 @@ export function EpubChapterEditor({
                     Belum disimpan
                   </span>
                 )}
+                <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5">
+                  <PillTab active={mode === "rich"} onClick={() => switchMode("rich")}>
+                    Teks
+                  </PillTab>
+                  <PillTab active={mode === "source"} onClick={() => switchMode("source")}>
+                    Sumber HTML
+                  </PillTab>
+                </div>
               </div>
 
-              <MonacoEditor
-                height="60vh"
-                defaultLanguage="html"
-                theme="vs-dark"
-                path={`${target}:${selected.path}`}
-                value={source}
-                onChange={(v) => setSource(v ?? "")}
-                options={{
-                  minimap: { enabled: false },
-                  wordWrap: "on",
-                  fontSize: 14,
-                  lineNumbers: "on",
-                  scrollBeyondLastLine: false,
-                  tabSize: 2,
-                }}
-              />
+              {mode === "rich" ? (
+                <RichChapterEditor
+                  // A new chapter is a new document — never reuse the iframe, or
+                  // the previous chapter's undo stack and styles come with it.
+                  key={`${target}:${selected.path}`}
+                  html={source}
+                  css={loaded.css}
+                  assets={loaded.assets}
+                  onChange={onRichChange}
+                  handleRef={richRef}
+                />
+              ) : (
+                <MonacoEditor
+                  height="60vh"
+                  defaultLanguage="html"
+                  theme="vs-dark"
+                  path={`${target}:${selected.path}`}
+                  value={source}
+                  onChange={(v) => setSource(v ?? "")}
+                  options={{
+                    minimap: { enabled: false },
+                    wordWrap: "on",
+                    fontSize: 14,
+                    lineNumbers: "on",
+                    scrollBeyondLastLine: false,
+                    tabSize: 2,
+                  }}
+                />
+              )}
 
               <div className="flex flex-wrap items-center gap-3">
                 <Button size="md" onClick={() => void save()} disabled={saving || !dirty}>
@@ -292,7 +383,7 @@ export function EpubChapterEditor({
   );
 }
 
-function TargetTab({
+function PillTab({
   active,
   onClick,
   children,

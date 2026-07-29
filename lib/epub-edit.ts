@@ -127,6 +127,82 @@ export function isSpinePath(bytes: Uint8Array, path: string): boolean {
   return spinePaths(openOpf(bytes)).includes(path);
 }
 
+const MIME_BY_EXT: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+
+/** Images embedded per chapter are few (1–2), but a cover can still be large. */
+const MAX_INLINE_IMAGE_BYTES = 2 * 1024 * 1024;
+
+export type ChapterAsset = { src: string; dataUri: string };
+
+/**
+ * The chapter's own stylesheets, concatenated.
+ *
+ * Without these the WYSIWYG editor is a lie: these books carry their typography
+ * in classes — `chapter-num`, `first`, `dialog`, `center` — so a paragraph
+ * stripped of its stylesheet looks identical to every other paragraph and a
+ * seller can't see what they're editing.
+ */
+export function readChapterStyles(bytes: Uint8Array, chapterPath: string): string {
+  const { files } = openOpf(bytes);
+  const raw = files[chapterPath];
+  if (!raw) return "";
+  const xhtml = strFromU8(raw);
+  const dir = dirOf(chapterPath);
+
+  const out: string[] = [];
+  for (const m of xhtml.matchAll(/<link\b[^>]*>/gi)) {
+    const tag = m[0];
+    if (!/\bstylesheet\b/i.test(tag)) continue;
+    const href = tag.match(/\bhref="([^"]+)"/i)?.[1];
+    if (!href) continue;
+    const css = files[resolvePath(dir, href)];
+    if (css) out.push(strFromU8(css));
+  }
+  // Inline <style> blocks count too.
+  for (const m of xhtml.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)) out.push(m[1]);
+  return out.join("\n");
+}
+
+/**
+ * Images referenced by the chapter, as data URIs keyed by their ORIGINAL src.
+ *
+ * The editor renders in an iframe with no access to the archive, so relative
+ * srcs would simply break. The client swaps these in for display and restores
+ * the original src before saving, so what lands back in the EPUB still points at
+ * the file inside it rather than a megabyte of base64.
+ */
+export function readChapterAssets(bytes: Uint8Array, chapterPath: string): ChapterAsset[] {
+  const { files } = openOpf(bytes);
+  const raw = files[chapterPath];
+  if (!raw) return [];
+  const body = bodyOf(strFromU8(raw));
+  const dir = dirOf(chapterPath);
+
+  const seen = new Set<string>();
+  const out: ChapterAsset[] = [];
+  for (const m of body.matchAll(
+    /<(?:img|image)\b[^>]*?\b(?:src|href|xlink:href)="([^"]+)"/gi,
+  )) {
+    const src = m[1];
+    if (!src || seen.has(src) || /^(data:|https?:|blob:)/i.test(src)) continue;
+    seen.add(src);
+    const data = files[resolvePath(dir, src)];
+    if (!data || data.byteLength > MAX_INLINE_IMAGE_BYTES) continue;
+    const ext = src.split(".").pop()?.toLowerCase() ?? "";
+    const mime = MIME_BY_EXT[ext] ?? "application/octet-stream";
+    out.push({ src, dataUri: `data:${mime};base64,${Buffer.from(data).toString("base64")}` });
+  }
+  return out;
+}
+
 /**
  * Replace one chapter's <body> contents and return the rebuilt archive.
  *
