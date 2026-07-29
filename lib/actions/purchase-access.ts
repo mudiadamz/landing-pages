@@ -112,7 +112,7 @@ export async function setPurchaseRevoked(
   }
 
   // The buyer's library and reader are per-request, but the panel lists aren't.
-  revalidatePath("/panel/stats");
+  revalidatePath("/panel/sales");
   revalidatePath("/panel/purchases");
   return { ok: true };
 }

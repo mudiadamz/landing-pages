@@ -34,7 +34,7 @@ export default async function PanelPage() {
   const seller = !!profile && canSell(profile.role);
 
   // Publishers get their own-products view and never the site-wide one, matching
-  // the split /panel/stats already enforces.
+  // the split /panel/sales already enforces.
   const wantsGlobal = (await requireFeature("stats")) && profile?.role !== "publisher";
 
   const [purchases, favorites, sellerStats, globalStats] = await Promise.all([
@@ -147,7 +147,7 @@ export default async function PanelPage() {
       {/* ---- Seller ---- */}
       {sellerStats && (
         <section className="space-y-3">
-          <SectionHead title="Jualan saya" href="/panel/stats" more="Detail penjualan" />
+          <SectionHead title="Jualan saya" href="/panel/sales" more="Detail penjualan" />
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard label="Produk" value={nf(sellerStats.totalProducts)} />
             <StatCard
@@ -194,7 +194,7 @@ export default async function PanelPage() {
       {/* ---- Admin ---- */}
       {globalStats && (
         <section className="space-y-3">
-          <SectionHead title="Situs" href="/panel/stats" more="Statistik lengkap" />
+          <SectionHead title="Situs" href="/panel/sales" more="Statistik lengkap" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Produk" value={nf(globalStats.totalLandingPages)} />
             <StatCard

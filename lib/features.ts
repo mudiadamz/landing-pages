@@ -3,7 +3,7 @@
  * Kept framework-free so both client & server can import it. */
 
 export const ADMIN_FEATURES = [
-  { key: "stats", label: "Stats", href: "/panel/stats" },
+  { key: "stats", label: "Penjualan", href: "/panel/sales" },
   { key: "users", label: "Users", href: "/panel/users" },
   { key: "categories", label: "Kategori", href: "/panel/categories" },
   { key: "contacts", label: "Kontak", href: "/panel/contacts" },

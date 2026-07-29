@@ -55,7 +55,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/panel/products", label: "Produk digital", icon: LayoutIcon, sellerOnly: true },
       { href: "#assets", label: "Assets", icon: ImageIcon, sellerOnly: true, action: "assets" },
-      { href: "/panel/stats", label: "Penjualan", icon: ChartIcon, feature: "stats", publisherToo: true },
+      { href: "/panel/sales", label: "Penjualan", icon: ChartIcon, feature: "stats", publisherToo: true },
     ],
   },
   {
