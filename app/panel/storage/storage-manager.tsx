@@ -56,36 +56,67 @@ function splitPath(path: string): { dir: string; name: string } {
   return i === -1 ? { dir: "", name: path } : { dir: path.slice(0, i), name: path.slice(i + 1) };
 }
 
-type FolderGroup = {
+type TreeNode = {
+  /** Stable and unique: bucket roots key on the bucket, folders on "bucket\ndir". */
   key: string;
-  bucket: string;
-  dir: string;
+  /** Just this level's segment — the full path is the chain of ancestors. */
+  name: string;
+  /** Files sitting directly in this folder, not in a subfolder. */
   files: StorageFile[];
+  children: TreeNode[];
+  /** Totals for the whole subtree, so a collapsed folder still reports its weight. */
+  count: number;
   size: number;
 };
 
 /**
- * Group the already-sorted, already-capped rows by bucket + folder.
+ * Build a bucket → folder → file tree from the already-sorted, already-capped rows.
  *
- * Deliberately downstream of both: group order follows the best-ranked file in
- * each folder, so picking "Terbesar" floats the folder holding the biggest file
- * rather than re-ranking folders by some aggregate the user never asked for —
- * and the visible cap keeps meaning "top 500 by the chosen sort".
+ * Deliberately downstream of both: sibling order follows the best-ranked file
+ * beneath each node, so picking "Terbesar" floats the branch holding the biggest
+ * file rather than re-ranking folders by an aggregate nobody asked for — and the
+ * visible cap keeps meaning "top 500 by the chosen sort".
  */
-function groupByFolder(rows: StorageFile[]): FolderGroup[] {
-  const out: FolderGroup[] = [];
-  const index = new Map<string, FolderGroup>();
-  for (const f of rows) {
-    const { dir } = splitPath(f.path);
-    const key = `${f.bucket}\n${dir}`;
-    let g = index.get(key);
-    if (!g) {
-      g = { key, bucket: f.bucket, dir, files: [], size: 0 };
-      index.set(key, g);
-      out.push(g);
+function buildTree(rows: StorageFile[]): TreeNode[] {
+  const roots: TreeNode[] = [];
+  const index = new Map<string, TreeNode>();
+
+  const nodeAt = (key: string, name: string, parent: TreeNode | null): TreeNode => {
+    let n = index.get(key);
+    if (!n) {
+      n = { key, name, files: [], children: [], count: 0, size: 0 };
+      index.set(key, n);
+      (parent ? parent.children : roots).push(n);
     }
-    g.files.push(f);
-    g.size += f.size ?? 0;
+    return n;
+  };
+
+  for (const f of rows) {
+    const segments = f.path.split("/").filter(Boolean);
+    segments.pop(); // the file name itself is not a folder level
+    const size = f.size ?? 0;
+
+    let cur = nodeAt(f.bucket, f.bucket, null);
+    cur.count += 1;
+    cur.size += size;
+
+    let dir = "";
+    for (const s of segments) {
+      dir = dir ? `${dir}/${s}` : s;
+      cur = nodeAt(`${f.bucket}\n${dir}`, s, cur);
+      cur.count += 1;
+      cur.size += size;
+    }
+    cur.files.push(f);
+  }
+  return roots;
+}
+
+/** Every node key in the tree, for expand-all / collapse-all. */
+function allKeys(nodes: TreeNode[], out: string[] = []): string[] {
+  for (const n of nodes) {
+    out.push(n.key);
+    allKeys(n.children, out);
   }
   return out;
 }
@@ -109,6 +140,7 @@ export function StorageManager({
   const [confirm, setConfirm] = useState<string | null>(null); // "bucket\npath"
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
 
   const counts = useMemo(() => {
     const m = new Map<string, number>();
@@ -130,7 +162,22 @@ export function StorageManager({
 
   const totalSize = useMemo(() => filtered.reduce((n, f) => n + (f.size ?? 0), 0), [filtered]);
   const shown = useMemo(() => sorted.slice(0, VISIBLE_CAP), [sorted]);
-  const groups = useMemo(() => groupByFolder(shown), [shown]);
+  const tree = useMemo(() => buildTree(shown), [shown]);
+
+  // While searching, every folder reads as open regardless of the collapsed set:
+  // a hit buried in a folded branch is a result the user cannot see. Derived
+  // rather than pushed into state on change, so clearing the search restores
+  // exactly the folds they had.
+  const searching = query.trim().length > 0;
+  const isOpen = (key: string) => searching || !collapsed.has(key);
+
+  const toggle = (key: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   async function onDelete(f: StorageFile) {
     const key = `${f.bucket}\n${f.path}`;
@@ -205,119 +252,193 @@ export function StorageManager({
         />
       </div>
 
-      <div className="flex items-center justify-between text-xs text-[var(--muted)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
         <span>
           {filtered.length} file · {formatBytes(totalSize)}
           {filtered.length > VISIBLE_CAP && ` (menampilkan ${VISIBLE_CAP})`}
+          {searching && " · folder dibuka otomatis saat mencari"}
         </span>
-        {error && <span className="text-red-500">{error}</span>}
+        <div className="flex items-center gap-3">
+          {error && <span className="text-red-500">{error}</span>}
+          <button
+            type="button"
+            onClick={() => setCollapsed(new Set())}
+            className="font-medium text-[var(--primary)] hover:underline"
+          >
+            Buka semua
+          </button>
+          <button
+            type="button"
+            onClick={() => setCollapsed(new Set(allKeys(tree)))}
+            className="font-medium text-[var(--primary)] hover:underline"
+          >
+            Tutup semua
+          </button>
+        </div>
       </div>
 
-      {groups.length === 0 ? (
+      {tree.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-10 text-center text-sm text-[var(--muted)]">
           Tidak ada file.
         </div>
       ) : (
-        <div className="space-y-3">
-          {groups.map((g) => (
-            <section
-              key={g.key}
-              className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm"
-            >
-              <header className="flex items-center gap-2 border-b border-[var(--border)] bg-[var(--background)] px-3 py-2 sm:px-4">
-                <FolderIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-                <span className="shrink-0 rounded bg-[var(--card)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--muted)]">
-                  {g.bucket}
-                </span>
-                {/* Wrapped rather than truncated: these are UUID chains whose
-                    meaningful part is the tail, and a headline per folder is
-                    cheap — there is one of these, not one per file. */}
-                <span className="min-w-0 flex-1 break-all font-mono text-xs text-foreground">
-                  {g.dir || "/"}
-                </span>
-                <span className="shrink-0 text-[11px] text-[var(--muted)]">
-                  {g.files.length} file · {formatBytes(g.size)}
-                </span>
-              </header>
-
-              <ul className="divide-y divide-[var(--border)]">
-                {g.files.map((f) => {
-                  const key = `${f.bucket}\n${f.path}`;
-                  const confirming = confirm === key;
-                  const deleting = busy === key;
-                  return (
-                    <li key={key} className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                        {isImage(f) ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={f.publicUrl!} alt="" className="h-full w-full object-cover" loading="lazy" />
-                        ) : (
-                          <FileGlyph mimetype={f.mimetype} />
-                        )}
-                      </span>
-
-                      <div className="min-w-0 flex-1">
-                        {/* Folder lives in the header, so the row shows only the
-                            file name — the paths here are UUID chains and the
-                            name was the one part being truncated away. */}
-                        <p className="truncate font-mono text-xs text-foreground" title={f.path}>
-                          {splitPath(f.path).name}
-                        </p>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--muted)]">
-                          <span>{formatBytes(f.size)}</span>
-                          <span>{formatDate(f.updatedAt)}</span>
-                          {f.publicUrl && (
-                            <a
-                              href={f.publicUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[var(--primary)] hover:underline"
-                            >
-                              Buka
-                            </a>
-                          )}
-                        </p>
-                      </div>
-
-                      {confirming ? (
-                        <div className="flex shrink-0 items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onDelete(f)}
-                            disabled={deleting}
-                            className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
-                          >
-                            {deleting ? "Menghapus…" : "Hapus"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirm(null)}
-                            disabled={deleting}
-                            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
-                          >
-                            Batal
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setConfirm(key)}
-                          title="Hapus file"
-                          aria-label="Hapus file"
-                          className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+        <ul className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+          {tree.map((n) => (
+            <TreeFolder
+              key={n.key}
+              node={n}
+              depth={0}
+              isOpen={isOpen}
+              toggle={toggle}
+              ctx={{ confirm, busy, setConfirm, onDelete }}
+            />
           ))}
-        </div>
+        </ul>
       )}
     </div>
+  );
+}
+
+/** Everything a file row needs from the manager, passed down the recursion. */
+type RowCtx = {
+  confirm: string | null;
+  busy: string | null;
+  setConfirm: (key: string | null) => void;
+  onDelete: (f: StorageFile) => void;
+};
+
+/** Indent by nesting depth. Padding rather than nested margins so a row's
+ *  hover and click target still spans the full width at any depth. */
+const indent = (depth: number) => ({ paddingLeft: `${0.75 + depth * 1.15}rem` });
+
+function TreeFolder({
+  node,
+  depth,
+  isOpen,
+  toggle,
+  ctx,
+}: {
+  node: TreeNode;
+  depth: number;
+  isOpen: (key: string) => boolean;
+  toggle: (key: string) => void;
+  ctx: RowCtx;
+}) {
+  const open = isOpen(node.key);
+  return (
+    <li className="border-b border-[var(--border)] last:border-b-0">
+      <button
+        type="button"
+        onClick={() => toggle(node.key)}
+        aria-expanded={open}
+        style={indent(depth)}
+        className="flex w-full items-center gap-2 py-2 pr-3 text-left transition-colors hover:bg-[var(--background)] sm:pr-4"
+      >
+        <Chevron
+          className={`h-3.5 w-3.5 shrink-0 text-[var(--muted)] transition-transform ${open ? "rotate-90" : ""}`}
+        />
+        <FolderIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+        <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground" title={node.name}>
+          {node.name}
+        </span>
+        <span className="shrink-0 text-[11px] text-[var(--muted)]">
+          {node.count} file · {formatBytes(node.size)}
+        </span>
+      </button>
+
+      {open && (node.children.length > 0 || node.files.length > 0) && (
+        <ul className="border-t border-[var(--border)]">
+          {node.children.map((c) => (
+            <TreeFolder key={c.key} node={c} depth={depth + 1} isOpen={isOpen} toggle={toggle} ctx={ctx} />
+          ))}
+          {node.files.map((f) => (
+            <FileRow key={`${f.bucket}\n${f.path}`} file={f} depth={depth + 1} ctx={ctx} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+function FileRow({ file: f, depth, ctx }: { file: StorageFile; depth: number; ctx: RowCtx }) {
+  const key = `${f.bucket}\n${f.path}`;
+  const confirming = ctx.confirm === key;
+  const deleting = ctx.busy === key;
+
+  return (
+    <li
+      style={indent(depth)}
+      className="flex items-center gap-3 border-b border-[var(--border)] py-2.5 pr-3 last:border-b-0 sm:pr-4"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)]">
+        {isImage(f) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={f.publicUrl!} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <FileGlyph mimetype={f.mimetype} />
+        )}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        {/* Folders are the ancestry above; the row only needs the leaf name. */}
+        <p className="truncate font-mono text-xs text-foreground" title={f.path}>
+          {splitPath(f.path).name}
+        </p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--muted)]">
+          <span>{formatBytes(f.size)}</span>
+          <span>{formatDate(f.updatedAt)}</span>
+          {f.publicUrl && (
+            <a
+              href={f.publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--primary)] hover:underline"
+            >
+              Buka
+            </a>
+          )}
+        </p>
+      </div>
+
+      {confirming ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => ctx.onDelete(f)}
+            disabled={deleting}
+            className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+          >
+            {deleting ? "Menghapus…" : "Hapus"}
+          </button>
+          <button
+            type="button"
+            onClick={() => ctx.setConfirm(null)}
+            disabled={deleting}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+          >
+            Batal
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => ctx.setConfirm(key)}
+          title="Hapus file"
+          aria-label="Hapus file"
+          className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+        >
+          <TrashIcon className="h-4 w-4" />
+        </button>
+      )}
+    </li>
+  );
+}
+
+function Chevron({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
   );
 }
 
