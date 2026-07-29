@@ -7,7 +7,10 @@ import { PinButton } from "./pin-button";
 import { DeleteButton } from "./delete-button";
 import { VisibilityToggle } from "./visibility-toggle";
 
-const PAGE_SIZE = 8;
+// 50, not 8. The list is a working surface — you come here to find a product
+// and open it — and paging every 8 rows meant a 16-product catalog was already
+// split in two. The pagination control stays for when a catalog outgrows this.
+const PAGE_SIZE = 50;
 
 const ACTION_LINK_SM =
   "inline-flex items-center justify-center p-2 rounded-lg text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--background)] transition active:scale-90";
