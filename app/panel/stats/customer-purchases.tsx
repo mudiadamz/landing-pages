@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
   getCustomerPurchases,
@@ -68,10 +69,13 @@ function Dialog({
   name: string;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [rows, setRows] = useState<CustomerPurchase[] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [, start] = useTransition();
+
+  const revokedCount = rows?.filter((r) => r.revoked_at).length ?? 0;
 
   useEffect(() => {
     getCustomerPurchases(userId).then(setRows);
@@ -123,6 +127,9 @@ function Dialog({
           ) ?? null,
       );
       setMsg(revoking ? `Akses "${row.title}" dicabut.` : `Akses "${row.title}" dipulihkan.`);
+      // The customer list behind this dialog carries the revoked tally, so it has
+      // to catch up now rather than on some later navigation.
+      router.refresh();
     });
   }
 
@@ -138,7 +145,20 @@ function Dialog({
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
           <div className="min-w-0">
             <h2 className="truncate text-base font-semibold text-foreground">Akses pembelian</h2>
-            <p className="mt-0.5 truncate text-xs text-[var(--muted)]">{name}</p>
+            <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
+              {name}
+              {rows && (
+                <>
+                  {" · "}
+                  {rows.length} pembelian
+                  {revokedCount > 0 && (
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                      {revokedCount} dicabut
+                    </span>
+                  )}
+                </>
+              )}
+            </p>
           </div>
           <button
             type="button"

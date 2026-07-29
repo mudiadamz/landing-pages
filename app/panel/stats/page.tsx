@@ -109,6 +109,22 @@ function MyProductStats({ stats }: { stats: PublisherStats }) {
   );
 }
 
+/**
+ * Sits next to the purchase count so a customer with withdrawn access is
+ * visible from the list itself. Without it the only way to know was to open
+ * every customer in turn, which is not a thing anyone would actually do.
+ */
+function RevokedCount({ n }: { n: number }) {
+  return (
+    <span
+      title={`${n} pembelian aksesnya dicabut`}
+      className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+    >
+      {n} dicabut
+    </span>
+  );
+}
+
 function GlobalStats({ stats, customers }: { stats: Stats; customers: CustomerRow[] }) {
   return (
     <div className="space-y-8">
@@ -135,7 +151,9 @@ function GlobalStats({ stats, customers }: { stats: Stats; customers: CustomerRo
                   <p className="font-medium text-foreground">{c.full_name || "—"}</p>
                   <p className="mt-0.5 text-sm text-[var(--muted)] break-all">{c.email || "—"}</p>
                   <p className="mt-2 text-xs text-[var(--muted)]">
-                    {c.purchase_count} pembelian · Terakhir: {formatDate(c.last_purchase_at)}
+                    {c.purchase_count} pembelian
+                    {c.revoked_count > 0 && <RevokedCount n={c.revoked_count} />} · Terakhir:{" "}
+                    {formatDate(c.last_purchase_at)}
                   </p>
                   <div className="mt-3">
                     <CustomerPurchasesButton
@@ -165,7 +183,10 @@ function GlobalStats({ stats, customers }: { stats: Stats; customers: CustomerRo
                       <tr key={c.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--background)]/30 transition-colors">
                         <td className="px-4 py-3.5 font-medium text-foreground">{c.full_name || "—"}</td>
                         <td className="px-4 py-3.5 text-sm text-[var(--muted)]">{c.email || "—"}</td>
-                        <td className="px-4 py-3.5 text-sm text-foreground">{c.purchase_count}</td>
+                        <td className="px-4 py-3.5 text-sm text-foreground">
+                          {c.purchase_count}
+                          {c.revoked_count > 0 && <RevokedCount n={c.revoked_count} />}
+                        </td>
                         <td className="px-4 py-3.5 text-sm text-[var(--muted)]">{formatDate(c.last_purchase_at)}</td>
                         <td className="px-4 py-3.5 text-right">
                           <CustomerPurchasesButton

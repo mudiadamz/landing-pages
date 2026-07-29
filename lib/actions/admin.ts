@@ -15,7 +15,10 @@ export type CustomerRow = {
   full_name: string | null;
   email: string | null;
   role: string;
+  /** Everything they own, revoked included — this is their buying history. */
   purchase_count: number;
+  /** How many of those an admin has since taken access to. */
+  revoked_count: number;
   last_purchase_at: string | null;
 };
 
@@ -46,18 +49,21 @@ export async function getCustomers(): Promise<CustomerRow[]> {
 
   const supabase = createAdminClient();
 
+  // Service role, so revoked rows are included — the point is to surface them.
   const { data: purchases } = await supabase
     .from("lp_purchases")
-    .select("user_id, purchased_at")
+    .select("user_id, purchased_at, revoked_at")
     .order("purchased_at", { ascending: false });
 
   if (!purchases?.length) return [];
 
   const countMap = new Map<string, number>();
+  const revokedMap = new Map<string, number>();
   const lastPurchaseMap = new Map<string, string>();
 
   purchases.forEach((p) => {
     countMap.set(p.user_id, (countMap.get(p.user_id) ?? 0) + 1);
+    if (p.revoked_at) revokedMap.set(p.user_id, (revokedMap.get(p.user_id) ?? 0) + 1);
     if (!lastPurchaseMap.has(p.user_id)) lastPurchaseMap.set(p.user_id, p.purchased_at);
   });
 
@@ -77,6 +83,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
       email: p?.email ?? null,
       role: p?.role ?? "customer",
       purchase_count: countMap.get(uid) ?? 0,
+      revoked_count: revokedMap.get(uid) ?? 0,
       last_purchase_at: lastPurchaseMap.get(uid) ?? null,
     };
   });
