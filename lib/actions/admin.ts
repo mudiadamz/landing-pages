@@ -96,11 +96,20 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   });
 }
 
-export type ProductStatRow = { id: string; title: string; sold: number; revenue: number };
+export type ProductStatRow = {
+  id: string;
+  title: string;
+  sold: number;
+  revenue: number;
+  /** Of `sold`, how many have had access revoked. */
+  revoked: number;
+};
 export type PublisherStats = {
   totalProducts: number;
   totalSales: number;
   totalRevenue: number;
+  /** Of `totalSales`, how many are revoked. */
+  totalRevoked: number;
   products: ProductStatRow[];
 };
 
@@ -108,6 +117,12 @@ export type PublisherStats = {
  * Sales stats scoped to the current seller's OWN products (by user_id). Used by
  * the publisher stats view. Reads via the service-role client because a seller
  * isn't the buyer on lp_purchases, so RLS would hide their products' sales.
+ *
+ * `sold` and `revenue` deliberately COUNT revoked rows: revoking is an access
+ * decision, not a refund — the money was still taken. But a bare "19 terjual"
+ * when 17 have been revoked reads as a much healthier catalog than it is, so the
+ * revoked share is reported alongside and surfaced in red, the same way the
+ * site-wide purchases card does it.
  */
 export async function getMyProductStats(): Promise<PublisherStats | null> {
   const profile = await getProfile();
@@ -121,24 +136,25 @@ export async function getMyProductStats(): Promise<PublisherStats | null> {
   const products = pages ?? [];
   const ids = products.map((p) => p.id);
 
-  const agg = new Map<string, { sold: number; revenue: number }>();
+  const agg = new Map<string, { sold: number; revenue: number; revoked: number }>();
   if (ids.length) {
     const { data: purchases } = await supabase
       .from("lp_purchases")
-      .select("landing_page_id, amount")
+      .select("landing_page_id, amount, revoked_at")
       .in("landing_page_id", ids);
     for (const p of purchases ?? []) {
-      const cur = agg.get(p.landing_page_id) ?? { sold: 0, revenue: 0 };
+      const cur = agg.get(p.landing_page_id) ?? { sold: 0, revenue: 0, revoked: 0 };
       cur.sold += 1;
       cur.revenue += Number(p.amount ?? 0);
+      if (p.revoked_at) cur.revoked += 1;
       agg.set(p.landing_page_id, cur);
     }
   }
 
   const rows: ProductStatRow[] = products
     .map((p) => {
-      const a = agg.get(p.id) ?? { sold: 0, revenue: 0 };
-      return { id: p.id, title: p.title, sold: a.sold, revenue: a.revenue };
+      const a = agg.get(p.id) ?? { sold: 0, revenue: 0, revoked: 0 };
+      return { id: p.id, title: p.title, sold: a.sold, revenue: a.revenue, revoked: a.revoked };
     })
     .sort((a, b) => b.sold - a.sold);
 
@@ -146,6 +162,7 @@ export async function getMyProductStats(): Promise<PublisherStats | null> {
     totalProducts: products.length,
     totalSales: rows.reduce((s, r) => s + r.sold, 0),
     totalRevenue: rows.reduce((s, r) => s + r.revenue, 0),
+    totalRevoked: rows.reduce((s, r) => s + r.revoked, 0),
     products: rows,
   };
 }
