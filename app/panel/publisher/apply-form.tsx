@@ -45,7 +45,7 @@ function Field({
   );
 }
 
-export function PublisherApply({
+export function PublisherApplyForm({
   role,
   status: initialStatus,
   rejectNote,

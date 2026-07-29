@@ -10,9 +10,8 @@ import {
   roleLabel as roleLabelFor,
   type PublisherStatus,
 } from "@/lib/profile-utils";
-import { getSiteContent } from "@/lib/actions/site-settings";
 import { ProfileForm } from "./profile-form";
-import { PublisherApply } from "./publisher-apply";
+import { PublisherCard } from "./publisher-card";
 import { VerifyEmailRow } from "./verify-email-row";
 
 /**
@@ -55,15 +54,18 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: row }, purchases, favorites, content] = await Promise.all([
+  const [{ data: row }, purchases, favorites] = await Promise.all([
     supabase
       .from("lp_profiles")
-      .select("id, full_name, role, publisher_status, publisher_reject_note, email_verified_at")
+      // One string literal, deliberately: supabase-js infers the row type from
+      // the literal, and a concatenated expression collapses it to an error type.
+      .select(
+        "id, full_name, role, publisher_status, publisher_reject_note, email_verified_at, publisher_display_name, publisher_real_name, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
+      )
       .eq("id", user.id)
       .single(),
     getPurchasesForUser(),
     getMyFavorites(),
-    getSiteContent(),
   ]);
 
   const role = row ? normalizeRole(row.role) : "customer";
@@ -155,12 +157,19 @@ export default async function ProfilePage() {
           </p>
         </header>
         <div className="p-4 sm:p-6">
-          <PublisherApply
+          <PublisherCard
             role={role}
             status={publisherStatus}
-            rejectNote={row?.publisher_reject_note ?? null}
-            termsHeading={content.publisherTermsHeading}
-            terms={content.publisherTerms}
+            info={{
+              displayName: row?.publisher_display_name ?? null,
+              realName: row?.publisher_real_name ?? null,
+              bankName: row?.publisher_bank_name ?? null,
+              bankHolder: row?.publisher_bank_holder ?? null,
+              bankAccount: row?.publisher_bank_account ?? null,
+              termsAcceptedAt: row?.publisher_terms_accepted_at ?? null,
+              appliedAt: row?.publisher_applied_at ?? null,
+              rejectNote: row?.publisher_reject_note ?? null,
+            }}
           />
         </div>
       </section>
