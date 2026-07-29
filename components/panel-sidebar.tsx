@@ -84,6 +84,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     // Measurement and plumbing — rarely opened, so it sits last.
     label: "Sistem",
     items: [
+      { href: "/panel/appearance", label: "Tampilan", icon: PaletteIcon, adminOnly: true },
       { href: "/panel/analytics", label: "Analytics", icon: PulseIcon, adminOnly: true },
       { href: "/panel/tracking", label: "Tracking", icon: TargetIcon, adminOnly: true },
       { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
@@ -92,6 +93,13 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
 ];
 
+function PaletteIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828L11 19.5M7 17h.01" />
+    </svg>
+  );
+}
 function HeartIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">

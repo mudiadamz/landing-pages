@@ -8,12 +8,14 @@ import { normalizeRolePermissions, type RolePermissions } from "@/lib/role-permi
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
 import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
+import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
 
 const CUSTOM_JS_KEY = "custom_js";
 const HERO_KEY = "hero";
 const CONTENT_KEY = "site_content";
 const ROLE_PERMS_KEY = "role_permissions";
 const TRACKING_KEY = "tracking";
+const PALETTE_KEY = "panel_palette";
 
 /* Role-based feature access (edited at /panel/roles). The cached reader lives in
  * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
@@ -227,5 +229,56 @@ export async function updateTracking(config: TrackingConfig): Promise<{ ok: bool
   }
   updateTag("tracking-config");
   revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/* Panel colour palette (edited at /panel/appearance, stored as JSON in
+ * lp_site_settings under "panel_palette"). Read on every panel render, so it is
+ * cached and invalidated by tag on save. */
+
+export const getPanelPalette = unstable_cache(
+  async (): Promise<PaletteConfig> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("key", PALETTE_KEY)
+        .maybeSingle();
+      if (!data?.value) return DEFAULT_PALETTE;
+      return normalizePalette(JSON.parse(data.value as string));
+    } catch {
+      // A palette is decoration; never let it take the panel down with it.
+      return DEFAULT_PALETTE;
+    }
+  },
+  ["panel-palette"],
+  { revalidate: 300, tags: ["panel-palette"] },
+);
+
+export async function updatePanelPalette(
+  config: PaletteConfig,
+): Promise<{ ok: boolean; error?: string }> {
+  const isAdmin = await requireAdmin();
+  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizePalette(config);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lp_site_settings")
+    .upsert(
+      { key: PALETTE_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+
+  if (error) {
+    console.error("updatePanelPalette error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  updateTag("panel-palette");
+  revalidatePath("/panel", "layout");
   return { ok: true };
 }

@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
+import { getPanelPalette } from "@/lib/actions/site-settings";
+import { paletteCss } from "@/lib/palette";
 import { PanelSidebar } from "@/components/panel-sidebar";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
@@ -10,9 +12,10 @@ export default async function PanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [supabase, profile] = await Promise.all([
+  const [supabase, profile, palette] = await Promise.all([
     createClient(),
     getProfile(),
+    getPanelPalette(),
   ]);
   const {
     data: { user },
@@ -33,6 +36,10 @@ export default async function PanelLayout({
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
+      {/* Panel palette (/panel/appearance). Rendered here so it exists only on
+          panel routes, but the selectors are :root / html.dark — dialogs portal
+          to document.body, and a wrapper class would leave them uncoloured. */}
+      <style dangerouslySetInnerHTML={{ __html: paletteCss(palette) }} />
       <PanelSidebar role={profile?.role} canSell={!!canSell} displayName={displayName} pendingActions={pendingActions} features={features} />
       <div className="flex flex-1 flex-col min-w-0">
         <EmailVerifyNotice />
