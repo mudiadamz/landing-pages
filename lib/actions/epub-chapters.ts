@@ -225,6 +225,13 @@ export async function saveEpubChapter(
   revalidatePath(`/panel/product/${pageId}/edit`);
   revalidatePath(`/lp/${t.slug}`);
   revalidatePath(`/read/${t.slug}`);
+  // The pages above are shells; the chapter text the reader actually renders
+  // comes from these routes, and they cache their own RESPONSE keyed on the
+  // route URL. Writing the archive to a new path busts the upstream fetch but
+  // leaves that response untouched, so without these an edit stayed invisible
+  // for up to a day while every other surface showed it immediately.
+  revalidatePath(`/api/epub-text/${t.slug}`);
+  revalidatePath(`/api/epub-text-owned/${t.slug}`);
 
   return { ok: true };
 }
