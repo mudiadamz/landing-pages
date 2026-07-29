@@ -12,17 +12,25 @@ ulang sebelum eksekusi kalau sudah lewat beberapa minggu.
 function di `sin1`, database di `ap-southeast-1`, terverifikasi lewat probe row
 yang hanya ada di database baru.
 
-Sisa yang **wajib** dikerjakan di dashboard (belum bisa diotomasi — client secret
-Google tidak ada di repo, dan management token tersimpan di keyring):
+- [x] **Google provider aktif** — diverifikasi: `/auth/v1/authorize?provider=google`
+      membalas 302 ke Google dengan
+      `redirect_uri=https://uxizlsoggphacyvtshub.supabase.co/auth/v1/callback`.
+- [x] **Login user lama aman** — 20 user punya `email_confirmed_at`, 11 punya hash
+      password, 10 punya identity Google.
 
-- [ ] **Google provider di project baru** — `external.google` masih `false`.
-      10 dari 21 identity memakai Google, jadi separuh user tidak bisa login
-      sampai client ID/secret dimasukkan.
-- [ ] **`mailer_autoconfirm`** masih `false` (produksi lama `true`). Selama masih
-      false, signup baru tertahan menunggu email konfirmasi Supabase yang memang
-      tidak pernah dikirim alur ini.
-- [ ] **Site URL + redirect allow-list** — belum bisa dibaca, pastikan
-      `https://admuiux.com`.
+Sisa (dashboard, belum bisa diotomasi — management token ada di keyring):
+
+- [ ] **`mailer_autoconfirm` masih `false`** (produksi lama `true`).
+      Authentication → Sign In / Providers → Email → matikan **Confirm email**.
+      **User lama tidak terpengaruh.** Yang kena hanya signup baru: `signUp()`
+      tidak mengembalikan session, fallback `signInWithPassword` di
+      `lib/actions/auth.ts:74` gagal dengan "Email not confirmed", dan user
+      mendarat di `/signup?message=check_email` — plus menerima dua email
+      (verifikasi Resend milik sendiri + konfirmasi bawaan Supabase).
+- [ ] **Site URL + redirect allow-list** — pastikan `https://admuiux.com`.
+      Terkait langsung dengan poin di atas: `emailRedirectTo` pada signup
+      menunjuk `${baseUrl}/login`, jadi kalau Site URL masih bawaan, link
+      konfirmasi mengarah ke localhost.
 
 Project lama `ogjydcyccrnoxdtakizs` **masih hidup dan utuh** — jangan dihapus
 minimal satu minggu.
