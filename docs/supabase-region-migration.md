@@ -136,11 +136,24 @@ baris `lp_purchases` tidak pernah tercatat. Itu kehilangan uang yang sunyi.
 
 1. Aktifkan maintenance / hentikan traffic tulis.
 2. Dump data dari project lama, restore ke project baru
-   ([panduan CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase)) —
-   butuh password database, yang tidak tersimpan di repo:
+   ([panduan CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase)).
+   CLI sudah punya kredensial ter-cache untuk project lama, jadi tidak ada prompt
+   password. Diuji 2026-07-30: 6,7 MB, 45 tabel, 20 user di `auth.users` lengkap
+   dengan hash password dan identity Google.
    ```bash
-   supabase db dump --db-url "<url-lama>" -f dump.sql --data-only
-   psql "<url-baru>" -f dump.sql
+   supabase db dump --linked --data-only --use-copy --schema public,auth -f data.sql
+   ```
+   **Skema `storage` sengaja tidak ikut.** Penyalinan file lewat Storage API sudah
+   membuat baris `storage.objects` di project baru; ikut men-dump-nya = tabrakan
+   primary key saat restore.
+
+   **Restore WAJIB mematikan trigger.** Dua alasan, keduanya bikin gagal senyap:
+   `pg_dump` memperingatkan ada circular foreign key, dan trigger
+   `lp_handle_new_user` akan ikut jalan saat baris `auth.users` masuk lalu membuat
+   `lp_profiles` duplikat yang bentrok dengan baris `lp_profiles` dari dump.
+   ```bash
+   { echo 'SET session_replication_role = replica;'; cat data.sql; } \
+     | psql "<url-baru>" -v ON_ERROR_STOP=1 --single-transaction
    ```
 3. Sinkronkan delta storage: jalankan ulang `migrate-storage.mjs --apply`.
 4. Tukar env di **ketiga** app Vercel: `NEXT_PUBLIC_SUPABASE_URL`,
