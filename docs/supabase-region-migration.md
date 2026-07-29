@@ -8,8 +8,24 @@ ulang sebelum eksekusi kalau sudah lewat beberapa minggu.
 
 ## Status
 
-Persiapan **sudah dijalankan** 2026-07-30. Belum ada cutover — produksi masih
-sepenuhnya di Tokyo dan tidak tersentuh.
+**Cutover selesai 2026-07-30.** Produksi (`admuiux.com`) berjalan di Singapore:
+function di `sin1`, database di `ap-southeast-1`, terverifikasi lewat probe row
+yang hanya ada di database baru.
+
+Sisa yang **wajib** dikerjakan di dashboard (belum bisa diotomasi — client secret
+Google tidak ada di repo, dan management token tersimpan di keyring):
+
+- [ ] **Google provider di project baru** — `external.google` masih `false`.
+      10 dari 21 identity memakai Google, jadi separuh user tidak bisa login
+      sampai client ID/secret dimasukkan.
+- [ ] **`mailer_autoconfirm`** masih `false` (produksi lama `true`). Selama masih
+      false, signup baru tertahan menunggu email konfirmasi Supabase yang memang
+      tidak pernah dikirim alur ini.
+- [ ] **Site URL + redirect allow-list** — belum bisa dibaca, pastikan
+      `https://admuiux.com`.
+
+Project lama `ogjydcyccrnoxdtakizs` **masih hidup dan utuh** — jangan dihapus
+minimal satu minggu.
 
 | | |
 |---|---|
@@ -170,6 +186,38 @@ baris `lp_purchases` tidak pernah tercatat. Itu kehilangan uang yang sunyi.
 7. Verifikasi: login email, login Google, buka satu produk berbayar, unduh ZIP
    (signed URL Storage), kirim satu contact form, cek `/panel/sales` tetap
    menampilkan 19 pembelian.
+
+## Temuan saat cutover (tidak ada di rencana awal)
+
+Empat hal yang baru ketahuan saat benar-benar dijalankan:
+
+1. **URL absolut tersimpan di dalam data.** Ini yang paling berbahaya.
+   `thumbnail_url`, `preview_url`, `thumbnail_landscape_url`, `html_content`, dan
+   `lp_site_settings.value` menyimpan URL lengkap ke storage project **lama** —
+   45 baris di 8 kolom. Dump/restore memindahkannya apa adanya, jadi setelah
+   cutover situs masih menarik gambar dari Tokyo. Kelihatan normal sampai project
+   lama dihapus, lalu semua gambar mati sekaligus. Sudah ditulis ulang, kecuali
+   `lp_received_emails.body_html`/`body_text` (2 baris) yang **sengaja dibiarkan**
+   — itu arsip email masuk, mengubah isinya berarti memalsukan rekaman.
+   ```sql
+   UPDATE lp_landing_pages SET thumbnail_url = replace(thumbnail_url, '<ref-lama>.supabase.co', '<ref-baru>.supabase.co'), … ;
+   ```
+   Cek ulang seluruh kolom teks sebelum menghapus project lama.
+2. **Tabel auth yang ephemeral jangan ikut dipindah.** `TRUNCATE … RESTART
+   IDENTITY` gagal di `auth.refresh_tokens` karena sequence-nya milik
+   `supabase_auth_admin`, bukan `postgres`. Dan memang tidak perlu: JWT secret
+   baru membatalkan semua sesi. Cukup bawa `auth.users` + `auth.identities`;
+   20 tabel auth sisanya (sessions, refresh_tokens, flow_state, audit log, SSO,
+   MFA, OAuth state) dilewati.
+3. **Next.js Data Cache bertahan lintas deployment.** Setelah env ditukar dan
+   deploy ulang — bahkan dengan `--force` — halaman masih menyajikan URL project
+   lama. Itu Data Cache, bukan build cache dan bukan CDN
+   (`x-vercel-cache: MISS`, `age: 0`). Selesai dengan `vercel cache purge`.
+   Jangan simpulkan "env belum masuk" sebelum cache dibersihkan.
+4. **texas-poker tidak punya project Vercel** — lokal saja. `.env.local`-nya
+   bahkan menunjuk project mati `sptnjidvcghqcigfembh`. Sudah diarahkan ke
+   project baru. Lima project Vercel lain di org ini dicek: tidak ada yang
+   memakai Supabase.
 
 ### Rollback
 
