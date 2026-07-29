@@ -143,9 +143,23 @@ function decodeJpegDataUrl(value: unknown): Buffer | null {
  * the applicant included, can read or overwrite an ID photo through the public
  * API. Only this action writes them and only the admin screen reads them.
  */
+/** What the applicant fills in alongside the two identity photos. */
+export type PublisherApplication = {
+  /** Must match the KTP — the admin compares it against the photo. */
+  realName: string;
+  /** Public store name. May differ from the legal name; that is the point. */
+  displayName: string;
+  bankName: string;
+  bankHolder: string;
+  bankAccount: string;
+  /** The terms checkbox. Rejected server-side when false. */
+  acceptedTerms: boolean;
+};
+
 export async function applyAsPublisher(
   ktp?: string,
   selfie?: string,
+  application?: PublisherApplication,
 ): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient();
   const {
@@ -157,6 +171,30 @@ export async function applyAsPublisher(
   const selfieBytes = decodeJpegDataUrl(selfie);
   if (!ktpBytes) return { ok: false, error: "Foto KTP belum diambil." };
   if (!selfieBytes) return { ok: false, error: "Foto selfie belum diambil." };
+
+  // Validated here, not only in the form: this is a server action, so the
+  // client-side disabled button is a convenience, not a control.
+  const trim = (s: string | undefined) => (s ?? "").trim().replace(/\s+/g, " ");
+  const realName = trim(application?.realName);
+  const displayName = trim(application?.displayName);
+  const bankName = trim(application?.bankName);
+  const bankHolder = trim(application?.bankHolder);
+  const bankAccount = trim(application?.bankAccount);
+
+  if (realName.length < 3) return { ok: false, error: "Nama sesuai KTP wajib diisi." };
+  if (displayName.length < 3) return { ok: false, error: "Nama toko wajib diisi." };
+  if (!bankName) return { ok: false, error: "Nama bank wajib diisi." };
+  if (!bankHolder) return { ok: false, error: "Nama pemilik rekening wajib diisi." };
+  if (!bankAccount) return { ok: false, error: "Nomor rekening wajib diisi." };
+  if (!application?.acceptedTerms)
+    return { ok: false, error: "Anda harus menyetujui ketentuan publisher." };
+
+  // Guard against the field lengths a free-text form invites. Generous caps —
+  // the aim is to stop abuse, not to second-guess unusual but valid names.
+  const tooLong = [realName, displayName, bankName, bankHolder, bankAccount].some(
+    (v) => v.length > 120,
+  );
+  if (tooLong) return { ok: false, error: "Isian terlalu panjang (maksimal 120 karakter)." };
 
   const { data: current } = await supabase
     .from("lp_profiles")
@@ -205,6 +243,14 @@ export async function applyAsPublisher(
       publisher_applied_at: new Date().toISOString(),
       publisher_ktp_path: ktpPath,
       publisher_selfie_path: selfiePath,
+      publisher_real_name: realName,
+      publisher_display_name: displayName,
+      publisher_bank_name: bankName,
+      publisher_bank_holder: bankHolder,
+      publisher_bank_account: bankAccount,
+      // Recorded as a timestamp so acceptance can be audited against the terms
+      // text that was in force at that moment.
+      publisher_terms_accepted_at: new Date().toISOString(),
       // A fresh application starts with a clean slate.
       publisher_reject_note: null,
       publisher_reviewed_at: null,

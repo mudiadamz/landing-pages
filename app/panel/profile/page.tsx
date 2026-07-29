@@ -10,6 +10,7 @@ import {
   roleLabel as roleLabelFor,
   type PublisherStatus,
 } from "@/lib/profile-utils";
+import { getSiteContent } from "@/lib/actions/site-settings";
 import { ProfileForm } from "./profile-form";
 import { PublisherApply } from "./publisher-apply";
 import { VerifyEmailRow } from "./verify-email-row";
@@ -54,7 +55,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: row }, purchases, favorites] = await Promise.all([
+  const [{ data: row }, purchases, favorites, content] = await Promise.all([
     supabase
       .from("lp_profiles")
       .select("id, full_name, role, publisher_status, publisher_reject_note, email_verified_at")
@@ -62,6 +63,7 @@ export default async function ProfilePage() {
       .single(),
     getPurchasesForUser(),
     getMyFavorites(),
+    getSiteContent(),
   ]);
 
   const role = row ? normalizeRole(row.role) : "customer";
@@ -144,6 +146,25 @@ export default async function ProfilePage() {
         </Link>
       </div>
 
+      {/* Publisher */}
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
+          <h2 className="text-base font-semibold text-foreground">Publisher</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            Status Anda sebagai penjual produk digital di sini.
+          </p>
+        </header>
+        <div className="p-4 sm:p-6">
+          <PublisherApply
+            role={role}
+            status={publisherStatus}
+            rejectNote={row?.publisher_reject_note ?? null}
+            termsHeading={content.publisherTermsHeading}
+            terms={content.publisherTerms}
+          />
+        </div>
+      </section>
+
       {/* Email + verification, next to the address it concerns. */}
       <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
         <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
@@ -173,23 +194,6 @@ export default async function ProfilePage() {
         </header>
         <div className="p-4 sm:p-6">
           <ProfileForm initialFullName={fullName} />
-        </div>
-      </section>
-
-      {/* Publisher */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
-        <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
-          <h2 className="text-base font-semibold text-foreground">Publisher</h2>
-          <p className="mt-0.5 text-sm text-[var(--muted)]">
-            Status Anda sebagai penjual produk digital di sini.
-          </p>
-        </header>
-        <div className="p-4 sm:p-6">
-          <PublisherApply
-            role={role}
-            status={publisherStatus}
-            rejectNote={row?.publisher_reject_note ?? null}
-          />
         </div>
       </section>
 

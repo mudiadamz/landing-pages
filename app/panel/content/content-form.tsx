@@ -85,13 +85,15 @@ export function ContentForm({ initialContent }: { initialContent: SiteContent })
   }
 
   // Generic helpers for the string-array fields.
-  function setStr(key: "licenseParagraphs" | "supportPoints", i: number, value: string) {
+  type StrListKey = "licenseParagraphs" | "supportPoints" | "publisherTerms";
+
+  function setStr(key: StrListKey, i: number, value: string) {
     set(key, content[key].map((x, idx) => (idx === i ? value : x)));
   }
-  function addStr(key: "licenseParagraphs" | "supportPoints") {
+  function addStr(key: StrListKey) {
     set(key, [...content[key], ""]);
   }
-  function removeStr(key: "licenseParagraphs" | "supportPoints", i: number) {
+  function removeStr(key: StrListKey, i: number) {
     set(key, content[key].filter((_, idx) => idx !== i));
   }
 
@@ -377,6 +379,41 @@ export function ContentForm({ initialContent }: { initialContent: SiteContent })
           <AddButton onClick={() => set("faqs", [...content.faqs, { q: "", a: "" }])}>
             Tambah pertanyaan
           </AddButton>
+        </div>
+      </section>
+
+      {/* Publisher terms — shown inside the publisher application form, not on
+          any public page. Edited here because it is site copy like the rest. */}
+      <section className={sectionCls}>
+        <SectionTitle>Ketentuan publisher</SectionTitle>
+        <p className="text-xs text-[var(--muted)]">
+          Ditampilkan di formulir pengajuan publisher (Profil → Jadi publisher). Pemohon
+          harus mencentang persetujuan sebelum bisa mengirim, dan waktu persetujuannya
+          dicatat.
+        </p>
+        <div>
+          <label className={labelCls}>Judul</label>
+          <input
+            className={inputCls}
+            value={content.publisherTermsHeading}
+            onChange={(e) => set("publisherTermsHeading", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          {content.publisherTerms.map((t, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="mt-2 shrink-0 text-xs text-[var(--muted)]">{i + 1}.</span>
+              <textarea
+                className={inputCls}
+                rows={2}
+                value={t}
+                onChange={(e) => setStr("publisherTerms", i, e.target.value)}
+                placeholder="Satu poin ketentuan"
+              />
+              <RemoveButton onClick={() => removeStr("publisherTerms", i)} />
+            </div>
+          ))}
+          <AddButton onClick={() => addStr("publisherTerms")}>Tambah ketentuan</AddButton>
         </div>
       </section>
 

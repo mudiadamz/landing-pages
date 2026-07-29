@@ -67,8 +67,37 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
           <div key={a.id} className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="truncate font-medium text-foreground">{a.full_name || "—"}</p>
+                {/* The legal name leads, because approving means confirming it
+                    matches the KTP photo below. The store name is what buyers
+                    will see, so both are shown side by side. */}
+                <p className="truncate font-medium text-foreground">
+                  {a.real_name || a.full_name || "—"}
+                </p>
                 <p className="truncate text-sm text-[var(--muted)]">{a.email || "—"}</p>
+                <dl className="mt-2 grid gap-x-4 gap-y-0.5 text-xs sm:grid-cols-2">
+                  <Row label="Nama toko" value={a.display_name} />
+                  <Row
+                    label="Rekening"
+                    value={
+                      a.bank_name || a.bank_account
+                        ? `${a.bank_name ?? "—"} · ${a.bank_account ?? "—"}`
+                        : null
+                    }
+                  />
+                  <Row label="Nama sesuai KTP" value={a.real_name} />
+                  <Row label="Pemilik rekening" value={a.bank_holder} />
+                </dl>
+                <p className="mt-1.5 text-[11px]">
+                  {a.terms_accepted_at ? (
+                    <span className="text-emerald-700 dark:text-emerald-400">
+                      Menyetujui ketentuan · {new Date(a.terms_accepted_at).toLocaleDateString("id-ID")}
+                    </span>
+                  ) : (
+                    <span className="text-amber-700 dark:text-amber-400">
+                      Pengajuan lama — sebelum ketentuan publisher ada
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <button
@@ -173,5 +202,18 @@ function KycPhoto({ label, url }: { label: string; url: string | null }) {
         {label}
       </span>
     </a>
+  );
+}
+
+/** One admin-only detail line. Renders an em dash rather than vanishing, so a
+ *  missing field is visibly missing during review instead of merely absent. */
+function Row({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex gap-1.5">
+      <dt className="shrink-0 text-[var(--muted)]">{label}:</dt>
+      <dd className="min-w-0 truncate text-foreground" title={value ?? undefined}>
+        {value || "—"}
+      </dd>
+    </div>
   );
 }

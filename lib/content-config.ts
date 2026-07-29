@@ -49,6 +49,17 @@ export type SiteContent = {
   /** FAQ block. */
   faqHeading: string;
   faqs: FaqItem[];
+
+  /**
+   * Terms a seller must accept before applying to become a publisher.
+   *
+   * Shown inside the application form, not on a public page — it is a contract
+   * between the seller and the marketplace, and the acceptance timestamp on
+   * lp_profiles is what records agreement.
+   */
+  publisherTermsHeading: string;
+  /** One paragraph per entry. Plain text; rendered as a scrollable list. */
+  publisherTerms: string[];
 };
 
 export const DEFAULT_CONTENT: SiteContent = {
@@ -113,6 +124,16 @@ export const DEFAULT_CONTENT: SiteContent = {
       a: "Support 1 bulan diberikan untuk setiap pembelian berbayar. Anda punya hak support selama 1 bulan sejak pembelian: tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
     },
   ],
+
+  publisherTermsHeading: "Ketentuan publisher",
+  publisherTerms: [
+    "Nama lengkap yang Anda isi harus sama persis dengan nama pada KTP. Pengajuan dengan nama yang berbeda akan ditolak.",
+    "Nama toko boleh berbeda dari nama asli. Nama toko inilah yang ditampilkan ke pembeli; nama asli dan data rekening hanya dilihat admin dan tidak pernah dipublikasikan.",
+    "Anda menjamin memiliki hak penuh atas setiap produk yang Anda jual, termasuk seluruh gambar, teks, font, dan aset di dalamnya.",
+    "Produk yang melanggar hak cipta, mengandung materi ilegal, atau menyesatkan pembeli akan dihapus dan status publisher dapat dicabut tanpa pemberitahuan.",
+    "Rekening yang Anda daftarkan harus atas nama Anda sendiri. Pencairan hanya dikirim ke rekening tersebut.",
+    "Deskripsi, harga, dan isi produk harus sesuai dengan yang diterima pembeli.",
+  ],
 };
 
 /** Merge a partial/parsed value onto the defaults so missing keys never break render. */
@@ -157,6 +178,8 @@ export function normalizeContent(raw: unknown): SiteContent {
     supportPoints: strArr(v.supportPoints, DEFAULT_CONTENT.supportPoints),
     supportOutro: v.supportOutro ?? DEFAULT_CONTENT.supportOutro,
     faqHeading: v.faqHeading ?? DEFAULT_CONTENT.faqHeading,
+    publisherTermsHeading: v.publisherTermsHeading ?? DEFAULT_CONTENT.publisherTermsHeading,
+    publisherTerms: strArr(v.publisherTerms, DEFAULT_CONTENT.publisherTerms),
     faqs,
   };
 }

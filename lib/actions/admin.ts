@@ -172,6 +172,16 @@ export type PublisherApplication = {
   full_name: string | null;
   email: string | null;
   publisher_applied_at: string | null;
+  /** Legal name to compare against the KTP photo. Admin-facing only. */
+  real_name: string | null;
+  /** The public store name the applicant chose. */
+  display_name: string | null;
+  bank_name: string | null;
+  bank_holder: string | null;
+  /** Payout account. Admin-facing only. */
+  bank_account: string | null;
+  /** When the publisher terms were accepted; null for pre-terms applications. */
+  terms_accepted_at: string | null;
   /** Short-lived signed URLs for the identity photos; null if never submitted. */
   ktp_url: string | null;
   selfie_url: string | null;
@@ -195,7 +205,7 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, email, publisher_applied_at, publisher_ktp_path, publisher_selfie_path")
+    .select("id, full_name, email, publisher_applied_at, publisher_ktp_path, publisher_selfie_path, publisher_real_name, publisher_display_name, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at")
     .eq("publisher_status", "pending")
     .order("publisher_applied_at", { ascending: true });
 
@@ -215,6 +225,12 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
       full_name: r.full_name ?? null,
       email: r.email ?? null,
       publisher_applied_at: r.publisher_applied_at ?? null,
+      real_name: r.publisher_real_name ?? null,
+      display_name: r.publisher_display_name ?? null,
+      bank_name: r.publisher_bank_name ?? null,
+      bank_holder: r.publisher_bank_holder ?? null,
+      bank_account: r.publisher_bank_account ?? null,
+      terms_accepted_at: r.publisher_terms_accepted_at ?? null,
       ktp_url: await sign(r.publisher_ktp_path ?? null),
       selfie_url: await sign(r.publisher_selfie_path ?? null),
     })),
