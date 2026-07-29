@@ -42,15 +42,47 @@ export function LivePhotoCapture({
   const [live, setLive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  // The stream is attached but has not reported its dimensions yet. Capturing
+  // in that state silently produces nothing, so the button waits for it.
+  const [ready, setReady] = useState(false);
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setLive(false);
+    setReady(false);
   }, []);
 
   // Never leave the camera running behind a closed page.
   useEffect(() => stop, [stop]);
+
+  /**
+   * Attach the stream once the <video> is actually in the DOM.
+   *
+   * This used to happen in a requestAnimationFrame right after setLive(true),
+   * which raced React: the frame callback can run before the re-render that
+   * mounts the element is committed, leaving videoRef null and the preview
+   * blank. It showed up on the FIRST grant in particular — after the permission
+   * prompt resolves, the commit lands late enough to lose the race, while a
+   * second attempt (no prompt) usually won it. An effect runs after commit by
+   * definition, so the race is gone rather than narrowed.
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!live || !video || !stream) return;
+
+    video.srcObject = stream;
+    const onMeta = () => setReady(video.videoWidth > 0);
+    video.addEventListener("loadedmetadata", onMeta);
+    // Some browsers have metadata before the listener is attached.
+    if (video.videoWidth > 0) setReady(true);
+    // Muted + playsInline, so this is allowed without a gesture; a rejection
+    // here means the element went away mid-start, which stop() already handles.
+    video.play().catch(() => {});
+
+    return () => video.removeEventListener("loadedmetadata", onMeta);
+  }, [live]);
 
   async function start() {
     setError(null);
@@ -61,14 +93,7 @@ export function LivePhotoCapture({
         audio: false,
       });
       streamRef.current = stream;
-      setLive(true);
-      // The <video> only exists once `live` is true, so attach on the next frame.
-      requestAnimationFrame(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          void videoRef.current.play();
-        }
-      });
+      setLive(true); // the effect above attaches it once the <video> exists
     } catch (err) {
       const name = (err as DOMException)?.name;
       setError(
@@ -113,13 +138,21 @@ export function LivePhotoCapture({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={value} alt={label} className="h-full w-full object-cover" />
         ) : live ? (
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            // Mirroring only the selfie view — a mirrored KTP is unreadable.
-            className={`h-full w-full object-cover ${facing === "user" ? "-scale-x-100" : ""}`}
-          />
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              // Mirroring only the selfie view — a mirrored KTP is unreadable.
+              className={`h-full w-full object-cover ${facing === "user" ? "-scale-x-100" : ""}`}
+            />
+            {!ready && (
+              <div className="absolute inset-0 flex items-center justify-center bg-[var(--background)]/70">
+                <p className="text-xs text-[var(--muted)]">Menyalakan kamera…</p>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex h-full items-center justify-center px-4 text-center">
             <p className="text-xs text-[var(--muted)]">
@@ -146,9 +179,10 @@ export function LivePhotoCapture({
             <button
               type="button"
               onClick={capture}
-              className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
+              disabled={!ready}
+              className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              Ambil foto
+              {ready ? "Ambil foto" : "Menyiapkan…"}
             </button>
             <button
               type="button"
