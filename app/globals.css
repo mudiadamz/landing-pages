@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Tailwind v4 defaults the `dark:` variant to @media (prefers-color-scheme),
+   but this app's dark mode is a class on <html> (lib/use-theme.ts) and :root
+   declares color-scheme: light so Android never force-darkens us.
+
+   Without this line the two disagree: every dark: utility fires from the DEVICE
+   setting while the page stays light, so on a phone in OS dark mode a badge got
+   `bg-emerald-100` + `dark:bg-emerald-900/30` and `text-emerald-800` +
+   `dark:text-emerald-300` at the same time — pale green on pale green. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   /* Declare a light scheme so browsers (e.g. Android auto-dark) don't follow
      the device and force-darken the page. Dark is opt-in via html.dark only. */
