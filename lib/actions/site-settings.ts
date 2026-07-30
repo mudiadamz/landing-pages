@@ -10,8 +10,13 @@ import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/conte
 import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
 import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_PROMO, normalizePromo, PROMO_KEY, type PromoPopup } from "@/lib/promo-config";
-import { PROMO_MAX_BYTES, readWebpHeader } from "@/lib/webp";
+import {
+  DEFAULT_POPUP,
+  normalizePopup,
+  POPUP_SETTINGS_KEY,
+  type PopupBanner,
+} from "@/lib/popup-config";
+import { POPUP_MAX_BYTES, readWebpHeader } from "@/lib/webp";
 
 const CUSTOM_JS_KEY = "custom_js";
 const HERO_KEY = "hero";
@@ -286,66 +291,66 @@ export async function updatePanelPalette(
   return { ok: true };
 }
 
-/* Promo popup over the product preview. Types/defaults in lib/promo-config.ts. */
+/* Popup banner over the product preview. Types/defaults in lib/popup-config.ts. */
 
-export const getPromoPopup = unstable_cache(
-  async (): Promise<PromoPopup> => {
+export const getPopupBanner = unstable_cache(
+  async (): Promise<PopupBanner> => {
     try {
       const supabase = await createClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
-        .eq("key", PROMO_KEY)
+        .eq("key", POPUP_SETTINGS_KEY)
         .single();
-      if (!data?.value) return DEFAULT_PROMO;
-      return normalizePromo(JSON.parse(data.value as string));
+      if (!data?.value) return DEFAULT_POPUP;
+      return normalizePopup(JSON.parse(data.value as string));
     } catch {
-      return DEFAULT_PROMO;
+      return DEFAULT_POPUP;
     }
   },
-  ["promo-popup"],
-  { revalidate: 300, tags: ["promo-popup"] },
+  ["popup-banner"],
+  { revalidate: 300, tags: ["popup-banner"] },
 );
 
-export async function updatePromoPopup(config: PromoPopup): Promise<{ ok: boolean; error?: string }> {
+export async function updatePopupBanner(config: PopupBanner): Promise<{ ok: boolean; error?: string }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
-  const clean = normalizePromo(config);
+  const clean = normalizePopup(config);
   const supabase = await createClient();
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
-      { key: PROMO_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
+      { key: POPUP_SETTINGS_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
       { onConflict: "key" },
     );
 
   if (error) {
-    console.error("updatePromoPopup error:", error);
+    console.error("updatePopupBanner error:", error);
     return { ok: false, error: "Gagal menyimpan." };
   }
-  updateTag("promo-popup");
+  updateTag("popup-banner");
   return { ok: true };
 }
 
 /**
- * Upload the promo image.
+ * Upload the popup image.
  *
  * WebP only, and enforced here rather than trusted from the file picker: the
  * point of the format requirement is weight on a page that must not get heavier,
  * so a PNG renamed .webp has to fail. The magic bytes are checked, not the
  * declared MIME type.
  */
-export async function uploadPromoImage(
+export async function uploadPopupImage(
   form: FormData,
 ): Promise<{ ok: boolean; url?: string; width?: number; height?: number; error?: string }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
   const file = form.get("file");
   if (!(file instanceof File)) return { ok: false, error: "File tidak ditemukan." };
-  if (file.size > PROMO_MAX_BYTES)
+  if (file.size > POPUP_MAX_BYTES)
     return {
       ok: false,
-      error: `Ukuran maksimal ${Math.round(PROMO_MAX_BYTES / 1024)} KB — kompres dulu.`,
+      error: `Ukuran maksimal ${Math.round(POPUP_MAX_BYTES / 1024)} KB — kompres dulu.`,
     };
 
   const bytes = Buffer.from(await file.arrayBuffer());
@@ -353,12 +358,14 @@ export async function uploadPromoImage(
   if (!dims) return { ok: false, error: "File harus WebP asli (bukan hasil rename)." };
 
   const admin = createAdminClient();
+  // Prefix stays "promo/" through the popup rename: already-uploaded images live
+  // under it and their public URLs are what the stored config points at.
   const path = `promo/${Date.now()}.webp`;
   const { error } = await admin.storage
     .from("landing-assets")
     .upload(path, bytes, { contentType: "image/webp", upsert: false });
   if (error) {
-    console.error("uploadPromoImage error:", error);
+    console.error("uploadPopupImage error:", error);
     return { ok: false, error: "Gagal mengunggah." };
   }
 
@@ -367,7 +374,7 @@ export async function uploadPromoImage(
 }
 
 /**
- * Store an email volunteered from the promo popup.
+ * Store an email volunteered from the popup banner.
  *
  * Written with the service role because lp_promo_subscribers has RLS on and no
  * policies — an anonymous reader is the one subscribing, and a public INSERT
@@ -376,7 +383,7 @@ export async function uploadPromoImage(
  * Re-subscribing is a success, not an error: a reader who submits twice should
  * see the thank-you, not a failure they can do nothing about.
  */
-export async function subscribePromoEmail(
+export async function subscribePopupEmail(
   email: string,
   sourceSlug?: string,
 ): Promise<{ ok: boolean; error?: string }> {
@@ -394,7 +401,7 @@ export async function subscribePromoEmail(
     );
 
   if (error) {
-    console.error("subscribePromoEmail error:", error);
+    console.error("subscribePopupEmail error:", error);
     return { ok: false, error: "Gagal menyimpan. Coba lagi." };
   }
   return { ok: true };

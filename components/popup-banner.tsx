@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { subscribePromoEmail } from "@/lib/actions/site-settings";
-import type { PromoPopup as PromoConfig } from "@/lib/promo-config";
+import { subscribePopupEmail } from "@/lib/actions/site-settings";
+import type { PopupBanner as PopupConfig } from "@/lib/popup-config";
 
 /**
- * Promo popup over the product preview — a bottom sheet on mobile, a centred
+ * Popup banner over the product preview — a bottom sheet on mobile, a centred
  * card on desktop, opening on a dusk scene with rain and a glowing flower.
  *
  * Built around one rule: the preview must not get slower. It has been paid for
@@ -29,13 +29,16 @@ import type { PromoPopup as PromoConfig } from "@/lib/promo-config";
  * only ~21% of people already leaving.
  */
 
+// Value pinned through the popup rename: it is already in visitors'
+// localStorage, and changing it would re-open the banner for everyone who has
+// dismissed it once.
 const SEEN_KEY = "lp-promo-seen";
 const WARM_LEAD_MS = 1500;
 const RAINDROPS = 14;
 
 type Phase = "form" | "done";
 
-export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string }) {
+export function PopupBanner({ config, slug }: { config: PopupConfig; slug: string }) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("form");
   const [email, setEmail] = useState("");
@@ -128,7 +131,7 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
     // The address is stored server-side; a failure there should not rob the
     // reader of the acknowledgement they just earned, so the thank-you shows
     // either way and the error is logged rather than shouted at them.
-    await subscribePromoEmail(v, slug).catch(() => undefined);
+    await subscribePopupEmail(v, slug).catch(() => undefined);
     setBusy(false);
     setPhase("done");
     remember();
@@ -139,21 +142,21 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
 
   return (
     <div
-      className="promo-backdrop"
+      className="popup-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="promo-title"
+      aria-labelledby="popup-title"
       onClick={close}
     >
-      <div className="promo-sheet" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="promo-x" onClick={close} aria-label="Tutup">
+      <div className="popup-sheet" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="popup-x" onClick={close} aria-label="Tutup">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
 
-        <div className="promo-scene" aria-hidden>
-          <span className="promo-grabber" />
+        <div className="popup-scene" aria-hidden>
+          <span className="popup-grabber" />
           {config.imageUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -162,11 +165,11 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
               width={config.width || undefined}
               height={config.height || undefined}
               decoding="async"
-              className="promo-scene-img"
+              className="popup-scene-img"
             />
           ) : (
             <>
-              <div className="promo-rain">
+              <div className="popup-rain">
                 {Array.from({ length: RAINDROPS }).map((_, i) => (
                   <span
                     key={i}
@@ -179,7 +182,7 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
                   />
                 ))}
               </div>
-              <svg className="promo-flower" width="46" height="46" viewBox="0 0 46 46" fill="none" aria-hidden>
+              <svg className="popup-flower" width="46" height="46" viewBox="0 0 46 46" fill="none" aria-hidden>
                 <g fill="#8FA6F2">
                   <ellipse cx="23" cy="11" rx="6.2" ry="9" />
                   <ellipse cx="23" cy="35" rx="6.2" ry="9" />
@@ -197,10 +200,10 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
           )}
         </div>
 
-        <div className="promo-body">
+        <div className="popup-body">
           {phase === "done" ? (
-            <div className="promo-done" aria-live="polite">
-              <div className="promo-tick">
+            <div className="popup-done" aria-live="polite">
+              <div className="popup-tick">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
@@ -210,14 +213,14 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
             </div>
           ) : (
             <>
-              <p className="promo-eyebrow">{config.eyebrow}</p>
-              <h2 className="promo-title" id="promo-title">
+              <p className="popup-eyebrow">{config.eyebrow}</p>
+              <h2 className="popup-title" id="popup-title">
                 {config.title}
               </h2>
-              <p className="promo-text">{config.body}</p>
+              <p className="popup-text">{config.body}</p>
 
               {config.emailCapture ? (
-                <form className="promo-form" onSubmit={submit} noValidate>
+                <form className="popup-form" onSubmit={submit} noValidate>
                   <input
                     type="email"
                     value={email}
@@ -237,7 +240,7 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
               ) : (
                 config.href && (
                   <a
-                    className="promo-cta"
+                    className="popup-cta"
                     href={config.href}
                     target={config.href.startsWith("/") ? undefined : "_blank"}
                     rel="noopener noreferrer"
@@ -249,7 +252,7 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
               )}
 
               {config.instagramUrl && (
-                <a className="promo-ig" href={config.instagramUrl} target="_blank" rel="noopener noreferrer">
+                <a className="popup-ig" href={config.instagramUrl} target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
                     <rect x="3" y="3" width="18" height="18" rx="5" />
                     <circle cx="12" cy="12" r="4" />
@@ -259,7 +262,7 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
                 </a>
               )}
 
-              <button type="button" className="promo-dismiss" onClick={close}>
+              <button type="button" className="popup-dismiss" onClick={close}>
                 {config.dismissLabel}
               </button>
             </>
@@ -268,75 +271,75 @@ export function PromoPopup({ config, slug }: { config: PromoConfig; slug: string
       </div>
 
       <style>{`
-        .promo-backdrop{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;
+        .popup-backdrop{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;
           justify-content:center;background:rgba(28,27,48,.42);
           backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-          animation:promoFade .35s ease both}
-        .promo-sheet{position:relative;width:100%;max-width:480px;background:#FBF7F0;
+          animation:popupFade .35s ease both}
+        .popup-sheet{position:relative;width:100%;max-width:480px;background:#FBF7F0;
           border-radius:26px 26px 0 0;overflow:hidden;box-shadow:0 -12px 44px rgba(28,27,48,.28);
-          animation:promoRise .42s cubic-bezier(.22,1,.36,1) both;color:#2B2620}
-        .promo-x{position:absolute;top:12px;right:12px;z-index:3;width:34px;height:34px;border:none;
+          animation:popupRise .42s cubic-bezier(.22,1,.36,1) both;color:#2B2620}
+        .popup-x{position:absolute;top:12px;right:12px;z-index:3;width:34px;height:34px;border:none;
           border-radius:50%;background:rgba(251,247,240,.9);color:#2B2620;cursor:pointer;
           display:grid;place-items:center;line-height:0;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-        .promo-x:hover{background:#fff}
-        .promo-x svg{width:16px;height:16px}
-        .promo-scene{position:relative;height:132px;overflow:hidden;
+        .popup-x:hover{background:#fff}
+        .popup-x svg{width:16px;height:16px}
+        .popup-scene{position:relative;height:132px;overflow:hidden;
           background:linear-gradient(170deg,#2A2A48 0%,#4C4A73 62%,#6E5E86 100%)}
-        .promo-scene-img{width:100%;height:100%;object-fit:cover;display:block}
-        .promo-grabber{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;
+        .popup-scene-img{width:100%;height:100%;object-fit:cover;display:block}
+        .popup-grabber{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;
           height:4px;border-radius:99px;background:rgba(255,255,255,.4);z-index:2}
-        .promo-rain{position:absolute;inset:0;z-index:1;opacity:.5}
-        .promo-rain span{position:absolute;top:-20%;width:1px;height:38px;
+        .popup-rain{position:absolute;inset:0;z-index:1;opacity:.5}
+        .popup-rain span{position:absolute;top:-20%;width:1px;height:38px;
           background:linear-gradient(rgba(255,255,255,0),rgba(201,199,224,.85));
-          animation:promoFall linear infinite}
-        @keyframes promoFall{to{transform:translateY(180px)}}
-        .promo-flower{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);z-index:2;
+          animation:popupFall linear infinite}
+        @keyframes popupFall{to{transform:translateY(180px)}}
+        .popup-flower{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);z-index:2;
           filter:drop-shadow(0 0 10px #AEBEF7) drop-shadow(0 0 22px rgba(143,166,242,.5));
-          animation:promoBob 4.5s ease-in-out infinite}
-        @keyframes promoBob{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-58%)}}
-        .promo-body{padding:22px 24px calc(24px + env(safe-area-inset-bottom))}
-        .promo-eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#E8960C;
+          animation:popupBob 4.5s ease-in-out infinite}
+        @keyframes popupBob{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-58%)}}
+        .popup-body{padding:22px 24px calc(24px + env(safe-area-inset-bottom))}
+        .popup-eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#E8960C;
           font-weight:600;margin:0 0 8px}
-        .promo-title{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:25px;
+        .popup-title{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:25px;
           line-height:1.15;margin:0 0 10px;color:#2B2620}
-        .promo-text{font-size:14.5px;line-height:1.6;color:#6E6659;margin:0 0 18px}
-        .promo-form{display:flex;gap:8px;margin:0 0 12px}
-        .promo-form input{flex:1;min-width:0;font:500 15px/1 inherit;color:#2B2620;background:#fff;
+        .popup-text{font-size:14.5px;line-height:1.6;color:#6E6659;margin:0 0 18px}
+        .popup-form{display:flex;gap:8px;margin:0 0 12px}
+        .popup-form input{flex:1;min-width:0;font:500 15px/1 inherit;color:#2B2620;background:#fff;
           border:1.5px solid #ECE4D6;border-radius:13px;padding:14px 15px;outline:none;
           transition:border-color .2s}
-        .promo-form input::placeholder{color:#A79C8B}
-        .promo-form input:focus,.promo-form input.is-invalid{border-color:#E8960C}
-        .promo-form button,.promo-cta{flex:none;font:600 15px/1 inherit;color:#fff;cursor:pointer;
+        .popup-form input::placeholder{color:#A79C8B}
+        .popup-form input:focus,.popup-form input.is-invalid{border-color:#E8960C}
+        .popup-form button,.popup-cta{flex:none;font:600 15px/1 inherit;color:#fff;cursor:pointer;
           background:#E8960C;border:none;border-radius:13px;padding:14px 18px;white-space:nowrap;
           transition:background .18s,transform .06s;text-decoration:none;display:inline-block}
-        .promo-form button:hover,.promo-cta:hover{background:#C97F09}
-        .promo-form button:active{transform:scale(.97)}
-        .promo-form button:disabled{opacity:.6;cursor:default}
-        .promo-cta{margin:0 0 12px}
-        .promo-ig{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;
+        .popup-form button:hover,.popup-cta:hover{background:#C97F09}
+        .popup-form button:active{transform:scale(.97)}
+        .popup-form button:disabled{opacity:.6;cursor:default}
+        .popup-cta{margin:0 0 12px}
+        .popup-ig{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;
           color:#4C4A73;text-decoration:none;padding:4px 0}
-        .promo-ig:hover{color:#E8960C}
-        .promo-ig svg{width:17px;height:17px}
-        .promo-dismiss{display:block;width:100%;margin-top:6px;background:none;border:none;
+        .popup-ig:hover{color:#E8960C}
+        .popup-ig svg{width:17px;height:17px}
+        .popup-dismiss{display:block;width:100%;margin-top:6px;background:none;border:none;
           cursor:pointer;font:500 13.5px/1 inherit;color:#A79C8B;padding:10px}
-        .promo-dismiss:hover{color:#6E6659}
-        .promo-done{text-align:center;padding:8px 0 4px}
-        .promo-tick{width:52px;height:52px;border-radius:50%;background:#FCEFD6;color:#E8960C;
+        .popup-dismiss:hover{color:#6E6659}
+        .popup-done{text-align:center;padding:8px 0 4px}
+        .popup-tick{width:52px;height:52px;border-radius:50%;background:#FCEFD6;color:#E8960C;
           display:grid;place-items:center;margin:0 auto 14px}
-        .promo-tick svg{width:26px;height:26px}
-        .promo-done h3{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:21px;
+        .popup-tick svg{width:26px;height:26px}
+        .popup-done h3{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:21px;
           margin:0 0 6px;color:#2B2620}
-        .promo-done p{font-size:14px;color:#6E6659;margin:0}
-        @keyframes promoFade{from{opacity:0}to{opacity:1}}
-        @keyframes promoRise{from{transform:translateY(102%)}to{transform:translateY(0)}}
+        .popup-done p{font-size:14px;color:#6E6659;margin:0}
+        @keyframes popupFade{from{opacity:0}to{opacity:1}}
+        @keyframes popupRise{from{transform:translateY(102%)}to{transform:translateY(0)}}
         @media (min-width:600px){
-          .promo-backdrop{align-items:center;padding:20px}
-          .promo-sheet{border-radius:24px}
-          .promo-grabber{display:none}
+          .popup-backdrop{align-items:center;padding:20px}
+          .popup-sheet{border-radius:24px}
+          .popup-grabber{display:none}
         }
         @media (prefers-reduced-motion:reduce){
-          .promo-backdrop,.promo-sheet{animation:none}
-          .promo-rain,.promo-flower{animation:none}
+          .popup-backdrop,.popup-sheet{animation:none}
+          .popup-rain,.popup-flower{animation:none}
         }
       `}</style>
     </div>

@@ -1,5 +1,5 @@
-/* Promo popup shown over the product preview. Types + defaults live here (not in
- * the "use server" action file) so client components can import them.
+/* Popup banner shown over the product preview. Types + defaults live here (not
+ * in the "use server" action file) so client components can import them.
  *
  * Stored as JSON in lp_site_settings.value under the key "promo_popup".
  *
@@ -10,7 +10,7 @@
  * nothing is fetched until the popup is about to appear, long after load.
  */
 
-export type PromoPopup = {
+export type PopupBanner = {
   enabled: boolean;
   /** Public URL of the WebP. Empty disables the popup regardless of `enabled`. */
   imageUrl: string;
@@ -49,9 +49,18 @@ export type PromoPopup = {
   doneBody: string;
 };
 
-export const PROMO_KEY = "promo_popup";
+/**
+ * Row key in lp_site_settings.
+ *
+ * The VALUE stays "promo_popup" even though everything around it was renamed to
+ * "popup": it is a live row holding the configured banner, and changing the
+ * string would silently orphan it — the panel would open on defaults and the
+ * banner would stop rendering. The name says popup; the key stays what the data
+ * is filed under.
+ */
+export const POPUP_SETTINGS_KEY = "promo_popup";
 
-export const DEFAULT_PROMO: PromoPopup = {
+export const DEFAULT_POPUP: PopupBanner = {
   enabled: false,
   imageUrl: "",
   href: "",
@@ -84,11 +93,11 @@ const clampInt = (v: unknown, min: number, max: number, fallback: number) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 };
 
-export function normalizePromo(raw: unknown): PromoPopup {
-  if (!raw || typeof raw !== "object") return DEFAULT_PROMO;
-  const v = raw as Partial<PromoPopup>;
+export function normalizePopup(raw: unknown): PopupBanner {
+  if (!raw || typeof raw !== "object") return DEFAULT_POPUP;
+  const v = raw as Partial<PopupBanner>;
   return {
-    enabled: typeof v.enabled === "boolean" ? v.enabled : DEFAULT_PROMO.enabled,
+    enabled: typeof v.enabled === "boolean" ? v.enabled : DEFAULT_POPUP.enabled,
     imageUrl: String(v.imageUrl ?? "").trim(),
     href: String(v.href ?? "").trim(),
     alt: String(v.alt ?? "").trim().slice(0, 200),
@@ -96,24 +105,24 @@ export function normalizePromo(raw: unknown): PromoPopup {
     height: clampInt(v.height, 0, 4000, 0),
     // Floor of 1s: anything faster fires while the preview is still settling,
     // which is the failure mode this feature must not reintroduce.
-    delayMs: clampInt(v.delayMs, 1000, 120000, DEFAULT_PROMO.delayMs),
-    exitIntent: typeof v.exitIntent === "boolean" ? v.exitIntent : DEFAULT_PROMO.exitIntent,
-    eyebrow: str(v.eyebrow, DEFAULT_PROMO.eyebrow, 60),
-    title: str(v.title, DEFAULT_PROMO.title, 120),
-    body: str(v.body, DEFAULT_PROMO.body, 600),
-    ctaLabel: str(v.ctaLabel, DEFAULT_PROMO.ctaLabel, 40),
+    delayMs: clampInt(v.delayMs, 1000, 120000, DEFAULT_POPUP.delayMs),
+    exitIntent: typeof v.exitIntent === "boolean" ? v.exitIntent : DEFAULT_POPUP.exitIntent,
+    eyebrow: str(v.eyebrow, DEFAULT_POPUP.eyebrow, 60),
+    title: str(v.title, DEFAULT_POPUP.title, 120),
+    body: str(v.body, DEFAULT_POPUP.body, 600),
+    ctaLabel: str(v.ctaLabel, DEFAULT_POPUP.ctaLabel, 40),
     emailCapture:
-      typeof v.emailCapture === "boolean" ? v.emailCapture : DEFAULT_PROMO.emailCapture,
+      typeof v.emailCapture === "boolean" ? v.emailCapture : DEFAULT_POPUP.emailCapture,
     instagramUrl: String(v.instagramUrl ?? "").trim(),
-    instagramLabel: str(v.instagramLabel, DEFAULT_PROMO.instagramLabel, 80),
-    dismissLabel: str(v.dismissLabel, DEFAULT_PROMO.dismissLabel, 40),
-    doneTitle: str(v.doneTitle, DEFAULT_PROMO.doneTitle, 80),
-    doneBody: str(v.doneBody, DEFAULT_PROMO.doneBody, 200),
+    instagramLabel: str(v.instagramLabel, DEFAULT_POPUP.instagramLabel, 80),
+    dismissLabel: str(v.dismissLabel, DEFAULT_POPUP.dismissLabel, 40),
+    doneTitle: str(v.doneTitle, DEFAULT_POPUP.doneTitle, 80),
+    doneBody: str(v.doneBody, DEFAULT_POPUP.doneBody, 200),
   };
 }
 
 /** Everything needed to render, or null when it should not render at all. */
-export function activePromo(p: PromoPopup): PromoPopup | null {
+export function activePopup(p: PopupBanner): PopupBanner | null {
   // No image requirement any more: the popup draws its own scene, and an
   // uploaded WebP only replaces that header. Copy is what it needs.
   return p.enabled && p.title ? p : null;

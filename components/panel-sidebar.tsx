@@ -88,12 +88,23 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/analytics", label: "Analytics", icon: PulseIcon, adminOnly: true },
       { href: "/panel/tracking", label: "Tracking", icon: TargetIcon, adminOnly: true },
       { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
-      { href: "/panel/promo", label: "Promo", icon: TargetIcon, adminOnly: true },
+      { href: "/panel/popup", label: "Popup banner", icon: PopupIcon, adminOnly: true },
       { href: "/panel/storage", label: "Storage", icon: DatabaseIcon, adminOnly: true },
     ],
   },
 ];
 
+/* A small card layered over a larger one — the popup sitting over the preview.
+ * Its own glyph rather than the TargetIcon it used to share with Tracking, which
+ * made two unrelated rows look like the same tool. */
+function PopupIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5h11a1 1 0 011 1v4M4 5a1 1 0 00-1 1v9a1 1 0 001 1h4" />
+      <rect x="10" y="11" width="11" height="8" rx="1.5" strokeWidth={2} />
+    </svg>
+  );
+}
 function PaletteIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">

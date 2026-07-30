@@ -7,11 +7,11 @@
  * of the same header is free, and they let the popup reserve its space so it
  * cannot shift layout when it appears.
  *
- * Kept out of lib/promo-config.ts on purpose: that module is imported by client
+ * Kept out of lib/popup-config.ts on purpose: that module is imported by client
  * components, and none of this belongs in the browser bundle.
  */
 
-export const PROMO_MAX_BYTES = 300 * 1024;
+export const POPUP_MAX_BYTES = 300 * 1024;
 
 export type WebpDimensions = { width: number; height: number };
 

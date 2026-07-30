@@ -1,23 +1,23 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updatePromoPopup, uploadPromoImage } from "@/lib/actions/site-settings";
-import { type PromoPopup } from "@/lib/promo-config";
-import { PROMO_MAX_BYTES } from "@/lib/webp";
+import { updatePopupBanner, uploadPopupImage } from "@/lib/actions/site-settings";
+import { type PopupBanner } from "@/lib/popup-config";
+import { POPUP_MAX_BYTES } from "@/lib/webp";
 import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 
 const input =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
 
-export function PromoForm({ initial }: { initial: PromoPopup }) {
-  const [cfg, setCfg] = useState<PromoPopup>(initial);
+export function PopupForm({ initial }: { initial: PopupBanner }) {
+  const [cfg, setCfg] = useState<PopupBanner>(initial);
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [meta, setMeta] = useState<FileMeta | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const set = <K extends keyof PromoPopup>(k: K, v: PromoPopup[K]) =>
+  const set = <K extends keyof PopupBanner>(k: K, v: PopupBanner[K]) =>
     setCfg((p) => ({ ...p, [k]: v }));
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -29,7 +29,7 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
     try {
       const fd = new FormData();
       fd.set("file", file);
-      const res = await uploadPromoImage(fd);
+      const res = await uploadPopupImage(fd);
       if (res.ok && res.url) {
         setCfg((p) => ({
           ...p,
@@ -51,7 +51,7 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
   function save() {
     setMsg(null);
     startTransition(async () => {
-      const res = await updatePromoPopup(cfg);
+      const res = await updatePopupBanner(cfg);
       setMsg(
         res.ok
           ? { ok: true, text: "Tersimpan." }
@@ -70,7 +70,7 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
           className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
         />
         <span className="text-sm">
-          <span className="font-medium text-foreground">Aktifkan popup promo</span>
+          <span className="font-medium text-foreground">Aktifkan popup banner</span>
           <span className="mt-0.5 block text-xs text-[var(--muted)]">
             Tampil di halaman preview produk. Tanpa gambar, popup tidak pernah muncul.
           </span>
@@ -79,7 +79,7 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
 
       <FileUploadCard
         label="Gambar header (WebP, opsional)"
-        hint={`Opsional — tanpa gambar, popup memakai ilustrasi hujan + bunga bawaan (nol request). Kalau diisi: wajib WebP asli, maksimal ${Math.round(PROMO_MAX_BYTES / 1024)} KB.`}
+        hint={`Opsional — tanpa gambar, popup memakai ilustrasi hujan + bunga bawaan (nol request). Kalau diisi: wajib WebP asli, maksimal ${Math.round(POPUP_MAX_BYTES / 1024)} KB.`}
         accept="image/webp"
         badge="WEBP"
         badgeClass="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
