@@ -2,28 +2,6 @@
 
 Panduan arsitektur & flow project untuk Claude Code. Project ini adalah **marketplace template landing page / digital assets** milik ADM.UIUX (Adam Mudianto). Admin membuat & menjual template HTML; customer membeli, membayar via Duitku, lalu download ZIP.
 
-## Stack
-
-- **Next.js 16** (App Router, React 19, Server Components + Server Actions)
-- **Supabase** — Postgres + Auth (SSR) + Storage. CLI migrations di `supabase/migrations/`
-- **Tailwind CSS v4** (`@tailwindcss/postcss`)
-- **Duitku** — payment gateway (QRIS, e-wallet, VA, dll.)
-- **Resend** — email transaksional + inbound email (webhook)
-- **Meta Pixel + Conversions API**, GA4, Vercel Analytics/Speed Insights — tracking
-- **Monaco Editor** — editor HTML/CSS/JS in-browser
-- **fflate** — unzip site bundle di sisi server
-
-## Perintah
-
-```bash
-npm run dev              # next dev
-npm run build            # next build
-npm run lint             # eslint
-npm run supabase:start   # Supabase lokal (butuh Docker)
-npm run db:reset         # apply semua migration ke db lokal
-npm run db:push          # push migration ke remote project
-```
-
 ## Konvensi penting
 
 - Semua tabel app diawali prefix **`lp_`** (mis. `lp_landing_pages`, `lp_purchases`, `lp_profiles`).
@@ -33,38 +11,18 @@ npm run db:push          # push migration ke remote project
   - `server.ts` — `createClient()`, server components/actions, cookie-based, terkena RLS.
   - `client.ts` — `createClient()` browser.
   - `admin.ts` — `createAdminClient()` pakai **Service Role Key**, bypass RLS. **Hanya** untuk API routes (callback, webhook, hiring).
-- Cursor rule aktif (`.cursor/rules/`): **selalu commit & push setelah menyelesaikan task** tanpa diminta.
+- Selesai task → **commit** tanpa diminta. **Jangan `git push`**: push diblokir di
+  settings user (deny rule + PreToolUse hook), jadi setiap percobaan pasti gagal —
+  termasuk kalau diselipkan di rantai `&&`. Adam yang push sendiri.
+  (`.cursor/rules/commit-push-after-finish.mdc` masih menyebut push — itu untuk Cursor.)
+- **Semua input file di panel WAJIB pakai `FileUploadCard`** (`components/file-upload-card.tsx`).
+  Jangan pernah menulis `<input type="file">` telanjang di layar panel — kartu ini
+  yang memegang state kosong/terisi, nama + ukuran file, tombol ganti & hapus,
+  dan tampilan error. Dulu komponennya privat di `product-edit-form.tsx` lalu
+  layar lain menumbuhkan input file sendiri yang bentuknya beda; sekarang satu
+  komponen dipakai bersama.
 - Kontak support hardcode di `lib/constants.ts` (`SUPPORT_CONTACT`).
 - Server Actions semua di `lib/actions/*.ts`. Caching pakai `unstable_cache` + `revalidateTag`.
-
-## Struktur direktori
-
-```
-app/
-  page.tsx                       # homepage (hero, kategori, listing)
-  lp/[slug]/                     # render landing page terpublish (di dalam iframe)
-  checkout/[slug]/               # halaman beli + done (sukses/gagal)
-  panel/                         # area login (admin & customer)
-    landing-pages/[id]/edit/     # title + preview source + Monaco editor + asset + pricing
-    dashboard|users|categories|contacts|inbox|custom-js|invoices|profile
-  api/
-    duitku/create-invoice        # buat invoice → redirect ke Duitku
-    duitku/callback              # webhook Duitku → simpan purchase, email, CAPI
-    download/[slug]              # signed URL download ZIP (cek kepemilikan)
-    hiring-test                  # submit tes skill + CV
-    webhooks/resend/inbound      # email masuk dari Resend → lp_received_emails
-    admin/users
-  auth/callback                  # OAuth code exchange
-  hiring/                        # halaman lowongan + tes skill
-components/                      # UI komponen (header, footer, hero, trust-badges, tawk-chat, dll.)
-lib/
-  actions/                       # server actions (auth, landing-pages, purchases, dll.)
-  supabase/                      # client server/browser/admin
-  duitku.ts, invoice.ts, meta-capi.ts, analytics.ts, editor-utils.ts,
-  preview-guard.ts, seo.ts, slug.ts, profile-utils.ts, hiring-questions.ts, constants.ts
-supabase/migrations/             # SQL migrations (timestamp prefix)
-middleware.ts                    # refresh sesi + proteksi /panel
-```
 
 ## Auth & roles
 
@@ -81,20 +39,8 @@ middleware.ts                    # refresh sesi + proteksi /panel
 - **Hanya admin** boleh buat/edit landing page & akses Dashboard/Users/Categories/Contacts/Inbox/Custom JS. Customer melihat pembelian, invoice, review.
 - Role dinormalisasi case-insensitive via `lib/profile-utils.ts: normalizeRole()`.
 
-## Flow: buat & edit landing page (admin)
-
-1. **Buat**: `/panel/landing-pages/new` (`createLandingPage`) atau upload file `.html` via `/panel/upload`.
-2. **Pengaturan halaman** (`page-settings-form.tsx`): edit **title** + **sumber preview** (`updateLandingPageSettings`):
-   - `html` (default) — render konten editor di iframe `/lp/[slug]`.
-   - `pdf` — upload PDF (`uploadPreviewPdf` → bucket `landing-assets/{user}/{page}/preview/`), di-embed di `/lp/[slug]`.
-   - `link` — embed URL eksternal di `/lp/[slug]`.
-   Kolom DB: `preview_type ('html'|'pdf'|'link')`, `preview_url`.
-3. **Editor** (`editor.tsx`): Monaco tab HTML/CSS/JS, simpan **manual** (tombol Save / `Cmd/Ctrl+S`) → `updateLandingPageHtml()`. Tidak ada autosave maupun history/restore (fitur version dihapus Jun 2026).
-   - `lib/editor-utils.ts`: `parseHtmlContent()` pisah `<style>`/`<script>`; `mergeHtmlContent()` gabung lagi sebelum simpan ke `html_content`.
-4. **Assets** (`asset-upload.tsx`):
-   - Gambar/video → Storage `landing-assets/{userId}/{pageId}/{ts}-{file}`, dapat public URL.
-   - **ZIP site** → `uploadSiteZip()`: unzip (fflate), upload semua file ke `.../site/...`, inject `<base href>` ke direktori storage, cari `index.html` terdangkal, update `html_content`.
-5. **Pricing** (`pricing-form.tsx`): `price`, `price_discount`, `is_free`, `thumbnail_url`, `category_id` (hierarki parent→child), `long_description`, plus upload ZIP download (file yang diterima customer).
+> Flow buat & edit landing page (admin) ada di `app/panel/CLAUDE.md` — kebaca otomatis
+> saat kerja di dalam `app/panel/`.
 
 ## Flow: render landing page publik (`/lp/[slug]`)
 

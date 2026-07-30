@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { updatePromoPopup, uploadPromoImage } from "@/lib/actions/site-settings";
 import { type PromoPopup } from "@/lib/promo-config";
 import { PROMO_MAX_BYTES } from "@/lib/webp";
+import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 
 const input =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
@@ -13,7 +14,8 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [meta, setMeta] = useState<FileMeta | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const set = <K extends keyof PromoPopup>(k: K, v: PromoPopup[K]) =>
     setCfg((p) => ({ ...p, [k]: v }));
@@ -22,6 +24,7 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setMsg(null);
+    setUploadError(null);
     setUploading(true);
     try {
       const fd = new FormData();
@@ -34,13 +37,14 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
           width: res.width ?? 0,
           height: res.height ?? 0,
         }));
+        setMeta({ name: file.name, size: file.size });
         setMsg({ ok: true, text: `Terunggah — ${res.width}×${res.height}px. Jangan lupa Simpan.` });
       } else {
-        setMsg({ ok: false, text: res.error ?? "Gagal mengunggah." });
+        setUploadError(res.error ?? "Gagal mengunggah.");
       }
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
+      e.target.value = "";
     }
   }
 
@@ -73,48 +77,34 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
         </span>
       </label>
 
-      <div>
-        <p className="text-xs font-medium text-foreground">Gambar promo (WebP)</p>
-        <p className="mt-0.5 text-xs text-[var(--muted)]">
-          Wajib WebP asli, maksimal {Math.round(PROMO_MAX_BYTES / 1024)} KB. Gambar tidak
-          ikut dimuat saat preview dibuka — baru diambil sesaat sebelum popup tampil,
-          jadi kecepatan preview tidak terpengaruh.
-        </p>
-
-        {cfg.imageUrl && (
-          <div className="mt-2 flex items-start gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+      <FileUploadCard
+        label="Gambar promo (WebP)"
+        hint={`Wajib WebP asli, maksimal ${Math.round(PROMO_MAX_BYTES / 1024)} KB. Gambar tidak ikut dimuat saat preview dibuka — baru diambil sesaat sebelum popup tampil, jadi kecepatan preview tidak terpengaruh.`}
+        accept="image/webp"
+        badge="WEBP"
+        badgeClass="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+        url={cfg.imageUrl}
+        meta={meta}
+        uploading={uploading}
+        error={uploadError}
+        statusText={cfg.width ? `${cfg.width}×${cfg.height} px` : "Gambar siap"}
+        preview={
+          cfg.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={cfg.imageUrl}
               alt=""
-              className="h-24 w-auto rounded-lg border border-[var(--border)]"
+              className="mb-2 h-24 w-auto rounded-lg border border-[var(--border)]"
             />
-            <div className="min-w-0 text-xs text-[var(--muted)]">
-              <p>
-                {cfg.width || "?"}×{cfg.height || "?"} px
-              </p>
-              <p className="mt-1 break-all">{cfg.imageUrl}</p>
-              <button
-                type="button"
-                onClick={() => setCfg((p) => ({ ...p, imageUrl: "", width: 0, height: 0 }))}
-                className="mt-1 text-red-600 hover:underline"
-              >
-                Hapus gambar
-              </button>
-            </div>
-          </div>
-        )}
-
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/webp"
-          onChange={onFile}
-          disabled={uploading}
-          className="mt-2 block w-full text-sm text-[var(--muted)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
-        />
-        {uploading && <p className="mt-1 text-xs text-[var(--muted)]">Mengunggah…</p>}
-      </div>
+          ) : null
+        }
+        onUpload={onFile}
+        onRemove={() => {
+          setCfg((p) => ({ ...p, imageUrl: "", width: 0, height: 0 }));
+          setMeta(null);
+          setUploadError(null);
+        }}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
