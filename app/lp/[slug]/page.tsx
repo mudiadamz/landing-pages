@@ -156,14 +156,23 @@ async function PreviewContent({ slug }: { slug: string }) {
       ? checkout?.purchase_link?.trim() || null
       : null;
 
+  // A gated preview asks a different question. "Beli sekarang" is a shop verb;
+  // the reader stopped mid-chapter wants to know how to keep reading, so the
+  // default answers that instead. A seller's own cta_label still wins.
   const defaultLabel = calendarMode
     ? "Tambahkan ke kalender"
-    : showAsFree
-      ? "Ambil gratis"
-      : "Beli sekarang";
+    : epubExcerpt
+      ? showAsFree
+        ? "Buka semua bab — gratis"
+        : "Baca sampai habis"
+      : showAsFree
+        ? "Ambil gratis"
+        : "Beli sekarang";
   const buyLabel = checkout?.cta_label?.trim() || defaultLabel;
   const priceText = showAsFree ? null : `Rp ${displayPrice.toLocaleString("id-ID")}`;
-  const buyNote = checkout?.cta_note?.trim() || null;
+  const buyNote =
+    checkout?.cta_note?.trim() ||
+    (epubExcerpt ? "Akses penuh, selamanya — baca kapan saja di HP." : null);
 
   const buyHref = calendarMode
     ? `/api/calendar/${slug}`
@@ -259,6 +268,7 @@ async function PreviewContent({ slug }: { slug: string }) {
       external={!!externalBuyLink}
       slug={slug}
       ctaAction={calendarMode ? "calendar" : externalBuyLink ? "buy_link" : "buy"}
+      gated={epubExcerpt}
     />
   );
 

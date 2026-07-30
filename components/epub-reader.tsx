@@ -29,10 +29,12 @@ export function EpubReader({
   version?: string;
   storageKey?: string;
 }) {
-  // Re-key on the source so switching files cleanly reloads the reader.
+  // Re-key on the source so switching files cleanly reloads the reader. Falls
+  // back to the slug because an excerpt has no archive URL at all, and `key=""`
+  // is not a usable identity.
   return (
     <EpubViewer
-      key={url}
+      key={url || slug || "epub"}
       url={url}
       slug={slug}
       title={title}

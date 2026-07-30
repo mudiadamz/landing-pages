@@ -38,13 +38,24 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     );
 
     // Truncate before serialising: `chapters` is what leaves the building.
-    const chapters =
-      cutPercent === null
-        ? allChapters
-        : allChapters.slice(0, keepCountForCut(allChapters.map(visibleChars), cutPercent));
+    const lens = allChapters.map(visibleChars);
+    const keep = cutPercent === null ? allChapters.length : keepCountForCut(lens, cutPercent);
+    const chapters = allChapters.slice(0, keep);
+
+    // Counts, not content: how much is being held back is the one thing the
+    // gate at the end of the preview has to be able to say precisely.
+    const excerpt =
+      keep < allChapters.length
+        ? {
+            shownChapters: keep,
+            totalChapters: allChapters.length,
+            shownChars: lens.slice(0, keep).reduce((a, b) => a + b, 0),
+            totalChars: lens.reduce((a, b) => a + b, 0),
+          }
+        : null;
 
     return NextResponse.json(
-      { chapters, truncated: cutPercent !== null && chapters.length < allChapters.length },
+      { chapters, excerpt },
       {
         headers: {
           // Cached at the edge so only the first reader pays the unzip cost.

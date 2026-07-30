@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { withEpubVersion } from "@/lib/epub-version";
+import { setExcerptMeta, type ExcerptMeta } from "@/lib/excerpt-store";
 import { unzipSync, strFromU8 } from "fflate";
 import { markBookReady } from "@/lib/boot-splash";
 
@@ -248,7 +249,13 @@ export default function EpubInlineViewer({
         try {
           const res = await fetch(chapterUrl);
           if (res.ok) {
-            const { chapters } = (await res.json()) as { chapters: string[] };
+            const { chapters, excerpt } = (await res.json()) as {
+              chapters: string[];
+              excerpt?: ExcerptMeta | null;
+            };
+            // Publish before painting: the gate renders in the same commit as
+            // the last chapter, so it can never flash "the end" first.
+            setExcerptMeta(excerpt ?? null);
             const html = sanitizeChapters(chapters);
             if (cancelled) return;
             if (contentRef.current) contentRef.current.innerHTML = html;
@@ -280,6 +287,7 @@ export default function EpubInlineViewer({
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const bytes = new Uint8Array(await res.arrayBuffer());
+        setExcerptMeta(null);
         const { html, blobs } = buildEpubHtml(bytes);
         if (cancelled) {
           blobs.forEach(URL.revokeObjectURL);
