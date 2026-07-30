@@ -36,9 +36,7 @@ export default async function EditPage({
     story_epub_url?: string | null;
   };
   const hasEpub =
-    ((epubRow.preview_type === "epub" || epubRow.preview_type === "excerpt") &&
-      !!epubRow.preview_url) ||
-    !!epubRow.story_epub_url;
+    (epubRow.preview_type === "epub" && !!epubRow.preview_url) || !!epubRow.story_epub_url;
 
   return (
     <div className="space-y-6">

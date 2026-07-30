@@ -109,13 +109,15 @@ async function PreviewContent({ slug }: { slug: string }) {
     }
   }
 
+  // "excerpt" reads the same file the buyer gets, truncated by the chapter
+  // endpoint. Deliberately NOT signed here: handing the browser a URL to the
+  // complete book would make the cut decorative, since the reader falls back to
+  // downloading the archive whole when the text endpoint is unavailable.
+  const epubExcerpt = page.preview_type === "excerpt" && !!page.story_epub_url;
+
   // Effective preview URLs (deliverable-signed when applicable). A PDF preview
   // needs at least one file; if only the dark one exists, use it as the default.
-  // "excerpt" is a generated EPUB living at preview_url, so it serves exactly
-  // like "epub" — the cut already happened when the file was built.
-  const epubUrl =
-    dvEpubUrl ??
-    (page.preview_type === "epub" || page.preview_type === "excerpt" ? previewUrl : null);
+  const epubUrl = dvEpubUrl ?? (page.preview_type === "epub" ? previewUrl : null);
   const pdfLight = dvPdfUrl ?? (page.preview_type === "pdf" ? previewUrl ?? previewUrlDark : null);
   const pdfDark = dvPdfUrl ? dvPdfUrlDark : page.preview_type === "pdf" ? previewUrlDark : null;
 
@@ -127,10 +129,12 @@ async function PreviewContent({ slug }: { slug: string }) {
   // Which file the chapters come from, so an edited book isn't served from a
   // day-old edge cache (lib/epub-version.ts).
   const epubVersion = epubVersionToken(
-    page.preview_type === "deliverable" ? page.story_epub_url : page.preview_url,
+    page.preview_type === "deliverable" || page.preview_type === "excerpt"
+      ? page.story_epub_url
+      : page.preview_url,
   );
 
-  const embedEpub = !!epubUrl;
+  const embedEpub = !!epubUrl || epubExcerpt;
   const embedPdf = !!pdfLight && !embedEpub;
   const embedLink = page.preview_type === "link" && !!previewUrl;
 
@@ -272,7 +276,8 @@ async function PreviewContent({ slug }: { slug: string }) {
         // scroll, taps, focus mode and the iOS address bar are all native.
         <div className="w-full">
           <EpubReader
-            url={epubUrl as string}
+            // Empty for an excerpt: there is no archive the browser may fetch.
+            url={epubUrl ?? ""}
             slug={slug}
             title={page.title}
             version={epubVersion}

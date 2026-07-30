@@ -266,6 +266,16 @@ export default function EpubInlineViewer({
         }
         if (cancelled) return;
       }
+      // No archive URL means the server is the only permitted source — an
+      // excerpt preview, where downloading the whole book is exactly what must
+      // not happen. Fail visibly instead of silently falling back.
+      if (!url) {
+        if (!cancelled) {
+          setError("Gagal memuat teks.");
+          setLoading(false);
+        }
+        return;
+      }
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

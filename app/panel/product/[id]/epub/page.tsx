@@ -27,8 +27,9 @@ export default async function EpubChaptersPage({
 
   // A product can have a free sample, the full book, or both — and they are
   // separate files. Only offer the ones that exist.
-  const hasPreview =
-    (row.preview_type === "epub" || row.preview_type === "excerpt") && !!row.preview_url;
+  // "excerpt" has no file of its own — it is the deliverable, shown in part —
+  // so there is nothing separate to edit, which is the reason it exists.
+  const hasPreview = row.preview_type === "epub" && !!row.preview_url;
   const hasDeliverable = !!row.story_epub_url;
 
   // No EPUB yet: there's nothing for the editor to render, so keep a plain
