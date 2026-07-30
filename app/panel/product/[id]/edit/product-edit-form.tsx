@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, useEffect } from "react";
 import { getStoredFileSizes } from "@/lib/actions/file-sizes";
+import { generateExcerptPreview } from "@/lib/actions/epub-excerpt";
 import { useRouter } from "next/navigation";
 import {
   updateLandingPageSettings,
@@ -52,7 +53,15 @@ const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
     label: "Sama dgn deliverable",
     hint: "Preview memakai file pembeli (PDF/EPUB) yang sama — tak perlu upload lagi. Seluruh isi bisa dibaca gratis di preview.",
   },
+  {
+    value: "excerpt",
+    label: "Potong dari deliverable",
+    hint: "Ambil EPUB pembeli, potong sekian persen, simpan sisanya sebagai preview. Bab yang dipotong tidak ikut ke file preview.",
+  },
 ];
+
+/** Default withheld share. 60% out, 40% in — enough to hook, not enough to finish. */
+const DEFAULT_CUT_PERCENT = 60;
 
 type DeliverableType = "zip" | "pdf" | "epub";
 
@@ -81,6 +90,7 @@ type Props = {
     preview_type: PreviewType;
     preview_url: string | null;
     preview_url_dark?: string | null;
+    preview_cut_percent?: number | null;
     price?: number | null;
     price_discount?: number | null;
     is_free?: boolean;
@@ -345,6 +355,43 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   );
   const [epubUploading, setEpubUploading] = useState(false);
   const [epubError, setEpubError] = useState<string | null>(null);
+
+  // Excerpt preview: cut from the deliverable EPUB into a separate file. The
+  // percentage is what gets WITHHELD, which is how a seller thinks about it
+  // ("give away 40%" is a decision about the free part; "cut 60%" is the same
+  // decision stated as the thing being protected).
+  const [cutPercent, setCutPercent] = useState<number>(
+    initial.preview_cut_percent ?? DEFAULT_CUT_PERCENT,
+  );
+  const [cutting, setCutting] = useState(false);
+  const [cutError, setCutError] = useState<string | null>(null);
+  const [cutResult, setCutResult] = useState<{
+    keptChapters: number;
+    totalChapters: number;
+    keptPercent: number;
+    excerptBytes: number;
+    lastChapterTitle: string;
+  } | null>(null);
+
+  const runExcerpt = useCallback(async () => {
+    setCutting(true);
+    setCutError(null);
+    setCutResult(null);
+    const res = await generateExcerptPreview(pageId, cutPercent);
+    if (res.ok) {
+      setPreviewUrl(res.url);
+      setCutResult({
+        keptChapters: res.keptChapters,
+        totalChapters: res.totalChapters,
+        keptPercent: res.keptPercent,
+        excerptBytes: res.excerptBytes,
+        lastChapterTitle: res.lastChapterTitle,
+      });
+    } else {
+      setCutError(res.error);
+    }
+    setCutting(false);
+  }, [pageId, cutPercent]);
 
   // --- Pricing ---
   const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
@@ -793,6 +840,13 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
       setMessage({ type: "err", text: "Upload minimal satu PDF (terang atau gelap)." });
       return;
     }
+    if (previewType === "excerpt" && !previewUrl.trim()) {
+      setMessage({
+        type: "err",
+        text: "Tekan \u201CPotong sekarang\u201D dulu \u2014 preview potongan belum dibuat.",
+      });
+      return;
+    }
     if (previewType === "epub" && !previewUrl.trim()) {
       setMessage({ type: "err", text: "Upload file EPUB dulu." });
       return;
@@ -831,9 +885,12 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
         {
           title: trimmedTitle,
           preview_type: previewType,
+          // "excerpt" keeps preview_url: it points at the generated cut, which
+          // the Potong button already wrote.
           preview_url:
             previewType === "html" || previewType === "deliverable" ? null : previewUrl.trim() || null,
           preview_url_dark: previewType === "pdf" ? previewUrlDark.trim() || null : null,
+          preview_cut_percent: Math.max(5, Math.min(95, Math.round(cutPercent))),
         },
         slug,
       );
@@ -1347,6 +1404,87 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
               onUpload={handlePreviewEpubUpload}
               onRemove={removePreviewEpub}
             />
+          </div>
+        )}
+
+        {/* Preview = excerpt cut from the deliverable EPUB. */}
+        {previewType === "excerpt" && (
+          <div className="space-y-3">
+            {!storyEpubUrl.trim() ? (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                Belum ada file <strong>EPUB</strong> pembeli. Buka tab <strong>Pengiriman</strong>, pilih tipe
+                file EPUB lalu upload — baru bukunya bisa dipotong.
+              </p>
+            ) : (
+              <>
+                <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
+                  Preview dibuat dari EPUB pembeli, dipotong di batas bab terdekat. Bab yang dipotong{" "}
+                  <strong className="text-foreground">tidak ikut</strong> ke file preview — bukan disembunyikan
+                  di reader, tapi memang tidak ada di filenya.
+                </p>
+
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="cut-percent"
+                      className="block text-sm font-medium text-foreground"
+                    >
+                      Dipotong
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="cut-percent"
+                        type="number"
+                        min={5}
+                        max={95}
+                        step={5}
+                        value={cutPercent}
+                        onChange={(e) => setCutPercent(Number(e.target.value))}
+                        className="w-24 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-foreground"
+                      />
+                      <span className="text-sm text-[var(--muted)]">
+                        % — pembaca dapat {Math.max(5, Math.min(95, 100 - cutPercent))}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={runExcerpt}
+                    disabled={cutting}
+                    className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] transition-transform active:scale-95 disabled:opacity-60"
+                  >
+                    {cutting ? "Memotong…" : previewUrl ? "Potong ulang" : "Potong sekarang"}
+                  </button>
+                </div>
+
+                {cutError && (
+                  <p className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+                    {cutError}
+                  </p>
+                )}
+
+                {cutResult && (
+                  <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs text-[var(--muted)]">
+                    <p className="font-medium text-foreground">
+                      {cutResult.keptChapters} dari {cutResult.totalChapters} bab ·{" "}
+                      {cutResult.keptPercent}% teks · {(cutResult.excerptBytes / 1024).toFixed(0)} KB
+                    </p>
+                    {cutResult.lastChapterTitle && (
+                      <p className="mt-0.5">Berakhir di: {cutResult.lastChapterTitle}</p>
+                    )}
+                  </div>
+                )}
+
+                {previewUrl && !cutResult && (
+                  <p className="text-xs text-[var(--muted)]">
+                    Preview potongan sudah terpasang. Kalau isi bukunya diubah, tekan{" "}
+                    <strong className="text-foreground">Potong ulang</strong> — preview tidak ikut berubah
+                    sendiri.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         )}
 

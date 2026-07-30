@@ -111,7 +111,11 @@ async function PreviewContent({ slug }: { slug: string }) {
 
   // Effective preview URLs (deliverable-signed when applicable). A PDF preview
   // needs at least one file; if only the dark one exists, use it as the default.
-  const epubUrl = dvEpubUrl ?? (page.preview_type === "epub" ? previewUrl : null);
+  // "excerpt" is a generated EPUB living at preview_url, so it serves exactly
+  // like "epub" — the cut already happened when the file was built.
+  const epubUrl =
+    dvEpubUrl ??
+    (page.preview_type === "epub" || page.preview_type === "excerpt" ? previewUrl : null);
   const pdfLight = dvPdfUrl ?? (page.preview_type === "pdf" ? previewUrl ?? previewUrlDark : null);
   const pdfDark = dvPdfUrl ? dvPdfUrlDark : page.preview_type === "pdf" ? previewUrlDark : null;
 

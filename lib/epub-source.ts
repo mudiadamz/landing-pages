@@ -15,7 +15,8 @@ export async function resolvePreviewEpubUrl(slug: string): Promise<string | null
     .maybeSingle();
   if (!page) return null;
 
-  if (page.preview_type === "epub") return page.preview_url?.trim() || null;
+  if (page.preview_type === "epub" || page.preview_type === "excerpt")
+    return page.preview_url?.trim() || null;
   if (page.preview_type === "deliverable" && page.story_epub_url) {
     return await getSignedDownloadUrl(page.story_epub_url);
   }

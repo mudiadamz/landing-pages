@@ -36,7 +36,9 @@ export default async function EditPage({
     story_epub_url?: string | null;
   };
   const hasEpub =
-    (epubRow.preview_type === "epub" && !!epubRow.preview_url) || !!epubRow.story_epub_url;
+    ((epubRow.preview_type === "epub" || epubRow.preview_type === "excerpt") &&
+      !!epubRow.preview_url) ||
+    !!epubRow.story_epub_url;
 
   return (
     <div className="space-y-6">
@@ -108,6 +110,8 @@ export default async function EditPage({
           preview_type: (page as { preview_type?: PreviewType }).preview_type ?? "html",
           preview_url: (page as { preview_url?: string | null }).preview_url ?? null,
           preview_url_dark: (page as { preview_url_dark?: string | null }).preview_url_dark ?? null,
+          preview_cut_percent:
+            (page as { preview_cut_percent?: number | null }).preview_cut_percent ?? 60,
           price: page.price,
           price_discount: page.price_discount,
           is_free: page.is_free,

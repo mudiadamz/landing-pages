@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
 
-export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable";
+export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable" | "excerpt";
 
 function createAnonClient() {
   return createSupabaseJS(
@@ -303,6 +303,7 @@ export async function updateLandingPageSettings(
     preview_type?: PreviewType;
     preview_url?: string | null;
     preview_url_dark?: string | null;
+    preview_cut_percent?: number;
   },
   slug?: string,
 ) {
@@ -322,6 +323,11 @@ export async function updateLandingPageSettings(
   if (opts.preview_url !== undefined) update.preview_url = opts.preview_url?.trim() || null;
   if (opts.preview_url_dark !== undefined)
     update.preview_url_dark = opts.preview_url_dark?.trim() || null;
+  // Clamped to the DB's own CHECK range so a hand-edited form field fails here
+  // with a usable message rather than as a constraint violation.
+  if (opts.preview_cut_percent !== undefined) {
+    update.preview_cut_percent = Math.max(5, Math.min(95, Math.round(opts.preview_cut_percent)));
+  }
 
   // A PDF preview needs at least one file (light or dark); a link needs its URL.
   if (opts.preview_type === "pdf" && opts.preview_url !== undefined) {
