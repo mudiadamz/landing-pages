@@ -33,6 +33,20 @@ export type PromoPopup = {
   delayMs: number;
   /** Also open on exit intent (pointer leaving the viewport), before the delay. */
   exitIntent: boolean;
+
+  /* ---- copy ---- */
+  eyebrow: string;
+  title: string;
+  body: string;
+  /** Submit button on the email form. */
+  ctaLabel: string;
+  /** Ask for an email. Off makes the popup purely an announcement. */
+  emailCapture: boolean;
+  instagramUrl: string;
+  instagramLabel: string;
+  dismissLabel: string;
+  doneTitle: string;
+  doneBody: string;
 };
 
 export const PROMO_KEY = "promo_popup";
@@ -46,6 +60,23 @@ export const DEFAULT_PROMO: PromoPopup = {
   height: 0,
   delayMs: 8000,
   exitIntent: true,
+
+  eyebrow: "dari penulisnya",
+  title: "suka sama ceritanya?",
+  body: "aku nulis cerita kayak gini pelan-pelan, sepenuh hati. kalau kamu mau aku kabari tiap ada bab atau buku baru, tinggalin email kamu aja ya.",
+  ctaLabel: "kabari aku ya",
+  emailCapture: true,
+  instagramUrl: "https://instagram.com/admuiux",
+  instagramLabel: "atau ikutin ceritanya di instagram",
+  dismissLabel: "nanti aja",
+  doneTitle: "makasih ya 🌧️",
+  doneBody: "nanti aku kabari kalau ada cerita baru.",
+};
+
+/** Trimmed, capped, and falling back to the default when blanked. */
+const str = (v: unknown, fallback: string, max: number) => {
+  const t = String(v ?? "").trim();
+  return (t || fallback).slice(0, max);
 };
 
 const clampInt = (v: unknown, min: number, max: number, fallback: number) => {
@@ -67,10 +98,23 @@ export function normalizePromo(raw: unknown): PromoPopup {
     // which is the failure mode this feature must not reintroduce.
     delayMs: clampInt(v.delayMs, 1000, 120000, DEFAULT_PROMO.delayMs),
     exitIntent: typeof v.exitIntent === "boolean" ? v.exitIntent : DEFAULT_PROMO.exitIntent,
+    eyebrow: str(v.eyebrow, DEFAULT_PROMO.eyebrow, 60),
+    title: str(v.title, DEFAULT_PROMO.title, 120),
+    body: str(v.body, DEFAULT_PROMO.body, 600),
+    ctaLabel: str(v.ctaLabel, DEFAULT_PROMO.ctaLabel, 40),
+    emailCapture:
+      typeof v.emailCapture === "boolean" ? v.emailCapture : DEFAULT_PROMO.emailCapture,
+    instagramUrl: String(v.instagramUrl ?? "").trim(),
+    instagramLabel: str(v.instagramLabel, DEFAULT_PROMO.instagramLabel, 80),
+    dismissLabel: str(v.dismissLabel, DEFAULT_PROMO.dismissLabel, 40),
+    doneTitle: str(v.doneTitle, DEFAULT_PROMO.doneTitle, 80),
+    doneBody: str(v.doneBody, DEFAULT_PROMO.doneBody, 200),
   };
 }
 
 /** Everything needed to render, or null when it should not render at all. */
 export function activePromo(p: PromoPopup): PromoPopup | null {
-  return p.enabled && p.imageUrl ? p : null;
+  // No image requirement any more: the popup draws its own scene, and an
+  // uploaded WebP only replaces that header. Copy is what it needs.
+  return p.enabled && p.title ? p : null;
 }

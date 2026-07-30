@@ -365,3 +365,37 @@ export async function uploadPromoImage(
   const { data } = admin.storage.from("landing-assets").getPublicUrl(path);
   return { ok: true, url: data.publicUrl, width: dims.width, height: dims.height };
 }
+
+/**
+ * Store an email volunteered from the promo popup.
+ *
+ * Written with the service role because lp_promo_subscribers has RLS on and no
+ * policies — an anonymous reader is the one subscribing, and a public INSERT
+ * policy would let anyone flood or enumerate the table through the REST API.
+ *
+ * Re-subscribing is a success, not an error: a reader who submits twice should
+ * see the thank-you, not a failure they can do nothing about.
+ */
+export async function subscribePromoEmail(
+  email: string,
+  sourceSlug?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const clean = (email ?? "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean) || clean.length > 254) {
+    return { ok: false, error: "Email tidak valid." };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("lp_promo_subscribers")
+    .upsert(
+      { email: clean, source_slug: sourceSlug?.slice(0, 120) ?? null },
+      { onConflict: "email", ignoreDuplicates: true },
+    );
+
+  if (error) {
+    console.error("subscribePromoEmail error:", error);
+    return { ok: false, error: "Gagal menyimpan. Coba lagi." };
+  }
+  return { ok: true };
+}

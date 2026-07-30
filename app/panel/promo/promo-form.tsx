@@ -78,8 +78,8 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
       </label>
 
       <FileUploadCard
-        label="Gambar promo (WebP)"
-        hint={`Wajib WebP asli, maksimal ${Math.round(PROMO_MAX_BYTES / 1024)} KB. Gambar tidak ikut dimuat saat preview dibuka — baru diambil sesaat sebelum popup tampil, jadi kecepatan preview tidak terpengaruh.`}
+        label="Gambar header (WebP, opsional)"
+        hint={`Opsional — tanpa gambar, popup memakai ilustrasi hujan + bunga bawaan (nol request). Kalau diisi: wajib WebP asli, maksimal ${Math.round(PROMO_MAX_BYTES / 1024)} KB.`}
         accept="image/webp"
         badge="WEBP"
         badgeClass="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
@@ -163,6 +163,75 @@ export function PromoForm({ initial }: { initial: PromoPopup }) {
             </span>
           </span>
         </label>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-[var(--border)] p-3">
+        <p className="text-xs font-medium text-foreground">Isi popup</p>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Eyebrow</span>
+            <input className={`mt-1 ${input}`} value={cfg.eyebrow}
+              onChange={(e) => set("eyebrow", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Judul</span>
+            <input className={`mt-1 ${input}`} value={cfg.title}
+              onChange={(e) => set("title", e.target.value)} />
+          </label>
+        </div>
+
+        <label className="block">
+          <span className="text-xs text-[var(--muted)]">Teks</span>
+          <textarea rows={3} className={`mt-1 resize-y ${input}`} value={cfg.body}
+            onChange={(e) => set("body", e.target.value)} />
+        </label>
+
+        <label className="flex items-start gap-2">
+          <input type="checkbox" checked={cfg.emailCapture}
+            onChange={(e) => set("emailCapture", e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--primary)]" />
+          <span className="text-sm">
+            <span className="font-medium text-foreground">Minta email</span>
+            <span className="mt-0.5 block text-xs text-[var(--muted)]">
+              Alamat disimpan di <code>lp_promo_subscribers</code>. Kalau dimatikan, tombol
+              memakai &quot;Link tujuan&quot; di atas.
+            </span>
+          </span>
+        </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Label tombol</span>
+            <input className={`mt-1 ${input}`} value={cfg.ctaLabel}
+              onChange={(e) => set("ctaLabel", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Label &quot;nanti aja&quot;</span>
+            <input className={`mt-1 ${input}`} value={cfg.dismissLabel}
+              onChange={(e) => set("dismissLabel", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Instagram URL (kosong = sembunyi)</span>
+            <input className={`mt-1 ${input}`} value={cfg.instagramUrl}
+              onChange={(e) => set("instagramUrl", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Label Instagram</span>
+            <input className={`mt-1 ${input}`} value={cfg.instagramLabel}
+              onChange={(e) => set("instagramLabel", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Judul setelah kirim</span>
+            <input className={`mt-1 ${input}`} value={cfg.doneTitle}
+              onChange={(e) => set("doneTitle", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-[var(--muted)]">Teks setelah kirim</span>
+            <input className={`mt-1 ${input}`} value={cfg.doneBody}
+              onChange={(e) => set("doneBody", e.target.value)} />
+          </label>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 border-t border-[var(--border)] pt-4">
