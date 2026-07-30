@@ -9,6 +9,9 @@ import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config"
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
 import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
 import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { DEFAULT_PROMO, normalizePromo, PROMO_KEY, type PromoPopup } from "@/lib/promo-config";
+import { PROMO_MAX_BYTES, readWebpHeader } from "@/lib/webp";
 
 const CUSTOM_JS_KEY = "custom_js";
 const HERO_KEY = "hero";
@@ -281,4 +284,84 @@ export async function updatePanelPalette(
   updateTag("panel-palette");
   revalidatePath("/panel", "layout");
   return { ok: true };
+}
+
+/* Promo popup over the product preview. Types/defaults in lib/promo-config.ts. */
+
+export const getPromoPopup = unstable_cache(
+  async (): Promise<PromoPopup> => {
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("key", PROMO_KEY)
+        .single();
+      if (!data?.value) return DEFAULT_PROMO;
+      return normalizePromo(JSON.parse(data.value as string));
+    } catch {
+      return DEFAULT_PROMO;
+    }
+  },
+  ["promo-popup"],
+  { revalidate: 300, tags: ["promo-popup"] },
+);
+
+export async function updatePromoPopup(config: PromoPopup): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizePromo(config);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lp_site_settings")
+    .upsert(
+      { key: PROMO_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+
+  if (error) {
+    console.error("updatePromoPopup error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  updateTag("promo-popup");
+  return { ok: true };
+}
+
+/**
+ * Upload the promo image.
+ *
+ * WebP only, and enforced here rather than trusted from the file picker: the
+ * point of the format requirement is weight on a page that must not get heavier,
+ * so a PNG renamed .webp has to fail. The magic bytes are checked, not the
+ * declared MIME type.
+ */
+export async function uploadPromoImage(
+  form: FormData,
+): Promise<{ ok: boolean; url?: string; width?: number; height?: number; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const file = form.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "File tidak ditemukan." };
+  if (file.size > PROMO_MAX_BYTES)
+    return {
+      ok: false,
+      error: `Ukuran maksimal ${Math.round(PROMO_MAX_BYTES / 1024)} KB — kompres dulu.`,
+    };
+
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const dims = readWebpHeader(bytes);
+  if (!dims) return { ok: false, error: "File harus WebP asli (bukan hasil rename)." };
+
+  const admin = createAdminClient();
+  const path = `promo/${Date.now()}.webp`;
+  const { error } = await admin.storage
+    .from("landing-assets")
+    .upload(path, bytes, { contentType: "image/webp", upsert: false });
+  if (error) {
+    console.error("uploadPromoImage error:", error);
+    return { ok: false, error: "Gagal mengunggah." };
+  }
+
+  const { data } = admin.storage.from("landing-assets").getPublicUrl(path);
+  return { ok: true, url: data.publicUrl, width: dims.width, height: dims.height };
 }

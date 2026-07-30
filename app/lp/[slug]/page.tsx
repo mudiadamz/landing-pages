@@ -6,6 +6,9 @@ import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds, getN
 import { isUpcoming } from "@/lib/product-status";
 import { ComingSoon } from "@/components/coming-soon";
 import { buildMetaDescription } from "@/lib/seo";
+import { PromoPopup } from "@/components/promo-popup";
+import { activePromo } from "@/lib/promo-config";
+import { getPromoPopup } from "@/lib/actions/site-settings";
 import { guardPreviewHtml } from "@/lib/preview-guard";
 import { PreviewSurface } from "../preview-surface";
 import { PreviewGuardClient } from "../preview-guard-client";
@@ -164,11 +167,16 @@ async function PreviewContent({ slug }: { slug: string }) {
   // For the "Masuk dengan Google" item in the actions menu (logged-out only)
   // and the like button's current state.
   const supabase = await createClient();
-  const [{ data: { user } }, liked, related] = await Promise.all([
+  const [{ data: { user } }, liked, related, promoConfig] = await Promise.all([
     supabase.auth.getUser(),
     getMyLike(page.id),
     getProductsByIds(page.related_product_ids ?? []),
+    // Joins the existing parallel fetch rather than adding a waterfall, and is
+    // an unstable_cache hit after the first request, so it costs the preview
+    // nothing measurable.
+    getPromoPopup(),
   ]);
+  const promo = activePromo(promoConfig);
 
   // A logged-out visitor tapping the buy button would land on a checkout page
   // whose only content is a login prompt — so send them to the login screen
@@ -303,6 +311,10 @@ async function PreviewContent({ slug }: { slug: string }) {
           </PreviewSurface>
         </div>
       )}
+      {/* Promo popup. Nothing is fetched or rendered until it opens — see
+          components/promo-popup.tsx. The config read is an unstable_cache hit,
+          so the preview pays nothing for it. */}
+      {promo && <PromoPopup config={promo} slug={slug} />}
       <ProductActionsMenu
         variant="floating"
         title={page.title}

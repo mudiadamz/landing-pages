@@ -88,6 +88,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/analytics", label: "Analytics", icon: PulseIcon, adminOnly: true },
       { href: "/panel/tracking", label: "Tracking", icon: TargetIcon, adminOnly: true },
       { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
+      { href: "/panel/promo", label: "Promo", icon: TargetIcon, adminOnly: true },
       { href: "/panel/storage", label: "Storage", icon: DatabaseIcon, adminOnly: true },
     ],
   },
