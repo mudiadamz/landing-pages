@@ -128,10 +128,20 @@ async function PreviewContent({ slug }: { slug: string }) {
 
   // Which file the chapters come from, so an edited book isn't served from a
   // day-old edge cache (lib/epub-version.ts).
+  // Everything that changes what the preview endpoints return. The cut percent
+  // is in here because an excerpt serves a slice of an UNCHANGED archive — the
+  // file stamp cannot see that decision move. preview_purged_at is the manual
+  // override, for when a seller wants the edge dropped now.
+  const previewVariant = [
+    page.preview_type ?? "",
+    page.preview_cut_percent ?? "",
+    page.preview_purged_at ?? "",
+  ].join("|");
   const epubVersion = epubVersionToken(
     page.preview_type === "deliverable" || page.preview_type === "excerpt"
       ? page.story_epub_url
       : page.preview_url,
+    previewVariant,
   );
 
   const embedEpub = !!epubUrl || epubExcerpt;

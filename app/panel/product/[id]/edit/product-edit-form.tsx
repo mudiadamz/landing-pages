@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import { getStoredFileSizes } from "@/lib/actions/file-sizes";
 import { DEFAULT_CUT_PERCENT, clampCutPercent } from "@/lib/epub-cut";
+import { purgePreviewCache } from "@/lib/actions/preview-cache";
 import { useRouter } from "next/navigation";
 import {
   updateLandingPageSettings,
@@ -359,6 +360,17 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
   const [cutPercent, setCutPercent] = useState<number>(
     initial.preview_cut_percent ?? DEFAULT_CUT_PERCENT,
   );
+
+  const [purging, setPurging] = useState(false);
+  const [purged, setPurged] = useState<string | null>(null);
+
+  const runPurge = useCallback(async () => {
+    setPurging(true);
+    setPurged(null);
+    const res = await purgePreviewCache(pageId);
+    setPurged(res.ok ? "Cache preview dibuang. Pengunjung dapat versi terbaru." : res.error);
+    setPurging(false);
+  }, [pageId]);
 
   // --- Pricing ---
   const [longDescription, setLongDescription] = useState(initial.long_description ?? "");
@@ -1371,6 +1383,29 @@ export function ProductEditForm({ pageId, slug, initialHtml, categories, related
             />
           </div>
         )}
+
+        {/* Cache purge — every preview type, not just excerpts. The chapter,
+            cover and asset endpoints are all cached hard at the edge. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">Cache preview</p>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">
+              Ganti file atau ubah potongan sudah otomatis menyegarkan. Pakai ini kalau pengunjung
+              masih melihat versi lama.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={runPurge}
+            disabled={purging}
+            className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-[var(--primary)] disabled:opacity-60"
+          >
+            {purging ? "Membuang…" : "Buang cache"}
+          </button>
+          {purged && (
+            <p className="w-full text-xs text-[var(--muted)]">{purged}</p>
+          )}
+        </div>
 
         {/* Preview = part of the deliverable. One file, truncated when served. */}
         {previewType === "excerpt" && (

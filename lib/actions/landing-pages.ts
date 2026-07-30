@@ -155,7 +155,7 @@ export async function getLandingPageBySlug(slug: string) {
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("lp_landing_pages")
-    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, story_pdf_url, story_pdf_url_dark, story_epub_url, like_count, related_product_ids, next_product_id, available_at, thumbnail_url, published, user_id")
+    .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, preview_cut_percent, preview_purged_at, story_pdf_url, story_pdf_url_dark, story_epub_url, like_count, related_product_ids, next_product_id, available_at, thumbnail_url, published, user_id")
     .eq("slug", slug)
     .single();
 
@@ -170,6 +170,8 @@ export async function getLandingPageBySlug(slug: string) {
     preview_type?: PreviewType | null;
     preview_url?: string | null;
     preview_url_dark?: string | null;
+    preview_cut_percent?: number | null;
+    preview_purged_at?: string | null;
     story_pdf_url?: string | null;
     story_pdf_url_dark?: string | null;
     story_epub_url?: string | null;

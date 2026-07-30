@@ -73,7 +73,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     return new NextResponse(Buffer.from(out) as unknown as BodyInit, {
       headers: {
         "Content-Type": type,
-        "Cache-Control": "public, max-age=86400, s-maxage=31536000, immutable",
+        // NOT immutable, and not a year. This URL is /api/epub-cover/<slug>
+        // with nothing version-shaped in it — the splash renders in the shell,
+        // before any data is fetched, precisely so it can flush immediately, so
+        // there is no token available to put here. An unversioned URL cached
+        // for a year means replacing a book leaves the old cover on screen
+        // effectively forever. An hour at the edge, served stale while it
+        // refreshes, keeps the fast path fast and lets it heal on its own.
+        "Cache-Control": "public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
       },
     });
   } catch {

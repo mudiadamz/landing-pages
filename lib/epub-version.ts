@@ -21,20 +21,38 @@
  * to `<dir>/<Date.now()>-<name>.epub`, so that leading stamp is exactly the
  * signal. Anything unexpected falls back to a cheap string hash.
  */
-export function epubVersionToken(sourceRef: string | null | undefined): string {
-  if (!sourceRef) return "0";
-
-  const base = sourceRef.split("?")[0].split("/").pop() ?? "";
-  const stamp = base.match(/^(\d{10,})-/)?.[1];
-  if (stamp) return stamp.slice(-9);
-
-  // FNV-1a, enough to distinguish one path from another.
+function hash(s: string): string {
+  // FNV-1a, enough to distinguish one string from another.
   let h = 0x811c9dc5;
-  for (let i = 0; i < sourceRef.length; i++) {
-    h ^= sourceRef.charCodeAt(i);
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
     h = Math.imul(h, 0x01000193) >>> 0;
   }
   return h.toString(36);
+}
+
+/**
+ * `variant` covers everything OTHER than the file that changes what gets served.
+ *
+ * The file stamp alone was not enough once the preview stopped being the whole
+ * book. An excerpt serves a slice of an unchanged archive, so moving the cut
+ * from 60% to 40% produced identical bytes at an identical path — the token did
+ * not move, and readers would have kept the old cut for a day. Anything that
+ * changes the RESPONSE has to be in the key, not just anything that changes the
+ * source.
+ */
+export function epubVersionToken(
+  sourceRef: string | null | undefined,
+  variant?: string | null,
+): string {
+  const suffix = variant ? `-${hash(variant)}` : "";
+  if (!sourceRef) return `0${suffix}`;
+
+  const base = sourceRef.split("?")[0].split("/").pop() ?? "";
+  const stamp = base.match(/^(\d{10,})-/)?.[1];
+  if (stamp) return `${stamp.slice(-9)}${suffix}`;
+
+  return `${hash(sourceRef)}${suffix}`;
 }
 
 /** Append the token as a query param, preserving any the URL already has. */
