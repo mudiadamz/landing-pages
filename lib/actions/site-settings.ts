@@ -296,7 +296,18 @@ export async function updatePanelPalette(
 export const getPopupBanner = unstable_cache(
   async (): Promise<PopupBanner> => {
     try {
-      const supabase = await createClient();
+      // Anon client built directly, NOT lib/supabase/server's createClient: that
+      // one reads cookies(), and Next refuses dynamic data sources inside
+      // unstable_cache. It throws, the catch below turns it into DEFAULT_POPUP,
+      // and DEFAULT_POPUP is `enabled: false` — so the banner was silently off
+      // everywhere no matter what the panel said. Every other reader in this
+      // file already does it this way; this one was written later and copied the
+      // wrong neighbour. The config is public site settings, so there is no
+      // session to carry anyway.
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -304,7 +315,10 @@ export const getPopupBanner = unstable_cache(
         .single();
       if (!data?.value) return DEFAULT_POPUP;
       return normalizePopup(JSON.parse(data.value as string));
-    } catch {
+    } catch (e) {
+      // Loudly: the fallback disables the feature, so a silent catch here is
+      // indistinguishable from "admin turned it off" and hid this bug for days.
+      console.error("getPopupBanner failed, falling back to disabled:", e);
       return DEFAULT_POPUP;
     }
   },
