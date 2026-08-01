@@ -43,14 +43,42 @@ const navLinks = [
   { href: "/terms", label: "Ketentuan" },
 ];
 
+/**
+ * Horizontal scroller for the category chips.
+ *
+ * The fade is a mask, not a gradient overlay: the rail sits on three different
+ * surfaces (card, tinted strip, and whatever the theme is) and an overlay would
+ * need to know the colour behind it. A mask fades whatever is actually there,
+ * in both themes, with no colour knowledge at all.
+ *
+ * `overscroll-x-contain` matters on iOS — without it, flicking the rail past its
+ * end hands the gesture to the page and triggers the back-swipe.
+ */
+function Rail({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={
+        "flex items-center gap-1.5 overflow-x-auto overscroll-x-contain scroll-smooth " +
+        "snap-x snap-proximity [scrollbar-width:none] [-ms-overflow-style:none] " +
+        "[&::-webkit-scrollbar]:hidden " +
+        "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] " +
+        className
+      }
+    >
+      {children}
+    </div>
+  );
+}
+
 export function SiteHeader({ user, categories = [], currentCategorySlug = null }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const activeChipRef = useRef<HTMLAnchorElement>(null);
+  const activeSubRef = useRef<HTMLAnchorElement>(null);
 
   // ─── Build the 2-level tree from the flat list ───
-  const { parents, childrenOf, activeParent, activeChildSlug, subCats } = useMemo(() => {
+  const { parents, activeParent, activeChildSlug, subCats } = useMemo(() => {
     const byId = new Map(categories.map((c) => [c.id, c]));
     const parents = categories.filter((c) => !c.parent_id);
     const childrenOf = (id: string) => categories.filter((c) => c.parent_id === id);
@@ -64,12 +92,11 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
       : null;
     const activeChildSlug = current && current.parent_id ? current.slug : null;
     const subCats = activeParent ? childrenOf(activeParent.id) : [];
-    return { parents, childrenOf, activeParent, activeChildSlug, subCats };
+    return { parents, activeParent, activeChildSlug, subCats };
   }, [categories, currentCategorySlug]);
 
   const showCategories = parents.length > 0;
   const activeParentId = activeParent?.id ?? null;
-  const isExpanded = (id: string) => openOverrides[id] ?? id === activeParentId;
 
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -82,279 +109,245 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
     return () => document.removeEventListener("click", handleClickOutside);
   }, [userMenuOpen]);
 
-  const parentChipClass = (active: boolean) =>
-    `flex items-center gap-2 px-2.5 py-2 text-sm rounded-lg transition-all duration-150 shrink-0 ${
-      active
-        ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
-        : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:opacity-80"
-    }`;
+  // Bring the active chip into view. On a phone the rail is a handful of chips
+  // wide, so the one you're actually on is routinely off-screen at load — which
+  // reads as "the category bar forgot where I am".
+  useEffect(() => {
+    for (const el of [activeChipRef.current, activeSubRef.current]) {
+      el?.scrollIntoView({ block: "nearest", inline: "center" });
+    }
+  }, [currentCategorySlug]);
+
+  const chip = (active: boolean) =>
+    `snap-start shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] ` +
+    `font-medium whitespace-nowrap transition-colors duration-150 active:scale-[0.97] ` +
+    (active
+      ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm"
+      : "border border-[var(--border)] bg-[var(--background)]/60 text-[var(--muted)] hover:text-foreground hover:border-[var(--primary)]/40");
+
+  const subChip = (active: boolean) =>
+    `snap-start shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ` +
+    `whitespace-nowrap transition-colors duration-150 active:scale-[0.97] ` +
+    (active
+      ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-semibold"
+      : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]");
 
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--card)]/80">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-base sm:text-lg font-semibold tracking-tight shrink-0 text-foreground hover:opacity-80 transition-opacity"
-        >
-          <BrandMark className="h-6 w-6 sm:h-7 sm:w-7" />
-          ADM.UIUX
-        </Link>
+    <>
+      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--card)]/80">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-base sm:text-lg font-semibold tracking-tight shrink-0 text-foreground hover:opacity-80 transition-opacity"
+          >
+            <BrandMark className="h-6 w-6 sm:h-7 sm:w-7" />
+            ADM.UIUX
+          </Link>
 
-        {/* Desktop row 1: parent categories */}
-        <nav className="hidden md:flex items-center min-w-0 flex-1 justify-center overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex items-center gap-1.5 flex-nowrap py-1">
-            {showCategories ? (
-              <>
-                {parents.map((cat) => (
+          <div className="flex items-center gap-2 shrink-0">
+            <ThemeSwitch />
+            {/* Auth control is hidden on mobile — the bottom nav + hamburger menu
+                cover profile/login there. Shown from md upward. */}
+            <div className="hidden md:flex items-center">
+              {user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen((o) => !o)}
+                    aria-expanded={userMenuOpen}
+                    aria-haspopup="true"
+                    className="px-3 sm:px-4 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150 flex items-center gap-1.5"
+                  >
+                    <span className="max-w-[120px] truncate">{displayName(user)}</span>
+                    <svg className="w-4 h-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-1 py-1 min-w-[160px] rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg z-30">
+                      <Link
+                        href="/panel"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-4 py-2.5 text-sm text-foreground hover:bg-[var(--accent-subtle)]"
+                      >
+                        Pembelian saya
+                      </Link>
+                      <form action={signOut} className="block">
+                        <button
+                          type="submit"
+                          className="w-full text-left px-4 py-2.5 text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                        >
+                          Keluar
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-3 sm:px-4 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150"
+                >
+                  Masuk
+                </Link>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Buka menu"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden p-2 -mr-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:scale-[0.95] active:opacity-80 transition-all duration-150"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Categories, at every size. They used to be desktop-only, with phones
+            reaching them through a nested accordion behind the hamburger — two
+            taps and a scroll to change category. A rail costs one swipe. */}
+        {showCategories ? (
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-2">
+            <Rail>
+              {parents.map((cat) => {
+                const active = activeParentId === cat.id;
+                return (
                   <Link
                     key={cat.id}
+                    ref={active ? activeChipRef : undefined}
                     href={`/category/${cat.slug}`}
-                    className={parentChipClass(activeParentId === cat.id)}
+                    aria-current={active ? "page" : undefined}
+                    className={chip(active)}
                   >
                     <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0" />
-                    <span className="whitespace-nowrap">{cat.name}</span>
+                    {cat.name}
                   </Link>
-                ))}
-              </>
-            ) : (
-              navLinks.map(({ href, label }) => (
+                );
+              })}
+              <Link
+                href="/categories"
+                className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium whitespace-nowrap text-[var(--muted)] hover:text-foreground transition-colors"
+              >
+                Semua →
+              </Link>
+            </Rail>
+          </div>
+        ) : (
+          <div className="hidden md:block max-w-5xl mx-auto px-4 sm:px-6 pb-2">
+            <Rail>
+              {navLinks.map(({ href, label }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-2 px-2.5 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:opacity-80 transition-all duration-150 shrink-0"
+                  className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[13px] text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] transition-colors whitespace-nowrap"
                 >
                   {label}
                 </Link>
-              ))
-            )}
+              ))}
+            </Rail>
           </div>
-        </nav>
+        )}
 
-        <div className="flex items-center gap-2 shrink-0">
-          <ThemeSwitch />
-          {/* Auth control is hidden on mobile — the bottom nav + hamburger menu
-              cover profile/login there. Shown from md upward. */}
-          <div className="hidden md:flex items-center">
-          {user ? (
-            <div className="relative" ref={userMenuRef}>
-              <button
-                type="button"
-                onClick={() => setUserMenuOpen((o) => !o)}
-                aria-expanded={userMenuOpen}
-                aria-haspopup="true"
-                className="px-3 sm:px-4 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150 flex items-center gap-1.5"
+        {/* Mobile menu — categories live in the rail now, so this is only the
+            things the rail can't hold: account, and the standing pages. */}
+        {mobileOpen && (
+          <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)]">
+            <nav className="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-0.5">
+              <Link
+                href="/categories"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-foreground rounded-xl bg-[var(--accent-subtle)]"
               >
-                <span className="max-w-[120px] truncate">{displayName(user)}</span>
-                <svg className="w-4 h-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 py-1 min-w-[160px] rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-lg z-30">
+                Semua kategori
+                <span aria-hidden className="text-[var(--primary)]">→</span>
+              </Link>
+              {navLinks.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:opacity-90 transition-all duration-150"
+                >
+                  {label}
+                </Link>
+              ))}
+              {user ? (
+                <div className="mt-2 pt-3 border-t border-[var(--border)] flex flex-col gap-0.5">
                   <Link
                     href="/panel"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="block px-4 py-2.5 text-sm text-foreground hover:bg-[var(--accent-subtle)]"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 text-sm text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
                   >
                     Pembelian saya
                   </Link>
-                  <form action={signOut} className="block">
+                  <form action={signOut}>
                     <button
                       type="submit"
-                      className="w-full text-left px-4 py-2.5 text-sm text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
+                      className="block w-full text-left px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
                     >
                       Keluar
                     </button>
                   </form>
                 </div>
-              )}
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="px-3 sm:px-4 py-2 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:opacity-80 transition-all duration-150"
-            >
-              Masuk
-            </Link>
-          )}
-          </div>
-          <button
-            type="button"
-            aria-label="Toggle menu"
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 -mr-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:scale-[0.95] active:opacity-80 transition-all duration-150"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-3 py-2.5 mt-2 pt-3 border-t border-[var(--border)] text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] transition-all duration-150"
+                >
+                  Masuk
+                </Link>
               )}
-            </svg>
-          </button>
-        </div>
-      </div>
+            </nav>
+          </div>
+        )}
+      </header>
 
-      {/* Desktop row 2: sub-categories of the active parent */}
+      {/* Sub-categories sit OUTSIDE the sticky header on purpose. Pinning both
+          rails costs ~145px of a phone screen before any product is visible;
+          this way the parent rail stays reachable and the narrower choice
+          scrolls away once you've made it. */}
       {showCategories && subCats.length > 0 && activeParent && (
-        <div className="hidden md:block border-t border-[var(--border)] bg-[var(--background)]/40">
+        <div className="border-b border-[var(--border)] bg-[var(--background)]/50">
           <div className="max-w-5xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center gap-1.5 flex-nowrap py-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <Rail className="py-1.5">
               <Link
                 href={`/category/${activeParent.slug}`}
-                className={`px-2.5 py-1 text-xs rounded-md transition-colors shrink-0 ${
-                  !activeChildSlug
-                    ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
-                    : "text-[var(--muted)] hover:text-foreground"
-                }`}
+                ref={!activeChildSlug ? activeSubRef : undefined}
+                aria-current={!activeChildSlug ? "page" : undefined}
+                className={subChip(!activeChildSlug)}
               >
                 Semua {activeParent.name}
               </Link>
-              <span className="text-[var(--border)] shrink-0" aria-hidden>·</span>
-              {subCats.map((sub) => (
-                <Link
-                  key={sub.id}
-                  href={`/category/${sub.slug}`}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md transition-colors shrink-0 ${
-                    activeChildSlug === sub.slug
-                      ? "bg-[var(--accent-subtle)] text-[var(--primary)] font-medium"
-                      : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
-                  }`}
-                >
-                  <CategoryIcon icon={sub.icon} className="w-3.5 h-3.5 shrink-0" />
-                  <span className="whitespace-nowrap">{sub.name}</span>
-                </Link>
-              ))}
-            </div>
+              <span className="shrink-0 text-[var(--border)]" aria-hidden>
+                ·
+              </span>
+              {subCats.map((sub) => {
+                const active = activeChildSlug === sub.slug;
+                return (
+                  <Link
+                    key={sub.id}
+                    ref={active ? activeSubRef : undefined}
+                    href={`/category/${sub.slug}`}
+                    aria-current={active ? "page" : undefined}
+                    className={subChip(active)}
+                  >
+                    <CategoryIcon icon={sub.icon} className="w-3.5 h-3.5 shrink-0" />
+                    {sub.name}
+                  </Link>
+                );
+              })}
+            </Rail>
           </div>
         </div>
       )}
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[var(--card)] max-h-[70vh] overflow-y-auto">
-          <nav className="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-0.5">
-            {showCategories ? (
-              <>
-                {parents.map((parent) => {
-                  const children = childrenOf(parent.id);
-                  const parentActive = activeParentId === parent.id;
-                  if (children.length === 0) {
-                    return (
-                      <Link
-                        key={parent.id}
-                        href={`/category/${parent.slug}`}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
-                          parentActive ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
-                        }`}
-                      >
-                        <CategoryIcon icon={parent.icon} className="w-4 h-4 shrink-0" />
-                        {parent.name}
-                      </Link>
-                    );
-                  }
-                  const open = isExpanded(parent.id);
-                  return (
-                    <div key={parent.id}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setOpenOverrides((prev) => ({ ...prev, [parent.id]: !open }))
-                        }
-                        aria-expanded={open}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg ${
-                          parentActive ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]" : "text-foreground hover:bg-[var(--accent-subtle)]"
-                        }`}
-                      >
-                        <CategoryIcon icon={parent.icon} className="w-4 h-4 shrink-0" />
-                        <span className="flex-1 text-left">{parent.name}</span>
-                        <svg
-                          className={`w-4 h-4 shrink-0 opacity-70 transition-transform ${open ? "rotate-180" : ""}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                      {open && (
-                        <div className="ml-4 pl-3 border-l border-[var(--border)] flex flex-col gap-0.5 py-0.5">
-                          <Link
-                            href={`/category/${parent.slug}`}
-                            onClick={() => setMobileOpen(false)}
-                            className={`px-3 py-2 text-sm rounded-lg ${
-                              parentActive && !activeChildSlug
-                                ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]"
-                                : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
-                            }`}
-                          >
-                            Semua {parent.name}
-                          </Link>
-                          {children.map((sub) => (
-                            <Link
-                              key={sub.id}
-                              href={`/category/${sub.slug}`}
-                              onClick={() => setMobileOpen(false)}
-                              className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg ${
-                                activeChildSlug === sub.slug
-                                  ? "text-[var(--primary)] font-medium bg-[var(--accent-subtle)]"
-                                  : "text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)]"
-                              }`}
-                            >
-                              <CategoryIcon icon={sub.icon} className="w-4 h-4 shrink-0" />
-                              {sub.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </>
-            ) : (
-              navLinks.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:bg-[var(--accent-subtle)] active:opacity-90 transition-all duration-150"
-                >
-                  {label}
-                </Link>
-              ))
-            )}
-            {user ? (
-              <div className="mt-2 pt-4 border-t border-[var(--border)] flex flex-col gap-0.5">
-                <Link
-                  href="/panel"
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 text-sm text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
-                >
-                  Pembelian saya
-                </Link>
-                <form action={signOut}>
-                  <button
-                    type="submit"
-                    className="block w-full text-left px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
-                  >
-                    Keluar
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="block px-3 py-2.5 mt-2 pt-4 border-t border-[var(--border)] text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:scale-[0.98] active:bg-[var(--accent-subtle)] active:opacity-90 transition-all duration-150"
-              >
-                Masuk
-              </Link>
-            )}
-          </nav>
-        </div>
-      )}
-    </header>
+    </>
   );
 }
