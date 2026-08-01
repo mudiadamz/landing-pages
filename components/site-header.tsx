@@ -226,7 +226,7 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                     aria-current={active ? "page" : undefined}
                     className={chip(active)}
                   >
-                    <CategoryIcon icon={cat.icon} className="w-4 h-4 shrink-0" />
+                    <CategoryIcon icon={cat.icon} className="w-4 h-4" active={active} />
                     {cat.name}
                   </Link>
                 );
@@ -339,7 +339,7 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
                     aria-current={active ? "page" : undefined}
                     className={subChip(active)}
                   >
-                    <CategoryIcon icon={sub.icon} className="w-3.5 h-3.5 shrink-0" />
+                    <CategoryIcon icon={sub.icon} className="w-3.5 h-3.5" active={active} />
                     {sub.name}
                   </Link>
                 );

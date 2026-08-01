@@ -140,7 +140,30 @@ export const CATEGORY_ICONS: Record<string, IconDef> = {
 
 export const ICON_KEYS = Object.keys(CATEGORY_ICONS);
 
-export function CategoryIcon({ icon, className }: { icon: string; className?: string }) {
+/**
+ * `active` is what makes the set feel alive rather than printed on.
+ *
+ * The wrapper exists so the icon can be animated without touching the 16 svg
+ * definitions: the pop lives on the span, and the stroke weight is bumped with
+ * CSS, which beats the strokeWidth presentation attribute the svgs carry.
+ *
+ * The animation replays on every switch for free — the class only ever arrives
+ * on the icon you just chose, and applying an animation class to an element
+ * that didn't have one starts it. Styling in app/globals.css.
+ */
+export function CategoryIcon({
+  icon,
+  className,
+  active = false,
+}: {
+  icon: string;
+  className?: string;
+  active?: boolean;
+}) {
   const def = CATEGORY_ICONS[icon] ?? CATEGORY_ICONS.default;
-  return def.svg(className ?? "w-4 h-4 shrink-0");
+  return (
+    <span className={`cat-icon${active ? " cat-icon--active" : ""}`} aria-hidden>
+      {def.svg(className ?? "w-4 h-4")}
+    </span>
+  );
 }

@@ -751,3 +751,56 @@ input, textarea, select {
   content: attr(data-placeholder);
   color: var(--muted);
 }
+
+/* ── Category icons ──────────────────────────────────────────────────────────
+   The nav used 16 flat outline glyphs that never reacted to anything, so the
+   bar read as printed on. These give them weight and a reaction, without
+   editing a single svg: the wrapper animates, and CSS overrides the strokeWidth
+   attribute the shapes carry.
+
+   The override has to target the SHAPES, not the <svg>. A presentation
+   attribute loses to a CSS rule on the same element, but it beats a value
+   inherited from an ancestor — so `.cat-icon--active svg { stroke-width }` is
+   silently ignored by any <path stroke-width="2">, which is all of them. */
+.cat-icon {
+  display: inline-flex;
+  flex: none;
+  transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.cat-icon svg :is(path, circle, rect, line, polyline, polygon, ellipse) {
+  transition: stroke-width 0.25s ease;
+}
+
+/* Becoming the active category. The class only ever lands on the icon you just
+   chose, so this fires once per switch — the bar acknowledging the tap. */
+.cat-icon--active {
+  animation: catIconPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.cat-icon--active svg :is(path, circle, rect, line, polyline, polygon, ellipse) {
+  stroke-width: 2.4;
+}
+@keyframes catIconPop {
+  0%   { transform: scale(0.7) rotate(-14deg); }
+  55%  { transform: scale(1.16) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Touch/hover feedback on the chip itself — the icon leads, so the whole chip
+   feels physical rather than a coloured rectangle. */
+a:hover > .cat-icon { transform: scale(1.12); }
+a:active > .cat-icon { transform: scale(0.9); }
+
+/* The tile on /categories leans its icon in with the card. */
+.cat-tile:hover .cat-icon,
+a:hover .cat-tile .cat-icon { transform: scale(1.15) rotate(-7deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-icon,
+  .cat-icon svg :is(path, circle, rect, line, polyline, polygon, ellipse) { transition: none; }
+  .cat-icon--active { animation: none; }
+  a:hover > .cat-icon,
+  a:active > .cat-icon,
+  .cat-tile:hover .cat-icon,
+  a:hover .cat-tile .cat-icon { transform: none; }
+}

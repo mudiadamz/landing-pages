@@ -51,7 +51,7 @@ export default async function CategoriesPage() {
                     href={`/category/${parent.slug}`}
                     className="group flex items-center gap-3"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-subtle)] text-[var(--primary)]">
+                    <span className="cat-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-subtle)] text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)] group-hover:text-[var(--primary-foreground)]">
                       <CategoryIcon icon={parent.icon} className="h-5 w-5" />
                     </span>
                     <span className="min-w-0">
