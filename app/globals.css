@@ -520,6 +520,28 @@ html.dark .epub-surface {
 /* A chapter-num immediately followed by a title is one unit — close the gap. */
 .epub-inline .chapter-num + .chapter-title { margin-top: 0; }
 
+/* The other convention: some exporters nest the label INSIDE the heading —
+   <h1><span class="num">Kata Pengantar</span>Bukan Soal Pintar Ngomong</h1> —
+   rather than emitting a separate .chapter-num element. A span is inline, and
+   the markup has no whitespace between the two, so with the book's own
+   stylesheet stripped the label welds onto the title and reads as one run-on
+   line. Books carrying this shape style it themselves (h1 .num { display:block })
+   — that rule is exactly what the reader throws away, so it has to be restored
+   here. Same treatment as .chapter-num above, so both conventions look alike:
+   0.52em of a 1.5em h1 lands on the same 0.78em. */
+.epub-inline h1 .num,
+.epub-inline h2 .num,
+.epub-inline h3 .num,
+.epub-inline h4 .num {
+  display: block;
+  font-size: 0.52em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-bottom: 0.85em;
+}
+
 /* The opening chapter, compacted.
    Later chapters keep the full header: by then it is a landmark the reader has
    earned, and the pause is welcome. Here it sits in front of the only screen
