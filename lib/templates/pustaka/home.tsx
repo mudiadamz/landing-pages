@@ -39,7 +39,7 @@ export function PustakaHome({
   user,
 }: TemplateProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div data-template="pustaka" className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader user={user} categories={categories} />
 
       <main className="flex-1">

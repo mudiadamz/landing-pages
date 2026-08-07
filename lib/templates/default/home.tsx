@@ -26,7 +26,10 @@ export function DefaultHome({
   user,
 }: TemplateProps) {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div
+      data-template="default"
+      className="min-h-screen bg-background text-foreground flex flex-col"
+    >
       <SiteHeader user={user} categories={categories} />
 
       <main className="flex-1 relative">
