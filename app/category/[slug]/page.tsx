@@ -1,15 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
-import { LandingPageCard } from "@/app/landing-page-card";
-import { SortTabs } from "@/components/sort-tabs";
-import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
-import { FounderCredibility } from "@/components/founder-credibility";
-import { Testimonials } from "@/components/testimonials";
-import { Disclaimer } from "@/components/disclaimer";
+import { currentSite } from "@/lib/site-resolve";
+import { resolveCategory } from "@/lib/templates/registry";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -25,6 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: cat.name };
 }
 
+/**
+ * Loads the data, then hands it to this domain's template — same split as
+ * app/page.tsx and for the same reason: per-site catalog filtering and the cache
+ * keys stay in one place, where a future template can't fetch around them.
+ */
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const sp = await searchParams;
@@ -35,64 +35,29 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [pages, categories, reviews, reviewCounts] = await Promise.all([
+  const [site, pages, categories, reviews, reviewCounts] = await Promise.all([
+    currentSite(),
     getLandingPagesForHomepage(slug, sort),
     getCategories(),
     getPublicReviews(),
     getReviewCounts(),
   ]);
 
-  const cat = categories.find((c) => c.slug === slug);
-  if (!cat) notFound();
+  const category = categories.find((c) => c.slug === slug);
+  if (!category) notFound();
+
+  const CategoryView = resolveCategory(site.template);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <TemplateHeader user={user} categories={categories} currentCategorySlug={slug} />
-
-      <main className="flex-1 relative">
-        <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-2">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">{cat.name}</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">{pages.length} produk</p>
-        </section>
-
-        {pages.length === 0 ? (
-          <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
-            <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)]/50 py-12 sm:py-16 px-6 sm:px-8 text-center animate-fade-in-up hover:shadow-lg transition-shadow duration-300">
-              <p className="text-[var(--muted)]">Belum ada landing page di kategori ini.</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                <Link href="/" className="font-medium text-[var(--primary)] hover:opacity-80 transition-opacity">
-                  Lihat semua
-                </Link>
-              </p>
-            </div>
-          </section>
-        ) : (
-          <section id="templates" className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24 scroll-mt-20">
-            <SortTabs basePath={`/category/${slug}`} current={sort} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 landing-grid">
-              {pages.map((page, i) => (
-                <LandingPageCard
-                  key={page.id}
-                  page={page}
-                  priority={i < 3}
-                  reviewCount={reviewCounts[page.id] ?? 0}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {pages.length > 0 && (
-          <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-4">
-            <FounderCredibility templateCount={pages.length} />
-          </section>
-        )}
-
-        <Testimonials reviews={reviews} />
-        <Disclaimer />
-      </main>
-
-      <TemplateFooter />
-    </div>
+    <CategoryView
+      site={site}
+      category={category}
+      pages={pages}
+      categories={categories}
+      reviews={reviews}
+      reviewCounts={reviewCounts}
+      sort={sort}
+      user={user}
+    />
   );
 }

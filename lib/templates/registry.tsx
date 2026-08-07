@@ -5,9 +5,11 @@ import type { Site } from "@/lib/site-resolve";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
+import { DefaultCategory } from "./default/category";
 import { PustakaHome } from "./pustaka/home";
 import { PustakaHeader } from "./pustaka/header";
 import { PustakaFooter } from "./pustaka/footer";
+import { PustakaCategory } from "./pustaka/category";
 
 /**
  * Frontend templates, so storefronts in different niches don't all look like a
@@ -46,6 +48,10 @@ export type ChromeProps = {
   currentCategorySlug?: string | null;
 };
 
+export type CategoryTemplateProps = Omit<TemplateProps, "hero"> & {
+  category: LandingPageCategory;
+};
+
 export type TemplateDef = {
   key: string;
   /** Shown in the panel picker. */
@@ -62,6 +68,20 @@ export type TemplateDef = {
    */
   Header: (props: ChromeProps) => React.ReactNode;
   Footer: () => React.ReactNode;
+  /**
+   * OPTIONAL slots. A template overrides only the surfaces its niche actually
+   * changes; anything left undefined falls back to the marketplace version, so
+   * adding a template never means reimplementing the whole site.
+   *
+   * Pages deliberately NOT slotted, because a niche has no reason to differ:
+   *   /lp/[slug]            chrome-free fullscreen preview by design
+   *   /checkout/*           a payment flow; divergence here buys risk, not identity
+   *   /privacy /terms /refund  legal text, identical obligations on every domain
+   *   /about /contact /hiring  parent-brand pages
+   *   /read/[slug]          the reader, owned by the product not the storefront
+   * Add a slot here when a real niche difference appears — not in advance.
+   */
+  Category?: (props: CategoryTemplateProps) => React.ReactNode;
 };
 
 export const TEMPLATES: Record<string, TemplateDef> = {
@@ -74,6 +94,7 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     // The chrome the live site already ships. Untouched on purpose.
     Header: SiteHeader,
     Footer: SiteFooter,
+    Category: DefaultCategory,
   },
   pustaka: {
     key: "pustaka",
@@ -83,6 +104,7 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Home: PustakaHome,
     Header: PustakaHeader,
     Footer: PustakaFooter,
+    Category: PustakaCategory,
   },
 };
 
@@ -97,4 +119,14 @@ export function resolveTemplate(key: string | null | undefined): TemplateDef {
 /** For the panel picker. */
 export function templateOptions(): TemplateDef[] {
   return Object.values(TEMPLATES);
+}
+
+/**
+ * The category page for a template, falling back to the marketplace one.
+ *
+ * The fallback is what makes the optional slots honest: a template with no
+ * Category still renders a correct, complete page instead of nothing.
+ */
+export function resolveCategory(key: string | null | undefined) {
+  return resolveTemplate(key).Category ?? DefaultCategory;
 }
