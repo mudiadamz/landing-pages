@@ -37,7 +37,33 @@ Tiga tempat. Melewatkan satu menghasilkan gejala yang terlihat seperti bug.
 
 ### 2. Vercel — supaya domainnya sampai ke aplikasi
 
-Project **`landing_pages`** → Settings → Domains → **Add**.
+**Bisa otomatis.** Kalau `VERCEL_API_TOKEN` diset, panel menambahkan domain ke
+project sendiri lewat REST API Vercel (`POST /v10/projects/{id}/domains`) begitu
+domain dibuat. Kartu domain di `/panel/sites` menampilkan statusnya —
+*Aktif di Vercel* / *Menunggu DNS* / *Belum di Vercel* — plus tombol
+**Tambah ke Vercel** dan **Cek verifikasi**, dan record DNS yang diminta Vercel
+kalau domainnya butuh diverifikasi.
+
+Env yang dibutuhkan (lihat `.env.example`):
+
+```
+VERCEL_API_TOKEN=      # Vercel → Account Settings → Tokens
+VERCEL_PROJECT_ID=     # dari .vercel/project.json (projectId)
+VERCEL_TEAM_ID=        # dari .vercel/project.json (orgId)
+```
+
+> **Token Vercel itu luas.** Scope-nya per akun/team, bukan per endpoint — tidak
+> ada token "domains saja", jadi token ini bisa melakukan apa pun yang team bisa
+> (termasuk menghapus project). Simpan sebagai env server (**jangan** pakai
+> prefix `NEXT_PUBLIC_`), batasi ke team, dan beri masa kedaluwarsa. Semua
+> pemakaiannya ada di `lib/vercel-domains.ts` dan setiap pemanggil lewat
+> `requireAdmin()`.
+
+Tanpa token, langkahnya manual dan panduan di panel tetap menampilkan nilai yang
+perlu dipasang. **Menghapus domain di panel tidak melepasnya dari Vercel** —
+disengaja, supaya tidak mematikan domain hidup hanya karena mau di-repoint.
+
+Kalau manual: Project **`landing_pages`** → Settings → Domains → **Add**.
 
 - **Subdomain `admuiux.com`** (mis. `resep.admuiux.com`) — DNS-nya sudah di Vercel,
   jadi langsung jalan. Tidak perlu beli domain, SSL otomatis.

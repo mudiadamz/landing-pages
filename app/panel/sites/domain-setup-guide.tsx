@@ -75,10 +75,13 @@ export function DomainSetupGuide({
   host,
   supabaseProjectUrl,
   canonicalHost,
+  vercelAutomated,
 }: {
   host: string;
   supabaseProjectUrl: string;
   canonicalHost: string;
+  /** A token is configured, so the panel adds the domain to Vercel itself. */
+  vercelAutomated: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const isSubdomain = host.endsWith(`.${canonicalHost}`);
@@ -96,7 +99,9 @@ export function DomainSetupGuide({
             Langkah di luar panel ini
           </span>
           <span className="block text-xs text-[var(--muted)]">
-            Vercel &amp; Supabase — tanpa ini, {host} tidak bisa dibuka atau tidak bisa login.
+            {vercelAutomated
+              ? `Vercel sudah otomatis. Tinggal Supabase — tanpa itu, login di ${host} gagal.`
+              : `Vercel & Supabase — tanpa ini, ${host} tidak bisa dibuka atau tidak bisa login.`}
           </span>
         </span>
         <span className="shrink-0 text-xs font-medium text-[var(--primary)]">
@@ -106,12 +111,30 @@ export function DomainSetupGuide({
 
       {open && (
         <ol className="space-y-4 border-t border-[var(--border)] px-3 py-3">
-          <Step n={1} title="Arahkan domain ke aplikasi" where="Vercel">
-            <p>
-              Project <strong className="text-foreground">landing_pages</strong> → Settings →
-              Domains → <strong className="text-foreground">Add</strong>, lalu masukkan:
-            </p>
-            <Value>{host}</Value>
+          <Step
+            n={1}
+            title={
+              vercelAutomated
+                ? "Arahkan domain ke aplikasi — sudah otomatis"
+                : "Arahkan domain ke aplikasi"
+            }
+            where="Vercel"
+          >
+            {vercelAutomated ? (
+              <p>
+                Panel ini menambahkannya sendiri lewat API Vercel saat domain dibuat — status &amp;
+                tombolnya ada di kartu domain di atas. Kalau gagal, alasannya tampil di sana
+                beserta tombol coba lagi.
+              </p>
+            ) : (
+              <>
+                <p>
+                  Project <strong className="text-foreground">landing_pages</strong> → Settings →
+                  Domains → <strong className="text-foreground">Add</strong>, lalu masukkan:
+                </p>
+                <Value>{host}</Value>
+              </>
+            )}
             {isSubdomain ? (
               <p>
                 Ini subdomain <span className="font-mono">{canonicalHost}</span> yang DNS-nya

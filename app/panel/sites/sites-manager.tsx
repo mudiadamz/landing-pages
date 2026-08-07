@@ -8,6 +8,7 @@ import { createSite, updateSite, deleteSite } from "@/lib/actions/sites";
 import type { Site } from "@/lib/site-resolve";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import { DomainSetupGuide } from "./domain-setup-guide";
+import { VercelDomainStatus } from "./vercel-domain-status";
 
 type Draft = {
   host: string;
@@ -37,11 +38,13 @@ export function SitesManager({
   rootCategories,
   canonicalHost,
   supabaseProjectUrl,
+  vercelAutomated,
 }: {
   sites: Site[];
   rootCategories: LandingPageCategory[];
   canonicalHost: string;
   supabaseProjectUrl: string;
+  vercelAutomated: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -79,19 +82,44 @@ export function SitesManager({
   }
 
   function save() {
-    const isNew = editing === "new";
+    const editingId = editing;
     startTransition(async () => {
-      const res = isNew ? await createSite(draft) : await updateSite(editing!, draft);
-      if (!res.ok) {
-        setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
-        return;
+      // Branched rather than a ternary: only createSite reports a Vercel outcome, and
+      // narrowing a union of the two return shapes loses that field.
+      if (editingId === "new") {
+        const res = await createSite(draft);
+        if (!res.ok) {
+          setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
+          return;
+        }
+        // The row is saved either way; what to say depends on how far Vercel got.
+        const v = res.vercel;
+        if (!v || v.kind === "not-configured") {
+          setMessage({
+            type: "ok",
+            text: `Domain ${draft.host} ditambahkan. Jangan lupa tambahkan juga di Vercel.`,
+          });
+        } else if (v.kind === "error") {
+          setMessage({
+            type: "err",
+            text: `Domain ${draft.host} tersimpan, tapi gagal ditambahkan ke Vercel: ${v.error}`,
+          });
+        } else {
+          setMessage({
+            type: "ok",
+            text: v.state.verified
+              ? `Domain ${draft.host} ditambahkan & aktif di Vercel. Tinggal langkah Supabase.`
+              : `Domain ${draft.host} ditambahkan ke Vercel — menunggu DNS. Record-nya ada di kartu domain.`,
+          });
+        }
+      } else {
+        const res = await updateSite(editingId!, draft);
+        if (!res.ok) {
+          setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
+          return;
+        }
+        setMessage({ type: "ok", text: "Perubahan tersimpan." });
       }
-      setMessage({
-        type: "ok",
-        text: isNew
-          ? `Domain ${draft.host} ditambahkan. Jangan lupa tambahkan juga di Vercel.`
-          : "Perubahan tersimpan.",
-      });
       setEditing(null);
       router.refresh();
     });
@@ -100,7 +128,7 @@ export function SitesManager({
   function remove(site: Site) {
     if (
       !confirm(
-        `Hapus domain ${site.host}?\n\nPengaturan khusus domain ini (hero, popup, tracking, custom JS) ikut terhapus. Produk tidak terpengaruh.`,
+        `Hapus domain ${site.host}?\n\nPengaturan khusus domain ini (hero, popup, tracking, custom JS) ikut terhapus. Produk tidak terpengaruh.\n\nDomainnya TETAP terdaftar di Vercel — lepas sendiri di sana kalau memang mau dilepas.`,
       )
     )
       return;
@@ -148,7 +176,14 @@ export function SitesManager({
           </li>
           <li>
             <strong className="text-foreground">Vercel</strong> — supaya domainnya sampai ke
-            aplikasi ini.
+            aplikasi ini.{" "}
+            {vercelAutomated ? (
+              <span className="text-green-700 dark:text-green-400">
+                Otomatis — panel ini yang menambahkannya.
+              </span>
+            ) : (
+              <span>Manual, lihat panduan per domain.</span>
+            )}
           </li>
           <li>
             <strong className="text-foreground">Supabase</strong> — supaya pengunjung bisa login
@@ -222,11 +257,13 @@ export function SitesManager({
             )}
 
             {editing !== site.id && !site.is_canonical && (
-              <div className="mt-3">
+              <div className="mt-3 space-y-2">
+                <VercelDomainStatus host={site.host} />
                 <DomainSetupGuide
                   host={site.host}
                   supabaseProjectUrl={supabaseProjectUrl}
                   canonicalHost={canonicalHost}
+                  vercelAutomated={vercelAutomated}
                 />
               </div>
             )}

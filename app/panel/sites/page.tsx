@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { getSites } from "@/lib/actions/sites";
+import { getSites, isVercelConfigured } from "@/lib/actions/sites";
 import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { SitesManager } from "./sites-manager";
 
@@ -16,7 +16,11 @@ export default async function SitesPage() {
   // niche domain to rewrite the canonical domain's own host.
   if (!(await isCanonicalRequest())) redirect("/");
 
-  const [sites, categories] = await Promise.all([getSites(), getCategories()]);
+  const [sites, categories, vercelAutomated] = await Promise.all([
+    getSites(),
+    getCategories(),
+    isVercelConfigured(),
+  ]);
   const rootCategories = categories.filter((c) => !c.parent_id);
 
   return (
@@ -36,6 +40,7 @@ export default async function SitesPage() {
         // Public anyway (it ships to the browser as a NEXT_PUBLIC var) and needed
         // verbatim: it is the one redirect URI Google is configured with.
         supabaseProjectUrl={(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}
+        vercelAutomated={vercelAutomated}
       />
     </div>
   );

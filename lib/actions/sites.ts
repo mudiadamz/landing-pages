@@ -4,6 +4,13 @@ import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
+import {
+  addVercelDomain,
+  getVercelDomain,
+  verifyVercelDomain,
+  vercelConfigured,
+  type VercelDomainState,
+} from "@/lib/vercel-domains";
 
 // Site is deliberately NOT re-exported here. Every export of a "use server"
 // module is compiled into a callable server action, and a type re-export becomes
@@ -53,6 +60,50 @@ export async function getSites(): Promise<Site[]> {
   return listSites();
 }
 
+/** Whether the panel can add domains to Vercel itself, or must tell you to. */
+export async function isVercelConfigured(): Promise<boolean> {
+  if (!(await requireAdmin())) return false;
+  return vercelConfigured();
+}
+
+export type VercelStatus =
+  | { kind: "not-configured" }
+  | { kind: "ok"; state: VercelDomainState }
+  | { kind: "error"; error: string };
+
+async function toStatus(
+  run: () => Promise<
+    { ok: true; state: VercelDomainState } | { ok: false; error: string; code?: string }
+  >,
+): Promise<VercelStatus> {
+  const res = await run();
+  if (res.ok) return { kind: "ok", state: res.state };
+  if (res.code === "not-configured") return { kind: "not-configured" };
+  return { kind: "error", error: res.error };
+}
+
+/** Read a domain's state on the Vercel project. */
+export async function getDomainStatus(host: string): Promise<VercelStatus> {
+  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
+  return toStatus(() => getVercelDomain(host));
+}
+
+/** Add (or re-add) the domain to the Vercel project. */
+export async function attachDomainToVercel(host: string): Promise<VercelStatus> {
+  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
+  const status = await toStatus(() => addVercelDomain(host));
+  revalidatePath("/panel/sites");
+  return status;
+}
+
+/** Re-check the DNS challenge once the record has been added at the registrar. */
+export async function recheckDomainVerification(host: string): Promise<VercelStatus> {
+  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
+  const status = await toStatus(() => verifyVercelDomain(host));
+  revalidatePath("/panel/sites");
+  return status;
+}
+
 /** Everything that invalidates when a site's identity or niche changes. */
 function bustSiteCaches() {
   updateTag("sites");
@@ -61,7 +112,9 @@ function bustSiteCaches() {
   revalidatePath("/panel/sites");
 }
 
-export async function createSite(input: SiteInput): Promise<{ ok: boolean; error?: string }> {
+export async function createSite(
+  input: SiteInput,
+): Promise<{ ok: boolean; error?: string; vercel?: VercelStatus }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
   const host = cleanHost(input.host);
@@ -90,7 +143,12 @@ export async function createSite(input: SiteInput): Promise<{ ok: boolean; error
     return { ok: false, error: "Gagal menyimpan." };
   }
   bustSiteCaches();
-  return { ok: true };
+
+  // Then hand it to Vercel, if a token is configured. Deliberately AFTER the row
+  // exists and never fatal: a Vercel failure must not throw away the site the admin
+  // just described, and the panel shows the reason plus a retry button.
+  const vercel = await toStatus(() => addVercelDomain(host));
+  return { ok: true, vercel };
 }
 
 export async function updateSite(
