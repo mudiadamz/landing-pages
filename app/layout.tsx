@@ -150,12 +150,10 @@ export default async function RootLayout({
       <body
         className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Per-storefront palette. In the BODY, not the head: Next hoists the
-            globals.css <link> with data-precedence, which lands it after a plain
-            inline <style> in head — so a head version loses to globals.css and the
-            palette silently does nothing (measured: the served CSS was right and the
-            rendered colour was not). app/panel/layout.tsx does the same for the
-            panel palette, and renders inside this, so it still wins on panel routes.
+        {/* Per-storefront palette. In the BODY to match app/panel/layout.tsx, which
+            puts the panel palette here so it lands after Next's hoisted stylesheet
+            and so portalled dialogs still get the tokens. The panel's own <style>
+            renders inside this one, so it still wins on panel routes.
 
             Overrides only the four mood tokens; backgrounds, text and borders stay
             fixed, which is where the contrast lives. */}
