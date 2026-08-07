@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isCanonicalRequest } from "@/lib/site-resolve";
 import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { getPanelPalette } from "@/lib/actions/site-settings";
@@ -12,6 +14,11 @@ export default async function PanelLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // The panel exists on the canonical domain only. Supabase session cookies are
+  // per-domain and don't cross, so serving /panel from every storefront would mean
+  // logging in again on each one. Niche domains send visitors to their homepage.
+  if (!(await isCanonicalRequest())) redirect("/");
+
   const [supabase, profile, palette] = await Promise.all([
     createClient(),
     getProfile(),

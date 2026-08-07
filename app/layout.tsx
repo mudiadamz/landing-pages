@@ -16,6 +16,7 @@ import { PwaRegister } from "@/components/pwa-register";
 import { SessionTracker } from "@/components/session-tracker";
 import { GtmScripts } from "@/components/gtm-scripts";
 import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
+import { currentOrigin, currentSite } from "@/lib/site-resolve";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,57 +38,50 @@ const aumanDisplay = localFont({
   weight: "400",
 });
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com").replace(/\/$/, "");
+const DEFAULT_DESCRIPTION =
+  "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.";
 
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "ADM.UIUX",
-  url: SITE_URL,
-  logo: `${SITE_URL}/logo-adm-100.jpg`,
-  email: "admin@admuiux.com",
-  founder: { "@type": "Person", name: "Adam Mudianto" },
-};
+/**
+ * Per-domain, because one deployment serves several niche storefronts: the brand
+ * name, tagline and metadataBase all follow the host the visitor arrived on.
+ * A static `metadata` export can't do that — it is evaluated without a request —
+ * so this is generateMetadata even though most of it is constant.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const [site, origin] = await Promise.all([currentSite(), currentOrigin()]);
+  const name = site.name || "ADM.UIUX";
+  const title = site.tagline ? `${name} — ${site.tagline}` : name;
+  const description = site.tagline
+    ? `${site.tagline} — ${name}.`
+    : DEFAULT_DESCRIPTION;
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: "ADM.UIUX — Produk Digital Siap Pakai",
-    template: "%s | ADM.UIUX",
-  },
-  description:
-    "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.",
-  keywords: [
-    "produk digital",
-    "aset digital",
-    "digital assets",
-    "landing page",
-    "template HTML",
-    "HTML template",
-    "Adam Mudianto",
-    "ADM.UIUX",
-  ],
-  authors: [{ name: "Adam Mudianto", url: SITE_URL }],
-  creator: "Adam Mudianto",
-  openGraph: {
-    type: "website",
-    locale: "id_ID",
-    siteName: "ADM.UIUX",
-    title: "ADM.UIUX — Produk Digital Siap Pakai",
-    description:
-      "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "ADM.UIUX — Produk Digital Siap Pakai",
-    description:
-      "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+  return {
+    metadataBase: new URL(origin),
+    title: { default: title, template: `%s | ${name}` },
+    description,
+    keywords: [
+      "produk digital",
+      "aset digital",
+      "digital assets",
+      "landing page",
+      "template HTML",
+      "HTML template",
+      "Adam Mudianto",
+      name,
+    ],
+    authors: [{ name: "Adam Mudianto", url: origin }],
+    creator: "Adam Mudianto",
+    openGraph: {
+      type: "website",
+      locale: "id_ID",
+      siteName: name,
+      title,
+      description,
+    },
+    twitter: { card: "summary_large_image", title, description },
+    robots: { index: true, follow: true },
+  };
+}
 
 /**
  * Tag-manager + custom JS, both of which need a settings lookup. Kept out of the
@@ -115,6 +109,8 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme");
   const isDark = themeCookie?.value === "dark";
+  // Which storefront: drives the JSON-LD org name and the iOS home-screen title.
+  const [site, origin] = await Promise.all([currentSite(), currentOrigin()]);
 
   return (
     <html lang="id" suppressHydrationWarning className={isDark ? "dark" : undefined}>
@@ -129,7 +125,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="ADM.UIUX" />
+        <meta name="apple-mobile-web-app-title" content={site.name || "ADM.UIUX"} />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         {/* Launch images for an iOS home-screen install. iOS ignores the web
             manifest here, so without an exactly-matching startup image it shows
@@ -153,7 +149,17 @@ export default async function RootLayout({
       <body
         className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <JsonLd data={organizationJsonLd} />
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: site.name || "ADM.UIUX",
+            url: origin,
+            logo: `${origin}/logo-adm-100.jpg`,
+            email: "admin@admuiux.com",
+            founder: { "@type": "Person", name: "Adam Mudianto" },
+          }}
+        />
         <Suspense fallback={null}>
           <DeferredScripts />
         </Suspense>

@@ -1,9 +1,14 @@
 import type { MetadataRoute } from "next";
+import { currentOrigin } from "@/lib/site-resolve";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com";
-
-export default function robots(): MetadataRoute.Robots {
-  const base = SITE_URL.replace(/\/$/, "");
+/**
+ * Per-domain, so each storefront points crawlers at its OWN sitemap. Reading the
+ * request host makes this route dynamic instead of built once — which is the
+ * point: a single baked-in origin would tell every niche domain to crawl
+ * admuiux.com's sitemap.
+ */
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const base = await currentOrigin();
   return {
     rules: {
       userAgent: "*",

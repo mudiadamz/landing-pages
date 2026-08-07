@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createDuitkuInvoice } from "@/lib/duitku";
 import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
+import { canonicalOrigin, currentOrigin } from "@/lib/site-resolve";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +61,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    // Two different origins on purpose.
+    //
+    // callbackUrl is server-to-server: Duitku posts the payment result to it with
+    // no browser involved, so it must be ONE fixed host we control regardless of
+    // which storefront the buyer started from — otherwise every new niche domain
+    // silently becomes a payment endpoint that has to be whitelisted.
+    //
+    // returnUrl is where the BUYER's browser lands afterwards, so it has to be the
+    // domain they were shopping on. Sending them to admuiux.com after they bought
+    // on a niche site looks like a redirect to a stranger's shop.
+    const callbackBase = canonicalOrigin();
+    const returnBase = await currentOrigin();
     const noDash = (s: string) => s.replace(/-/g, "");
     const merchantOrderId = `LP_${noDash(page.id)}_${noDash(user.id)}`.slice(0, 50);
     const additionalParam = JSON.stringify({
@@ -113,8 +125,8 @@ export async function POST(req: NextRequest) {
         },
       },
       additionalParam,
-      callbackUrl: `${baseUrl}/api/duitku/callback`,
-      returnUrl: `${baseUrl}/checkout/${slug}/done`,
+      callbackUrl: `${callbackBase}/api/duitku/callback`,
+      returnUrl: `${returnBase}/checkout/${slug}/done`,
       expiryPeriod: 60,
     });
 

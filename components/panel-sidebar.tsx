@@ -75,6 +75,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Situs",
     items: [
+      { href: "/panel/sites", label: "Domain", icon: GlobeIcon, adminOnly: true },
       { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
       { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
@@ -97,6 +98,14 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 /* A small card layered over a larger one — the popup sitting over the preview.
  * Its own glyph rather than the TargetIcon it used to share with Tracking, which
  * made two unrelated rows look like the same tool. */
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M12 3c2.5 2.4 2.5 15.6 0 18M12 3c-2.5 2.4-2.5 15.6 0 18" />
+    </svg>
+  );
+}
 function PopupIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">

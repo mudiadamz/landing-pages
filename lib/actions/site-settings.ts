@@ -17,6 +17,7 @@ import {
   type PopupBanner,
 } from "@/lib/popup-config";
 import { POPUP_MAX_BYTES, readWebpHeader } from "@/lib/webp";
+import { canonicalSiteId, currentSiteId } from "@/lib/site-resolve";
 
 const CUSTOM_JS_KEY = "custom_js";
 const HERO_KEY = "hero";
@@ -35,11 +36,18 @@ export async function updateRolePermissions(
 
   const clean = normalizeRolePermissions(perms);
   const supabase = await createClient();
+  // Not per-site: who may do what is a property of the panel, which only the
+  // canonical domain serves.
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
-      { key: ROLE_PERMS_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
-      { onConflict: "key" },
+      {
+        site_id: await canonicalSiteId(),
+        key: ROLE_PERMS_KEY,
+        value: JSON.stringify(clean),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "site_id,key" },
     );
 
   if (error) {
@@ -55,8 +63,8 @@ export async function updateRolePermissions(
  * lp_site_settings.value under key "hero"). Types/defaults live in
  * lib/hero-config.ts so this "use server" file only exports async functions. */
 
-export const getHero = unstable_cache(
-  async (): Promise<HeroConfig> => {
+const readHero = unstable_cache(
+  async (siteId: string): Promise<HeroConfig> => {
     try {
       const supabase = createSupabaseJS(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,8 +73,9 @@ export const getHero = unstable_cache(
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
+        .eq("site_id", siteId)
         .eq("key", HERO_KEY)
-        .single();
+        .maybeSingle();
       if (!data?.value) return DEFAULT_HERO;
       return normalizeHero(JSON.parse(data.value as string));
     } catch {
@@ -77,7 +86,14 @@ export const getHero = unstable_cache(
   { revalidate: 120, tags: ["hero-config"] },
 );
 
-export async function updateHero(config: HeroConfig): Promise<{ ok: boolean; error?: string }> {
+export async function getHero(siteId?: string): Promise<HeroConfig> {
+  return readHero(siteId ?? (await currentSiteId()));
+}
+
+export async function updateHero(
+  config: HeroConfig,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireFeature("hero");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
@@ -86,8 +102,13 @@ export async function updateHero(config: HeroConfig): Promise<{ ok: boolean; err
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
-      { key: HERO_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
-      { onConflict: "key" },
+      {
+        site_id: siteId ?? (await currentSiteId()),
+        key: HERO_KEY,
+        value: JSON.stringify(clean),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "site_id,key" },
     );
 
   if (error) {
@@ -103,8 +124,8 @@ export async function updateHero(config: HeroConfig): Promise<{ ok: boolean; err
  * /panel/content, stored as JSON in lp_site_settings.value under "site_content".
  * Types/defaults live in lib/content-config.ts. */
 
-export const getSiteContent = unstable_cache(
-  async (): Promise<SiteContent> => {
+const readSiteContent = unstable_cache(
+  async (siteId: string): Promise<SiteContent> => {
     try {
       const supabase = createSupabaseJS(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -113,8 +134,9 @@ export const getSiteContent = unstable_cache(
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
+        .eq("site_id", siteId)
         .eq("key", CONTENT_KEY)
-        .single();
+        .maybeSingle();
       if (!data?.value) return DEFAULT_CONTENT;
       return normalizeContent(JSON.parse(data.value as string));
     } catch {
@@ -125,7 +147,14 @@ export const getSiteContent = unstable_cache(
   { revalidate: 120, tags: ["site-content"] },
 );
 
-export async function updateSiteContent(content: SiteContent): Promise<{ ok: boolean; error?: string }> {
+export async function getSiteContent(siteId?: string): Promise<SiteContent> {
+  return readSiteContent(siteId ?? (await currentSiteId()));
+}
+
+export async function updateSiteContent(
+  content: SiteContent,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireFeature("content");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
@@ -134,8 +163,13 @@ export async function updateSiteContent(content: SiteContent): Promise<{ ok: boo
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
-      { key: CONTENT_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
-      { onConflict: "key" },
+      {
+        site_id: siteId ?? (await currentSiteId()),
+        key: CONTENT_KEY,
+        value: JSON.stringify(clean),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "site_id,key" },
     );
 
   if (error) {
@@ -147,8 +181,8 @@ export async function updateSiteContent(content: SiteContent): Promise<{ ok: boo
   return { ok: true };
 }
 
-export const getCustomJs = unstable_cache(
-  async (): Promise<string> => {
+const readCustomJs = unstable_cache(
+  async (siteId: string): Promise<string> => {
     try {
       const supabase = createSupabaseJS(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -157,8 +191,9 @@ export const getCustomJs = unstable_cache(
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
+        .eq("site_id", siteId)
         .eq("key", CUSTOM_JS_KEY)
-        .single();
+        .maybeSingle();
       return (data?.value as string) ?? "";
     } catch {
       return "";
@@ -168,14 +203,27 @@ export const getCustomJs = unstable_cache(
   { revalidate: 120 },
 );
 
-export async function updateCustomJs(script: string): Promise<{ ok: boolean; error?: string }> {
+export async function getCustomJs(siteId?: string): Promise<string> {
+  return readCustomJs(siteId ?? (await currentSiteId()));
+}
+
+export async function updateCustomJs(
+  script: string,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireFeature("custom-js");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("lp_site_settings")
-    .upsert({ key: CUSTOM_JS_KEY, value: script.trim(), updated_at: new Date().toISOString() }, { onConflict: "key" });
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: CUSTOM_JS_KEY,
+      value: script.trim(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
 
   if (error) {
     console.error("updateCustomJs error:", error);
@@ -188,8 +236,8 @@ export async function updateCustomJs(script: string): Promise<{ ok: boolean; err
  * falls back to the NEXT_PUBLIC_GTM_ID env var when nothing is saved so the id
  * can be configured either in the panel or in Vercel. See lib/tracking-config.ts. */
 
-export const getTracking = unstable_cache(
-  async (): Promise<TrackingConfig> => {
+const readTracking = unstable_cache(
+  async (siteId: string): Promise<TrackingConfig> => {
     const envFallback = normalizeGtmId(process.env.NEXT_PUBLIC_GTM_ID);
     try {
       const supabase = createSupabaseJS(
@@ -199,8 +247,9 @@ export const getTracking = unstable_cache(
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
+        .eq("site_id", siteId)
         .eq("key", TRACKING_KEY)
-        .single();
+        .maybeSingle();
       if (!data?.value) return { gtmId: envFallback };
       const cfg = normalizeTracking(JSON.parse(data.value as string));
       return { gtmId: cfg.gtmId || envFallback };
@@ -212,7 +261,15 @@ export const getTracking = unstable_cache(
   { revalidate: 120, tags: ["tracking-config"] },
 );
 
-export async function updateTracking(config: TrackingConfig): Promise<{ ok: boolean; error?: string }> {
+/** Per-site: a niche storefront usually wants its own GTM container. */
+export async function getTracking(siteId?: string): Promise<TrackingConfig> {
+  return readTracking(siteId ?? (await currentSiteId()));
+}
+
+export async function updateTracking(
+  config: TrackingConfig,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
   const isAdmin = await requireAdmin();
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
@@ -227,8 +284,13 @@ export async function updateTracking(config: TrackingConfig): Promise<{ ok: bool
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
-      { key: TRACKING_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
-      { onConflict: "key" },
+      {
+        site_id: siteId ?? (await currentSiteId()),
+        key: TRACKING_KEY,
+        value: JSON.stringify(clean),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "site_id,key" },
     );
 
   if (error) {
@@ -244,8 +306,11 @@ export async function updateTracking(config: TrackingConfig): Promise<{ ok: bool
  * lp_site_settings under "panel_palette"). Read on every panel render, so it is
  * cached and invalidated by tag on save. */
 
-export const getPanelPalette = unstable_cache(
-  async (): Promise<PaletteConfig> => {
+/* NOT per-site: the palette dresses the panel, which lives only on the canonical
+   domain. Pinned there so there is one row rather than a copy per storefront. */
+
+const readPanelPalette = unstable_cache(
+  async (siteId: string): Promise<PaletteConfig> => {
     try {
       const supabase = createSupabaseJS(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -254,6 +319,7 @@ export const getPanelPalette = unstable_cache(
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
+        .eq("site_id", siteId)
         .eq("key", PALETTE_KEY)
         .maybeSingle();
       if (!data?.value) return DEFAULT_PALETTE;
@@ -267,6 +333,10 @@ export const getPanelPalette = unstable_cache(
   { revalidate: 300, tags: ["panel-palette"] },
 );
 
+export async function getPanelPalette(): Promise<PaletteConfig> {
+  return readPanelPalette(await canonicalSiteId());
+}
+
 export async function updatePanelPalette(
   config: PaletteConfig,
 ): Promise<{ ok: boolean; error?: string }> {
@@ -278,8 +348,13 @@ export async function updatePanelPalette(
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
-      { key: PALETTE_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
-      { onConflict: "key" },
+      {
+        site_id: await canonicalSiteId(),
+        key: PALETTE_KEY,
+        value: JSON.stringify(clean),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "site_id,key" },
     );
 
   if (error) {
@@ -293,8 +368,8 @@ export async function updatePanelPalette(
 
 /* Popup banner over the product preview. Types/defaults in lib/popup-config.ts. */
 
-export const getPopupBanner = unstable_cache(
-  async (): Promise<PopupBanner> => {
+const readPopupBanner = unstable_cache(
+  async (siteId: string): Promise<PopupBanner> => {
     try {
       // Anon client built directly, NOT lib/supabase/server's createClient: that
       // one reads cookies(), and Next refuses dynamic data sources inside
@@ -311,8 +386,9 @@ export const getPopupBanner = unstable_cache(
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
+        .eq("site_id", siteId)
         .eq("key", POPUP_SETTINGS_KEY)
-        .single();
+        .maybeSingle();
       if (!data?.value) return DEFAULT_POPUP;
       return normalizePopup(JSON.parse(data.value as string));
     } catch (e) {
@@ -326,7 +402,14 @@ export const getPopupBanner = unstable_cache(
   { revalidate: 300, tags: ["popup-banner"] },
 );
 
-export async function updatePopupBanner(config: PopupBanner): Promise<{ ok: boolean; error?: string }> {
+export async function getPopupBanner(siteId?: string): Promise<PopupBanner> {
+  return readPopupBanner(siteId ?? (await currentSiteId()));
+}
+
+export async function updatePopupBanner(
+  config: PopupBanner,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePopup(config);
@@ -334,8 +417,13 @@ export async function updatePopupBanner(config: PopupBanner): Promise<{ ok: bool
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
-      { key: POPUP_SETTINGS_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() },
-      { onConflict: "key" },
+      {
+        site_id: siteId ?? (await currentSiteId()),
+        key: POPUP_SETTINGS_KEY,
+        value: JSON.stringify(clean),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "site_id,key" },
     );
 
   if (error) {

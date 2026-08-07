@@ -5,6 +5,7 @@ import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
+import { currentSite } from "@/lib/site-resolve";
 
 export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable" | "excerpt";
 
@@ -381,11 +382,19 @@ export async function getLandingPagesForHomepage(
   sort: HomepageSort = "newest",
 ) {
   const slug = categorySlug?.trim() || "";
-  return getCachedHomepagePages(slug, sort);
+  // The storefront's own niche. Passed as an ARGUMENT, not read inside the cache:
+  // unstable_cache refuses headers(), and the argument is what makes the cache key
+  // differ per domain — without it one storefront would serve another's catalog.
+  const site = await currentSite();
+  return getCachedHomepagePages(slug, sort, site.category_ids ?? []);
 }
 
 const getCachedHomepagePages = unstable_cache(
-  async (slug: string, sort: HomepageSort): Promise<LandingPagePublic[]> => {
+  async (
+    slug: string,
+    sort: HomepageSort,
+    siteCategoryIds: string[],
+  ): Promise<LandingPagePublic[]> => {
     const supabase = createAnonClient();
 
     // Resolve the requested category slug to the set of category ids to include.
@@ -400,6 +409,26 @@ const getCachedHomepagePages = unstable_cache(
         .filter((c) => c.parent_id === target.id)
         .map((c) => c.id);
       categoryIds = [target.id, ...childIds];
+    }
+
+    // Narrow to the storefront's niche. The site names ROOT categories, so expand
+    // each to its children the same way a browsed parent category expands.
+    // An empty list means "whole catalog" — that is the canonical site, and it must
+    // not be read as "show nothing".
+    if (siteCategoryIds.length > 0) {
+      const cats = await getCategories();
+      const allowed = new Set<string>();
+      for (const rootId of siteCategoryIds) {
+        allowed.add(rootId);
+        for (const c of cats) if (c.parent_id === rootId) allowed.add(c.id);
+      }
+      categoryIds =
+        categoryIds === null
+          ? [...allowed]
+          : categoryIds.filter((id) => allowed.has(id));
+      // Browsing a category this storefront doesn't carry yields nothing rather
+      // than leaking a product from another niche.
+      if (categoryIds.length === 0) return [];
     }
 
     let query = supabase

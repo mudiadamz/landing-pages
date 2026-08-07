@@ -52,11 +52,17 @@ export const getRolePermissions = unstable_cache(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       );
+      // Deliberately NOT scoped by site_id. Role permissions govern the panel,
+      // which only the canonical domain serves, so exactly one row carries this
+      // key (see updateRolePermissions). limit(1) rather than single() so a
+      // stray second row degrades to "use the first" instead of throwing and
+      // locking every admin out of every feature.
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
         .eq("key", "role_permissions")
-        .single();
+        .limit(1)
+        .maybeSingle();
       if (!data?.value) return DEFAULT_ROLE_PERMISSIONS;
       return normalizeRolePermissions(JSON.parse(data.value as string));
     } catch {
