@@ -14,6 +14,7 @@ export type SiteInput = {
   host: string;
   name: string;
   tagline: string;
+  description: string;
   categoryIds: string[];
   active: boolean;
 };
@@ -73,6 +74,7 @@ export async function createSite(input: SiteInput): Promise<{ ok: boolean; error
     host,
     name: input.name.trim(),
     tagline: input.tagline.trim() || null,
+    description: input.description.trim() || null,
     category_ids: input.categoryIds,
     active: input.active,
     // Never through this form: the canonical site is the one that owns the panel
@@ -109,6 +111,7 @@ export async function updateSite(
       host,
       name: input.name.trim(),
       tagline: input.tagline.trim() || null,
+      description: input.description.trim() || null,
       category_ids: input.categoryIds,
       active: input.active,
       updated_at: new Date().toISOString(),

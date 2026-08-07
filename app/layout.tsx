@@ -51,9 +51,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const [site, origin] = await Promise.all([currentSite(), currentOrigin()]);
   const name = site.name || "ADM.UIUX";
   const title = site.tagline ? `${name} — ${site.tagline}` : name;
-  const description = site.tagline
-    ? `${site.tagline} — ${name}.`
-    : DEFAULT_DESCRIPTION;
+  // The site's own snippet, never one synthesised from the tagline: a tagline is a
+  // headline and makes a uselessly short search result.
+  const description = site.description?.trim() || DEFAULT_DESCRIPTION;
 
   return {
     metadataBase: new URL(origin),

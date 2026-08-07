@@ -12,11 +12,19 @@ type Draft = {
   host: string;
   name: string;
   tagline: string;
+  description: string;
   categoryIds: string[];
   active: boolean;
 };
 
-const EMPTY: Draft = { host: "", name: "", tagline: "", categoryIds: [], active: true };
+const EMPTY: Draft = {
+  host: "",
+  name: "",
+  tagline: "",
+  description: "",
+  categoryIds: [],
+  active: true,
+};
 
 const CARD =
   "rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5 shadow-sm";
@@ -50,6 +58,7 @@ export function SitesManager({
       host: site.host,
       name: site.name,
       tagline: site.tagline ?? "",
+      description: site.description ?? "",
       categoryIds: site.category_ids ?? [],
       active: site.active,
     });
@@ -297,7 +306,23 @@ function SiteForm({
           className={INPUT}
         />
         <p className="text-xs text-[var(--muted)]">
-          Masuk ke meta description &amp; judul halaman. Kosong = pakai teks bawaan.
+          Muncul di judul tab: <span className="font-mono">{draft.name || "Nama"} — tagline</span>.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-foreground">Deskripsi (SEO)</label>
+        <textarea
+          value={draft.description}
+          onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+          rows={3}
+          maxLength={200}
+          placeholder="Kalimat yang tampil di hasil pencarian Google…"
+          className={`${INPUT} resize-y`}
+        />
+        <p className="text-xs text-[var(--muted)]">
+          Ini snippet di Google — beda pekerjaan dari tagline, jadi tulis 120–160 karakter.
+          Sekarang {draft.description.trim().length}. Kosong = pakai teks bawaan.
         </p>
       </div>
 
