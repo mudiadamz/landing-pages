@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { isCanonicalRequest } from "@/lib/site-resolve";
+import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { getPanelPalette } from "@/lib/actions/site-settings";
@@ -9,15 +10,48 @@ import { PanelSidebar } from "@/components/panel-sidebar";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
 
+/**
+ * Panel routes a CUSTOMER needs, so they work on every storefront.
+ *
+ * An allowlist, not a blocklist of admin routes: a new admin screen added later
+ * must default to canonical-only. Getting that backwards would quietly expose the
+ * next admin surface on every domain.
+ */
+const CUSTOMER_PANEL_PATHS = [
+  "/panel", // dashboard — shows the customer's own purchases
+  "/panel/purchases",
+  "/panel/favorites",
+  "/panel/invoices",
+  "/panel/profile",
+  "/panel/publisher", // applying to become a seller
+];
+
+function isCustomerPanelPath(pathname: string): boolean {
+  const clean = pathname.replace(/\/+$/, "") || "/panel";
+  return CUSTOMER_PANEL_PATHS.some((p) => clean === p || clean.startsWith(`${p}/`));
+}
+
 export default async function PanelLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // The panel exists on the canonical domain only. Supabase session cookies are
-  // per-domain and don't cross, so serving /panel from every storefront would mean
-  // logging in again on each one. Niche domains send visitors to their homepage.
-  if (!(await isCanonicalRequest())) redirect("/");
+  // /panel is not an admin area — it is a MIXED one. Customers read "Pembelian
+  // saya", their invoices and favourites here, and because Supabase session
+  // cookies never cross domains, a buyer's session exists only on the domain they
+  // bought from. Blocking /panel per-domain therefore stranded them: no purchases
+  // on the storefront they used, and no session on the canonical one.
+  //
+  // So the customer routes serve everywhere, and only the admin surfaces stay
+  // canonical (one admin login instead of one per storefront). An admin route hit
+  // on a niche domain redirects to the SAME path on the canonical origin, which is
+  // where their session already is.
+  if (!(await isCanonicalRequest())) {
+    const pathname = (await headers()).get("x-pathname") ?? "/panel";
+    if (!isCustomerPanelPath(pathname)) {
+      redirect(`${canonicalOrigin()}${pathname}`);
+    }
+  }
 
   const [supabase, profile, palette] = await Promise.all([
     createClient(),

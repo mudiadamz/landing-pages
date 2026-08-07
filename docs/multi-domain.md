@@ -117,9 +117,20 @@ domain. Pengunjung login sendiri di tiap domain. Karena akunnya tetap satu
 `auth.users` (email yang sama), pembelian dari beberapa domain tetap muncul
 bersama di "Pembelian saya".
 
-**Panel hanya di domain utama.** Dijaga di `app/panel/layout.tsx`; domain niche
-memantul ke homepage-nya. Alasannya sama seperti di atas — kalau panel ada di tiap
-domain, admin harus login ulang di masing-masing.
+**`/panel` itu area campuran, bukan area admin.** Pembeli membaca "Pembelian
+saya", invoice, dan favorit di situ. Karena sesi tidak lintas domain, sesi pembeli
+cuma ada di domain tempat dia beli — jadi **route pembeli harus jalan di semua
+domain**, kalau tidak pembeli terjebak: pembeliannya tidak bisa dibuka di
+storefront yang dia pakai, dan di domain utama dia belum login.
+
+Yang canonical-only hanya layar **admin**, supaya admin tidak login ulang di tiap
+storefront. Dijaga di `app/panel/layout.tsx` dengan **allowlist** route pembeli
+(`CUSTOMER_PANEL_PATHS`) — bukan blocklist route admin, supaya layar admin baru
+otomatis ikut terkunci. Route admin yang dibuka dari domain niche di-redirect ke
+**path yang sama di domain utama**, tempat sesinya sudah ada.
+
+Layout tidak menerima pathname, jadi middleware (`lib/supabase/proxy.ts`)
+meneruskannya lewat header `x-pathname`.
 
 **Pembayaran tidak butuh setelan per domain.** `callbackUrl` Duitku selalu ke
 domain utama (server-to-server, jadi harus satu host tetap — kalau ikut domain

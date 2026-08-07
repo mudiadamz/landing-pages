@@ -27,9 +27,22 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  /**
+   * Forward the pathname to the server components.
+   *
+   * A layout never receives it, and app/panel/layout.tsx has to tell a customer
+   * route ("Pembelian saya") from an admin one to decide whether a niche domain
+   * may serve it. Built fresh at each call rather than snapshotted once, because
+   * Supabase rewrites request cookies during the session refresh below and a
+   * stale copy would drop the renewed session.
+   */
+  const nextWithPath = () => {
+    const headers = new Headers(request.headers);
+    headers.set("x-pathname", pathname);
+    return NextResponse.next({ request: { headers } });
+  };
+
+  let supabaseResponse = nextWithPath();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,9 +56,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          supabaseResponse = nextWithPath();
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );

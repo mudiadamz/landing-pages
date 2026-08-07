@@ -10,11 +10,11 @@ export const metadata = { title: "Domain" };
 export default async function SitesPage() {
   if (!(await requireAdmin())) redirect("/panel");
 
-  // The panel lives on the canonical domain only. Supabase session cookies are
-  // per-domain, so an admin screen on every storefront would mean a separate
-  // login for each one — and this screen in particular could then be used from a
-  // niche domain to rewrite the canonical domain's own host.
-  if (!(await isCanonicalRequest())) redirect("/");
+  // Belt and braces: app/panel/layout.tsx already sends admin routes on a niche
+  // domain to the canonical origin, so this normally never fires. Kept because this
+  // screen in particular could otherwise be used from a niche domain to rewrite the
+  // canonical domain's own host — a guard worth having twice.
+  if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/sites`);
 
   const [sites, categories, vercelAutomated] = await Promise.all([
     getSites(),

@@ -98,8 +98,10 @@ Dikelola di **`/panel/sites`**. Menambah domain butuh tiga tempat:
 3. **Supabase** — tambahkan `https://<domain>/auth/callback` ke Redirect URLs,
    kalau tidak login Google di domain itu gagal.
 
-Panel dan callback Duitku hanya di domain **canonical**. Sesi login tidak lintas
-domain (cookie Supabase per-domain) — itu disengaja.
+Sesi login tidak lintas domain (cookie Supabase per-domain) — itu disengaja. Maka:
+route **pembeli** (`/panel/purchases`, invoice, favorit) jalan di **semua** domain,
+karena sesi pembeli hanya ada di domain tempat dia beli. Yang canonical-only cuma
+layar **admin** dan callback Duitku.
 
 📖 Detail lengkap, jebakan cache, dan pola implementasi:
 **[`docs/multi-domain.md`](docs/multi-domain.md)**

@@ -194,11 +194,13 @@ export function DomainSetupGuide({
             <p>Buka domainnya dan pastikan tiga hal:</p>
             <ul className="list-disc space-y-0.5 pl-4">
               <li>Homepage tampil dengan produk niche yang dipilih di atas.</li>
+              <li>Tombol Masuk dengan Google berhasil dan tetap di domain ini.</li>
               <li>
-                <span className="font-mono">/panel</span> memantul ke homepage — panel hanya di{" "}
+                <span className="font-mono">/panel/purchases</span> bisa dibuka di domain ini —
+                pembeli wajib bisa lihat pembeliannya di tempat dia beli. Layar admin
+                (produk, domain, users) memantul ke{" "}
                 <span className="font-mono">{canonicalHost}</span>.
               </li>
-              <li>Tombol Masuk dengan Google berhasil dan tetap di domain ini.</li>
             </ul>
             <p>
               Pembayaran tidak perlu disetel apa pun: callback Duitku selalu ke{" "}
