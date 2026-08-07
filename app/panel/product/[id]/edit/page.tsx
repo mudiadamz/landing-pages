@@ -42,11 +42,13 @@ export default async function EditPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          {/* Back goes to the product list, which is where you came from — not to
+              the panel home. */}
           <Link
-            href="/panel"
+            href="/panel/products"
             className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
           >
-            ← Kembali
+            ← Kembali ke daftar produk
           </Link>
           <h1 className="text-xl font-semibold tracking-tight">Edit produk digital</h1>
           <span className="w-fit rounded bg-[var(--background)] px-2 py-1 font-mono text-sm text-[var(--muted)]">
@@ -68,18 +70,6 @@ export default async function EditPage({
               Isi EPUB
             </Button>
           )}
-          <Button
-            href={`/panel/product/${id}/stats`}
-            variant="secondary"
-            size="sm"
-            leftIcon={
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6m4 6V5m4 14v-9M5 19h14" />
-              </svg>
-            }
-          >
-            Statistik
-          </Button>
           <Button
             href={`/lp/${page.slug}`}
             external
@@ -103,6 +93,7 @@ export default async function EditPage({
         initialHtml={page.html_content}
         categories={categories}
         relatedOptions={relatedOptions}
+        published={(page as { published?: boolean }).published !== false}
         initial={{
           title: page.title,
           preview_type: (page as { preview_type?: PreviewType }).preview_type ?? "html",
@@ -113,7 +104,6 @@ export default async function EditPage({
           price: page.price,
           price_discount: page.price_discount,
           is_free: page.is_free,
-          featured: page.featured,
           thumbnail_url: page.thumbnail_url,
           zip_url: (page as { zip_url?: string | null }).zip_url ?? null,
           story_pdf_url: (page as { story_pdf_url?: string | null }).story_pdf_url ?? null,
