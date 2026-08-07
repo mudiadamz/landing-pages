@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
@@ -118,10 +118,26 @@ export async function recheckDomainVerification(host: string): Promise<VercelSta
   return status;
 }
 
-/** Everything that invalidates when a site's identity or niche changes. */
+/**
+ * Everything that invalidates when a site's identity, niche or template changes.
+ *
+ * BOTH invalidators, deliberately. Our readers are `unstable_cache` with a `tags`
+ * option, and `updateTag` documents its tag sources as fetch tags and `cacheTag()`
+ * inside `'use cache'` — not that option. Measured: after a panel save the row in
+ * the database and the panel itself said the new template, while the public page
+ * kept rendering the old one until a fresh deployment dropped the cache. Five
+ * minutes of "I changed it and nothing happened".
+ *
+ * revalidateTag is the invalidator that pairs with unstable_cache; updateTag is
+ * kept for the read-your-own-writes guarantee inside this action's own response.
+ */
 function bustSiteCaches() {
-  updateTag("sites");
-  updateTag("homepage-pages");
+  for (const tag of ["sites", "homepage-pages"]) {
+    // "max" = stale-while-revalidate: at worst the very next request still sees the
+    // old value and the one after it is correct. A profile is required in 16.1.6.
+    revalidateTag(tag, "max");
+    updateTag(tag);
+  }
   revalidatePath("/", "layout");
   revalidatePath("/panel/sites");
 }

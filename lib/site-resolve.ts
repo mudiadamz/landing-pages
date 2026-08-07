@@ -91,7 +91,10 @@ const readSiteByHost = unstable_cache(
     return (data as Site) ?? null;
   },
   ["site-by-host"],
-  { revalidate: 300, tags: ["sites"] },
+  // 60s, not 300: this is the value that decides which storefront a visitor sees,
+  // and tag invalidation on unstable_cache proved unreliable enough that the TTL is
+  // the real backstop. The row is one tiny select, so a shorter window costs little.
+  { revalidate: 60, tags: ["sites"] },
 );
 
 const readCanonicalSite = unstable_cache(
@@ -105,7 +108,7 @@ const readCanonicalSite = unstable_cache(
     return (data as Site) ?? null;
   },
   ["site-canonical"],
-  { revalidate: 300, tags: ["sites"] },
+  { revalidate: 60, tags: ["sites"] },
 );
 
 /** Swallows the throw at the edge, where it can't be written to the cache. */
