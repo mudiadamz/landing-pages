@@ -48,7 +48,7 @@ export default async function EditPage({
             href="/panel/products"
             className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
           >
-            ← Kembali ke daftar produk
+            ← Kembali
           </Link>
           <h1 className="text-xl font-semibold tracking-tight">Edit produk digital</h1>
           <span className="w-fit rounded bg-[var(--background)] px-2 py-1 font-mono text-sm text-[var(--muted)]">

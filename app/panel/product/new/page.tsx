@@ -22,7 +22,7 @@ export default async function NewPagePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <Link
-          href="/panel"
+          href="/panel/products"
           className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
         >
           ← Kembali
