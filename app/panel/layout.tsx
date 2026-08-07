@@ -17,8 +17,16 @@ import { EmailVerifyNotice } from "@/components/email-verify-notice";
  * must default to canonical-only. Getting that backwards would quietly expose the
  * next admin surface on every domain.
  */
-const CUSTOMER_PANEL_PATHS = [
-  "/panel", // dashboard — shows the customer's own purchases
+/**
+ * The dashboard, matched EXACTLY. It cannot be a prefix: "/panel" as a prefix
+ * matches "/panel/anything", which would have allowed every admin screen on every
+ * domain — an allowlist that lets everything through. Caught by testing the
+ * classifier against real paths rather than eyeballing it.
+ */
+const CUSTOMER_PANEL_EXACT = ["/panel"];
+
+/** Sub-trees a customer owns; these match themselves and anything beneath them. */
+const CUSTOMER_PANEL_PREFIXES = [
   "/panel/purchases",
   "/panel/favorites",
   "/panel/invoices",
@@ -28,7 +36,10 @@ const CUSTOMER_PANEL_PATHS = [
 
 function isCustomerPanelPath(pathname: string): boolean {
   const clean = pathname.replace(/\/+$/, "") || "/panel";
-  return CUSTOMER_PANEL_PATHS.some((p) => clean === p || clean.startsWith(`${p}/`));
+  if (CUSTOMER_PANEL_EXACT.includes(clean)) return true;
+  // `${p}/` and not startsWith(p), so /panel/purchasesX doesn't ride in on
+  // /panel/purchases.
+  return CUSTOMER_PANEL_PREFIXES.some((p) => clean === p || clean.startsWith(`${p}/`));
 }
 
 export default async function PanelLayout({
