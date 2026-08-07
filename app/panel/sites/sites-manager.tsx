@@ -16,6 +16,7 @@ type Draft = {
   tagline: string;
   description: string;
   categoryIds: string[];
+  template: string;
   active: boolean;
 };
 
@@ -25,6 +26,7 @@ const EMPTY: Draft = {
   tagline: "",
   description: "",
   categoryIds: [],
+  template: "default",
   active: true,
 };
 
@@ -39,12 +41,14 @@ export function SitesManager({
   canonicalHost,
   supabaseProjectUrl,
   vercelAutomated,
+  templates,
 }: {
   sites: Site[];
   rootCategories: LandingPageCategory[];
   canonicalHost: string;
   supabaseProjectUrl: string;
   vercelAutomated: boolean;
+  templates: { key: string; label: string; description: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -66,6 +70,7 @@ export function SitesManager({
       tagline: site.tagline ?? "",
       description: site.description ?? "",
       categoryIds: site.category_ids ?? [],
+      template: site.template || "default",
       active: site.active,
     });
     setEditing(site.id);
@@ -211,6 +216,7 @@ export function SitesManager({
                 onCancel={() => setEditing(null)}
                 pending={pending}
                 lockHost={site.is_canonical}
+                templates={templates}
               />
             ) : (
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -236,6 +242,11 @@ export function SitesManager({
                   )}
                   <p className="mt-1 text-xs text-[var(--muted)]">
                     Niche: <span className="text-foreground">{nicheLabel(site)}</span>
+                    {" · "}Tampilan:{" "}
+                    <span className="text-foreground">
+                      {templates.find((t) => t.key === (site.template || "default"))?.label ??
+                        site.template}
+                    </span>
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -284,6 +295,7 @@ export function SitesManager({
             onCancel={() => setEditing(null)}
             pending={pending}
             lockHost={false}
+            templates={templates}
           />
         </div>
       ) : (
@@ -304,6 +316,7 @@ function SiteForm({
   onCancel,
   pending,
   lockHost,
+  templates,
 }: {
   draft: Draft;
   setDraft: React.Dispatch<React.SetStateAction<Draft>>;
@@ -313,6 +326,7 @@ function SiteForm({
   onCancel: () => void;
   pending: boolean;
   lockHost: boolean;
+  templates: { key: string; label: string; description: string }[];
 }) {
   return (
     <div className="space-y-4">
@@ -378,6 +392,37 @@ function SiteForm({
         <p className="text-xs text-[var(--muted)]">
           Ini snippet di Google — beda pekerjaan dari tagline, jadi tulis 120–160 karakter.
           Sekarang {draft.description.trim().length}. Kosong = pakai teks bawaan.
+        </p>
+      </div>
+
+      {/* Template picker. Cards rather than a <select>: the choice is visual, and the
+          one-line description is what makes it decidable without previewing. */}
+      <div className="space-y-2">
+        <span className="block text-sm font-medium text-foreground">Tampilan (template)</span>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {templates.map((t) => {
+            const active = draft.template === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setDraft((d) => ({ ...d, template: t.key }))}
+                aria-pressed={active}
+                className={`rounded-xl border p-3 text-left transition-colors ${
+                  active
+                    ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
+                    : "border-[var(--border)] hover:bg-[var(--background)]"
+                }`}
+              >
+                <span className="block text-sm font-medium text-foreground">{t.label}</span>
+                <span className="mt-0.5 block text-xs text-[var(--muted)]">{t.description}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-[var(--muted)]">
+          Header, footer, dan halaman produk tetap sama di semua template — yang berubah
+          halaman depannya.
         </p>
       </div>
 

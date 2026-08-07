@@ -28,12 +28,14 @@ export type Site = {
   description: string | null;
   /** Root categories this storefront covers. Empty = the whole catalog. */
   category_ids: string[];
+  /** Frontend template key; validated against lib/templates/registry. */
+  template: string;
   is_canonical: boolean;
   active: boolean;
 };
 
 const SITE_COLUMNS =
-  "id, host, name, tagline, description, category_ids, is_canonical, active";
+  "id, host, name, tagline, description, category_ids, template, is_canonical, active";
 
 /**
  * Used when lp_sites is empty or unreachable — a fresh database, or the migration
@@ -49,6 +51,7 @@ const FALLBACK_SITE: Site = {
   tagline: null,
   description: null,
   category_ids: [],
+  template: "default",
   is_canonical: true,
   active: true,
 };

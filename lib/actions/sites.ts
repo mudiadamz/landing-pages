@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
+import { resolveTemplate } from "@/lib/templates/registry";
 import {
   addVercelDomain,
   getVercelDomain,
@@ -24,6 +25,7 @@ export type SiteInput = {
   tagline: string;
   description: string;
   categoryIds: string[];
+  template: string;
   active: boolean;
 };
 
@@ -141,6 +143,7 @@ export async function createSite(
     tagline: input.tagline.trim() || null,
     description: input.description.trim() || null,
     category_ids: input.categoryIds,
+    template: resolveTemplate(input.template).key,
     active: input.active,
     // Never through this form: the canonical site is the one that owns the panel
     // and the payment callback, and having two would be ambiguous.
@@ -183,6 +186,7 @@ export async function updateSite(
       tagline: input.tagline.trim() || null,
       description: input.description.trim() || null,
       category_ids: input.categoryIds,
+      template: resolveTemplate(input.template).key,
       active: input.active,
       updated_at: new Date().toISOString(),
     })
