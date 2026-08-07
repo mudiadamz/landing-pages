@@ -21,7 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const categories = await getCategories();
   const cat = categories.find((c) => c.slug === slug);
   if (!cat) return { title: "Kategori tidak ditemukan" };
-  return { title: `${cat.name} — ADM.UIUX` };
+  // Brand comes from the layout title template, per domain.
+  return { title: cat.name };
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {

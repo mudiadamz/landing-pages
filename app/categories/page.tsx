@@ -6,8 +6,10 @@ import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { CategoryIcon } from "@/lib/category-icons";
 
 export const metadata: Metadata = {
-  title: "Semua Kategori — ADM.UIUX",
-  description: "Jelajahi semua kategori dan sub-kategori produk digital di ADM.UIUX.",
+  // No brand suffix: app/layout.tsx appends "| {site.name}" per domain, so a
+  // hardcoded one both doubles up and names the wrong storefront.
+  title: "Semua Kategori",
+  description: "Jelajahi semua kategori dan sub-kategori produk digital.",
   alternates: { canonical: "/categories" },
 };
 

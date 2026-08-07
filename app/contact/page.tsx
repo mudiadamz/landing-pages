@@ -8,7 +8,7 @@ import { SupportContactImages } from "@/components/support-contact-images";
 
 export const metadata: Metadata = {
   title: "Kontak",
-  description: "Hubungi ADM.UIUX. Form kontak dan media sosial untuk pertanyaan, masukan, atau kerja sama.",
+  description: "Form kontak dan media sosial untuk pertanyaan, masukan, atau kerja sama.",
 };
 
 export default async function ContactPage() {
