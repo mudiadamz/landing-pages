@@ -90,6 +90,10 @@ tagline, deskripsi SEO, **template tampilan**, hero, popup, tracking, dan custom
 sendiri — tapi produknya **tidak diduplikasi**: domain memilih *kategori*, jadi
 satu produk bisa tampil di beberapa storefront.
 
+Palet warna juga per domain (5 preset contrast-checked, dipilih di `/panel/sites` →
+**Warna (palet)**). Toggle terang/gelap sengaja disembunyikan di semua halaman publik;
+di panel masih ada.
+
 Dikelola di **`/panel/sites`**. Menambah domain butuh tiga tempat:
 
 1. **Panel** — nama, niche, pengaturan per domain.
@@ -115,13 +119,28 @@ terlihat seperti marketplace template. Dipilih di `/panel/sites` → **Tampilan
 | Key | Label | Untuk |
 |---|---|---|
 | `default` | Marketplace | Hero besar, grid 3 kolom, testimoni, blok founder. Katalog campuran. |
-| `pustaka` | Pustaka | Rak buku: sampul portrait 2:3, tanpa hero mockup, tanpa blok founder. Ebook, novel, bacaan. |
+| `pustaka` | Pustaka | Rak buku: sampul portrait 2:3, masthead editorial, header/footer sendiri, tanpa blok founder. Ebook, novel, bacaan. |
+
+**Yang dikuasai template:** halaman depan (`Home`), header/menu (`Header`), footer
+(`Footer`), dan halaman kategori (`Category`). Header & footer berlaku di **semua**
+halaman publik, bukan cuma homepage — kalau tidak, storefront berubah identitas
+begitu pengunjung klik satu link.
+
+**Slot opsional.** `Category` (dan slot yang ditambah nanti) boleh tidak diisi —
+jatuh ke versi Marketplace. Jadi template baru hanya menulis permukaan yang niche-nya
+benar-benar beda, bukan seluruh situs.
+
+**Sengaja TIDAK per-template** (alasannya ada di `registry.tsx`):
+`/lp/[slug]` preview fullscreen · `/checkout/*` alur pembayaran · `/privacy`
+`/terms` `/refund` teks legal · `/about` `/contact` `/hiring` halaman brand induk ·
+`/read/[slug]` reader. Slot baru ditambahkan kalau ada perbedaan niche nyata, bukan
+diantisipasi.
 
 **Menambah template baru** — tidak perlu migration:
 
 1. Buat `lib/templates/<key>/home.tsx`, export satu komponen bertipe `TemplateProps`.
 2. Tambah entry di [`lib/templates/registry.tsx`](lib/templates/registry.tsx)
-   (`key`, `label`, `description`, `Home`).
+   (`key`, `label`, `description`, `Home`, `Header`, `Footer`; `Category` opsional).
 
 `lp_sites.template` itu **teks bebas** yang divalidasi terhadap registry, bukan enum
 DB — jadi menambah/menghapus template tidak menyentuh skema, dan key yang tidak
@@ -133,8 +152,9 @@ Dua aturan yang dijaga desainnya:
   sama. Template menentukan *tampilan*, bukan *data apa yang boleh dilihat* — jadi
   template baru tidak bisa mengulang bug "semua produk tampil di semua domain"
   dengan fetch caranya sendiri.
-- **Header, footer, dan halaman produk (`/lp/[slug]`, checkout, reader) dipakai
-  bersama.** Navigasi dan alur beli tidak perlu dipelajari ulang per domain.
+- **Halaman produk (`/lp/[slug]`), checkout, dan reader dipakai bersama.** Alur beli
+  tidak perlu dipelajari ulang per domain, dan mem-fork alur pembayaran cuma
+  menambah risiko. Header & footer justru per-template (lihat di atas).
 
 Tiap template menandai dirinya dengan `data-template="<key>"` di elemen root —
 dipakai untuk menargetkan CSS, dan supaya "template mana yang benar-benar
@@ -160,7 +180,7 @@ lib/
   site-resolve.ts       host → site, dasar multi-domain
   vercel-domains.ts     integrasi Vercel Domains API
   templates/            frontend per niche — registry.tsx + satu folder per template
-supabase/migrations/    68 migration, berurutan timestamp
+supabase/migrations/    69 migration, berurutan timestamp
 docs/                   catatan panjang (multi-domain, analytics, region)
 ```
 
