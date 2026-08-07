@@ -2,8 +2,12 @@ import type { LandingPagePublic, LandingPageCategory, HomepageSort } from "@/lib
 import type { HeroConfig } from "@/lib/hero-config";
 import type { PublicReview } from "@/lib/actions/reviews";
 import type { Site } from "@/lib/site-resolve";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
 import { PustakaHome } from "./pustaka/home";
+import { PustakaHeader } from "./pustaka/header";
+import { PustakaFooter } from "./pustaka/footer";
 
 /**
  * Frontend templates, so storefronts in different niches don't all look like a
@@ -31,13 +35,33 @@ export type TemplateProps = {
   user: { id: string } | null;
 };
 
+/**
+ * Chrome props, matching what the shared header has always taken so a template can
+ * be swapped in without touching the twelve pages that render it.
+ */
+export type ChromeProps = {
+  user: { id: string; email?: string | null; user_metadata?: { full_name?: string | null } | null } | null;
+  categories?: LandingPageCategory[];
+  /** Highlights the browsed category in whatever nav the template draws. */
+  currentCategorySlug?: string | null;
+};
+
 export type TemplateDef = {
   key: string;
   /** Shown in the panel picker. */
   label: string;
   /** One line on who it suits — this is what makes the picker usable. */
   description: string;
+  /** Homepage body AND frame. */
   Home: (props: TemplateProps) => React.ReactNode;
+  /**
+   * Site-wide chrome. Rendered on every public page — product preview, checkout,
+   * category listings, legal pages — not just the homepage, so a storefront doesn't
+   * change identity the moment a visitor clicks through. Both may be async server
+   * components, which is why the return type is loose.
+   */
+  Header: (props: ChromeProps) => React.ReactNode;
+  Footer: () => React.ReactNode;
 };
 
 export const TEMPLATES: Record<string, TemplateDef> = {
@@ -47,6 +71,9 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     description:
       "Tampilan ADM.UIUX sekarang: hero besar, grid kartu 3 kolom, testimoni, FAQ. Cocok untuk katalog campuran — template, aset, ebook.",
     Home: DefaultHome,
+    // The chrome the live site already ships. Untouched on purpose.
+    Header: SiteHeader,
+    Footer: SiteFooter,
   },
   pustaka: {
     key: "pustaka",
@@ -54,6 +81,8 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     description:
       "Rak buku: sampul portrait besar, tanpa hero mockup, fokus ke judul & harga. Cocok untuk niche ebook, novel, atau bacaan.",
     Home: PustakaHome,
+    Header: PustakaHeader,
+    Footer: PustakaFooter,
   },
 };
 

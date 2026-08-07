@@ -6,8 +6,7 @@ import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { LandingPageCard } from "@/app/landing-page-card";
 import { SortTabs } from "@/components/sort-tabs";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { FounderCredibility } from "@/components/founder-credibility";
 import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
@@ -47,7 +46,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} currentCategorySlug={slug} />
+      <TemplateHeader user={user} categories={categories} currentCategorySlug={slug} />
 
       <main className="flex-1 relative">
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-2">
@@ -92,7 +91,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <Disclaimer />
       </main>
 
-      <SiteFooter />
+      <TemplateFooter />
     </div>
   );
 }

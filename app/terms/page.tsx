@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 
 export const metadata: Metadata = {
   title: "Ketentuan Layanan",
@@ -23,7 +22,7 @@ export default async function TermsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} />
+      <TemplateHeader user={user} categories={categories} />
       <main className="flex-1">
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
           <div className="max-w-2xl mx-auto space-y-6">
@@ -64,7 +63,7 @@ export default async function TermsPage() {
           </div>
         </section>
       </main>
-      <SiteFooter />
+      <TemplateFooter />
     </div>
   );
 }

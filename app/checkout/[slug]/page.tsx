@@ -15,8 +15,7 @@ import { JsonLd } from "@/components/json-ld";
 import { SITE_URL, buildMetaDescription } from "@/lib/seo";
 import { RichText } from "@/components/rich-text";
 import { CheckoutForm } from "./checkout-form";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
 import { RelatedProducts } from "@/components/related-products";
@@ -128,11 +127,11 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   if (isUpcoming(page.available_at, isOwner)) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <SiteHeader user={user} />
+        <TemplateHeader user={user} />
         <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-12 sm:py-16 flex items-center justify-center">
           <ComingSoon title={page.title} thumbnailUrl={page.thumbnail_url} target={page.available_at!} />
         </main>
-        <SiteFooter />
+        <TemplateFooter />
       </div>
     );
   }
@@ -193,7 +192,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
       <JsonLd data={breadcrumbJsonLd} />
       <ViewTracker slug={page.slug} />
       <ProductTracker slug={page.slug} page="checkout" />
-      <SiteHeader user={user} />
+      <TemplateHeader user={user} />
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link
@@ -428,7 +427,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
         )}
       </main>
 
-      <SiteFooter />
+      <TemplateFooter />
     </div>
   );
 }

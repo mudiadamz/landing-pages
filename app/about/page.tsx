@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { SupportContactImages } from "@/components/support-contact-images";
 
 export const metadata: Metadata = {
@@ -24,7 +23,7 @@ export default async function AboutPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} />
+      <TemplateHeader user={user} categories={categories} />
       <main className="flex-1">
         {/* Background 1920x1080 */}
         <section
@@ -94,7 +93,7 @@ export default async function AboutPage() {
           </div>
         </section>
       </main>
-      <SiteFooter />
+      <TemplateFooter />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SortTabs } from "@/components/sort-tabs";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { PustakaHeader } from "./header";
+import { PustakaFooter } from "./footer";
 import { Testimonials } from "@/components/testimonials";
 import { isUpcoming } from "@/lib/product-status";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
@@ -40,7 +40,7 @@ export function PustakaHome({
 }: TemplateProps) {
   return (
     <div data-template="pustaka" className="flex min-h-screen flex-col bg-background text-foreground">
-      <SiteHeader user={user} categories={categories} />
+      <PustakaHeader user={user} categories={categories} />
 
       <main className="flex-1">
         {/* Editorial masthead. Copy comes from the SITE row, not the hero config —
@@ -88,7 +88,7 @@ export function PustakaHome({
         <Testimonials reviews={reviews} />
       </main>
 
-      <SiteFooter />
+      <PustakaFooter />
     </div>
   );
 }

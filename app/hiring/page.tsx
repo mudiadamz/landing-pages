@@ -3,8 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hiringQuestions } from "@/lib/hiring-questions";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -37,7 +36,7 @@ export default async function HiringPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} />
+      <TemplateHeader user={user} categories={categories} />
 
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
         <Link
@@ -131,7 +130,7 @@ export default async function HiringPage() {
         </div>
       </main>
 
-      <SiteFooter />
+      <TemplateFooter />
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { getCategories, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { PurchaseTracker } from "@/components/purchase-tracker";
 
 // Matches the Button component's secondary + md variant, so the story reader
@@ -52,7 +51,7 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} />
+      <TemplateHeader user={user} categories={categories} />
 
       {success && checkoutData && (
         <PurchaseTracker
@@ -162,7 +161,7 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
         </div>
       </main>
 
-      <SiteFooter />
+      <TemplateFooter />
     </div>
   );
 }
