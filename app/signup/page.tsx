@@ -9,7 +9,6 @@ import {
 } from "@/lib/signup-guard";
 import { TurnstileWidget } from "@/components/turnstile-widget";
 import { SubmitButton } from "./submit-button";
-import { ThemeSwitch } from "@/components/theme-switch";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { CheckoutIntent } from "../login/checkout-intent";
 
@@ -34,7 +33,7 @@ export default async function SignupPage({
         Back home
       </Link>
       <div className="absolute top-4 right-4">
-        <ThemeSwitch />
+        {/* Toggle hidden on public pages for now — see components/site-header.tsx. */}
       </div>
       <div className="w-full max-w-[400px]">
         <CheckoutIntent next={next} />

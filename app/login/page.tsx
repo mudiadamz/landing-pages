@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { login } from "@/lib/actions/auth";
 import { SubmitButton } from "./submit-button";
-import { ThemeSwitch } from "@/components/theme-switch";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { CheckoutIntent } from "./checkout-intent";
 
@@ -24,7 +23,7 @@ export default async function LoginPage({
         Back home
       </Link>
       <div className="absolute top-4 right-4">
-        <ThemeSwitch />
+        {/* Toggle hidden on public pages for now — see components/site-header.tsx. */}
       </div>
       <div className="w-full max-w-[400px]">
         {/* When the visitor came from a buy button, lead with what they're

@@ -30,12 +30,14 @@ export type Site = {
   category_ids: string[];
   /** Frontend template key; validated against lib/templates/registry. */
   template: string;
+  /** Palette preset key; validated against lib/palette PALETTE_PRESETS. */
+  palette: string;
   is_canonical: boolean;
   active: boolean;
 };
 
 const SITE_COLUMNS =
-  "id, host, name, tagline, description, category_ids, template, is_canonical, active";
+  "id, host, name, tagline, description, category_ids, template, palette, is_canonical, active";
 
 /**
  * Used when lp_sites is empty or unreachable — a fresh database, or the migration
@@ -52,6 +54,7 @@ const FALLBACK_SITE: Site = {
   description: null,
   category_ids: [],
   template: "default",
+  palette: "forest",
   is_canonical: true,
   active: true,
 };

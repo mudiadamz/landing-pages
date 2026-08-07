@@ -17,6 +17,7 @@ import { SessionTracker } from "@/components/session-tracker";
 import { GtmScripts } from "@/components/gtm-scripts";
 import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
 import { currentOrigin, currentSite } from "@/lib/site-resolve";
+import { paletteCss, paletteFromKey } from "@/lib/palette";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -140,6 +141,15 @@ export default async function RootLayout({
             />
           )),
         )}
+        {/* Per-storefront palette. Overrides the four tokens from globals.css for
+            both themes; backgrounds, text and borders stay fixed so contrast can't
+            be configured away. The panel injects its own palette in
+            app/panel/layout.tsx, which renders inside this one and therefore later
+            in the DOM — so panel styling still wins on panel routes. */}
+        <style
+          id="site-palette"
+          dangerouslySetInnerHTML={{ __html: paletteCss(paletteFromKey(site.palette)) }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,

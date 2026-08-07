@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ThemeSwitch } from "@/components/theme-switch";
 import { currentSite } from "@/lib/site-resolve";
 import { PustakaUserMenu } from "./user-menu";
 import type { ChromeProps } from "../registry";
@@ -58,7 +57,7 @@ export async function PustakaHeader({
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
-          <ThemeSwitch />
+          {/* Toggle hidden for now — see components/site-header.tsx. */}
           <PustakaUserMenu isLoggedIn={!!user} />
         </div>
       </div>

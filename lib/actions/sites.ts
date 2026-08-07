@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
+import { paletteFromKey } from "@/lib/palette";
 import {
   addVercelDomain,
   getVercelDomain,
@@ -26,6 +27,7 @@ export type SiteInput = {
   description: string;
   categoryIds: string[];
   template: string;
+  palette: string;
   active: boolean;
 };
 
@@ -160,6 +162,7 @@ export async function createSite(
     description: input.description.trim() || null,
     category_ids: input.categoryIds,
     template: resolveTemplate(input.template).key,
+    palette: paletteFromKey(input.palette).preset,
     active: input.active,
     // Never through this form: the canonical site is the one that owns the panel
     // and the payment callback, and having two would be ambiguous.
@@ -203,6 +206,7 @@ export async function updateSite(
       description: input.description.trim() || null,
       category_ids: input.categoryIds,
       template: resolveTemplate(input.template).key,
+      palette: paletteFromKey(input.palette).preset,
       active: input.active,
       updated_at: new Date().toISOString(),
     })

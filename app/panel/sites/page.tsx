@@ -4,6 +4,7 @@ import { getCategories } from "@/lib/actions/landing-pages";
 import { getSites, isVercelConfigured } from "@/lib/actions/sites";
 import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templateOptions } from "@/lib/templates/registry";
+import { paletteOptions } from "@/lib/palette";
 import { SitesManager } from "./sites-manager";
 
 export const metadata = { title: "Domain" };
@@ -45,6 +46,7 @@ export default async function SitesPage() {
         // Serialisable subset — the registry also holds components, which cannot
         // cross the server/client boundary as props.
         templates={templateOptions().map(({ key, label, description }) => ({ key, label, description }))}
+        palettes={paletteOptions()}
       />
     </div>
   );

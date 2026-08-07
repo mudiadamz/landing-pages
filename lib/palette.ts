@@ -150,3 +150,35 @@ export function paletteCss(config: PaletteConfig): string {
     `--accent-subtle:${t.subtleDark};--accent:${t.accentDark}}`
   );
 }
+
+/**
+ * Resolve a preset KEY to a full config, for the per-storefront palette on
+ * `lp_sites.palette`.
+ *
+ * Sites store only the key — never raw hex. The presets below were contrast-checked
+ * once; six free-text colour fields per domain would be six more chances to ship an
+ * illegible storefront with nothing measured behind it. An unknown key (renamed or
+ * removed preset) falls back to the default instead of emitting no primary colour.
+ */
+export function paletteFromKey(key: string | null | undefined): PaletteConfig {
+  const k = (key ?? "").trim();
+  const preset = PALETTE_PRESETS.find((p) => p.key === k);
+  return preset
+    ? { preset: preset.key, tokens: preset.tokens }
+    : DEFAULT_PALETTE;
+}
+
+/** Options for a picker: key, label, note and the swatch colours to show. */
+export function paletteOptions(): {
+  key: string;
+  label: string;
+  note: string;
+  swatch: [string, string, string];
+}[] {
+  return PALETTE_PRESETS.map((p) => ({
+    key: p.key,
+    label: p.label,
+    note: p.note,
+    swatch: [p.tokens.primary, p.tokens.accent, p.tokens.subtle],
+  }));
+}

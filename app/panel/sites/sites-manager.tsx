@@ -17,6 +17,7 @@ type Draft = {
   description: string;
   categoryIds: string[];
   template: string;
+  palette: string;
   active: boolean;
 };
 
@@ -27,6 +28,7 @@ const EMPTY: Draft = {
   description: "",
   categoryIds: [],
   template: "default",
+  palette: "forest",
   active: true,
 };
 
@@ -42,6 +44,7 @@ export function SitesManager({
   supabaseProjectUrl,
   vercelAutomated,
   templates,
+  palettes,
 }: {
   sites: Site[];
   rootCategories: LandingPageCategory[];
@@ -49,6 +52,7 @@ export function SitesManager({
   supabaseProjectUrl: string;
   vercelAutomated: boolean;
   templates: { key: string; label: string; description: string }[];
+  palettes: { key: string; label: string; note: string; swatch: [string, string, string] }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -71,6 +75,7 @@ export function SitesManager({
       description: site.description ?? "",
       categoryIds: site.category_ids ?? [],
       template: site.template || "default",
+      palette: site.palette || "forest",
       active: site.active,
     });
     setEditing(site.id);
@@ -217,6 +222,7 @@ export function SitesManager({
                 pending={pending}
                 lockHost={site.is_canonical}
                 templates={templates}
+                palettes={palettes}
               />
             ) : (
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -246,6 +252,11 @@ export function SitesManager({
                     <span className="text-foreground">
                       {templates.find((t) => t.key === (site.template || "default"))?.label ??
                         site.template}
+                    </span>
+                    {" · "}Warna:{" "}
+                    <span className="text-foreground">
+                      {palettes.find((p) => p.key === (site.palette || "forest"))?.label ??
+                        site.palette}
                     </span>
                   </p>
                 </div>
@@ -296,6 +307,7 @@ export function SitesManager({
             pending={pending}
             lockHost={false}
             templates={templates}
+            palettes={palettes}
           />
         </div>
       ) : (
@@ -317,6 +329,7 @@ function SiteForm({
   pending,
   lockHost,
   templates,
+  palettes,
 }: {
   draft: Draft;
   setDraft: React.Dispatch<React.SetStateAction<Draft>>;
@@ -327,6 +340,7 @@ function SiteForm({
   pending: boolean;
   lockHost: boolean;
   templates: { key: string; label: string; description: string }[];
+  palettes: { key: string; label: string; note: string; swatch: [string, string, string] }[];
 }) {
   return (
     <div className="space-y-4">
@@ -423,6 +437,49 @@ function SiteForm({
         <p className="text-xs text-[var(--muted)]">
           Header, footer, dan halaman produk tetap sama di semua template — yang berubah
           halaman depannya.
+        </p>
+      </div>
+
+      {/* Palette. Swatches, not names: "Jade & Mango" means nothing until you see it.
+          Only preset keys are storable — the presets had their contrast measured,
+          free-text hex fields per domain would not. */}
+      <div className="space-y-2">
+        <span className="block text-sm font-medium text-foreground">Warna (palet)</span>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {palettes.map((p) => {
+            const active = draft.palette === p.key;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => setDraft((d) => ({ ...d, palette: p.key }))}
+                aria-pressed={active}
+                className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                  active
+                    ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
+                    : "border-[var(--border)] hover:bg-[var(--background)]"
+                }`}
+              >
+                <span className="mt-0.5 flex shrink-0 gap-1" aria-hidden>
+                  {p.swatch.map((c, i) => (
+                    <span
+                      key={i}
+                      className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15"
+                      style={{ background: c }}
+                    />
+                  ))}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-foreground">{p.label}</span>
+                  <span className="mt-0.5 block text-xs text-[var(--muted)]">{p.note}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-[var(--muted)]">
+          Mengubah warna aksi, tint, dan aksen. Latar, teks, dan border tetap — di
+          situlah kontrasnya, jadi tidak bisa diatur sampai rusak.
         </p>
       </div>
 

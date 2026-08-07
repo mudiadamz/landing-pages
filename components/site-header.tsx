@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { ThemeSwitch } from "@/components/theme-switch";
 import { signOut } from "@/lib/actions/auth";
 import { CategoryIcon } from "@/lib/category-icons";
 import { BrandMark } from "@/components/brand-mark";
@@ -145,7 +144,8 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
           </Link>
 
           <div className="flex items-center gap-2 shrink-0">
-            <ThemeSwitch />
+            {/* Dark/light toggle hidden for now — the palette per storefront is the
+                intended way to set the look. Component kept; re-add to restore. */}
             {/* Auth control is hidden on mobile — the bottom nav + hamburger menu
                 cover profile/login there. Shown from md upward. */}
             <div className="hidden md:flex items-center">
