@@ -130,6 +130,26 @@ export async function addVercelDomain(host: string): Promise<VercelResult> {
   return { ok: true, state: stateFrom(body) };
 }
 
+/**
+ * Detach the domain from the project. Deliberately its OWN action rather than
+ * something deleteSite does: this stops a live domain from serving, which is a
+ * different intent from "remove this storefront's config", and is not what an
+ * admin re-pointing a domain wants. Never called automatically.
+ *
+ * The domain stays owned by the team; only the project assignment goes.
+ */
+export async function removeVercelDomain(host: string): Promise<VercelResult> {
+  if (!vercelConfigured()) return { ok: false, error: "not-configured", code: "not-configured" };
+  const { status, body } = await call(
+    `/v9/projects/${encodeURIComponent(projectId())}/domains/${encodeURIComponent(host)}${teamQuery()}`,
+    { method: "DELETE" },
+  );
+  // Already gone is the desired end state, not an error.
+  if (status === 404) return { ok: true, state: { added: false, verified: false, challenges: [] } };
+  if (status >= 400) return { ok: false, error: errorFrom(status, body, host) };
+  return { ok: true, state: { added: false, verified: false, challenges: [] } };
+}
+
 /** Ask Vercel to re-check the DNS challenge after the record has been added. */
 export async function verifyVercelDomain(host: string): Promise<VercelResult> {
   if (!vercelConfigured()) return { ok: false, error: "not-configured", code: "not-configured" };

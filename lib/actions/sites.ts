@@ -8,6 +8,7 @@ import {
   addVercelDomain,
   getVercelDomain,
   verifyVercelDomain,
+  removeVercelDomain,
   vercelConfigured,
   type VercelDomainState,
 } from "@/lib/vercel-domains";
@@ -92,6 +93,17 @@ export async function getDomainStatus(host: string): Promise<VercelStatus> {
 export async function attachDomainToVercel(host: string): Promise<VercelStatus> {
   if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
   const status = await toStatus(() => addVercelDomain(host));
+  revalidatePath("/panel/sites");
+  return status;
+}
+
+/**
+ * Detach from the Vercel project. Explicit only — deleteSite never does this,
+ * because a domain that is being re-pointed should keep serving.
+ */
+export async function detachDomainFromVercel(host: string): Promise<VercelStatus> {
+  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
+  const status = await toStatus(() => removeVercelDomain(host));
   revalidatePath("/panel/sites");
   return status;
 }

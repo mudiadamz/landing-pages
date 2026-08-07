@@ -5,6 +5,7 @@ import {
   getDomainStatus,
   attachDomainToVercel,
   recheckDomainVerification,
+  detachDomainFromVercel,
   type VercelStatus,
 } from "@/lib/actions/sites";
 
@@ -91,6 +92,24 @@ export function VercelDomainStatus({ host }: { host: string }) {
             className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)] disabled:opacity-60"
           >
             Coba lagi
+          </button>
+        )}
+        {state?.added && (
+          <button
+            type="button"
+            onClick={() => {
+              if (
+                !confirm(
+                  `Lepas ${host} dari project Vercel?\n\nDomainnya langsung berhenti melayani situs ini. Pengaturan domain di panel TIDAK dihapus — bisa dipasang lagi kapan saja dengan "Tambah ke Vercel".`,
+                )
+              )
+                return;
+              act(() => detachDomainFromVercel(host));
+            }}
+            disabled={pending}
+            className="ml-auto rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:text-red-600 disabled:opacity-60 dark:hover:text-red-400"
+          >
+            Lepas dari Vercel
           </button>
         )}
       </div>
