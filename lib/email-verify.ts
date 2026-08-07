@@ -72,6 +72,13 @@ export async function sendVerificationEmail(opts: {
   to: string;
   userId: string;
   name?: string | null;
+  /**
+   * Origin for the verify link. Both callers are server actions, so they pass the
+   * domain the visitor signed up on — clicking a link back to a different domain
+   * would verify them somewhere they never visited, and (since sessions don't
+   * cross domains) leave them still unverified where they were.
+   */
+  origin?: string | null;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const token = issueVerifyToken(opts.userId);
@@ -80,7 +87,11 @@ export async function sendVerificationEmail(opts: {
     return false;
   }
 
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com";
+  const base = (
+    opts.origin?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://admuiux.com"
+  ).replace(/\/$/, "");
   const link = `${base}/auth/verify-email?token=${encodeURIComponent(token)}`;
   const from = process.env.RESEND_FROM ?? "onboarding@resend.dev";
   const greeting = opts.name?.trim() ? `Halo ${opts.name.trim()},` : "Halo,";

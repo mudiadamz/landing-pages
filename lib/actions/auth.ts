@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { guardSignup } from "@/lib/signup-guard";
 import { sendVerificationEmail } from "@/lib/email-verify";
+import { currentOrigin } from "@/lib/site-resolve";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -28,7 +29,10 @@ export async function signup(formData: FormData) {
   const password = formData.get("password") as string;
   const fullName = (formData.get("full_name") as string)?.trim() ?? "";
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // The domain the visitor is actually on, not a baked-in one: sending someone
+  // who signed in on a niche storefront back to admuiux.com would set the session
+  // cookie on the wrong host, and they would look logged out where they started.
+  const baseUrl = await currentOrigin();
   // Carried through so someone who signs up mid-purchase lands back on the
   // product they were buying rather than the panel.
   const next = (formData.get("next") as string)?.trim();
@@ -64,7 +68,7 @@ export async function signup(formData: FormData) {
   // of it — the account works immediately and the panel nags until it's done.
   // Awaited so a Vercel function isn't frozen mid-send, but never fatal.
   if (data.user) {
-    await sendVerificationEmail({ to: email, userId: data.user.id, name: fullName });
+    await sendVerificationEmail({ to: email, userId: data.user.id, name: fullName, origin: baseUrl });
   }
 
   if (data.session) {
@@ -91,7 +95,10 @@ export async function signOut() {
 
 export async function signInWithGoogle(formData?: FormData) {
   const supabase = await createClient();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // The domain the visitor is actually on, not a baked-in one: sending someone
+  // who signed in on a niche storefront back to admuiux.com would set the session
+  // cookie on the wrong host, and they would look logged out where they started.
+  const baseUrl = await currentOrigin();
   const next = (formData?.get("next") as string)?.trim();
   const redirectTo = next && next.startsWith("/")
     ? `${baseUrl}/auth/callback?next=${encodeURIComponent(next)}`
@@ -137,6 +144,7 @@ export async function resendVerification(
     to: user.email,
     userId: user.id,
     name: (user.user_metadata?.full_name as string | undefined) ?? null,
+    origin: await currentOrigin(),
   });
   return sent
     ? { ok: true, message: `Link verifikasi dikirim ke ${user.email}.` }

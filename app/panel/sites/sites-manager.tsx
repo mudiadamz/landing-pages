@@ -7,6 +7,7 @@ import { createSite, updateSite, deleteSite } from "@/lib/actions/sites";
 // Type-only, so nothing from site-resolve (which reads headers()) reaches the client.
 import type { Site } from "@/lib/site-resolve";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
+import { DomainSetupGuide } from "./domain-setup-guide";
 
 type Draft = {
   host: string;
@@ -34,11 +35,13 @@ const INPUT =
 export function SitesManager({
   sites,
   rootCategories,
-  canonicalOrigin,
+  canonicalHost,
+  supabaseProjectUrl,
 }: {
   sites: Site[];
   rootCategories: LandingPageCategory[];
-  canonicalOrigin: string;
+  canonicalHost: string;
+  supabaseProjectUrl: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -133,24 +136,29 @@ export function SitesManager({
         </p>
       )}
 
-      {/* Vercel is the other half of adding a domain, and forgetting it is the
-          most likely way this feature "doesn't work". */}
+      {/* Adding a row here only makes the app READY to serve a domain. Vercel makes
+          the domain reach it and Supabase lets people sign in on it — both easy to
+          forget, and both fail in ways that look like a bug in this screen. */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm">
-        <p className="font-medium text-foreground">Dua langkah untuk tiap domain baru</p>
+        <p className="font-medium text-foreground">Menambah domain butuh tiga tempat</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-[var(--muted)]">
-          <li>Tambahkan di sini — menentukan nama, niche, dan pengaturannya.</li>
           <li>
-            Tambahkan domain yang sama di Vercel (project <strong>landing_pages</strong> →
-            Settings → Domains). SSL-nya otomatis.
+            <strong className="text-foreground">Di sini</strong> — nama, niche, dan pengaturan
+            per domain.
+          </li>
+          <li>
+            <strong className="text-foreground">Vercel</strong> — supaya domainnya sampai ke
+            aplikasi ini.
+          </li>
+          <li>
+            <strong className="text-foreground">Supabase</strong> — supaya pengunjung bisa login
+            di domain itu.
           </li>
         </ol>
         <p className="mt-2 text-xs text-[var(--muted)]">
-          Subdomain dari{" "}
-          <span className="font-mono text-foreground">
-            {canonicalOrigin.replace(/^https?:\/\//, "")}
-          </span>{" "}
-          tidak perlu beli domain baru. Login pengunjung terpisah per domain — cookie sesi tidak
-          bisa lintas domain.
+          Tiap domain di bawah punya panduan langkah 2 &amp; 3 dengan nilai yang sudah terisi —
+          buka &ldquo;Langkah di luar panel ini&rdquo;. Referensi lengkap:{" "}
+          <span className="font-mono text-foreground">docs/multi-domain.md</span>.
         </p>
       </div>
 
@@ -210,6 +218,16 @@ export function SitesManager({
                     </Button>
                   )}
                 </div>
+              </div>
+            )}
+
+            {editing !== site.id && !site.is_canonical && (
+              <div className="mt-3">
+                <DomainSetupGuide
+                  host={site.host}
+                  supabaseProjectUrl={supabaseProjectUrl}
+                  canonicalHost={canonicalHost}
+                />
               </div>
             )}
           </li>
