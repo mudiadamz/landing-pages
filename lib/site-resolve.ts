@@ -184,6 +184,28 @@ export function canonicalOrigin(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com").replace(/\/$/, "");
 }
 
+/**
+ * Which storefront a panel settings screen is EDITING — a different question from
+ * which one is serving the request. The panel only ever runs on the canonical
+ * domain, so the target comes from a `?site=` param instead of the host.
+ *
+ * The id is validated against the table rather than trusted, so a hand-edited URL
+ * can't write settings rows for a site that doesn't exist. Anything unknown falls
+ * back to the canonical site, which is what the screens did before they could
+ * target anything else.
+ */
+export async function editingSite(siteParam?: string | string[]): Promise<Site> {
+  const wanted = (Array.isArray(siteParam) ? siteParam[0] : siteParam)?.trim();
+  const all = await listSites();
+  const match = wanted ? all.find((s) => s.id === wanted) : undefined;
+  return (
+    match ??
+    all.find((s) => s.is_canonical) ??
+    all[0] ??
+    FALLBACK_SITE
+  );
+}
+
 /** Admin-facing list for the panel. Not cached — admins need to see writes. */
 export async function listSites(): Promise<Site[]> {
   const { data } = await anonClient()

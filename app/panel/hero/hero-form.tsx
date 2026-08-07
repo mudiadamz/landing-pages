@@ -22,7 +22,7 @@ const labelCls = "block text-xs font-medium text-[var(--muted)] mb-1.5";
 const inputCls =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]";
 
-export function HeroForm({ initialHero }: { initialHero: HeroConfig }) {
+export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; siteId: string }) {
   const [hero, setHero] = useState<HeroConfig>(initialHero);
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);
@@ -60,7 +60,7 @@ export function HeroForm({ initialHero }: { initialHero: HeroConfig }) {
 
   function handleSave() {
     startTransition(async () => {
-      const res = await updateHero(hero);
+      const res = await updateHero(hero, siteId);
       setStatus(res);
     });
   }

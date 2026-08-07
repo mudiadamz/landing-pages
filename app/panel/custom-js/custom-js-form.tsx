@@ -21,11 +21,11 @@ function SubmitButton() {
   );
 }
 
-export function CustomJsForm({ initialScript }: { initialScript: string }) {
+export function CustomJsForm({ initialScript, siteId }: { initialScript: string; siteId: string }) {
   const [state, formAction] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, formData: FormData) => {
       const script = (formData.get("script") as string) ?? "";
-      return updateCustomJs(script);
+      return updateCustomJs(script, siteId);
     },
     null
   );

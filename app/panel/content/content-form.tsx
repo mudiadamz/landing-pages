@@ -50,7 +50,7 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function ContentForm({ initialContent }: { initialContent: SiteContent }) {
+export function ContentForm({ initialContent, siteId }: { initialContent: SiteContent; siteId: string }) {
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);
@@ -106,7 +106,7 @@ export function ContentForm({ initialContent }: { initialContent: SiteContent })
 
   function handleSave() {
     startTransition(async () => {
-      setStatus(await updateSiteContent(content));
+      setStatus(await updateSiteContent(content, siteId));
     });
   }
 

@@ -14,11 +14,11 @@ function SubmitButton() {
   );
 }
 
-export function TrackingForm({ initialGtmId }: { initialGtmId: string }) {
+export function TrackingForm({ initialGtmId, siteId }: { initialGtmId: string; siteId: string }) {
   const [state, formAction] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, formData: FormData) => {
       const gtmId = (formData.get("gtmId") as string) ?? "";
-      return updateTracking({ gtmId });
+      return updateTracking({ gtmId }, siteId);
     },
     null,
   );
