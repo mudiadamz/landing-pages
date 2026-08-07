@@ -141,15 +141,6 @@ export default async function RootLayout({
             />
           )),
         )}
-        {/* Per-storefront palette. Overrides the four tokens from globals.css for
-            both themes; backgrounds, text and borders stay fixed so contrast can't
-            be configured away. The panel injects its own palette in
-            app/panel/layout.tsx, which renders inside this one and therefore later
-            in the DOM — so panel styling still wins on panel routes. */}
-        <style
-          id="site-palette"
-          dangerouslySetInnerHTML={{ __html: paletteCss(paletteFromKey(site.palette)) }}
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
@@ -159,6 +150,19 @@ export default async function RootLayout({
       <body
         className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Per-storefront palette. In the BODY, not the head: Next hoists the
+            globals.css <link> with data-precedence, which lands it after a plain
+            inline <style> in head — so a head version loses to globals.css and the
+            palette silently does nothing (measured: the served CSS was right and the
+            rendered colour was not). app/panel/layout.tsx does the same for the
+            panel palette, and renders inside this, so it still wins on panel routes.
+
+            Overrides only the four mood tokens; backgrounds, text and borders stay
+            fixed, which is where the contrast lives. */}
+        <style
+          id="site-palette"
+          dangerouslySetInnerHTML={{ __html: paletteCss(paletteFromKey(site.palette)) }}
+        />
         <JsonLd
           data={{
             "@context": "https://schema.org",
