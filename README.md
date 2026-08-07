@@ -86,9 +86,9 @@ Resend. Sisanya opsional (tracking, captcha, Vercel domain API).
 ## Multi-domain
 
 Satu deployment, satu katalog, beberapa storefront. Tiap domain punya nama,
-tagline, deskripsi SEO, hero, popup, tracking, dan custom JS sendiri — tapi
-produknya **tidak diduplikasi**: domain memilih *kategori*, jadi satu produk bisa
-tampil di beberapa storefront.
+tagline, deskripsi SEO, **template tampilan**, hero, popup, tracking, dan custom JS
+sendiri — tapi produknya **tidak diduplikasi**: domain memilih *kategori*, jadi
+satu produk bisa tampil di beberapa storefront.
 
 Dikelola di **`/panel/sites`**. Menambah domain butuh tiga tempat:
 
@@ -106,6 +106,44 @@ layar **admin** dan callback Duitku.
 📖 Detail lengkap, jebakan cache, dan pola implementasi:
 **[`docs/multi-domain.md`](docs/multi-domain.md)**
 
+## Template tampilan
+
+Tiap domain memilih frontend-nya sendiri, supaya storefront niche tidak semuanya
+terlihat seperti marketplace template. Dipilih di `/panel/sites` → **Tampilan
+(template)**.
+
+| Key | Label | Untuk |
+|---|---|---|
+| `default` | Marketplace | Hero besar, grid 3 kolom, testimoni, blok founder. Katalog campuran. |
+| `pustaka` | Pustaka | Rak buku: sampul portrait 2:3, tanpa hero mockup, tanpa blok founder. Ebook, novel, bacaan. |
+
+**Menambah template baru** — tidak perlu migration:
+
+1. Buat `lib/templates/<key>/home.tsx`, export satu komponen bertipe `TemplateProps`.
+2. Tambah entry di [`lib/templates/registry.tsx`](lib/templates/registry.tsx)
+   (`key`, `label`, `description`, `Home`).
+
+`lp_sites.template` itu **teks bebas** yang divalidasi terhadap registry, bukan enum
+DB — jadi menambah/menghapus template tidak menyentuh skema, dan key yang tidak
+dikenal jatuh ke `default` alih-alih membuat halaman error.
+
+Dua aturan yang dijaga desainnya:
+
+- **`app/page.tsx` yang mengambil semua data**; semua template menerima props yang
+  sama. Template menentukan *tampilan*, bukan *data apa yang boleh dilihat* — jadi
+  template baru tidak bisa mengulang bug "semua produk tampil di semua domain"
+  dengan fetch caranya sendiri.
+- **Header, footer, dan halaman produk (`/lp/[slug]`, checkout, reader) dipakai
+  bersama.** Navigasi dan alur beli tidak perlu dipelajari ulang per domain.
+
+Tiap template menandai dirinya dengan `data-template="<key>"` di elemen root —
+dipakai untuk menargetkan CSS, dan supaya "template mana yang benar-benar
+dirender" bisa dicek satu baris:
+
+```bash
+curl -s https://domain-anda.com/ | grep -o 'data-template="[a-z]*"'
+```
+
 ## Struktur
 
 ```
@@ -121,7 +159,8 @@ lib/
   supabase/             server / client / admin (service-role)
   site-resolve.ts       host → site, dasar multi-domain
   vercel-domains.ts     integrasi Vercel Domains API
-supabase/migrations/    67 migration, berurutan timestamp
+  templates/            frontend per niche — registry.tsx + satu folder per template
+supabase/migrations/    68 migration, berurutan timestamp
 docs/                   catatan panjang (multi-domain, analytics, region)
 ```
 
@@ -131,6 +170,13 @@ docs/                   catatan panjang (multi-domain, analytics, region)
 - Bahasa UI **Indonesia** (`<html lang="id">`, locale `id_ID`).
 - Semua mutasi lewat Server Actions di `lib/actions/*.ts`; caching pakai
   `unstable_cache` + invalidasi per tag.
+- **Jebakan invalidasi:** `updateTag()` **tidak** membatalkan entry `unstable_cache`
+  yang di-tag lewat opsi `{ tags: [...] }` — sumber tag yang didukungnya adalah
+  fetch tags dan `cacheTag()` di dalam `'use cache'`. Pakai
+  `revalidateTag(tag, "max")` (profil wajib di Next 16.1.6). Terukur: tanpa itu,
+  perubahan di panel tidak sampai ke halaman publik sampai window TTL habis atau
+  ada deploy baru. `lib/actions/sites.ts` sudah benar; call site `updateTag` lain
+  (categories, hero, content, tracking, popup) belum diverifikasi.
 - Input file di panel **wajib** pakai `FileUploadCard`.
 - Commit pakai email `mudi.adamz@gmail.com` (kalau tidak, deploy Vercel gagal).
 

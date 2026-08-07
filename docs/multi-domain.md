@@ -17,6 +17,7 @@ dokumen ini versi lengkapnya.
 | **Domain utama** | `is_canonical = true`. Satu-satunya. Memegang `/panel`, callback Duitku, dan jadi fallback untuk host yang tidak dikenal (preview deployment, `*.vercel.app`, domain yang diarahkan sebelum didaftarkan). |
 | **Niche** | `category_ids` berisi kategori **induk**; sub-kategorinya ikut otomatis. **Kosong = seluruh katalog** — itu yang dipakai domain utama, bukan berarti "tidak tampilkan apa-apa". |
 | **Pengaturan** | `lp_site_settings` di-key `(site_id, key)`. Per-domain: `hero`, `site_content`, `tracking`, `promo_popup`, `custom_js`. Global (pinned ke domain utama): `panel_palette`, `role_permissions`. |
+| **Template** | `lp_sites.template` — frontend halaman depan. Teks bebas divalidasi terhadap `lib/templates/registry.tsx`, **bukan** enum DB, jadi menambah template tidak butuh migration; key tak dikenal jatuh ke `default`. Lihat README → "Template tampilan". |
 | **Nonaktif** | `active = false` → domain itu menampilkan situs utama, bukan halaman error. |
 
 ## Menambah domain
@@ -141,9 +142,23 @@ domain tempat pembeli belanja.
 custom JS). Produk tidak terpengaruh — produk milik kategori, bukan milik domain.
 Domain utama tidak bisa dihapus.
 
-**Cache 5 menit.** `lp_sites` dibaca lewat `unstable_cache` dengan
-`revalidate: 300`. Perubahan lewat panel langsung berlaku (tag `sites` dibuang);
-perubahan langsung di database baru terlihat setelah window itu habis.
+**Cache 60 detik, dan jebakan invalidasinya.** `lp_sites` dibaca lewat
+`unstable_cache` dengan `revalidate: 60`.
+
+Awalnya 300 detik dengan invalidasi lewat `updateTag("sites")` saja — dan itu
+**tidak bekerja**: `updateTag` hanya mengenali fetch tags dan `cacheTag()` di dalam
+`'use cache'`, bukan opsi `{ tags: [...] }` pada `unstable_cache`. Terukur:
+setelah simpan di panel, baris database **dan** panel menampilkan nilai baru
+sementara halaman publik tetap menyajikan yang lama sampai ada deploy baru.
+
+Sekarang `bustSiteCaches()` memanggil `revalidateTag(tag, "max")` (profil wajib di
+Next 16.1.6) **dan** `updateTag(tag)`, dan TTL diturunkan ke 60 detik sebagai jaring
+pengaman. Perubahan langsung di database (tanpa invalidasi apa pun) terlihat dalam
+~20 detik.
+
+> Call site `updateTag` lain — `categories`, `hero`, `site_content`, `tracking`,
+> `promo_popup`, `homepage-pages` — kemungkinan lag dengan cara yang sama. Belum
+> diverifikasi satu per satu.
 
 ## Catatan implementasi
 
