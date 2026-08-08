@@ -51,7 +51,13 @@ export function SitesManager({
   canonicalHost: string;
   supabaseProjectUrl: string;
   vercelAutomated: boolean;
-  templates: { key: string; label: string; description: string }[];
+  templates: {
+    key: string;
+    label: string;
+    description: string;
+    defaultPalette: string | null;
+    coverage: { label: string; own: boolean }[];
+  }[];
   palettes: { key: string; label: string; note: string; swatch: [string, string, string] }[];
 }) {
   const router = useRouter();
@@ -339,7 +345,13 @@ function SiteForm({
   onCancel: () => void;
   pending: boolean;
   lockHost: boolean;
-  templates: { key: string; label: string; description: string }[];
+  templates: {
+    key: string;
+    label: string;
+    description: string;
+    defaultPalette: string | null;
+    coverage: { label: string; own: boolean }[];
+  }[];
   palettes: { key: string; label: string; note: string; swatch: [string, string, string] }[];
 }) {
   return (
@@ -430,6 +442,30 @@ function SiteForm({
               >
                 <span className="block text-sm font-medium text-foreground">{t.label}</span>
                 <span className="mt-0.5 block text-xs text-[var(--muted)]">{t.description}</span>
+                {/* Read live from the registry, so a new theme's coverage shows up here
+                    without anyone updating this list. "bawaan" = falls back to
+                    Marketplace for that surface. */}
+                <span className="mt-2 flex flex-wrap gap-1">
+                  {t.coverage.map((c) => (
+                    <span
+                      key={c.label}
+                      className={`rounded px-1.5 py-0.5 text-[10px] ${
+                        c.own
+                          ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+                          : "bg-[var(--background)] text-[var(--muted)]"
+                      }`}
+                    >
+                      {c.label}
+                      {c.own ? "" : " · bawaan"}
+                    </span>
+                  ))}
+                </span>
+                {t.defaultPalette && (
+                  <span className="mt-1.5 block text-[10px] text-[var(--muted)]">
+                    Palet disarankan:{" "}
+                    {palettes.find((p) => p.key === t.defaultPalette)?.label ?? t.defaultPalette}
+                  </span>
+                )}
               </button>
             );
           })}

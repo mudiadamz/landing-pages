@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { getSites, isVercelConfigured } from "@/lib/actions/sites";
 import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
-import { templateOptions } from "@/lib/templates/registry";
+import { templatePickerOptions } from "@/lib/templates/registry";
 import { paletteOptions } from "@/lib/palette";
 import { SitesManager } from "./sites-manager";
 
@@ -43,9 +43,9 @@ export default async function SitesPage() {
         // verbatim: it is the one redirect URI Google is configured with.
         supabaseProjectUrl={(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}
         vercelAutomated={vercelAutomated}
-        // Serialisable subset — the registry also holds components, which cannot
-        // cross the server/client boundary as props.
-        templates={templateOptions().map(({ key, label, description }) => ({ key, label, description }))}
+        // Serialisable view — the registry also holds components, which cannot cross
+        // the server/client boundary as props.
+        templates={templatePickerOptions()}
         palettes={paletteOptions()}
       />
     </div>

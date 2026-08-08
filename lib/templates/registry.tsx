@@ -6,10 +6,12 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
 import { DefaultCategory } from "./default/category";
+import { DefaultCategories } from "./default/categories";
 import { PustakaHome } from "./pustaka/home";
 import { PustakaHeader } from "./pustaka/header";
 import { PustakaFooter } from "./pustaka/footer";
 import { PustakaCategory } from "./pustaka/category";
+import { PustakaCategories } from "./pustaka/categories";
 
 /**
  * Frontend templates, so storefronts in different niches don't all look like a
@@ -52,6 +54,12 @@ export type CategoryTemplateProps = Omit<TemplateProps, "hero"> & {
   category: LandingPageCategory;
 };
 
+export type CategoriesTemplateProps = {
+  site: Site;
+  categories: LandingPageCategory[];
+  user: { id: string } | null;
+};
+
 export type TemplateDef = {
   key: string;
   /** Shown in the panel picker. */
@@ -82,6 +90,14 @@ export type TemplateDef = {
    * Add a slot here when a real niche difference appears — not in advance.
    */
   Category?: (props: CategoryTemplateProps) => React.ReactNode;
+  /** Category index (/categories). */
+  Categories?: (props: CategoriesTemplateProps) => React.ReactNode;
+  /**
+   * Palette preset this theme was designed against. Only a SUGGESTION shown in the
+   * panel — the palette is stored per domain, so two sites on one theme can differ,
+   * and an admin's explicit choice is never overwritten.
+   */
+  defaultPalette?: string;
 };
 
 export const TEMPLATES: Record<string, TemplateDef> = {
@@ -95,6 +111,8 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Header: SiteHeader,
     Footer: SiteFooter,
     Category: DefaultCategory,
+    Categories: DefaultCategories,
+    defaultPalette: "forest",
   },
   pustaka: {
     key: "pustaka",
@@ -105,6 +123,8 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Header: PustakaHeader,
     Footer: PustakaFooter,
     Category: PustakaCategory,
+    Categories: PustakaCategories,
+    defaultPalette: "ink",
   },
 };
 
@@ -121,6 +141,17 @@ export function templateOptions(): TemplateDef[] {
   return Object.values(TEMPLATES);
 }
 
+/** Serialisable view for the panel: no components cross the client boundary. */
+export function templatePickerOptions() {
+  return Object.values(TEMPLATES).map((t) => ({
+    key: t.key,
+    label: t.label,
+    description: t.description,
+    defaultPalette: t.defaultPalette ?? null,
+    coverage: templateCoverage(t),
+  }));
+}
+
 /**
  * The category page for a template, falling back to the marketplace one.
  *
@@ -129,4 +160,30 @@ export function templateOptions(): TemplateDef[] {
  */
 export function resolveCategory(key: string | null | undefined) {
   return resolveTemplate(key).Category ?? DefaultCategory;
+}
+
+export function resolveCategories(key: string | null | undefined) {
+  return resolveTemplate(key).Categories ?? DefaultCategories;
+}
+
+/**
+ * Which surfaces a template actually defines, derived from the registry itself.
+ *
+ * Read live rather than maintained by hand, so it cannot drift: add a slot to a
+ * template and the panel shows it. This is how you check a new theme is complete
+ * without reading the code.
+ */
+export const TEMPLATE_SLOTS = [
+  { key: "Home", label: "Halaman depan", required: true },
+  { key: "Header", label: "Header & menu", required: true },
+  { key: "Footer", label: "Footer", required: true },
+  { key: "Category", label: "Halaman kategori", required: false },
+  { key: "Categories", label: "Daftar kategori", required: false },
+] as const;
+
+export function templateCoverage(def: TemplateDef): { label: string; own: boolean }[] {
+  return TEMPLATE_SLOTS.map((slot) => ({
+    label: slot.label,
+    own: typeof (def as unknown as Record<string, unknown>)[slot.key] === "function",
+  }));
 }

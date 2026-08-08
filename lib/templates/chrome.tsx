@@ -3,9 +3,11 @@ import { currentSite } from "@/lib/site-resolve";
 import {
   resolveTemplate,
   resolveCategory,
+  resolveCategories,
   type ChromeProps,
   type TemplateProps,
   type CategoryTemplateProps,
+  type CategoriesTemplateProps,
 } from "./registry";
 
 /**
@@ -57,4 +59,9 @@ export function TemplateHomeView(props: TemplateProps) {
  */
 export function TemplateCategoryView(props: CategoryTemplateProps) {
   return createElement(resolveCategory(props.site.template), props);
+}
+
+/** Category index, falling back to the marketplace one when unslotted. */
+export function TemplateCategoriesView(props: CategoriesTemplateProps) {
+  return createElement(resolveCategories(props.site.template), props);
 }
