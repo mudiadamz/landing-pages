@@ -123,6 +123,7 @@ tak dikenal jatuh ke default alih-alih merusak halaman.
 | Aset milik domain | kolom URL di `lp_sites` + upload service-role di prefix sendiri | `logo_url`, `icon_url` |
 | Layar panel untuk satu tabel | pisah per **risiko**, bukan per tabel: satu action per himpunan kolom | `updateSiteDomain` / `updateSiteProfile` |
 | Pilihan yang berlaku lintas-layar panel | cookie + server action yang memvalidasi, satu kontrol di sidebar | `panel_site` / `selectPanelSite` |
+| Data per-domain di layar admin | kolom `site_id` diisi saat menulis + filter `.or()` lewat `panelScope()` | `lib/site-scope.ts` |
 | Identitas domain di client component | resolve di server, kirim sebagai prop **wajib** | `brand` di `ChromeProps` |
 | Pengaturan global admin | `lp_site_settings` di-pin ke canonical site | `panel_palette` |
 | Reader baru | reader per-request, key-kan komponen dinamis | `EpubViewer key={url \|\| slug}` |
@@ -158,6 +159,8 @@ Bukan anekdot — mekanisme yang akan menjebak orang berikutnya.
 | Aset per-domain lewat konvensi file | `app/icon.svg`, `app/favicon.ico`, `app/opengraph-image.tsx` dipancarkan untuk **semua** host — aset build-time tidak bisa ikut request | pindah ke `public/`, deklarasikan di `generateMetadata()` |
 | Brand opsional di props | prop `brand?` yang boleh kosong = permukaan baru diam-diam memakai lambang ADM.UIUX di domain orang lain | prop **wajib**; dispatcher yang mengisinya (`TemplateHeader`) |
 | MIME dari file picker | browser menebak dari ekstensi, dan itu jadi `Content-Type` di bucket publik | sniff magic bytes, simpan tipe hasil sniffing (`lib/site-brand.ts`) |
+| Kolom atribusi ditambah belakangan | baris lama `NULL` selamanya — tidak bisa di-backfill, dan layar yang kosong terlihat seperti bug | putuskan arti `NULL` **secara eksplisit** dan katakan di UI (`SiteScopeCoverage`) |
+| Parameter baru di fungsi Postgres yang dipakai runtime | deploy tidak atomik dengan migration | tambah di akhir **dengan DEFAULT** |
 
 ---
 

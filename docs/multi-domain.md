@@ -21,8 +21,18 @@ menyentuh `host`/`active`.
 ### Satu switcher untuk seluruh panel
 
 Domain yang sedang dikelola dipilih **sekali**, di **sidebar** (“Situs yang
-dikelola”), dan berlaku untuk semua layar per-domain: Identitas situs, Hero, Konten
-situs, Tracking, Popup, Custom JS.
+dikelola”), dan berlaku untuk seluruh panel:
+
+| Layar | Cara di-scope |
+|---|---|
+| Identitas situs, Hero, Konten situs, Tracking, Popup, Custom JS | baris/`lp_site_settings` milik situs itu |
+| **Produk digital** | **kategori** — niche situs diperluas ke sub-kategorinya (produk milik kategori, bukan milik situs) |
+| **Penjualan, Analytics, Kontak** | kolom `site_id` di `lp_purchases` / `lp_sessions` / `lp_page_events` / `lp_contacts` |
+
+**Sengaja TIDAK di-scope**, karena konsepnya tidak ada: Users & Roles (satu
+`auth.users` dipakai semua domain), Kategori (memang dibagi — itu justru mekanisme
+niche-nya), Storage & Assets (satu bucket), Tampilan (palet panel, admin-global),
+Email masuk (satu alamat inbound), dan Domain (daftar situsnya sendiri).
 
 Dulu tiap layar punya `SiteSwitcher`-nya sendiri lewat `?site=<id>`. Dua masalah:
 enam kontrol untuk satu keputusan, dan pilihannya **hilang begitu pindah halaman** —
@@ -63,6 +73,36 @@ domain di `/panel/sites` — dokumen ini versi lengkapnya.
 | **Palet** | `lp_sites.palette` — kunci preset dari `lib/palette.ts` (bukan hex), diinjeksi sebagai `<style>` di body `app/layout.tsx`. Menimpa 4 token mood; latar/teks/border tetap. |
 | **Logo & ikon** | `lp_sites.logo_url` (wordmark lebar, untuk header) dan `lp_sites.icon_url` (persegi: favicon, PWA, apple-touch, avatar Link in bio). Keduanya URL publik di bucket `landing-assets` prefix `sites/`. NULL = lambang ADM.UIUX. Detail: bagian "Logo & ikon" di bawah. |
 | **Nonaktif** | `active = false` → domain itu menampilkan situs utama, bukan halaman error. |
+
+### Atribusi per-domain (`site_id`) dan lubang historisnya
+
+`lp_sessions`, `lp_page_events`, `lp_purchases`, `lp_contacts`, `lp_reviews` punya
+`site_id` (migration `20260808050000`). Sebelum itu **tidak ada** yang mencatat
+storefront mana — `referrer_host` itu asal *pengunjung* (instagram.com), bukan domain
+kita — jadi panel tidak bisa menjawab “bagaimana performa resepku.com bulan ini”.
+
+Diisi saat menulis dari host request, **kecuali pembayaran**: callback Duitku datang
+server-to-server ke domain **utama**, jadi tidak bisa tahu pembeli ada di mana. Situs
+ikut lewat `additionalParam` bersama `lp`/`u`/`e`. Field itu dibatasi 255 karakter dan
+string yang terpotong **bukan JSON valid** — callback akan gagal parse, jatuh ke
+`merchantOrderId`, dan kehilangan email **dan** situs. Karena itu field-nya sekarang
+dibuang berurutan dari yang paling tidak penting sampai muat, bukan di-`slice` buta.
+
+> **Data lama tidak bisa diatribusikan ke belakang.** Informasinya memang tidak pernah
+> dicatat, jadi semua baris lama `NULL`. Panel membaca `NULL` sebagai **domain utama** —
+> itu memang asalnya, karena selama periode itu deployment ini cuma melayani satu
+> domain. Konsekuensinya: **domain niche mulai dari nol**, dan layar penjualan yang
+> kosong itu terlihat persis seperti query yang rusak. `SiteScopeCoverage` menyebutkan
+> yang mana di setiap layar ber-angka — jangan hapus komponen itu.
+
+`ON DELETE SET NULL`, bukan `CASCADE`: menghapus domain tidak boleh menghapus
+pembelian, review, atau riwayat penjualannya. Barisnya kehilangan atribusi, titik.
+(`lp_site_settings` memang `CASCADE` — hero tanpa domainnya tidak berarti apa-apa.
+Pembayaran beda.)
+
+`lp_track_session` dapat parameter `p_site_id` **dengan DEFAULT**: deploy tidak atomik
+dengan migration, dan route tracking menelan error-nya sendiri, jadi tanpa default
+setiap penulisan sesi di antara keduanya akan gagal tanpa suara.
 
 ## Menambah domain
 
