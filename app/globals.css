@@ -455,12 +455,17 @@ html.dark .epub-surface {
 /* Inline EPUB reader — content rendered directly in the DOM (no iframe), so
    styles are scoped here to avoid leaking into the app. */
 .epub-inline {
-  /* Inherit the page's typeface and leading rather than imposing a book serif.
-     After the size rebase to 21.28px, an explicit 1.75 gave ~37px line boxes —
-     airy to the point of feeling spread out. `inherit` follows body. */
+  /* The page's typeface and the page's leading, rather than a book serif and 1.75
+     — after the rebase to 21.28px, 1.75 gave ~37px line boxes, spread out rather
+     than airy.
+
+     line-height is the page's RATIO (body computes to 24px on 16px = 1.5), not
+     `inherit`. inherit copies the computed *pixel* value, so the leading would
+     have frozen at 24px while the reader's own size control goes up to 240% —
+     51px text inside 24px lines, i.e. overlapping. Unitless scales with it. */
   font-family: inherit;
   font-weight: 500;
-  line-height: inherit;
+  line-height: 1.5;
   overflow-wrap: break-word;
   word-wrap: break-word;
   /* Narrow phone column + long Indonesian words = rivers of white space,
