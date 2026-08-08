@@ -35,7 +35,7 @@ export function SiteScopeCoverage({
     <p className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs leading-relaxed text-[var(--muted)]">
       Hanya {what} dari <strong className="font-medium text-foreground">{name}</strong>{" "}
       <span className="font-mono text-foreground">{host}</span> · ganti di{" "}
-      <strong className="font-medium text-foreground">Situs yang dikelola</strong> pada sidebar.
+      <strong className="font-medium text-foreground">Kelola situs</strong> pada sidebar.
       {includesUnattributed ? (
         <>
           {" "}

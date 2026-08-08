@@ -27,7 +27,7 @@ export function SiteScopeNotice({
         <span className="font-mono text-foreground">{host}</span>
       </span>
       <span className="text-[var(--muted)]">
-        · ganti di <strong className="font-medium text-foreground">Situs yang dikelola</strong> pada
+        · ganti di <strong className="font-medium text-foreground">Kelola situs</strong> pada
         sidebar
       </span>
     </p>
