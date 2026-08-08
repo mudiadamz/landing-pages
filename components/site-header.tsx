@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { CategoryIcon } from "@/lib/category-icons";
-import { BrandMark } from "@/components/brand-mark";
+import { SiteLogo } from "@/components/site-logo";
+import type { SiteBrand } from "@/lib/site-brand";
 
 type User = {
   id: string;
@@ -25,6 +26,12 @@ type Props = {
   user: User | null;
   categories?: HeaderCategory[];
   currentCategorySlug?: string | null;
+  /**
+   * Which storefront's identity to draw. This component is a client component, so
+   * it cannot read the site row itself — the brand arrives as a prop, resolved by
+   * whichever server component renders the shell.
+   */
+  brand: SiteBrand;
 };
 
 function displayName(user: User): string {
@@ -69,7 +76,7 @@ function Rail({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
-export function SiteHeader({ user, categories = [], currentCategorySlug = null }: Props) {
+export function SiteHeader({ user, brand, categories = [], currentCategorySlug = null }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -137,10 +144,10 @@ export function SiteHeader({ user, categories = [], currentCategorySlug = null }
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
           <Link
             href="/"
+            aria-label={brand.name}
             className="flex items-center gap-2 text-base sm:text-lg font-semibold tracking-tight shrink-0 text-foreground hover:opacity-80 transition-opacity"
           >
-            <BrandMark className="h-6 w-6 sm:h-7 sm:w-7" />
-            ADM.UIUX
+            <SiteLogo brand={brand} />
           </Link>
 
           <div className="flex items-center gap-2 shrink-0">

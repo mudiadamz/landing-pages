@@ -107,6 +107,12 @@ route **pembeli** (`/panel/purchases`, invoice, favorit) jalan di **semua** doma
 karena sesi pembeli hanya ada di domain tempat dia beli. Yang canonical-only cuma
 layar **admin** dan callback Duitku.
 
+Tiap domain juga punya **logo** (wordmark lebar, dipakai di header) dan **ikon**
+(persegi, dipakai di tab browser, install PWA, apple-touch, dan avatar Link in bio).
+Diupload di `/panel/sites`; dikosongkan = pakai lambang ADM.UIUX. Ikon raster harus
+persegi minimal 192×192 dan bukan JPEG — sisanya di `docs/multi-domain.md` →
+"Logo & ikon".
+
 📖 Detail lengkap, jebakan cache, dan pola implementasi:
 **[`docs/multi-domain.md`](docs/multi-domain.md)**
 

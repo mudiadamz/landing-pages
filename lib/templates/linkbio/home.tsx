@@ -1,19 +1,10 @@
 import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
+import { BrandAvatar } from "@/components/site-logo";
+import { siteBrand } from "@/lib/site-brand";
 import { LinkbioFooter } from "./chrome";
 import { LinkRow } from "./link-row";
 import type { TemplateProps } from "../registry";
-
-/** Initials for the avatar when there's no logo — "Bacaan Ringan" → "BR". */
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
 
 /**
  * A link-in-bio page: profile block, then a vertical stack of tappable rows.
@@ -38,14 +29,10 @@ export function LinkbioHome({ site, pages, categories }: TemplateProps) {
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-10 sm:pt-14">
-        {/* Profile */}
+        {/* Profile. The site icon IS the profile photo here — this is the surface the
+            square upload exists for, and initials are the stand-in, not the design. */}
         <div className="flex flex-col items-center text-center">
-          <span
-            aria-hidden
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--primary)] text-2xl font-semibold text-[var(--primary-foreground)] shadow-lg"
-          >
-            {initials(site.name)}
-          </span>
+          <BrandAvatar brand={siteBrand(site)} />
           <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {site.name}
           </h1>

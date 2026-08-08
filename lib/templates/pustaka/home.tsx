@@ -3,6 +3,7 @@ import { PustakaHeader } from "./header";
 import { PustakaFooter } from "./footer";
 import { ShelfGrid } from "./shelf";
 import { Testimonials } from "@/components/testimonials";
+import { siteBrand } from "@/lib/site-brand";
 import type { TemplateProps } from "../registry";
 
 /**
@@ -27,7 +28,7 @@ export function PustakaHome({
 }: TemplateProps) {
   return (
     <div data-template="pustaka" className="flex min-h-screen flex-col bg-background text-foreground">
-      <PustakaHeader user={user} categories={categories} />
+      <PustakaHeader user={user} brand={siteBrand(site)} categories={categories} />
 
       <main className="flex-1">
         {/* Editorial masthead. Copy comes from the SITE row, not the hero config —

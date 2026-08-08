@@ -120,6 +120,8 @@ tak dikenal jatuh ke default alih-alih merusak halaman.
 | Tema baru | komponen + satu entry di registry | `lib/templates/linkbio/*` |
 | Permukaan bertema baru | slot **opsional** + fallback + dispatcher | `Categories` di `registry.tsx` |
 | Pengaturan per-domain | kolom di `lp_sites` **atau** key di `lp_site_settings` | `palette` / `hero` |
+| Aset milik domain | kolom URL di `lp_sites` + upload service-role di prefix sendiri | `logo_url`, `icon_url` |
+| Identitas domain di client component | resolve di server, kirim sebagai prop **wajib** | `brand` di `ChromeProps` |
 | Pengaturan global admin | `lp_site_settings` di-pin ke canonical site | `panel_palette` |
 | Reader baru | reader per-request, key-kan komponen dinamis | `EpubViewer key={url \|\| slug}` |
 | Integrasi eksternal | modul sendiri, opsional, degradasi ke instruksi | `lib/vercel-domains.ts` |
@@ -151,6 +153,9 @@ Bukan anekdot — mekanisme yang akan menjebak orang berikutnya.
 | Siklus impor dispatcher | `chrome → registry → template → chrome` | tema impor chrome-nya **langsung** |
 | Komponen dinamis tidak mount | `ssr:false` + `key=""` → tidak pernah mount | key selalu punya nilai: `key={url \|\| slug}` |
 | Path lama di analitik | `page_type` diturunkan dari path tersimpan | classifier menerima prefix **lama dan baru** |
+| Aset per-domain lewat konvensi file | `app/icon.svg`, `app/favicon.ico`, `app/opengraph-image.tsx` dipancarkan untuk **semua** host — aset build-time tidak bisa ikut request | pindah ke `public/`, deklarasikan di `generateMetadata()` |
+| Brand opsional di props | prop `brand?` yang boleh kosong = permukaan baru diam-diam memakai lambang ADM.UIUX di domain orang lain | prop **wajib**; dispatcher yang mengisinya (`TemplateHeader`) |
+| MIME dari file picker | browser menebak dari ekstensi, dan itu jadi `Content-Type` di bucket publik | sniff magic bytes, simpan tipe hasil sniffing (`lib/site-brand.ts`) |
 
 ---
 

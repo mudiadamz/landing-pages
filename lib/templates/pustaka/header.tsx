@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { currentSite } from "@/lib/site-resolve";
+import { SiteLogo } from "@/components/site-logo";
 import { PustakaUserMenu } from "./user-menu";
 import type { ChromeProps } from "../registry";
 
@@ -13,15 +13,18 @@ import type { ChromeProps } from "../registry";
  * catalogue has few enough sections to show them all, and the row wraps on
  * narrow screens instead of hiding behind a menu.
  *
- * A server component: it reads the site row for the wordmark. Only the two bits
- * that genuinely need interactivity (theme, account menu) are client components.
+ * Only the two bits that genuinely need interactivity (theme, account menu) are
+ * client components.
+ *
+ * An uploaded logo replaces the wordmark rather than sitting beside it — a bookshop
+ * masthead is one mark, and the display face is the fallback, not the requirement.
  */
-export async function PustakaHeader({
+export function PustakaHeader({
   user,
+  brand,
   categories = [],
   currentCategorySlug = null,
 }: ChromeProps) {
-  const site = await currentSite();
   // Top-level only. Sub-categories appear on the category page itself, where
   // there is room for them.
   const parents = categories.filter((c) => !c.parent_id);
@@ -31,9 +34,14 @@ export async function PustakaHeader({
       <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           href="/"
+          aria-label={brand.name}
           className="min-w-0 shrink-0 font-[family-name:var(--font-auman)] text-lg tracking-tight text-foreground transition-opacity hover:opacity-80"
         >
-          {site.name}
+          <SiteLogo
+            brand={brand}
+            imgClassName="h-7 w-auto max-w-[180px]"
+            markClassName="h-6 w-6"
+          />
         </Link>
 
         <nav className="hidden min-w-0 flex-1 items-center gap-x-5 gap-y-1 sm:flex sm:flex-wrap">

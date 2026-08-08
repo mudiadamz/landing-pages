@@ -6,6 +6,9 @@ import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { paletteFromKey } from "@/lib/palette";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { brandMaxBytes, iconShapeError, readPngSize, sniffBrandImage } from "@/lib/site-brand";
+import { readWebpHeader } from "@/lib/webp";
 import {
   addVercelDomain,
   getVercelDomain,
@@ -28,6 +31,9 @@ export type SiteInput = {
   categoryIds: string[];
   template: string;
   palette: string;
+  /** Public URLs from uploadSiteBrandImage. Empty string clears back to the default. */
+  logoUrl: string;
+  iconUrl: string;
   active: boolean;
 };
 
@@ -63,6 +69,70 @@ function hostError(host: string): string | null {
 export async function getSites(): Promise<Site[]> {
   if (!(await requireAdmin())) return [];
   return listSites();
+}
+
+/**
+ * Upload a storefront's logo or icon.
+ *
+ * Written with the service role, so requireAdmin() is the whole authorisation —
+ * the bucket's own RLS policy keys writes to `auth.uid()/…`, and branding is not
+ * one admin's personal folder. It belongs to the domain, so it goes under a
+ * `sites/` prefix, and the gate has to be explicit here instead.
+ *
+ * The path is timestamped rather than derived from the site id, because the form
+ * uploads BEFORE the row exists when you are adding a domain. Replacing an image
+ * leaves the old object behind, matching uploadPopupImage: an orphaned 8 KB file
+ * is cheaper than a delete that races a page still serving the old URL.
+ */
+export async function uploadSiteBrandImage(
+  form: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const kind = form.get("kind") === "icon" ? "icon" : "logo";
+  const file = form.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "File tidak ditemukan." };
+
+  const limit = brandMaxBytes(kind);
+  if (file.size > limit) {
+    return { ok: false, error: `Ukuran maksimal ${Math.round(limit / 1024)} KB — kompres dulu.` };
+  }
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const bytes = new Uint8Array(buf);
+  const sniffed = sniffBrandImage(bytes);
+  if (!sniffed) {
+    return { ok: false, error: "Format harus PNG, WebP, JPEG, atau SVG asli." };
+  }
+
+  if (kind === "icon") {
+    if (sniffed.ext === "jpg") {
+      return { ok: false, error: "Ikon tidak boleh JPEG — tidak punya transparansi. Pakai PNG atau SVG." };
+    }
+    // SVG scales, so there is nothing to measure. Raster has to be square and big
+    // enough, or the manifest's `sizes: "any"` would be a lie and Chrome would
+    // refuse to treat the site as installable.
+    if (sniffed.ext !== "svg") {
+      const dims = sniffed.ext === "png" ? readPngSize(bytes) : readWebpHeader(buf);
+      const shapeErr = iconShapeError(dims);
+      if (shapeErr) return { ok: false, error: shapeErr };
+    }
+  }
+
+  const admin = createAdminClient();
+  const path = `sites/${kind}-${Date.now()}.${sniffed.ext}`;
+  const { error } = await admin.storage
+    .from("landing-assets")
+    // The sniffed type, never the declared one: this is the Content-Type the file
+    // will be served with from a public bucket.
+    .upload(path, bytes, { contentType: sniffed.contentType, upsert: false });
+  if (error) {
+    console.error("uploadSiteBrandImage error:", error);
+    return { ok: false, error: "Gagal mengunggah." };
+  }
+
+  const { data } = admin.storage.from("landing-assets").getPublicUrl(path);
+  return { ok: true, url: data.publicUrl };
 }
 
 /** Whether the panel can add domains to Vercel itself, or must tell you to. */
@@ -163,6 +233,8 @@ export async function createSite(
     category_ids: input.categoryIds,
     template: resolveTemplate(input.template).key,
     palette: paletteFromKey(input.palette).preset,
+    logo_url: input.logoUrl?.trim() || null,
+    icon_url: input.iconUrl?.trim() || null,
     active: input.active,
     // Never through this form: the canonical site is the one that owns the panel
     // and the payment callback, and having two would be ambiguous.
@@ -207,6 +279,8 @@ export async function updateSite(
       category_ids: input.categoryIds,
       template: resolveTemplate(input.template).key,
       palette: paletteFromKey(input.palette).preset,
+      logo_url: input.logoUrl?.trim() || null,
+      icon_url: input.iconUrl?.trim() || null,
       active: input.active,
       updated_at: new Date().toISOString(),
     })

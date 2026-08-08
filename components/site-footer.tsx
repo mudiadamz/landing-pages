@@ -3,15 +3,23 @@ import { SocialLinks } from "@/components/social-links";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
+import { currentSite } from "@/lib/site-resolve";
 
 /**
  * Bottom of the public shell: the footer itself plus the mobile bottom nav.
  * The nav lives here so every page that renders the public shell gets it for
  * free — /lp (fullscreen preview) and /panel (own sidebar) render no footer and
  * so stay untouched.
+ *
+ * Unlike the header, this resolves the site itself: it is a server component, so
+ * there is no client boundary forcing the brand through props.
  */
 export async function SiteFooter() {
-  const [content, supabase] = await Promise.all([getSiteContent(), createClient()]);
+  const [content, supabase, site] = await Promise.all([
+    getSiteContent(),
+    createClient(),
+    currentSite(),
+  ]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -60,7 +68,7 @@ export async function SiteFooter() {
           </nav>
         </div>
         <div className="mt-8 pt-6 border-t border-[var(--border)] text-center text-sm text-[var(--muted)]">
-          © {new Date().getFullYear()} ADM.UIUX
+          © {new Date().getFullYear()} {site.name || "ADM.UIUX"}
         </div>
       </div>
     </footer>

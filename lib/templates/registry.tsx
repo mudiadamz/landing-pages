@@ -2,6 +2,7 @@ import type { LandingPagePublic, LandingPageCategory, HomepageSort } from "@/lib
 import type { HeroConfig } from "@/lib/hero-config";
 import type { PublicReview } from "@/lib/actions/reviews";
 import type { Site } from "@/lib/site-resolve";
+import type { SiteBrand } from "@/lib/site-brand";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
@@ -51,6 +52,14 @@ export type ChromeProps = {
   categories?: LandingPageCategory[];
   /** Highlights the browsed category in whatever nav the template draws. */
   currentCategorySlug?: string | null;
+  /**
+   * This storefront's name, logo and icon. REQUIRED, not defaulted: the shared
+   * header is a client component and cannot resolve the site itself, and an
+   * optional brand would let a new surface quietly render the ADM.UIUX mark on
+   * somebody else's domain. Callers pass siteBrand(site); the TemplateHeader
+   * dispatcher resolves it for the pages that don't already hold the site row.
+   */
+  brand: SiteBrand;
 };
 
 export type CategoryTemplateProps = Omit<TemplateProps, "hero"> & {

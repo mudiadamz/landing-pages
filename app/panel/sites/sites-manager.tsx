@@ -3,7 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createSite, updateSite, deleteSite } from "@/lib/actions/sites";
+import { createSite, updateSite, deleteSite, uploadSiteBrandImage } from "@/lib/actions/sites";
+import { FileUploadCard } from "@/components/file-upload-card";
+import {
+  BRAND_ICON_ACCEPT,
+  BRAND_LOGO_ACCEPT,
+  type BrandImageKind,
+} from "@/lib/site-brand";
 // Type-only, so nothing from site-resolve (which reads headers()) reaches the client.
 import type { Site } from "@/lib/site-resolve";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
@@ -18,6 +24,8 @@ type Draft = {
   categoryIds: string[];
   template: string;
   palette: string;
+  logoUrl: string;
+  iconUrl: string;
   active: boolean;
 };
 
@@ -29,6 +37,8 @@ const EMPTY: Draft = {
   categoryIds: [],
   template: "default",
   palette: "forest",
+  logoUrl: "",
+  iconUrl: "",
   active: true,
 };
 
@@ -82,6 +92,8 @@ export function SitesManager({
       categoryIds: site.category_ids ?? [],
       template: site.template || "default",
       palette: site.palette || "forest",
+      logoUrl: site.logo_url ?? "",
+      iconUrl: site.icon_url ?? "",
       active: site.active,
     });
     setEditing(site.id);
@@ -232,7 +244,17 @@ export function SitesManager({
               />
             ) : (
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
+                {/* The mark, so a wrong or broken upload is visible from the list
+                    instead of only after opening the form. */}
+                {(site.icon_url || site.logo_url) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={site.icon_url || site.logo_url || ""}
+                    alt=""
+                    className="h-10 w-10 shrink-0 rounded-lg border border-[var(--border)] object-contain"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-sm font-medium text-foreground">
                       {site.host}
@@ -322,6 +344,102 @@ export function SitesManager({
         </Button>
       )}
     </div>
+  );
+}
+
+/**
+ * One brand image upload. Uses FileUploadCard like every other file input in the
+ * panel — the card owns the empty/filled states, the name, the size, and the
+ * replace/remove controls.
+ *
+ * Removing only clears the column. The stored object stays, deliberately: the page
+ * that is still serving the old URL from cache should keep rendering rather than
+ * showing a broken image for a minute.
+ */
+function BrandUpload({
+  kind,
+  label,
+  hint,
+  url,
+  onChange,
+}: {
+  kind: BrandImageKind;
+  label: string;
+  hint: string;
+  url: string;
+  onChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [meta, setMeta] = useState<{ name: string; size?: number } | null>(null);
+
+  async function handle(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.set("kind", kind);
+      form.set("file", file);
+      const res = await uploadSiteBrandImage(form);
+      if (!res.ok || !res.url) {
+        setError(res.error ?? "Gagal mengunggah.");
+        return;
+      }
+      setMeta({ name: file.name, size: file.size });
+      onChange(res.url);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <FileUploadCard
+      label={label}
+      hint={hint}
+      accept={kind === "icon" ? BRAND_ICON_ACCEPT : BRAND_LOGO_ACCEPT}
+      badge={kind === "icon" ? "ICO" : "IMG"}
+      badgeClass="bg-[var(--primary)]/10 text-[var(--primary)]"
+      url={url}
+      meta={meta}
+      uploading={uploading}
+      error={error}
+      statusText="Terpasang"
+      preview={
+        url ? (
+          // Checkerboard behind it, because both of these are usually transparent and
+          // a white logo on a white card looks like a failed upload.
+          <div
+            className="mb-2 flex items-center justify-center rounded-lg border border-[var(--border)] p-3"
+            style={{
+              backgroundImage:
+                "linear-gradient(45deg,rgba(128,128,128,.18) 25%,transparent 25%,transparent 75%,rgba(128,128,128,.18) 75%),linear-gradient(45deg,rgba(128,128,128,.18) 25%,transparent 25%,transparent 75%,rgba(128,128,128,.18) 75%)",
+              backgroundSize: "12px 12px",
+              backgroundPosition: "0 0, 6px 6px",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={url}
+              alt=""
+              className={
+                kind === "icon"
+                  ? "h-12 w-12 rounded-md object-cover"
+                  : "h-10 w-auto max-w-full object-contain"
+              }
+            />
+          </div>
+        ) : undefined
+      }
+      onUpload={handle}
+      onRemove={() => {
+        setMeta(null);
+        setError(null);
+        onChange("");
+      }}
+    />
   );
 }
 
@@ -418,6 +536,33 @@ function SiteForm({
         <p className="text-xs text-[var(--muted)]">
           Ini snippet di Google — beda pekerjaan dari tagline, jadi tulis 120–160 karakter.
           Sekarang {draft.description.trim().length}. Kosong = pakai teks bawaan.
+        </p>
+      </div>
+
+      {/* Logo & icon. Two uploads, because they are different shapes with different
+          jobs — see lib/site-brand.ts. Both optional: empty means this storefront
+          wears the ADM.UIUX mark. */}
+      <div className="space-y-2">
+        <span className="block text-sm font-medium text-foreground">Logo &amp; ikon</span>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <BrandUpload
+            kind="logo"
+            label="Logo (header)"
+            hint="Lebar/wordmark, PNG · WebP · JPEG · SVG, maks 300 KB. Menggantikan tulisan nama di header."
+            url={draft.logoUrl}
+            onChange={(url) => setDraft((d) => ({ ...d, logoUrl: url }))}
+          />
+          <BrandUpload
+            kind="icon"
+            label="Ikon (favicon & PWA)"
+            hint="Persegi, minimal 192×192, PNG · WebP · SVG, maks 200 KB. Dipakai di tab browser, install ke home screen, dan avatar Link in bio."
+            url={draft.iconUrl}
+            onChange={(url) => setDraft((d) => ({ ...d, iconUrl: url }))}
+          />
+        </div>
+        <p className="text-xs text-[var(--muted)]">
+          Dikosongkan = pakai lambang ADM.UIUX. Perubahan ikon baru terlihat di tab
+          setelah browser membuang cache favicon-nya — coba hard reload atau tab baru.
         </p>
       </div>
 

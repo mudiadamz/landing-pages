@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LinkbioHeader, LinkbioFooter } from "./chrome";
 import { LinkRow } from "./link-row";
+import { siteBrand } from "@/lib/site-brand";
 import type { CategoryTemplateProps, CategoriesTemplateProps } from "../registry";
 
 /**
@@ -13,13 +14,13 @@ import type { CategoryTemplateProps, CategoriesTemplateProps } from "../registry
  *
  * Same LinkRow as the homepage: one shape, scanned downward.
  */
-export function LinkbioCategory({ category, pages, categories, user }: CategoryTemplateProps) {
+export function LinkbioCategory({ site, category, pages, categories, user }: CategoryTemplateProps) {
   return (
     <div
       data-template="linkbio"
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
-      <LinkbioHeader user={user} categories={categories} currentCategorySlug={category.slug} />
+      <LinkbioHeader user={user} brand={siteBrand(site)} categories={categories} currentCategorySlug={category.slug} />
 
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-8">
         <div className="text-center">
@@ -50,7 +51,7 @@ export function LinkbioCategory({ category, pages, categories, user }: CategoryT
   );
 }
 
-export function LinkbioCategories({ categories, user }: CategoriesTemplateProps) {
+export function LinkbioCategories({ site, categories, user }: CategoriesTemplateProps) {
   const parents = categories.filter((c) => !c.parent_id);
   const childrenOf = (id: string) => categories.filter((c) => c.parent_id === id);
 
@@ -59,7 +60,7 @@ export function LinkbioCategories({ categories, user }: CategoriesTemplateProps)
       data-template="linkbio"
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
-      <LinkbioHeader user={user} categories={categories} />
+      <LinkbioHeader user={user} brand={siteBrand(site)} categories={categories} />
 
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-8">
         <h1 className="text-center text-lg font-semibold tracking-tight text-foreground">

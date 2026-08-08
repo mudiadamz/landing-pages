@@ -3,6 +3,7 @@ import { LandingPageCard } from "@/app/landing-page-card";
 import { SortTabs } from "@/components/sort-tabs";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { siteBrand } from "@/lib/site-brand";
 import { FounderCredibility } from "@/components/founder-credibility";
 import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
@@ -17,6 +18,7 @@ import type { TemplateProps } from "../registry";
  * site would be a regression dressed up as a feature.
  */
 export function DefaultHome({
+  site,
   pages,
   categories,
   reviews,
@@ -30,7 +32,7 @@ export function DefaultHome({
       data-template="default"
       className="min-h-screen bg-background text-foreground flex flex-col"
     >
-      <SiteHeader user={user} categories={categories} />
+      <SiteHeader user={user} brand={siteBrand(site)} categories={categories} />
 
       <main className="flex-1 relative">
         <HomeHero hero={hero} templateCount={pages.length} />

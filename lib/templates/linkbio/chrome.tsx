@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { currentSite } from "@/lib/site-resolve";
+import { SiteLogo } from "@/components/site-logo";
 import type { ChromeProps } from "../registry";
 
 /**
@@ -11,16 +12,20 @@ import type { ChromeProps } from "../registry";
  * centred wordmark. Anything more would reintroduce the marketplace furniture the
  * theme exists to avoid.
  */
-export async function LinkbioHeader({ user }: ChromeProps) {
-  const site = await currentSite();
+export function LinkbioHeader({ user, brand }: ChromeProps) {
   return (
     <header className="border-b border-[var(--border)]">
       <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-5 py-3.5">
         <Link
           href="/"
+          aria-label={brand.name}
           className="truncate text-sm font-semibold tracking-tight text-foreground transition-opacity hover:opacity-70"
         >
-          {site.name}
+          <SiteLogo
+            brand={brand}
+            imgClassName="h-6 w-auto max-w-[140px]"
+            markClassName="h-5 w-5"
+          />
         </Link>
         <Link
           href={user ? "/panel/purchases" : "/login"}

@@ -16,8 +16,9 @@ import { PwaRegister } from "@/components/pwa-register";
 import { SessionTracker } from "@/components/session-tracker";
 import { GtmScripts } from "@/components/gtm-scripts";
 import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
-import { currentOrigin, currentSite } from "@/lib/site-resolve";
+import { currentOrigin, currentSite, type Site } from "@/lib/site-resolve";
 import { paletteCss, paletteFromKey } from "@/lib/palette";
+import { DEFAULT_APPLE_ICON, DEFAULT_ICON } from "@/lib/site-brand";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,6 +83,31 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: { card: "summary_large_image", title, description },
     robots: { index: true, follow: true },
+    icons: siteIcons(site),
+  };
+}
+
+/**
+ * The browser-tab and home-screen icon, per storefront.
+ *
+ * Declared here rather than by file convention — and app/icon.svg + app/favicon.ico
+ * were MOVED to public/ to make that possible. Those filenames are a build-time
+ * convention: Next emits their link tags for every response, and a build-time
+ * asset cannot vary by host, so a niche domain would have worn the ADM.UIUX mark
+ * in its tab no matter what this function returned. In public/ they are ordinary
+ * static files, referenced below as the fallback and still served at /favicon.ico
+ * for browsers that ask for it without being told to.
+ */
+function siteIcons(site: Site): Metadata["icons"] {
+  if (site.icon_url) {
+    // One entry, not the site's plus the default: two <link rel="icon"> tags let the
+    // browser choose, and it sometimes chooses the wrong one.
+    return { icon: site.icon_url, shortcut: site.icon_url, apple: site.icon_url };
+  }
+  return {
+    icon: DEFAULT_ICON,
+    shortcut: "/favicon.ico",
+    apple: DEFAULT_APPLE_ICON,
   };
 }
 
@@ -123,8 +149,9 @@ export default async function RootLayout({
         <meta name="theme-color" content={isDark ? "#0d0d0f" : "#fdfcfb"} />
         {/* Add-to-home-screen support: manifest (auto-linked by app/manifest.ts)
             drives Chrome/Android/desktop installs; these tags cover iOS Safari,
-            which has no install API and uses the apple-touch-icon + Share sheet. */}
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+            which has no install API and uses the apple-touch-icon + Share sheet.
+            The apple-touch-icon link itself is emitted by generateMetadata, which
+            is where it has to live to follow the storefront's own icon. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content={site.name || "ADM.UIUX"} />
@@ -168,7 +195,9 @@ export default async function RootLayout({
             "@type": "Organization",
             name: site.name || "ADM.UIUX",
             url: origin,
-            logo: `${origin}/logo-adm-100.jpg`,
+            // Absolute, as schema.org requires. A site's own upload is already an
+            // absolute Supabase URL; the fallback needs the origin prefixed.
+            logo: site.logo_url || site.icon_url || `${origin}/logo-adm-100.jpg`,
             email: "admin@admuiux.com",
             founder: { "@type": "Person", name: "Adam Mudianto" },
           }}

@@ -32,12 +32,16 @@ export type Site = {
   template: string;
   /** Palette preset key; validated against lib/palette PALETTE_PRESETS. */
   palette: string;
+  /** Wide wordmark for the header. NULL = the ADM.UIUX mark. */
+  logo_url: string | null;
+  /** Square mark: browser tab, PWA, iOS home screen, bio avatar. NULL = default. */
+  icon_url: string | null;
   is_canonical: boolean;
   active: boolean;
 };
 
 const SITE_COLUMNS =
-  "id, host, name, tagline, description, category_ids, template, palette, is_canonical, active";
+  "id, host, name, tagline, description, category_ids, template, palette, logo_url, icon_url, is_canonical, active";
 
 /**
  * Used when lp_sites is empty or unreachable — a fresh database, or the migration
@@ -55,6 +59,8 @@ const FALLBACK_SITE: Site = {
   category_ids: [],
   template: "default",
   palette: "forest",
+  logo_url: null,
+  icon_url: null,
   is_canonical: true,
   active: true,
 };

@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { currentSite } from "@/lib/site-resolve";
+import { siteBrand } from "@/lib/site-brand";
 import {
   resolveTemplate,
   resolveCategory,
@@ -29,10 +30,16 @@ import {
  * pairs with by construction anyway.
  */
 
-export async function TemplateHeader(props: ChromeProps) {
+/**
+ * `brand` is resolved here rather than required from the caller: these twelve pages
+ * render the shell without otherwise needing the site row, and this dispatcher is
+ * already reading it to pick the template. Pages that DO hold the row (the template
+ * home/category views) pass their own, so no page fetches the site twice.
+ */
+export async function TemplateHeader(props: Omit<ChromeProps, "brand">) {
   const site = await currentSite();
   const { Header } = resolveTemplate(site.template);
-  return <Header {...props} />;
+  return <Header {...props} brand={siteBrand(site)} />;
 }
 
 export async function TemplateFooter() {

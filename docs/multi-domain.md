@@ -13,12 +13,13 @@ dokumen ini versi lengkapnya.
 
 | | |
 |---|---|
-| **Tabel** | `lp_sites` — `host`, `name`, `tagline`, `description`, `category_ids`, `template`, `palette`, `is_canonical`, `active` |
+| **Tabel** | `lp_sites` — `host`, `name`, `tagline`, `description`, `category_ids`, `template`, `palette`, `logo_url`, `icon_url`, `is_canonical`, `active` |
 | **Domain utama** | `is_canonical = true`. Satu-satunya. Memegang `/panel`, callback Duitku, dan jadi fallback untuk host yang tidak dikenal (preview deployment, `*.vercel.app`, domain yang diarahkan sebelum didaftarkan). |
 | **Niche** | `category_ids` berisi kategori **induk**; sub-kategorinya ikut otomatis. **Kosong = seluruh katalog** — itu yang dipakai domain utama, bukan berarti "tidak tampilkan apa-apa". |
 | **Pengaturan** | `lp_site_settings` di-key `(site_id, key)`. Per-domain: `hero`, `site_content`, `tracking`, `promo_popup`, `custom_js`. Global (pinned ke domain utama): `panel_palette`, `role_permissions`. |
 | **Template** | `lp_sites.template` — frontend storefront: halaman depan, **header/menu, footer**, halaman kategori, dan daftar kategori. Teks bebas divalidasi terhadap `lib/templates/registry.tsx`, **bukan** enum DB, jadi menambah template tidak butuh migration; key tak dikenal jatuh ke `default`. Tiga tema sekarang: `default` (Marketplace), `pustaka` (rak buku), `linkbio` (Linktree). Slot kategori **opsional** — yang kosong jatuh ke versi Marketplace, termasuk chrome-nya. Detail: README → "Template tampilan". |
 | **Palet** | `lp_sites.palette` — kunci preset dari `lib/palette.ts` (bukan hex), diinjeksi sebagai `<style>` di body `app/layout.tsx`. Menimpa 4 token mood; latar/teks/border tetap. |
+| **Logo & ikon** | `lp_sites.logo_url` (wordmark lebar, untuk header) dan `lp_sites.icon_url` (persegi: favicon, PWA, apple-touch, avatar Link in bio). Keduanya URL publik di bucket `landing-assets` prefix `sites/`. NULL = lambang ADM.UIUX. Detail: bagian "Logo & ikon" di bawah. |
 | **Nonaktif** | `active = false` → domain itu menampilkan situs utama, bukan halaman error. |
 
 ## Menambah domain
@@ -36,6 +37,7 @@ Tiga tempat. Melewatkan satu menghasilkan gejala yang terlihat seperti bug.
 - **Deskripsi (SEO)** — snippet Google, 120–160 karakter. Beda pekerjaan dari
   tagline; jangan disamakan.
 - **Niche** — centang kategori induk. Kosong = seluruh katalog.
+- **Logo & ikon** — opsional, lihat bagian di bawah.
 
 ### 2. Vercel — supaya domainnya sampai ke aplikasi
 
@@ -111,6 +113,55 @@ memakai Google One Tap — sekarang tidak dipakai.
 - Homepage tampil dengan produk niche yang dipilih.
 - `/panel` memantul ke homepage (panel hanya di domain utama).
 - Masuk dengan Google berhasil **dan tetap di domain itu**.
+
+## Logo & ikon
+
+Dua upload di `/panel/sites`, bukan satu, karena bentuk dan tugasnya berbeda:
+
+| | Logo | Ikon |
+|---|---|---|
+| Bentuk | lebar / wordmark | **persegi**, min. 192×192 |
+| Format | PNG · WebP · JPEG · SVG | PNG · WebP · SVG (**tanpa JPEG**) |
+| Maks | 300 KB | 200 KB |
+| Dipakai di | header semua template, JSON-LD `logo` | tab browser, PWA/install, apple-touch, avatar Link in bio |
+
+Kalau satu kolom dipakai untuk keduanya, hasilnya: wordmark terpotong di tab browser,
+atau lambang seukuran stempel di header. JPEG ditolak untuk ikon karena tidak punya
+transparansi — hasilnya kotak putih di tab gelap dan di launcher Android.
+
+**Header punya tiga keadaan** (`components/site-logo.tsx`):
+
+1. logo terpasang → gambarnya saja, tanpa nama di sebelahnya (wordmark sudah memuat nama)
+2. hanya ikon → lambang persegi + nama situs sebagai teks
+3. keduanya kosong → lambang ADM.UIUX + nama situs
+
+**Validasi di server, dari magic bytes, bukan dari MIME yang dikirim browser**
+(`lib/site-brand.ts`). Tipe hasil sniffing itulah yang dipakai sebagai
+`Content-Type` saat disimpan, jadi PNG yang di-rename `.svg` tersimpan sebagai PNG
+dan HTML yang di-rename `.png` ditolak. Ikon raster diukur (PNG lewat IHDR, WebP
+lewat header RIFF) dan harus persegi — banner 400×100 ditolak dengan pesan yang
+menyuruh pakai kolom Logo.
+
+**Favicon harus lewat `generateMetadata`, tidak bisa lewat file.** `app/icon.svg`
+dan `app/favicon.ico` **dipindah ke `public/`** justru karena itu: nama file di
+`app/` adalah konvensi build-time, Next memancarkan tag `<link>`-nya untuk semua
+response, dan aset build-time tidak bisa berbeda per host. Selama file itu ada di
+`app/`, domain niche akan memakai lambang ADM.UIUX di tab-nya apa pun isi kolom
+`icon_url`. Di `public/` keduanya jadi file statis biasa dan dipakai sebagai
+fallback — `/favicon.ico` tetap terlayani untuk browser yang memintanya tanpa
+diberi tahu.
+
+`app/manifest.ts` juga per-domain sekarang (nama, deskripsi, ikon), yang membuat
+route-nya dinamis — satu JSON kecil per prompt install, bukan per pageview. Ikonnya
+dideklarasikan `sizes: "any"`: upload sudah dipastikan persegi tapi ukuran pikselnya
+tidak dicatat, jadi `"512x512"` akan jadi klaim palsu. Chrome menerima `"any"` untuk
+installability, sama seperti untuk ikon SVG.
+
+**Ikon baru tidak langsung terlihat di tab.** Browser meng-cache favicon lebih
+agresif daripada halaman; hard reload atau tab baru.
+
+**Satu permukaan yang masih ADM.UIUX di semua domain:** `app/opengraph-image.tsx`
+— kartu OG default, gambar dengan teks yang di-bake. Belum per-domain.
 
 ## Yang perlu diketahui
 

@@ -3,6 +3,7 @@ import { LandingPageCard } from "@/app/landing-page-card";
 import { SortTabs } from "@/components/sort-tabs";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { siteBrand } from "@/lib/site-brand";
 import { FounderCredibility } from "@/components/founder-credibility";
 import { Testimonials } from "@/components/testimonials";
 import { Disclaimer } from "@/components/disclaimer";
@@ -17,6 +18,7 @@ import type { CategoryTemplateProps } from "../registry";
  * actually changes.
  */
 export function DefaultCategory({
+  site,
   category,
   pages,
   categories,
@@ -27,7 +29,7 @@ export function DefaultCategory({
 }: CategoryTemplateProps) {
   return (
     <div data-template="default" className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} currentCategorySlug={category.slug} />
+      <SiteHeader user={user} brand={siteBrand(site)} categories={categories} currentCategorySlug={category.slug} />
 
       <main className="flex-1 relative">
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-2">

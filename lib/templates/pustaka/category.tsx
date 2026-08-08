@@ -3,6 +3,7 @@ import { SortTabs } from "@/components/sort-tabs";
 import { PustakaHeader } from "./header";
 import { PustakaFooter } from "./footer";
 import { ShelfGrid } from "./shelf";
+import { siteBrand } from "@/lib/site-brand";
 import type { CategoryTemplateProps } from "../registry";
 
 /**
@@ -14,6 +15,7 @@ import type { CategoryTemplateProps } from "../registry";
  * pitch belongs on the parent brand's site.
  */
 export function PustakaCategory({
+  site,
   category,
   pages,
   categories,
@@ -22,7 +24,7 @@ export function PustakaCategory({
 }: CategoryTemplateProps) {
   return (
     <div data-template="pustaka" className="flex min-h-screen flex-col bg-background text-foreground">
-      <PustakaHeader user={user} categories={categories} currentCategorySlug={category.slug} />
+      <PustakaHeader user={user} brand={siteBrand(site)} categories={categories} currentCategorySlug={category.slug} />
 
       <main className="flex-1">
         <section className="mx-auto w-full max-w-5xl px-4 pt-8 sm:px-6 sm:pt-12">

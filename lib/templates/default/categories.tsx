@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { siteBrand } from "@/lib/site-brand";
 import { CategoryIcon } from "@/lib/category-icons";
 import type { CategoriesTemplateProps } from "../registry";
 
@@ -8,13 +9,13 @@ import type { CategoriesTemplateProps } from "../registry";
  * Category index for the marketplace template — the previous app/categories body,
  * moved unchanged. Also the FALLBACK for templates that don't slot their own.
  */
-export function DefaultCategories({ categories, user }: CategoriesTemplateProps) {
+export function DefaultCategories({ site, categories, user }: CategoriesTemplateProps) {
   const parents = categories.filter((c) => !c.parent_id);
   const childrenOf = (id: string) => categories.filter((c) => c.parent_id === id);
 
   return (
     <div data-template="default" className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader user={user} categories={categories} />
+      <SiteHeader user={user} brand={siteBrand(site)} categories={categories} />
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <header className="mb-6 sm:mb-8">
