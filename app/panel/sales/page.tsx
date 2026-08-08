@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getSalesOverview, type SalesOverview, type RecentSale } from "@/lib/actions/sales";
 import { getCustomers, type CustomerRow } from "@/lib/actions/admin";
 import { CustomerPurchasesButton } from "./customer-purchases";
+import { panelScope } from "@/lib/site-scope";
+import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 
 export const metadata = { title: "Penjualan" };
 
@@ -39,7 +41,7 @@ function formatDate(s: string | null) {
 }
 
 export default async function SalesPage() {
-  const data = await getSalesOverview();
+  const [data, scope] = await Promise.all([getSalesOverview(), panelScope()]);
   if (!data) redirect("/panel");
 
   // The customer directory is the admin's tool for withdrawing access, so it
@@ -56,6 +58,14 @@ export default async function SalesPage() {
             : "Transaksi dari produk Anda sendiri."}
         </p>
       </div>
+
+      <SiteScopeCoverage
+        host={scope.site.host}
+        name={scope.site.name}
+        siteCount={scope.siteCount}
+        includesUnattributed={scope.includesUnattributed}
+        what="penjualan"
+      />
 
       <Summary data={data} />
 

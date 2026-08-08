@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAllRows } from "@/lib/paginate";
 import { requireAdmin } from "@/lib/actions/profiles";
+import { panelScope } from "@/lib/site-scope";
 
 /**
  * Read-side aggregation for the session/journey analytics dashboard. Admin-only.
@@ -141,11 +142,21 @@ const EMPTY: Analytics = {
   sessions: [],
 };
 
+/**
+ * A match-everything `.or()`, used when there is nothing to scope by (a single-domain
+ * deployment). Spelled out rather than branching the two query builders, which are
+ * already three levels of callback deep — "site_id is null OR it isn't" is total.
+ */
+const ALL_SITES = "site_id.is.null,site_id.not.is.null";
+
 export async function getAnalytics(range: Range = 30): Promise<Analytics> {
   if (!(await requireAdmin())) return { ...EMPTY, range };
 
   const admin = createAdminClient();
   const since = sinceIso(range);
+  // Only the storefront the sidebar switcher points at. Rows written before
+  // attribution existed are NULL and count with the canonical site — see lib/site-scope.
+  const { filter: scope } = await panelScope();
 
   // Paged, not .limit()ed — PostgREST caps a single response at max_rows (1000
   // here) no matter what limit is asked for, so the old query reported 1000
@@ -162,7 +173,8 @@ export async function getAnalytics(range: Range = 30): Promise<Analytics> {
           .gte("started_at", since)
           .order("started_at", { ascending: false })
           .order("id", { ascending: false })
-          .range(from, to),
+          .range(from, to)
+          .or(scope?.or ?? ALL_SITES),
       CAP_SESSIONS,
     ),
     fetchAllRows<EventRow>(
@@ -173,7 +185,8 @@ export async function getAnalytics(range: Range = 30): Promise<Analytics> {
           .gte("created_at", since)
           .order("created_at", { ascending: true })
           .order("id", { ascending: true })
-          .range(from, to),
+          .range(from, to)
+          .or(scope?.or ?? ALL_SITES),
       CAP_EVENTS,
     ),
     admin.from("lp_landing_pages").select("slug, title"),

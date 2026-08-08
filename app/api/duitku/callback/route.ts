@@ -45,6 +45,11 @@ export async function POST(req: NextRequest) {
     let landingPageId: string | null = null;
     let userId: string | null = null;
     let email: string | null = null;
+    // Which storefront the buyer paid on. Only ever available here via additionalParam —
+    // the request's own host is the canonical domain, which would credit every niche
+    // sale to the main site. Absent (old invoices, truncated param) means unattributed,
+    // which the panel reads as canonical.
+    let siteId: string | null = null;
 
     if (additionalParam) {
       try {
@@ -53,6 +58,7 @@ export async function POST(req: NextRequest) {
           landingPageId = parsed.lp;
           userId = parsed.u;
           email = parsed.e ?? null;
+          siteId = typeof parsed.s === "string" && parsed.s ? parsed.s : null;
         }
       } catch {
         // additionalParam was not valid JSON, fall through to merchantOrderId parsing
@@ -88,6 +94,7 @@ export async function POST(req: NextRequest) {
         amount: Number(amount) || 0,
         payment_method: paymentMethod,
         invoice_number: generateInvoiceNumber(),
+        site_id: siteId,
       });
 
       if (error) {

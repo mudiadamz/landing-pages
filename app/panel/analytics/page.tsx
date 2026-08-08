@@ -6,6 +6,8 @@ import { getProductSummaries } from "@/lib/actions/product-insights";
 import { AnalyticsDashboard } from "./analytics-dashboard";
 import { ExcludedIps } from "./excluded-ips";
 import { listExcludedIps, getMyIp } from "@/lib/actions/excluded-ips";
+import { panelScope } from "@/lib/site-scope";
+import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 
 export const metadata = { title: "Analytics" };
 
@@ -22,11 +24,12 @@ export default async function AnalyticsPage({
   const parsed = Number(sp.range) as Range;
   const range: Range = RANGES.includes(parsed) ? parsed : 30;
 
-  const [data, products, excludedIps, myIp] = await Promise.all([
+  const [data, products, excludedIps, myIp, scope] = await Promise.all([
     getAnalytics(range),
     getProductSummaries(range),
     listExcludedIps(),
     getMyIp(),
+    panelScope(),
   ]);
 
   return (
@@ -62,6 +65,14 @@ export default async function AnalyticsPage({
           </div>
         </div>
       </div>
+
+      <SiteScopeCoverage
+        host={scope.site.host}
+        name={scope.site.name}
+        siteCount={scope.siteCount}
+        includesUnattributed={scope.includesUnattributed}
+        what="kunjungan"
+      />
 
       <AnalyticsDashboard data={data} products={products} />
     </div>

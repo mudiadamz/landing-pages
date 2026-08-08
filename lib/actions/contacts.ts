@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireFeature } from "./profiles";
+import { currentSiteId } from "@/lib/site-resolve";
+import { panelScope } from "@/lib/site-scope";
 
 const HONEYPOT_FIELD = "fax"; // obscure name so autofill/bots don't match
 
@@ -36,6 +38,8 @@ export async function submitContact(formData: FormData) {
     name,
     email,
     message,
+    // Which storefront the form was submitted from, so /panel/contacts can be scoped.
+    site_id: (await currentSiteId()) || null,
   });
 
   if (error) {
@@ -51,10 +55,15 @@ export async function getContactsForAdmin(): Promise<ContactSubmission[]> {
   if (!isAdmin) return [];
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  // Scoped to the storefront the panel is managing; messages sent before the site_id
+  // column existed count with the canonical site.
+  const { filter: scope } = await panelScope();
+  let query = supabase
     .from("lp_contacts")
     .select("id, name, email, message, created_at")
     .order("created_at", { ascending: false });
+  if (scope) query = query.or(scope.or);
+  const { data, error } = await query;
 
   if (error) return [];
   return (data ?? []) as ContactSubmission[];

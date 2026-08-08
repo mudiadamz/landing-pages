@@ -2,12 +2,14 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getContactsForAdmin } from "@/lib/actions/contacts";
+import { panelScope } from "@/lib/site-scope";
+import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 
 export default async function ContactsPage() {
   const ok = await requireFeature("contacts");
   if (!ok) redirect("/panel");
 
-  const contacts = await getContactsForAdmin();
+  const [contacts, scope] = await Promise.all([getContactsForAdmin(), panelScope()]);
 
   function formatDate(s: string) {
     return new Date(s).toLocaleString("id-ID", {
@@ -30,6 +32,14 @@ export default async function ContactsPage() {
         </Link>
         <h1 className="text-xl font-semibold tracking-tight">Pesan kontak</h1>
       </div>
+
+      <SiteScopeCoverage
+        host={scope.site.host}
+        name={scope.site.name}
+        siteCount={scope.siteCount}
+        includesUnattributed={scope.includesUnattributed}
+        what="pesan"
+      />
 
       {contacts.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">

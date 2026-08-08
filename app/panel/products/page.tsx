@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPagesForUser, getCategories } from "@/lib/actions/landing-pages";
 import { ProductList } from "../product-list";
+import { panelScope } from "@/lib/site-scope";
+import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 
 export default async function PanelPage() {
   // Product management is seller-only; everyone else manages their purchases.
@@ -13,7 +15,11 @@ export default async function PanelPage() {
 }
 
 async function SellerPanel() {
-  const [pages, categories] = await Promise.all([getLandingPagesForUser(), getCategories()]);
+  const [pages, categories, scope] = await Promise.all([
+    getLandingPagesForUser(),
+    getCategories(),
+    panelScope(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -32,6 +38,14 @@ async function SellerPanel() {
           Buat baru
         </Button>
       </div>
+
+      <SiteScopeCoverage
+        host={scope.site.host}
+        name={scope.site.name}
+        siteCount={scope.siteCount}
+        includesUnattributed={scope.includesUnattributed}
+        what="produk"
+      />
 
       {pages.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">

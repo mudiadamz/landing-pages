@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile, requireFeature } from "./profiles";
 import { fetchAllRows } from "@/lib/paginate";
+import { panelScope } from "@/lib/site-scope";
 
 /**
  * Everything /panel/sales needs, in one role-scoped read.
@@ -66,6 +67,9 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
   if (!global && !isPublisher) return null;
 
   const supabase = createAdminClient();
+  // Storefront scope, from the sidebar switcher. Unattributed purchases (before the
+  // site_id column existed) count with the canonical site.
+  const { filter: scope } = await panelScope();
 
   // Products in scope.
   let pageQuery = supabase.from("lp_landing_pages").select("id, title");
@@ -105,6 +109,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
         .order("id", { ascending: false })
         .range(from, to);
       if (!global) q = q.in("landing_page_id", ids);
+      if (scope) q = q.or(scope.or);
       return q;
     },
     CAP_PURCHASES,

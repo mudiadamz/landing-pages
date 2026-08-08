@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createDuitkuInvoice } from "@/lib/duitku";
 import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
-import { canonicalOrigin, currentOrigin } from "@/lib/site-resolve";
+import { canonicalOrigin, currentOrigin, currentSiteId } from "@/lib/site-resolve";
 
 export async function POST(req: NextRequest) {
   try {
@@ -75,11 +75,22 @@ export async function POST(req: NextRequest) {
     const returnBase = await currentOrigin();
     const noDash = (s: string) => s.replace(/-/g, "");
     const merchantOrderId = `LP_${noDash(page.id)}_${noDash(user.id)}`.slice(0, 50);
-    const additionalParam = JSON.stringify({
-      lp: page.id,
-      u: user.id,
-      e: email.trim(),
-    }).slice(0, 255);
+    // The callback arrives server-to-server on the CANONICAL host, so it cannot work
+    // out which storefront the buyer was on — it has to be told, and additionalParam is
+    // the only channel Duitku hands back.
+    //
+    // That field is capped at 255 chars, and a truncated string is not valid JSON: the
+    // callback would fail to parse it, fall back to merchantOrderId, and lose the email
+    // AND the site. So fields are dropped in reverse order of importance until it fits,
+    // rather than sliced blindly the way this used to be.
+    const siteId = await currentSiteId();
+    const candidates: Record<string, string>[] = [
+      { lp: page.id, u: user.id, s: siteId, e: email.trim() },
+      { lp: page.id, u: user.id, s: siteId },
+      { lp: page.id, u: user.id },
+    ];
+    const packed = candidates.map((c) => JSON.stringify(c));
+    const additionalParam = packed.find((c) => c.length <= 255) ?? packed[2];
 
     const fullName = user.user_metadata?.full_name ?? user.email ?? "Customer";
     const firstName = fullName.split(" ")[0] || "Customer";

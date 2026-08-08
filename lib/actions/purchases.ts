@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { isUpcoming } from "@/lib/product-status";
 import { grantBundleItems } from "@/lib/bundle";
+import { currentSiteId } from "@/lib/site-resolve";
 
 export type PurchaseWithPage = {
   id: string;
@@ -111,6 +112,8 @@ export async function addPurchase(landingPageId: string) {
     amount: 0,
     payment_method: "free",
     invoice_number: generateInvoiceNumber(),
+    // Runs as a Server Action from the storefront, so the host is the right answer here.
+    site_id: (await currentSiteId()) || null,
   });
 
   // A free bundle still hands over everything inside it.

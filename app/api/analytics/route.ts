@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { currentSiteId } from "@/lib/site-resolve";
 
 /**
  * First-party session/journey ingestion. One POST per page visit (sendBeacon or
@@ -200,6 +201,7 @@ export async function POST(req: Request) {
     // office/staff networks, which the per-user flag can't reach.
     if (ip && (await isExcludedIp(admin, ip))) return new NextResponse(null, { status: 204 });
     const geo = ip ? await lookupGeo(admin, ip) : EMPTY_GEO;
+    const siteId = await currentSiteId();
 
     await admin.rpc("lp_track_session", {
       p_session_id: sessionId,
@@ -223,6 +225,10 @@ export async function POST(req: Request) {
       p_browser: clamp(body.browser, 40),
       p_os: clamp(body.os, 40),
       p_dwell_ms: dwellMs,
+      // Which storefront this visit landed on. The beacon is POSTed from the page the
+      // visitor is on, so the Host header is that storefront — unlike the Duitku
+      // callback, which arrives server-to-server and has to be told.
+      p_site_id: siteId || null,
     });
 
     await admin.from("lp_page_events").insert({
@@ -238,6 +244,7 @@ export async function POST(req: Request) {
       scroll_depth: scrollDepth,
       reached_end: reachedEnd,
       engagement,
+      site_id: siteId || null,
     });
 
     return new NextResponse(null, { status: 204 });

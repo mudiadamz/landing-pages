@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAllRows } from "@/lib/paginate";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/actions/profiles";
+import { panelScope } from "@/lib/site-scope";
 
 /**
  * Behaviour-derived per-product summaries: turns raw session/journey events into
@@ -378,6 +379,10 @@ async function buildSummaries(
   slugFilter?: string,
 ): Promise<ProductSummary[]> {
   if (products.length === 0) return [];
+  // Scoped to the storefront the panel is managing, on all three queries below: a
+  // half-scoped funnel (events for one site, purchases for all) reads as a conversion
+  // rate rather than as a bug.
+  const { filter: scope } = await panelScope();
   const nowMinus = (d: number) => sinceIso(d);
   const boundaryIso = nowMinus(range);
   const windowStartIso = nowMinus(range * 2); // include previous window for trend
@@ -395,17 +400,22 @@ async function buildSummaries(
       .order("id", { ascending: false })
       .range(from, to);
     if (slugFilter) q = q.eq("product_slug", slugFilter);
+    if (scope) q = q.or(scope.or);
     return q;
   };
 
   const productIds = products.map((p) => p.id);
   const [{ rows: evRaw }, { data: purRaw }] = await Promise.all([
     fetchAllRows<EventRow>(pageEvents, CAP_EVENTS),
-    admin
-      .from("lp_purchases")
-      .select("landing_page_id, amount")
-      .in("landing_page_id", productIds)
-      .gte("purchased_at", boundaryIso),
+    (() => {
+      let q = admin
+        .from("lp_purchases")
+        .select("landing_page_id, amount")
+        .in("landing_page_id", productIds)
+        .gte("purchased_at", boundaryIso);
+      if (scope) q = q.or(scope.or);
+      return q;
+    })(),
   ]);
 
   const events = (evRaw ?? []) as EventRow[];
@@ -416,10 +426,12 @@ async function buildSummaries(
   if (sessionIds.length) {
     for (let i = 0; i < sessionIds.length; i += 1000) {
       const chunk = sessionIds.slice(i, i + 1000);
-      const { data: ss } = await admin
+      let sq = admin
         .from("lp_sessions")
         .select("session_id, utm_source, referrer_host, device")
         .in("session_id", chunk);
+      if (scope) sq = sq.or(scope.or);
+      const { data: ss } = await sq;
       for (const s of (ss ?? []) as { session_id: string; utm_source: string | null; referrer_host: string | null; device: string | null }[]) {
         sourceBySession.set(s.session_id, { source: s.utm_source, referrerHost: s.referrer_host, device: s.device });
       }

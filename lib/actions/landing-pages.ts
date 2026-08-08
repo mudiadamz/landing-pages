@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
 import { currentSite } from "@/lib/site-resolve";
+import { panelScope } from "@/lib/site-scope";
 
 export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable" | "excerpt";
 
@@ -114,6 +115,28 @@ export type LandingPageCheckout = {
   user_id?: string;
 };
 
+/**
+ * A storefront names ROOT categories; the products it carries are those plus everything
+ * in their sub-categories. Same expansion the public catalog does — extracted so the
+ * panel's product list can scope itself the same way, instead of a second implementation
+ * that drifts.
+ *
+ * An empty input means "the whole catalog" (the canonical site) and returns null, which
+ * callers read as "no filter". It must never be read as "show nothing".
+ */
+export async function expandNicheCategoryIds(
+  siteCategoryIds: string[],
+): Promise<string[] | null> {
+  if (!siteCategoryIds || siteCategoryIds.length === 0) return null;
+  const cats = await getCategories();
+  const allowed = new Set<string>();
+  for (const rootId of siteCategoryIds) {
+    allowed.add(rootId);
+    for (const c of cats) if (c.parent_id === rootId) allowed.add(c.id);
+  }
+  return [...allowed];
+}
+
 export async function getLandingPagesForUser() {
   const supabase = await createClient();
   const {
@@ -121,11 +144,21 @@ export async function getLandingPagesForUser() {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  // Scoped to the storefront the panel is managing. Products belong to CATEGORIES, not
+  // to sites, so the filter is the site's niche expanded to its sub-categories — exactly
+  // what the public catalog does. A product with no category therefore appears only under
+  // a site that carries the whole catalog, which is also true of the storefront itself.
+  const { site } = await panelScope();
+  const allowedCategories = await expandNicheCategoryIds(site.category_ids ?? []);
+
+  let query = supabase
     .from("lp_landing_pages")
     .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, published, category_id, zip_url, view_count")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
+  if (allowedCategories) query = query.in("category_id", allowedCategories);
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data ?? [];

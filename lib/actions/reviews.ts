@@ -3,6 +3,7 @@
 import { revalidatePath, unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { currentSiteId } from "@/lib/site-resolve";
 
 function createAnonClient() {
   return createSupabaseJS(
@@ -178,6 +179,7 @@ export async function submitReview(
       landing_page_id: landingPageId,
       rating,
       review_text: reviewText.trim() || null,
+      site_id: (await currentSiteId()) || null,
     });
 
     if (error) return { error: "Gagal menyimpan review" };
