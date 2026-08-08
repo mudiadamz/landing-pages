@@ -120,6 +120,7 @@ terlihat seperti marketplace template. Dipilih di `/panel/sites` → **Tampilan
 |---|---|---|
 | `default` | Marketplace | Hero besar, grid 3 kolom, testimoni, blok founder. Katalog campuran. |
 | `pustaka` | Pustaka | Rak buku: sampul portrait 2:3, masthead editorial, header/footer sendiri, tanpa blok founder. Ebook, novel, bacaan. |
+| `linkbio` | Link in bio | Satu kolom ala Linktree: avatar, bio, tumpukan tombol. **Tanpa header di halaman depan.** Untuk bio Instagram/TikTok. |
 
 **Yang dikuasai template** — badge-nya tampil live di picker `/panel/sites`,
 diturunkan dari registry sendiri jadi tidak bisa basi:
