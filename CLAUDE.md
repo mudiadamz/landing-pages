@@ -1,28 +1,62 @@
 # CLAUDE.md — Landing Page Manager (ADM.UIUX)
 
-Panduan arsitektur & flow project untuk Claude Code. Project ini adalah **marketplace template landing page / digital assets** milik ADM.UIUX (Adam Mudianto). Admin membuat & menjual template HTML; customer membeli, membayar via Duitku, lalu download ZIP.
+Marketplace produk digital milik ADM.UIUX (Adam Mudianto). Admin membuat & menjual
+produk; pembeli preview gratis, bayar via Duitku, lalu download atau baca di situs.
+**Satu deployment melayani beberapa storefront** (multi-domain + tema).
+
+## Baca ini dulu
+
+Aturan yang mengatur codebase ini — batas antar lapisan, invarian, pola untuk
+menambah sesuatu, dan jebakan strukturalnya — ada di
+**[`docs/architecture.md`](docs/architecture.md)**.
+
+Dokumen itu yang menentukan *bagaimana* menambah sesuatu. File ini cuma inventaris
+*apa* yang sudah ada. Kalau keduanya bertabrakan, `docs/architecture.md` yang benar,
+dan file ini yang perlu diperbarui.
+
+Ringkasan yang paling sering dilanggar:
+
+1. **Fungsi ter-cache tidak boleh membaca `headers()`/`cookies()`.** Identitas
+   tenant di-resolve di luar cache dan dikirim sebagai argumen.
+2. **Invalidasi `unstable_cache` pakai `revalidateTag(tag, "max")`**, bukan
+   `updateTag` sendirian.
+3. **Presentasi tidak mengambil data.** Halaman fetch, tema merender.
+4. **Modul `"use server"` hanya export `async function`.**
+5. **Service-role client bypass RLS** — setiap pemakaian wajib punya gate
+   otorisasi sendiri (`requireAdmin`/`requireFeature`/cek kepemilikan).
+6. **Konten berbayar dipotong di server**, bukan disembunyikan di client.
+
+## Peta
+
+| Mau apa | Ke mana |
+|---|---|
+| Aturan & pola arsitektur | [`docs/architecture.md`](docs/architecture.md) |
+| Multi-domain, tema, palet | [`docs/multi-domain.md`](docs/multi-domain.md) + README |
+| Setup, script, env | [`README.md`](README.md), [`.env.example`](.env.example) |
+| Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
+| Laporan kampanye iklan | `docs/campaign-reports/` |
 
 ## Konvensi penting
 
-- Semua tabel app diawali prefix **`lp_`** (mis. `lp_landing_pages`, `lp_purchases`, `lp_profiles`).
-- Tabel lama pernah di-rename → lihat migration `2026062100xx_*` (pp_merge, tp_merge, lp_rename).
+- Semua tabel app diawali prefix **`lp_`** (mis. `lp_landing_pages`, `lp_purchases`,
+  `lp_sites`). Tabel lama pernah di-rename → lihat migration `2026062100xx_*`.
 - Bahasa UI: **Indonesia** (`<html lang="id">`, locale `id_ID`).
-- Tiga jenis Supabase client di `lib/supabase/`:
-  - `server.ts` — `createClient()`, server components/actions, cookie-based, terkena RLS.
-  - `client.ts` — `createClient()` browser.
-  - `admin.ts` — `createAdminClient()` pakai **Service Role Key**, bypass RLS. **Hanya** untuk API routes (callback, webhook, hiring).
-- Selesai task → **commit** tanpa diminta. **Jangan `git push`**: push diblokir di
-  settings user (deny rule + PreToolUse hook), jadi setiap percobaan pasti gagal —
-  termasuk kalau diselipkan di rantai `&&`. Adam yang push sendiri.
-  (`.cursor/rules/commit-push-after-finish.mdc` masih menyebut push — itu untuk Cursor.)
-- **Semua input file di panel WAJIB pakai `FileUploadCard`** (`components/file-upload-card.tsx`).
-  Jangan pernah menulis `<input type="file">` telanjang di layar panel — kartu ini
-  yang memegang state kosong/terisi, nama + ukuran file, tombol ganti & hapus,
-  dan tampilan error. Dulu komponennya privat di `product-edit-form.tsx` lalu
-  layar lain menumbuhkan input file sendiri yang bentuknya beda; sekarang satu
-  komponen dipakai bersama.
+- Tiga Supabase client di `lib/supabase/`:
+  - `server.ts` — server components/actions, cookie-based, **terkena RLS**.
+  - `client.ts` — browser.
+  - `admin.ts` — Service Role Key, **bypass RLS**. Boleh di luar API route, tapi
+    pemakaiannya wajib punya gate otorisasi sendiri.
+  - Catatan: client cookie-based **tidak bisa** dipakai di dalam `unstable_cache`.
+- **Semua input file di panel WAJIB `FileUploadCard`** (`components/file-upload-card.tsx`).
+  Jangan `<input type="file">` telanjang: kartu itu yang memegang state kosong/terisi,
+  nama + ukuran, tombol ganti/hapus, dan error. Dulu privat di `product-edit-form.tsx`,
+  lalu layar lain menumbuhkan input sendiri yang bentuknya beda.
+- Server Actions semua di `lib/actions/*.ts`.
 - Kontak support hardcode di `lib/constants.ts` (`SUPPORT_CONTACT`).
-- Server Actions semua di `lib/actions/*.ts`. Caching pakai `unstable_cache` + `revalidateTag`.
+- Selesai task → **commit** tanpa diminta. **Jangan `git push`** — diblokir di
+  settings (deny rule + PreToolUse hook), termasuk kalau diselipkan di rantai `&&`.
+  Adam yang push. (`.cursor/rules/commit-push-after-finish.mdc` masih menyebut push —
+  itu untuk Cursor.)
 
 ## Auth & roles
 
@@ -42,7 +76,12 @@ Panduan arsitektur & flow project untuk Claude Code. Project ini adalah **market
 > Flow buat & edit landing page (admin) ada di `app/panel/CLAUDE.md` — kebaca otomatis
 > saat kerja di dalam `app/panel/`.
 
-## Flow: render landing page publik (`/lp/[slug]`)
+## Flow: render landing page publik (`/preview/[slug]`)
+
+> **Rute ini pindah** dari `/lp/[slug]`. `next.config.ts` menyimpan redirect 308
+> `/lp/:slug → /preview/:slug` — wajib, karena iklan yang jalan menunjuk ke URL lama.
+> Preview juga **noindex** (lihat README → "Preview & SEO"), dan produk di sitemap
+> menunjuk `/checkout/[slug]`.
 
 - `getPageBySlug()` ambil `html_content`, `preview_type`, `preview_url` (di-`cache()`). `generateMetadata()` bangun OG/canonical.
 - Berdasarkan `preview_type`: `pdf`/`link` → `<iframe src=…>` (PDF pakai `#toolbar=0`); selain itu HTML dirender di dalam `<iframe srcDoc={guardPreviewHtml(html)}>` sandbox `allow-scripts allow-same-origin allow-modals`.
@@ -102,36 +141,10 @@ GET /api/download/[slug]
 
 ## Environment variables
 
-```
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY          # admin client (callback, webhook, hiring)
-
-# Site
-NEXT_PUBLIC_SITE_URL               # untuk callbackUrl/returnUrl & metadata (default admuiux.com)
-
-# Duitku
-DUITKU_MERCHANT_CODE
-DUITKU_API_KEY
-DUITKU_SANDBOX                     # "true" sandbox, selain itu produksi
-
-# Resend
-RESEND_API_KEY
-RESEND_FROM                        # default onboarding@resend.dev
-RESEND_WEBHOOK_SECRET              # verifikasi inbound webhook
-
-# Signup (bot protection — lib/signup-guard.ts)
-SIGNUP_FORM_SECRET                 # opsional; HMAC token form (default: service role key)
-NEXT_PUBLIC_TURNSTILE_SITE_KEY     # captcha Cloudflare Turnstile; kosong = captcha mati
-TURNSTILE_SECRET_KEY               # pasangannya; keduanya wajib agar captcha aktif
-
-# Meta / tracking
-NEXT_PUBLIC_FB_PIXEL_ID
-META_CAPI_ACCESS_TOKEN
-META_CAPI_VERSION                  # default v21.0
-```
-(lihat `.env.example`, `.env.local`, `.env.development.local`)
+Sumber tunggal: [`.env.example`](.env.example) — tiap variabel ada komentarnya di
+sana. Daftarnya **tidak** diduplikasi di sini; salinan pasti menyimpang (pernah
+terjadi: dokumen menyebut variabel yang sudah tidak dibaca kode, sementara variabel
+wajib tidak tercatat sama sekali).
 
 ## Catatan migration
 
