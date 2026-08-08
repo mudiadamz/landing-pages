@@ -18,9 +18,35 @@ domain. Sekarang dua `SiteInput` terpisah dengan dua server action —
 `updateSiteDomain` tidak pernah menyentuh nama/logo, `updateSiteProfile` tidak pernah
 menyentuh `host`/`active`.
 
-`/panel/branding` memakai pola per-domain yang sama dengan Hero, Konten situs,
-Tracking, Popup, dan Custom JS: domain yang diatur datang dari `?site=<id>` +
-`SiteSwitcher`, bukan dari host (panel hanya jalan di domain utama).
+### Satu switcher untuk seluruh panel
+
+Domain yang sedang dikelola dipilih **sekali**, di **sidebar** (“Situs yang
+dikelola”), dan berlaku untuk semua layar per-domain: Identitas situs, Hero, Konten
+situs, Tracking, Popup, Custom JS.
+
+Dulu tiap layar punya `SiteSwitcher`-nya sendiri lewat `?site=<id>`. Dua masalah:
+enam kontrol untuk satu keputusan, dan pilihannya **hilang begitu pindah halaman** —
+pilih domain niche di Hero, klik Popup, dan diam-diam kembali ke domain utama.
+
+Sekarang pilihannya ada di cookie `panel_site` (`lib/panel-site.ts`, httpOnly, path
+`/panel`, umur 1 tahun) dan dibaca oleh `editingSite()`. Yang perlu diketahui:
+
+- **Nilainya tidak pernah dipercaya.** `editingSite()` mencocokkannya ke `lp_sites`
+  dan jatuh ke domain utama kalau tidak ketemu, jadi cookie basi (domain yang sudah
+  dihapus) atau hasil edit tangan tidak bisa menulis setting untuk situs yang tidak
+  ada. `selectPanelSite()` juga menolak id yang tidak dikenal sebelum menyimpannya.
+- **Cookie ini tidak memberi izin apa pun** — cuma memilih scope. Semua penulisan
+  tetap lewat `requireAdmin()`/`requireFeature()`.
+- **Tiap layar per-domain tetap menyebutkan situsnya** (`SiteScopeNotice`) — itu
+  risiko utama scope global: mengedit hero domain yang salah tanpa sadar. Enam
+  pengingat read-only, satu kontrol.
+- **Link lintas-layar harus men-set scope, bukan mengirim param.** Tombol
+  “Identitas & tampilan →” di `/panel/sites` memanggil `selectPanelSite()` lalu
+  navigasi; `<Link href=”…?site=…”>` akan mendarat di situs yang ditunjuk sidebar,
+  bukan baris yang diklik.
+- `listSites()` dibungkus `cache()` React (memoisasi **per request**, bukan lintas
+  request — admin tetap melihat tulisannya sendiri): layout + halaman + `editingSite()`
+  tadinya menghasilkan empat query identik per navigasi panel.
 
 Panduan langkah Vercel & Supabase dengan nilai yang sudah terisi ada di tiap baris
 domain di `/panel/sites` — dokumen ini versi lengkapnya.

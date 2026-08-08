@@ -3,19 +3,14 @@ import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getCustomJs } from "@/lib/actions/site-settings";
 import { editingSite, listSites } from "@/lib/site-resolve";
-import { SiteSwitcher } from "@/components/site-switcher";
+import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { CustomJsForm } from "./custom-js-form";
 
-export default async function CustomJsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ site?: string | string[] }>;
-}) {
+export default async function CustomJsPage() {
   const ok = await requireFeature("custom-js");
   if (!ok) redirect("/panel");
 
-  const { site: siteParam } = await searchParams;
-  const [site, sites] = await Promise.all([editingSite(siteParam), listSites()]);
+  const [site, sites] = await Promise.all([editingSite(), listSites()]);
   const initialScript = await getCustomJs(site.id);
 
   return (
@@ -30,7 +25,7 @@ export default async function CustomJsPage({
         <h1 className="text-xl font-semibold tracking-tight">Custom JavaScript</h1>
       </div>
 
-      <SiteSwitcher sites={sites} currentId={site.id} />
+      <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
         <p className="text-sm text-[var(--muted)] mb-4">

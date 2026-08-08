@@ -1,6 +1,8 @@
-import { headers } from "next/headers";
+import { cache } from "react";
+import { cookies, headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
+import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
 
 /**
  * Which storefront is this request for?
@@ -202,16 +204,21 @@ export function canonicalOrigin(): string {
 /**
  * Which storefront a panel settings screen is EDITING — a different question from
  * which one is serving the request. The panel only ever runs on the canonical
- * domain, so the target comes from a `?site=` param instead of the host.
+ * domain, so the target cannot come from the host; it comes from the panel-wide
+ * scope cookie set by the sidebar switcher (see lib/panel-site.ts).
  *
- * The id is validated against the table rather than trusted, so a hand-edited URL
- * can't write settings rows for a site that doesn't exist. Anything unknown falls
- * back to the canonical site, which is what the screens did before they could
- * target anything else.
+ * Was a `?site=` param, which forced a switcher onto every settings screen and lost
+ * the choice on every navigation. A cookie survives the reload a server action
+ * triggers and every link in the panel.
+ *
+ * The id is validated against the table rather than trusted, so a stale cookie (a
+ * domain since deleted) or a hand-edited one can't write settings rows for a site
+ * that doesn't exist. Anything unknown falls back to the canonical site, which is
+ * what the screens did before they could target anything else.
  */
-export async function editingSite(siteParam?: string | string[]): Promise<Site> {
-  const wanted = (Array.isArray(siteParam) ? siteParam[0] : siteParam)?.trim();
+export async function editingSite(): Promise<Site> {
   const all = await listSites();
+  const wanted = (await cookies()).get(PANEL_SITE_COOKIE)?.value?.trim();
   const match = wanted ? all.find((s) => s.id === wanted) : undefined;
   return (
     match ??
@@ -221,12 +228,21 @@ export async function editingSite(siteParam?: string | string[]): Promise<Site> 
   );
 }
 
-/** Admin-facing list for the panel. Not cached — admins need to see writes. */
-export async function listSites(): Promise<Site[]> {
+/**
+ * Admin-facing list for the panel. NOT cached across requests — admins have to see
+ * their own writes, which is the whole reason this doesn't go through unstable_cache.
+ *
+ * React's `cache()` is per-request memoisation, not a cache in that sense: it dedupes
+ * the calls WITHIN one render and forgets everything at the end. That matters now that
+ * the panel layout resolves the site scope for the sidebar — layout and page each ask
+ * for the list, and editingSite() asks again, which was four identical queries per
+ * panel navigation. Now it is one.
+ */
+export const listSites = cache(async (): Promise<Site[]> => {
   const { data } = await anonClient()
     .from("lp_sites")
     .select(SITE_COLUMNS)
     .order("is_canonical", { ascending: false })
     .order("host", { ascending: true });
   return (data as Site[]) ?? [];
-}
+});

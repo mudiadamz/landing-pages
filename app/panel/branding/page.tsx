@@ -5,7 +5,7 @@ import { getCategories } from "@/lib/actions/landing-pages";
 import { editingSite, listSites, isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
 import { paletteOptions } from "@/lib/palette";
-import { SiteSwitcher } from "@/components/site-switcher";
+import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { SiteProfileForm } from "./site-profile-form";
 
 export const metadata = { title: "Identitas situs" };
@@ -16,23 +16,19 @@ export const metadata = { title: "Identitas situs" };
  *
  * Split out of /panel/sites, which now owns only the plumbing (hostname, Vercel, on
  * or off). Follows the same shape as the other per-domain settings screens — hero,
- * konten situs, tracking, popup, custom JS — so which storefront you are editing
- * comes from `?site=<id>` and the switcher, not from the host.
+ * konten situs, tracking, popup, custom JS — so which storefront you are editing comes
+ * from the panel-wide scope cookie set by the sidebar switcher, not from the host and
+ * not from this screen.
  */
-export default async function BrandingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ site?: string | string[] }>;
-}) {
+export default async function BrandingPage() {
   if (!(await requireAdmin())) redirect("/panel");
 
   // Same belt-and-braces guard as /panel/sites: this screen rewrites a site row, and
   // app/panel/layout.tsx already keeps admin routes on the canonical origin.
   if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/branding`);
 
-  const { site: siteParam } = await searchParams;
   const [site, sites, categories] = await Promise.all([
-    editingSite(siteParam),
+    editingSite(),
     listSites(),
     getCategories(),
   ]);
@@ -50,7 +46,7 @@ export default async function BrandingPage({
         <h1 className="text-xl font-semibold tracking-tight">Identitas &amp; tampilan situs</h1>
       </div>
 
-      <SiteSwitcher sites={sites} currentId={site.id} label="Situs yang diatur" />
+      <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 
       {/* Keyed on the site so switching resets the form to that site's values instead
           of keeping the previous one's in component state — the same reason the hero

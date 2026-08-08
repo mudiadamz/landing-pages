@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
+import { isCanonicalRequest, canonicalOrigin, editingSite, listSites } from "@/lib/site-resolve";
 import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { getPanelPalette } from "@/lib/actions/site-settings";
@@ -86,13 +86,35 @@ export default async function PanelLayout({
   // shown to anyone who can access the Users area.
   const pendingActions = features.includes("users") ? (await getPublisherApplications()).length : 0;
 
+  // The panel-wide site scope, for the one switcher in the sidebar. Admins only, and
+  // only the fields the switcher renders — the full row would ship template, palette and
+  // both image URLs into the client bundle for nothing.
+  const isAdmin = profile?.role === "admin";
+  const [allSites, scopedSite] = isAdmin
+    ? await Promise.all([listSites(), editingSite()])
+    : [[], null];
+  const siteOptions = allSites.map((s) => ({
+    id: s.id,
+    host: s.host,
+    name: s.name,
+    is_canonical: s.is_canonical,
+  }));
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
       {/* Panel palette (/panel/appearance). Rendered here so it exists only on
           panel routes, but the selectors are :root / html.dark — dialogs portal
           to document.body, and a wrapper class would leave them uncoloured. */}
       <style dangerouslySetInnerHTML={{ __html: paletteCss(palette) }} />
-      <PanelSidebar role={profile?.role} canSell={!!canSell} displayName={displayName} pendingActions={pendingActions} features={features} />
+      <PanelSidebar
+        role={profile?.role}
+        canSell={!!canSell}
+        displayName={displayName}
+        pendingActions={pendingActions}
+        features={features}
+        sites={siteOptions}
+        editingSiteId={scopedSite?.id ?? ""}
+      />
       <div className="flex flex-1 flex-col min-w-0">
         <EmailVerifyNotice />
         {user && !emailVerified && <EmailConfirmBanner email={user.email ?? null} />}

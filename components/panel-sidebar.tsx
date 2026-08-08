@@ -7,10 +7,21 @@ import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
 import { BrandMark } from "@/components/brand-mark";
+import { PanelSiteSwitcher } from "@/components/panel-site-switcher";
+import type { PanelSiteOption } from "@/lib/panel-site";
 import type { FeatureKey } from "@/lib/features";
 
 type Role = "admin" | "customer" | "publisher";
-type Props = { role?: Role; canSell?: boolean; displayName?: string; pendingActions?: number; features?: FeatureKey[] };
+type Props = {
+  role?: Role;
+  canSell?: boolean;
+  displayName?: string;
+  pendingActions?: number;
+  features?: FeatureKey[];
+  /** Empty for non-admins: the scope only drives admin screens. */
+  sites?: PanelSiteOption[];
+  editingSiteId?: string;
+};
 
 type NavItem = {
   href: string;
@@ -404,7 +415,15 @@ function NavContent({
   );
 }
 
-export function PanelSidebar({ role, canSell, displayName, pendingActions, features }: Props) {
+export function PanelSidebar({
+  role,
+  canSell,
+  displayName,
+  pendingActions,
+  features,
+  sites = [],
+  editingSiteId = "",
+}: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
   const close = () => setMobileOpen(false);
@@ -511,6 +530,10 @@ export function PanelSidebar({ role, canSell, displayName, pendingActions, featu
             </span>
           </Link>
         )}
+
+        {/* The one site switcher. Directly under the profile card so it reads as
+            "who I am / what I'm working on", above the nav it changes the meaning of. */}
+        <PanelSiteSwitcher sites={sites} currentId={editingSiteId} onChanged={close} />
 
         <div className="flex flex-1 flex-col overflow-y-auto px-3 pb-[env(safe-area-inset-bottom)]">
           <NavContent

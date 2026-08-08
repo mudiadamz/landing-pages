@@ -3,19 +3,14 @@ import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { editingSite, listSites } from "@/lib/site-resolve";
-import { SiteSwitcher } from "@/components/site-switcher";
+import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { ContentForm } from "./content-form";
 
-export default async function ContentSettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ site?: string | string[] }>;
-}) {
+export default async function ContentSettingsPage() {
   const ok = await requireFeature("content");
   if (!ok) redirect("/panel");
 
-  const { site: siteParam } = await searchParams;
-  const [site, sites] = await Promise.all([editingSite(siteParam), listSites()]);
+  const [site, sites] = await Promise.all([editingSite(), listSites()]);
   const content = await getSiteContent(site.id);
 
   return (
@@ -35,7 +30,7 @@ export default async function ContentSettingsPage({
         jaminan support, dan FAQ). Perubahan langsung tampil di semua halaman.
       </p>
 
-      <SiteSwitcher sites={sites} currentId={site.id} />
+      <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 
       <ContentForm key={site.id} initialContent={content} siteId={site.id} />
     </div>

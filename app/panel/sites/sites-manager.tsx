@@ -2,9 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { createSite, updateSiteDomain, deleteSite } from "@/lib/actions/sites";
+import { createSite, updateSiteDomain, deleteSite, selectPanelSite } from "@/lib/actions/sites";
 // Type-only, so nothing from site-resolve (which reads headers()) reaches the client.
 import type { Site } from "@/lib/site-resolve";
 import { DomainSetupGuide } from "./domain-setup-guide";
@@ -65,6 +64,18 @@ export function SitesManager({
     setMessage(null);
   }
 
+  /** Point the whole panel at this site, then open its identity screen. */
+  function manage(siteId: string) {
+    startTransition(async () => {
+      const res = await selectPanelSite(siteId);
+      if (!res.ok) {
+        setMessage({ type: "err", text: res.error ?? "Gagal mengganti situs." });
+        return;
+      }
+      router.push("/panel/branding");
+    });
+  }
+
   function saveDomain(id: string) {
     startTransition(async () => {
       const res = await updateSiteDomain(id, draft);
@@ -102,8 +113,13 @@ export function SitesManager({
       setEditing(null);
       router.refresh();
       // Straight to the half that is still empty. A fresh domain has default name,
-      // template and palette, and leaving the admin on this screen hides that.
-      if (res.id) router.push(`/panel/branding?site=${res.id}`);
+      // template and palette, and leaving the admin on this screen hides that. Point
+      // the panel scope at it first, or the identity screen would open on whichever
+      // site the sidebar was already showing.
+      if (res.id) {
+        await selectPanelSite(res.id);
+        router.push("/panel/branding");
+      }
     });
   }
 
@@ -226,12 +242,19 @@ export function SitesManager({
                       {paletteLabels[site.palette || "forest"] ?? site.palette}
                     </span>
                   </p>
-                  <Link
-                    href={`/panel/branding?site=${site.id}`}
-                    className="mt-1.5 inline-block text-xs font-medium text-[var(--primary)] hover:underline"
+                  {/* A button, not a Link: the scope is a cookie now, so jumping to
+                      another site's identity screen means SETTING the scope first.
+                      A plain href would land on whichever site the sidebar is
+                      pointing at — the row you clicked and the screen you got would
+                      disagree. */}
+                  <button
+                    type="button"
+                    onClick={() => manage(site.id)}
+                    disabled={pending}
+                    className="mt-1.5 inline-block text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
                   >
                     Identitas &amp; tampilan →
-                  </Link>
+                  </button>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={() => openEdit(site)}>

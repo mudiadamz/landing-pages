@@ -3,21 +3,16 @@ import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getHero } from "@/lib/actions/site-settings";
 import { editingSite, listSites } from "@/lib/site-resolve";
-import { SiteSwitcher } from "@/components/site-switcher";
+import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { HeroForm } from "./hero-form";
 
-export default async function HeroSettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ site?: string | string[] }>;
-}) {
+export default async function HeroSettingsPage() {
   const ok = await requireFeature("hero");
   if (!ok) redirect("/panel");
 
   // Which storefront's hero — not the host, which is always the canonical domain
   // here because the panel only runs there.
-  const { site: siteParam } = await searchParams;
-  const [site, sites] = await Promise.all([editingSite(siteParam), listSites()]);
+  const [site, sites] = await Promise.all([editingSite(), listSites()]);
   const hero = await getHero(site.id);
 
   return (
@@ -32,7 +27,7 @@ export default async function HeroSettingsPage({
         <h1 className="text-xl font-semibold tracking-tight">Hero halaman utama</h1>
       </div>
 
-      <SiteSwitcher sites={sites} currentId={site.id} />
+      <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
         <p className="text-sm text-[var(--muted)] mb-6">

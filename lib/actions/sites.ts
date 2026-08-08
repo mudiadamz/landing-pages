@@ -1,7 +1,13 @@
 "use server";
 
 import { revalidatePath, revalidateTag, updateTag } from "next/cache";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import {
+  PANEL_SITE_COOKIE,
+  PANEL_SITE_COOKIE_MAX_AGE,
+  PANEL_SITE_COOKIE_PATH,
+} from "@/lib/panel-site";
 import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
@@ -91,6 +97,39 @@ function hostError(host: string): string | null {
 export async function getSites(): Promise<Site[]> {
   if (!(await requireAdmin())) return [];
   return listSites();
+}
+
+/**
+ * Point the whole panel at a storefront — the sidebar switcher, and the only way the
+ * scope changes.
+ *
+ * The id is validated here as well as in editingSite(). Not redundant: this is where a
+ * bad value would be PERSISTED for a year, and refusing to store it is better than
+ * storing it and relying on every reader to shrug it off.
+ *
+ * requireAdmin because only admins reach the per-site screens at all. The cookie grants
+ * nothing on its own — it selects a scope, and every write behind it still has its own
+ * gate — but a cookie no one can act on has no business being set either.
+ */
+export async function selectPanelSite(siteId: string): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const all = await listSites();
+  const target = all.find((s) => s.id === siteId);
+  if (!target) return { ok: false, error: "Situs tidak ditemukan." };
+
+  (await cookies()).set(PANEL_SITE_COOKIE, target.id, {
+    path: PANEL_SITE_COOKIE_PATH,
+    maxAge: PANEL_SITE_COOKIE_MAX_AGE,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  // The layout renders the switcher and every per-site screen reads the scope, so the
+  // whole panel subtree is stale — not just the page that called this.
+  revalidatePath("/panel", "layout");
+  return { ok: true };
 }
 
 /**
