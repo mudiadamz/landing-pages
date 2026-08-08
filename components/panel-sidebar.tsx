@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { AssetLibraryModal } from "@/components/asset-library-modal";
-import { BrandMark } from "@/components/brand-mark";
+import { SiteLogo } from "@/components/site-logo";
 import { PanelSiteSwitcher } from "@/components/panel-site-switcher";
 import type { PanelSiteOption } from "@/lib/panel-site";
+import type { SiteBrand } from "@/lib/site-brand";
 import type { FeatureKey } from "@/lib/features";
 
 type Role = "admin" | "customer" | "publisher";
@@ -21,6 +22,13 @@ type Props = {
   /** Empty for non-admins: the scope only drives admin screens. */
   sites?: PanelSiteOption[];
   editingSiteId?: string;
+  /**
+   * The storefront this panel is being SERVED on — not the one the switcher below
+   * is editing. A buyer opens "Pembelian saya" on the domain they bought from
+   * (sessions don't cross domains), so the shell has to wear that domain's name.
+   * It said ADM.UIUX everywhere, which on a niche storefront is a stranger's brand.
+   */
+  brand: SiteBrand;
 };
 
 type NavItem = {
@@ -423,6 +431,7 @@ export function PanelSidebar({
   features,
   sites = [],
   editingSiteId = "",
+  brand,
 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
@@ -467,9 +476,8 @@ export function PanelSidebar({
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)]" aria-hidden />
           )}
         </button>
-        <Link href="/panel" className="flex items-center gap-2 text-base font-semibold text-foreground">
-          <BrandMark className="h-6 w-6" />
-          ADM.UIUX
+        <Link href="/panel" className="flex items-center text-base font-semibold text-foreground">
+          <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[150px]" markClassName="h-6 w-6" />
         </Link>
         <ThemeSwitch />
       </div>
@@ -492,9 +500,8 @@ export function PanelSidebar({
         }`}
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border)] px-4 md:border-0">
-          <Link href="/panel" className="flex items-center gap-2 text-base font-semibold text-foreground" onClick={close}>
-            <BrandMark className="h-6 w-6" />
-            ADM.UIUX
+          <Link href="/panel" className="flex items-center text-base font-semibold text-foreground" onClick={close}>
+            <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[150px]" markClassName="h-6 w-6" />
           </Link>
           <div className="hidden md:block">
             <ThemeSwitch />

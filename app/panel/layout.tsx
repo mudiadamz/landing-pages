@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { isCanonicalRequest, canonicalOrigin, editingSite, listSites } from "@/lib/site-resolve";
+import { isCanonicalRequest, canonicalOrigin, currentSite, editingSite, listSites } from "@/lib/site-resolve";
+import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { getPanelPalette } from "@/lib/actions/site-settings";
@@ -114,6 +115,7 @@ export default async function PanelLayout({
         features={features}
         sites={siteOptions}
         editingSiteId={scopedSite?.id ?? ""}
+        brand={siteBrand(await currentSite())}
       />
       <div className="flex flex-1 flex-col min-w-0">
         <EmailVerifyNotice />

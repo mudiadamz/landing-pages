@@ -3,6 +3,9 @@ import { login } from "@/lib/actions/auth";
 import { SubmitButton } from "./submit-button";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { CheckoutIntent } from "./checkout-intent";
+import { SiteLogo } from "@/components/site-logo";
+import { siteBrand } from "@/lib/site-brand";
+import { currentSite } from "@/lib/site-resolve";
 
 export default async function LoginPage({
   searchParams,
@@ -11,6 +14,11 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const next = params.next && params.next.startsWith("/") ? params.next : undefined;
+  // The storefront being served, not the canonical one. This line used to read
+  // "ADM.UIUX" on every domain — the sign-in box for a niche storefront named a
+  // company the visitor had never heard of, which is both wrong and alarming on
+  // the one screen where you're about to type a password.
+  const brand = siteBrand(await currentSite());
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative">
       <Link
@@ -34,9 +42,14 @@ export default async function LoginPage({
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               Masuk
             </h1>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              ADM.UIUX
-            </p>
+            <div className="mt-2 flex justify-center">
+              <SiteLogo
+                brand={brand}
+                imgClassName="h-6 w-auto max-w-[160px]"
+                markClassName="h-4 w-4"
+                nameClassName="text-sm text-[var(--muted)]"
+              />
+            </div>
           </div>
           {params.error && (
             <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3">
