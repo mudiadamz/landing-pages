@@ -158,9 +158,16 @@ export function DomainSetupGuide({
             </p>
             <Value>{`https://${host}/auth/callback`}</Value>
             <p>
-              Tanpa ini, tombol &ldquo;Masuk dengan Google&rdquo; di {host} gagal dengan error
-              redirect. Sesi login <strong className="text-foreground">tidak</strong> lintas
-              domain — pengunjung login sendiri di tiap domain, dan itu memang disengaja.
+              Tanpa ini login <em>tidak</em> memunculkan error — Supabase diam-diam membuang
+              alamat kembali yang kita kirim dan memakai Site URL, jadi orang yang menekan
+              &ldquo;Masuk dengan Google&rdquo; di {host}{" "}
+              <strong className="text-foreground">mendarat di {canonicalHost}</strong>. Sesinya
+              ikut menempel di sana, sehingga di {host} dia tetap terlihat belum masuk. Pembeli
+              yang login di tengah checkout kehilangan produknya.
+            </p>
+            <p>
+              Sesi login <strong className="text-foreground">tidak</strong> lintas domain —
+              pengunjung login sendiri di tiap domain, dan itu memang disengaja.
             </p>
             {isSubdomain && (
               <p>

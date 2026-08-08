@@ -181,8 +181,26 @@ Untuk semua subdomain sekaligus, satu wildcard cukup. Pemisahnya `.` dan `/`, ja
 https://*.admuiux.com/auth/callback
 ```
 
-Tanpa langkah ini, tombol "Masuk dengan Google" di domain baru gagal dengan error
-redirect.
+**Langkah ini gagal tanpa suara.** Bukan error redirect — kalau `redirect_to` yang kita
+kirim tidak ada di daftar, Supabase membuangnya dan memakai **Site URL** project. Jadi
+"Masuk dengan Google" di domain baru tetap berhasil, tapi pengunjungnya mendarat di
+`admuiux.com`, dan cookie sesinya ikut menempel di host itu — di domain barunya dia
+tetap terlihat belum masuk. Buat pembeli yang login di tengah checkout, itu artinya
+dia terlempar keluar dari produk yang sedang dibeli.
+
+Kode aplikasinya sudah benar (`signInWithGoogle` memakai `currentOrigin()`, bukan
+origin yang di-hardcode) — yang kurang murni daftar di dashboard.
+
+Cara memastikan sebuah domain sudah terdaftar, tanpa membuka dashboard: minta GoTrue
+memvalidasi alamatnya lewat token yang pasti ditolak, lalu lihat ke mana dia melempar.
+
+```bash
+curl -s -o /dev/null -w '%{redirect_url}\n' \
+  "https://uxizlsoggphacyvtshub.supabase.co/auth/v1/verify?token=x&type=signup&redirect_to=https%3A%2F%2F<domain>%2Fauth%2Fcallback"
+```
+
+Balasannya memuat `/auth/callback` domain itu → terdaftar. Balasannya `admuiux.com/`
+telanjang → belum, dan login di sana akan meleset.
 
 ### 4. Google Cloud Console — **biasanya tidak perlu diubah**
 
