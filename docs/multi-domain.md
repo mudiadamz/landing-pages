@@ -166,41 +166,60 @@ Kalau manual: Project **`landing_pages`** → Settings → Domains → **Add**.
 
 Batas domain per project: Hobby 50, Pro *soft limit* 100.000. Tidak akan kena.
 
-### 3. Supabase — supaya bisa login di domain itu
+### 3. Supabase — **tidak ada yang perlu diubah**
 
-Authentication → URL Configuration → **Redirect URLs** → Add URL:
+Login Google di domain baru jalan tanpa menyentuh dashboard. Bagian ini menjelaskan
+kenapa, karena dulu tidak begitu dan kesalahannya sulit dikenali.
+
+**Dulu:** tiap domain harus didaftarkan sendiri di Authentication → URL Configuration
+→ Redirect URLs. Kalau lupa, tidak ada error. `redirect_to` yang tidak terdaftar
+bukan ditolak oleh Supabase — dibuang diam-diam dan diganti **Site URL** project.
+Jadi "Masuk dengan Google" tetap berhasil, tapi pengunjungnya mendarat di
+`admuiux.com` berikut cookie sesinya, dan di domain yang dia mulai tadi dia tetap
+terlihat belum masuk. Pembeli yang login di tengah checkout terlempar keluar dari
+produk yang sedang dibeli.
+
+**Sekarang:** OAuth selalu kembali ke satu URL yang pasti terdaftar — callback
+domain kanonik — lalu callback itu **melempar balik** ke domain asal.
 
 ```
-https://<domain-baru>/auth/callback
+domaintest.fit  →  Google  →  admuiux.com/auth/callback?sf=domaintest.fit
+                                        ↓ (tidak menukar code di sini)
+                              domaintest.fit/auth/callback?code=…
+                                        ↓ exchangeCodeForSession
+                              cookie sesi terpasang di domaintest.fit
 ```
 
-Untuk semua subdomain sekaligus, satu wildcard cukup. Pemisahnya `.` dan `/`, jadi
-`*` hanya cocok satu level:
+Yang berpindah adalah **`code`-nya, bukan sesinya**. Domain kanonik sengaja tidak
+menukar code itu sendiri: `signInWithOAuth` menulis verifier PKCE sebagai cookie di
+domain yang tombolnya ditekan, dan cookie tidak lintas host — `admuiux.com` tidak
+bisa membacanya. Justru karena code itu tak berguna di tempat lain, mengopernya lewat
+jalan memutar ini aman. Detail dan penjagaannya ada di `lib/oauth-return.ts`;
+`?sf=` divalidasi terhadap `lp_sites`, tanpa itu callback kanonik jadi open redirect
+yang menyerahkan code pengunjung ke domain siapa pun.
+
+**Yang masih wajib ada di daftar** cuma satu baris, dan sudah terpasang:
 
 ```
-https://*.admuiux.com/auth/callback
+https://admuiux.com/auth/callback
 ```
 
-**Langkah ini gagal tanpa suara.** Bukan error redirect — kalau `redirect_to` yang kita
-kirim tidak ada di daftar, Supabase membuangnya dan memakai **Site URL** project. Jadi
-"Masuk dengan Google" di domain baru tetap berhasil, tapi pengunjungnya mendarat di
-`admuiux.com`, dan cookie sesinya ikut menempel di host itu — di domain barunya dia
-tetap terlihat belum masuk. Buat pembeli yang login di tengah checkout, itu artinya
-dia terlempar keluar dari produk yang sedang dibeli.
-
-Kode aplikasinya sudah benar (`signInWithGoogle` memakai `currentOrigin()`, bukan
-origin yang di-hardcode) — yang kurang murni daftar di dashboard.
-
-Cara memastikan sebuah domain sudah terdaftar, tanpa membuka dashboard: minta GoTrue
-memvalidasi alamatnya lewat token yang pasti ditolak, lalu lihat ke mana dia melempar.
+Kalau baris itu hilang, login patah di **semua** domain sekaligus. Cara mengeceknya
+tanpa membuka dashboard — minta GoTrue memvalidasi alamatnya lewat token yang pasti
+ditolak, lalu lihat ke mana dia melempar:
 
 ```bash
 curl -s -o /dev/null -w '%{redirect_url}\n' \
-  "https://uxizlsoggphacyvtshub.supabase.co/auth/v1/verify?token=x&type=signup&redirect_to=https%3A%2F%2F<domain>%2Fauth%2Fcallback"
+  "https://uxizlsoggphacyvtshub.supabase.co/auth/v1/verify?token=x&type=signup&redirect_to=https%3A%2F%2Fadmuiux.com%2Fauth%2Fcallback"
 ```
 
-Balasannya memuat `/auth/callback` domain itu → terdaftar. Balasannya `admuiux.com/`
-telanjang → belum, dan login di sana akan meleset.
+Balasannya memuat `/auth/callback` → terdaftar. Balasannya `admuiux.com/` telanjang →
+sudah tidak, dan login patah di mana-mana.
+
+**Localhost dan preview `*.vercel.app`** tidak lewat jalan memutar ini: pelemparnya
+hanya mau mengirim ke host yang ada di `lp_sites`, jadi host asing malah akan
+tersangkut di domain kanonik. Keduanya tetap callback ke dirinya sendiri dan tetap
+butuh baris sendiri di daftar — untuk `http://localhost:3000/auth/callback` sudah ada.
 
 ### 4. Google Cloud Console — **biasanya tidak perlu diubah**
 

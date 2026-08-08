@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { guardSignup } from "@/lib/signup-guard";
 import { sendVerificationEmail } from "@/lib/email-verify";
 import { currentOrigin } from "@/lib/site-resolve";
+import { googleCallbackUrl } from "@/lib/oauth-return";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -95,14 +96,14 @@ export async function signOut() {
 
 export async function signInWithGoogle(formData?: FormData) {
   const supabase = await createClient();
-  // The domain the visitor is actually on, not a baked-in one: sending someone
-  // who signed in on a niche storefront back to admuiux.com would set the session
-  // cookie on the wrong host, and they would look logged out where they started.
-  const baseUrl = await currentOrigin();
   const next = (formData?.get("next") as string)?.trim();
-  const redirectTo = next && next.startsWith("/")
-    ? `${baseUrl}/auth/callback?next=${encodeURIComponent(next)}`
-    : `${baseUrl}/auth/callback`;
+  // Sending someone who signed in on a niche storefront back to admuiux.com would
+  // set the session cookie on the wrong host, and they would look logged out where
+  // they started. But naming that storefront here doesn't work either — Supabase
+  // silently swaps out a redirect_to it hasn't been told about. So the return trip
+  // goes through the one URL it does know, which bounces back. See
+  // lib/oauth-return.ts for why the code, not the session, is what travels.
+  const redirectTo = await googleCallbackUrl(next && next.startsWith("/") ? next : null);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {

@@ -62,6 +62,12 @@ Ringkasan yang paling sering dilanggar:
 
 - **Middleware** (`middleware.ts`): refresh sesi Supabase tiap request. `/panel/*` butuh login (redirect ke `/login`); user login yang buka `/login`/`/signup` diarahkan ke `/panel`.
 - **Sign-in**: email/password (`lib/actions/auth.ts: login`) atau Google OAuth (`signInWithGoogle` → `/auth/callback` `exchangeCodeForSession`).
+- **OAuth di domain non-kanonik**: Supabase hanya kenal satu redirect URL, jadi login
+  dari storefront lain kembali ke callback kanonik dengan `?sf=<host>`, lalu callback
+  itu **meneruskan `code`-nya** ke `/auth/callback` domain asal — bukan menukarnya di
+  situ, karena verifier PKCE-nya cookie milik domain asal. Aturan & penjagaannya di
+  `lib/oauth-return.ts`; `?sf=` **wajib** divalidasi terhadap `lp_sites`. Konsekuensi:
+  menambah domain tidak perlu menyentuh dashboard Supabase sama sekali.
 - **Verifikasi email**: signup **tidak** menunggu verifikasi — project Supabase pakai
   `mailer_autoconfirm=true`, jadi `auth.users.email_confirmed_at` cuma berarti "boleh
   login". Bukti kepemilikan alamat ada di `lp_profiles.email_verified_at`, diisi lewat
