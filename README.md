@@ -121,26 +121,38 @@ terlihat seperti marketplace template. Dipilih di `/panel/sites` → **Tampilan
 | `default` | Marketplace | Hero besar, grid 3 kolom, testimoni, blok founder. Katalog campuran. |
 | `pustaka` | Pustaka | Rak buku: sampul portrait 2:3, masthead editorial, header/footer sendiri, tanpa blok founder. Ebook, novel, bacaan. |
 
-**Yang dikuasai template:** halaman depan (`Home`), header/menu (`Header`), footer
-(`Footer`), dan halaman kategori (`Category`). Header & footer berlaku di **semua**
-halaman publik, bukan cuma homepage — kalau tidak, storefront berubah identitas
-begitu pengunjung klik satu link.
+**Yang dikuasai template** — badge-nya tampil live di picker `/panel/sites`,
+diturunkan dari registry sendiri jadi tidak bisa basi:
 
-**Slot opsional.** `Category` (dan slot yang ditambah nanti) boleh tidak diisi —
-jatuh ke versi Marketplace. Jadi template baru hanya menulis permukaan yang niche-nya
-benar-benar beda, bukan seluruh situs.
+| Slot | Wajib | Halaman |
+|---|---|---|
+| `Home` | ✅ | `/` |
+| `Header` | ✅ | semua halaman publik |
+| `Footer` | ✅ | semua halaman publik |
+| `Category` | opsional | `/category/[slug]` |
+| `Categories` | opsional | `/categories` |
 
-**Sengaja TIDAK per-template** (alasannya ada di `registry.tsx`):
-`/lp/[slug]` preview fullscreen · `/checkout/*` alur pembayaran · `/privacy`
-`/terms` `/refund` teks legal · `/about` `/contact` `/hiring` halaman brand induk ·
-`/read/[slug]` reader. Slot baru ditambahkan kalau ada perbedaan niche nyata, bukan
-diantisipasi.
+Slot opsional yang tidak diisi **jatuh ke versi Marketplace**, jadi tema baru cuma
+menulis permukaan yang niche-nya benar-benar beda — bukan seluruh situs.
+`defaultPalette` menandai palet yang tema itu dirancang untuknya; cuma saran di
+picker, karena palet tersimpan per domain.
+
+**Sengaja TIDAK per-template** (alasan lengkap di `registry.tsx`):
+
+| Halaman | Alasan |
+|---|---|
+| `/checkout/*` | alur pembayaran — mem-fork-nya menambah risiko, bukan identitas |
+| `/preview/[slug]`, `/read/[slug]` | permukaan baca, tanpa chrome by design |
+| `/privacy` `/terms` `/refund` | teks legal, kewajiban identik di tiap domain |
+| `/about` `/contact` `/hiring*` | halaman brand induk |
+| `/login` `/signup` | layar auth, tanpa header/footer |
 
 **Menambah template baru** — tidak perlu migration:
 
 1. Buat `lib/templates/<key>/home.tsx`, export satu komponen bertipe `TemplateProps`.
 2. Tambah entry di [`lib/templates/registry.tsx`](lib/templates/registry.tsx)
-   (`key`, `label`, `description`, `Home`, `Header`, `Footer`; `Category` opsional).
+   (`key`, `label`, `description`, `Home`, `Header`, `Footer`; `Category`,
+   `Categories`, `defaultPalette` opsional).
 
 `lp_sites.template` itu **teks bebas** yang divalidasi terhadap registry, bukan enum
 DB — jadi menambah/menghapus template tidak menyentuh skema, dan key yang tidak

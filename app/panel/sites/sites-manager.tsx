@@ -471,8 +471,9 @@ function SiteForm({
           })}
         </div>
         <p className="text-xs text-[var(--muted)]">
-          Header, footer, dan halaman produk tetap sama di semua template — yang berubah
-          halaman depannya.
+          Badge di atas = permukaan yang template ini punya sendiri;{" "}
+          <em>bawaan</em> berarti ikut tampilan Marketplace. Yang selalu sama di semua
+          template: halaman produk, checkout, reader, dan halaman legal.
         </p>
       </div>
 
