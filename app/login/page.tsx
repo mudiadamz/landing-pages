@@ -45,7 +45,7 @@ export default async function LoginPage({
             <div className="mt-2 flex justify-center">
               <SiteLogo
                 brand={brand}
-                imgClassName="h-6 w-auto max-w-[160px]"
+                imgClassName="h-8 w-auto max-w-[200px]"
                 markClassName="h-4 w-4"
                 nameClassName="text-sm text-[var(--muted)]"
               />
