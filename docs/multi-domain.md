@@ -1,8 +1,8 @@
 # Multi-domain (beberapa storefront, satu sistem)
 
 Satu deployment Vercel melayani banyak domain. Tiap domain punya nama, tagline,
-deskripsi SEO, tracking, hero, popup, custom JS sendiri — tapi **katalog produknya
-satu**. Domain memilih *kategori*, bukan produk, jadi tidak ada produk yang
+deskripsi SEO, **template tampilan**, **palet warna**, tracking, hero, popup, dan
+custom JS sendiri — tapi **katalog produknya satu**. Domain memilih *kategori*, bukan produk, jadi tidak ada produk yang
 diduplikasi dan satu produk bisa tampil di beberapa storefront.
 
 Dikelola di **`/panel/sites`** (menu Situs → Domain). Panduan langkah Vercel &
@@ -13,11 +13,12 @@ dokumen ini versi lengkapnya.
 
 | | |
 |---|---|
-| **Tabel** | `lp_sites` — `host`, `name`, `tagline`, `description`, `category_ids`, `is_canonical`, `active` |
+| **Tabel** | `lp_sites` — `host`, `name`, `tagline`, `description`, `category_ids`, `template`, `palette`, `is_canonical`, `active` |
 | **Domain utama** | `is_canonical = true`. Satu-satunya. Memegang `/panel`, callback Duitku, dan jadi fallback untuk host yang tidak dikenal (preview deployment, `*.vercel.app`, domain yang diarahkan sebelum didaftarkan). |
 | **Niche** | `category_ids` berisi kategori **induk**; sub-kategorinya ikut otomatis. **Kosong = seluruh katalog** — itu yang dipakai domain utama, bukan berarti "tidak tampilkan apa-apa". |
 | **Pengaturan** | `lp_site_settings` di-key `(site_id, key)`. Per-domain: `hero`, `site_content`, `tracking`, `promo_popup`, `custom_js`. Global (pinned ke domain utama): `panel_palette`, `role_permissions`. |
-| **Template** | `lp_sites.template` — frontend halaman depan. Teks bebas divalidasi terhadap `lib/templates/registry.tsx`, **bukan** enum DB, jadi menambah template tidak butuh migration; key tak dikenal jatuh ke `default`. Lihat README → "Template tampilan". |
+| **Template** | `lp_sites.template` — frontend storefront: halaman depan, **header/menu, footer**, halaman kategori, dan daftar kategori. Teks bebas divalidasi terhadap `lib/templates/registry.tsx`, **bukan** enum DB, jadi menambah template tidak butuh migration; key tak dikenal jatuh ke `default`. Tiga tema sekarang: `default` (Marketplace), `pustaka` (rak buku), `linkbio` (Linktree). Slot kategori **opsional** — yang kosong jatuh ke versi Marketplace, termasuk chrome-nya. Detail: README → "Template tampilan". |
+| **Palet** | `lp_sites.palette` — kunci preset dari `lib/palette.ts` (bukan hex), diinjeksi sebagai `<style>` di body `app/layout.tsx`. Menimpa 4 token mood; latar/teks/border tetap. |
 | **Nonaktif** | `active = false` → domain itu menampilkan situs utama, bukan halaman error. |
 
 ## Menambah domain

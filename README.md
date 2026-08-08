@@ -165,7 +165,7 @@ Dua aturan yang dijaga desainnya:
   sama. Template menentukan *tampilan*, bukan *data apa yang boleh dilihat* — jadi
   template baru tidak bisa mengulang bug "semua produk tampil di semua domain"
   dengan fetch caranya sendiri.
-- **Halaman produk (`/lp/[slug]`), checkout, dan reader dipakai bersama.** Alur beli
+- **Halaman produk (`/preview/[slug]`), checkout, dan reader dipakai bersama.** Alur beli
   tidak perlu dipelajari ulang per domain, dan mem-fork alur pembayaran cuma
   menambah risiko. Header & footer justru per-template (lihat di atas).
 
@@ -177,12 +177,38 @@ dirender" bisa dicek satu baris:
 curl -s https://domain-anda.com/ | grep -o 'data-template="[a-z]*"'
 ```
 
+## Preview & SEO
+
+Preview produk ada di **`/preview/[slug]`** (dulu `/lp/[slug]`).
+
+- `/lp/:slug` **redirect permanen (308)** ke `/preview/:slug`. Wajib ada: iklan
+  Instagram/Facebook yang jalan menunjuk ke URL `/lp/`, begitu juga link yang sudah
+  dibagikan, kartu OG yang sudah di-scrape, dan email konfirmasi yang sudah terkirim.
+- **Preview sengaja tidak di-index.** Halaman itu memberikan isi berbayar secara
+  gratis, dan excerpt yang ter-index adalah pintu depan scraper. Lapisannya:
+  `robots: { index: false, follow: false, nocache: true }` di halaman,
+  header `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex` untuk
+  `/preview/*`, `/lp/*` dan endpoint `/api/epub-{text,asset,cover}/*`
+  (`next.config.ts`), plus `/preview` `/lp` `/read` di Disallow `robots.txt`.
+- **Tag `og:` & `twitter:` tetap ada.** Itu kartu link, bukan indexing — tanpa itu
+  semua kreatif iklan dan link yang dibagikan tampak rusak.
+- **Produk di sitemap menunjuk `/checkout/[slug]`,** bukan preview. Rumah produk yang
+  boleh di-index adalah checkout (publik, ada judul/deskripsi/harga/ulasan);
+  `canonical` di preview juga mengarah ke sana. Kalau preview di-noindex *dan*
+  dikeluarkan dari sitemap tanpa pengganti, seluruh katalog hilang dari pencarian.
+- Bot dengan user-agent **tidak** diblokir. Daftar blokir hampir selalu memuat
+  `facebookexternalhit`, dan itu bot yang mengambil kartu preview untuk iklan
+  Facebook/Instagram — memblokirnya merusak sumber trafik utama.
+
+Analitik: `pageType()` di `lib/journey.ts` mengenali **dua** prefix (`/preview/` dan
+`/lp/`), karena `lp_page_events` menyimpan berbulan-bulan baris dengan path lama.
+
 ## Struktur
 
 ```
 app/
   page.tsx              homepage (katalog, difilter per domain)
-  lp/[slug]/            preview produk publik
+  preview/[slug]/       preview produk publik (noindex; /lp/* redirect ke sini)
   checkout/[slug]/      checkout + halaman "done"
   read/[slug]/          reader untuk pembeli
   panel/                admin & customer area  (CLAUDE.md sendiri di dalamnya)
