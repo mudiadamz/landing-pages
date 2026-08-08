@@ -197,7 +197,7 @@ html.dark .epub-surface {
 /* "3 bab · ±40 menit baca" — the book saying what it is, in one line, in the
    reading typeface. Sits in the flow above the first chapter and scrolls away. */
 .epub-identity {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-reader), Georgia, "Times New Roman", serif;
   font-size: 0.86rem;
   letter-spacing: 0.08em;
   text-transform: lowercase;
@@ -385,7 +385,7 @@ html.dark .epub-surface {
   color: var(--muted);
 }
 .reader-toc-label {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-reader), Georgia, "Times New Roman", serif;
   font-size: 0.95rem;
   line-height: 1.4;
   color: var(--foreground);
@@ -455,7 +455,12 @@ html.dark .epub-surface {
 /* Inline EPUB reader — content rendered directly in the DOM (no iframe), so
    styles are scoped here to avoid leaking into the app. */
 .epub-inline {
-  font-family: Georgia, "Times New Roman", serif;
+  /* Literata (variable, loaded in layout.tsx) with Georgia as the swap fallback —
+     same genre, so the reflow when the webfont lands is barely visible. */
+  font-family: var(--font-reader), Georgia, "Times New Roman", serif;
+  /* Firmer than 400 for long reading on a bright screen. A real weight instance,
+     not a synthesised one: Georgia could only have given 400 or 700. */
+  font-weight: 500;
   line-height: 1.75;
   overflow-wrap: break-word;
   word-wrap: break-word;

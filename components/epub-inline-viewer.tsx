@@ -9,6 +9,7 @@ import { markBookReady } from "@/lib/boot-splash";
 
 import {
   EPUB_ALIGN_EVENT,
+  EPUB_FONT_BASE_PX,
   EPUB_FONT_EVENT,
   EPUB_MARGIN_EVENT,
   clampEpubAlign,
@@ -375,7 +376,7 @@ export default function EpubInlineViewer({
         className="epub-inline mx-auto max-w-3xl"
         style={{
           textAlign: align,
-          fontSize: `${(19 * fontPct) / 100}px`,
+          fontSize: `${(EPUB_FONT_BASE_PX * fontPct) / 100}px`,
           paddingLeft: `${pad}px`,
           paddingRight: `${pad}px`,
           marginLeft: neg ? `${neg}px` : undefined,

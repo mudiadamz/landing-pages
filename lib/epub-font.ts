@@ -3,11 +3,29 @@
 // window CustomEvent plus a persisted localStorage value (so the choice sticks
 // across books/sessions). Both are SSR-safe (guarded reads).
 
-// Font size as a percent (applied via rendition.themes.fontSize).
+// Font size as a percent of EPUB_FONT_BASE_PX.
 export const EPUB_FONT_KEY = "lp-epub-font";
 export const EPUB_FONT_EVENT = "lp-epub-font";
-// 100% is the comfortable baseline (the reader applies it to an ~19px base, so
-// "100%" reads like the old ~118%).
+
+/**
+ * Base body size, in px, that 100% means.
+ *
+ * Rebased from 19px: the old 112% was the size that actually read well, so it is
+ * now the default and the readout says 100%. 19 × 1.12 = 21.28.
+ */
+export const EPUB_FONT_BASE_PX = 21.28;
+
+/** Factor between the old base and this one, used only to migrate saved choices. */
+const LEGACY_REBASE = 1.12;
+
+/**
+ * A reader who had saved "112%" means a SIZE, not a number. After the rebase that
+ * same number would render 12% bigger than what they chose, so stored values are
+ * rescaled once and stamped, rather than silently reinterpreted.
+ */
+const EPUB_FONT_SCALE_KEY = "lp-epub-font-scale";
+const EPUB_FONT_SCALE_VERSION = "2";
+
 export const EPUB_FONT_DEFAULT = 100;
 export const EPUB_FONT_MIN = 70;
 export const EPUB_FONT_MAX = 240;
@@ -21,8 +39,21 @@ export function clampEpubFont(n: number): number {
 /** Current font percent (falls back to the default on the server / when unset). */
 export function readEpubFont(): number {
   try {
-    const v = parseInt(localStorage.getItem(EPUB_FONT_KEY) ?? "", 10);
-    if (Number.isFinite(v)) return clampEpubFont(v);
+    const raw = localStorage.getItem(EPUB_FONT_KEY);
+    if (raw === null) return EPUB_FONT_DEFAULT;
+
+    const stored = parseInt(raw, 10);
+    if (!Number.isFinite(stored)) return EPUB_FONT_DEFAULT;
+
+    // Written against the 19px base? Convert to the same physical size on the new
+    // one, then stamp so it happens exactly once.
+    if (localStorage.getItem(EPUB_FONT_SCALE_KEY) !== EPUB_FONT_SCALE_VERSION) {
+      const migrated = clampEpubFont(stored / LEGACY_REBASE);
+      localStorage.setItem(EPUB_FONT_KEY, String(migrated));
+      localStorage.setItem(EPUB_FONT_SCALE_KEY, EPUB_FONT_SCALE_VERSION);
+      return migrated;
+    }
+    return clampEpubFont(stored);
   } catch {
     /* storage unavailable / SSR */
   }
@@ -34,6 +65,9 @@ export function setEpubFont(pct: number): void {
   const v = clampEpubFont(pct);
   try {
     localStorage.setItem(EPUB_FONT_KEY, String(v));
+    // Anything written now is already on the new base; stamp it so the migration
+    // above can never run over a fresh value.
+    localStorage.setItem(EPUB_FONT_SCALE_KEY, EPUB_FONT_SCALE_VERSION);
   } catch {
     /* best-effort */
   }

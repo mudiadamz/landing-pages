@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { getCustomJs, getTracking } from "@/lib/actions/site-settings";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Literata } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
@@ -27,6 +27,26 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+/**
+ * Reading face for the EPUB reader.
+ *
+ * Georgia was the previous choice and reads well, but it is a system font with only
+ * Regular and Bold — asking for a medium weight either snaps to 700 (too heavy for
+ * body copy) or gets faux-bolded, which smears the strokes. Literata is a variable
+ * serif designed for long-form screen reading (it is Google Play Books' face), so
+ * 500 is a real instance rather than a synthesised one.
+ *
+ * `display: swap` matters more here than usual: this font loads on the preview page,
+ * and a campaign already died once to seconds of blank screen. Text paints in Georgia
+ * immediately and swaps when the file lands — it never blocks the first read.
+ */
+const literata = Literata({
+  variable: "--font-reader",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 // AumanDisplay: local display face (Regular only). Set as the primary site
@@ -148,7 +168,7 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${aumanDisplay.variable} ${geistSans.variable} ${geistMono.variable} ${literata.variable} antialiased`}
       >
         {/* Per-storefront palette. In the BODY to match app/panel/layout.tsx, which
             puts the panel palette here so it lands after Next's hoisted stylesheet
