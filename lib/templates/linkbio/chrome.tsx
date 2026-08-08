@@ -1,0 +1,57 @@
+import Link from "next/link";
+import { currentSite } from "@/lib/site-resolve";
+import type { ChromeProps } from "../registry";
+
+/**
+ * Chrome for the link-in-bio theme — deliberately almost nothing.
+ *
+ * The homepage renders NO header at all (see LinkbioHome): a bio card with a nav
+ * bar above it stops being a bio card. But the secondary pages a link can lead to
+ * — checkout, legal, a category — still need a way back, so they get a single
+ * centred wordmark. Anything more would reintroduce the marketplace furniture the
+ * theme exists to avoid.
+ */
+export async function LinkbioHeader({ user }: ChromeProps) {
+  const site = await currentSite();
+  return (
+    <header className="border-b border-[var(--border)]">
+      <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-5 py-3.5">
+        <Link
+          href="/"
+          className="truncate text-sm font-semibold tracking-tight text-foreground transition-opacity hover:opacity-70"
+        >
+          {site.name}
+        </Link>
+        <Link
+          href={user ? "/panel/purchases" : "/login"}
+          className="shrink-0 text-xs text-[var(--muted)] transition-colors hover:text-foreground"
+        >
+          {user ? "Pembelian saya" : "Masuk"}
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+/** One line. A link-in-bio page has a colophon, not a sitemap. */
+export async function LinkbioFooter() {
+  const site = await currentSite();
+  return (
+    <footer className="mt-10 shrink-0 border-t border-[var(--border)]">
+      <div className="mx-auto flex max-w-xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-5 py-7 text-xs text-[var(--muted)]">
+        <span>
+          © {new Date().getFullYear()} {site.name}
+        </span>
+        <Link href="/privacy" className="transition-colors hover:text-foreground">
+          Privasi
+        </Link>
+        <Link href="/terms" className="transition-colors hover:text-foreground">
+          Ketentuan
+        </Link>
+        <Link href="/refund" className="transition-colors hover:text-foreground">
+          Pengembalian dana
+        </Link>
+      </div>
+    </footer>
+  );
+}

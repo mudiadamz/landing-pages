@@ -12,6 +12,9 @@ import { PustakaHeader } from "./pustaka/header";
 import { PustakaFooter } from "./pustaka/footer";
 import { PustakaCategory } from "./pustaka/category";
 import { PustakaCategories } from "./pustaka/categories";
+import { LinkbioHome } from "./linkbio/home";
+import { LinkbioHeader, LinkbioFooter } from "./linkbio/chrome";
+import { LinkbioCategory, LinkbioCategories } from "./linkbio/category";
 
 /**
  * Frontend templates, so storefronts in different niches don't all look like a
@@ -125,6 +128,18 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Category: PustakaCategory,
     Categories: PustakaCategories,
     defaultPalette: "ink",
+  },
+  linkbio: {
+    key: "linkbio",
+    label: "Link in bio",
+    description:
+      "Satu kolom ala Linktree: foto profil, bio, lalu tumpukan tombol. Tanpa header di halaman depan. Cocok untuk bio Instagram/TikTok — semua yang dijual jadi satu daftar yang bisa di-tap.",
+    Home: LinkbioHome,
+    Header: LinkbioHeader,
+    Footer: LinkbioFooter,
+    Category: LinkbioCategory,
+    Categories: LinkbioCategories,
+    defaultPalette: "tropical",
   },
 };
 
