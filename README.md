@@ -255,6 +255,7 @@ Singapore. Perubahan `NEXT_PUBLIC_*` butuh redeploy karena di-inline saat build.
 
 | | |
 |---|---|
+| [`docs/architecture.md`](docs/architecture.md) | **Aturan yang mengatur codebase**: batas antar lapisan, invarian, pola, jebakan struktural |
 | [`docs/multi-domain.md`](docs/multi-domain.md) | Beberapa domain, satu sistem |
 | [`docs/supabase-region-migration.md`](docs/supabase-region-migration.md) | Pindah region Supabase |
 | [`docs/ai-analytics-plan.md`](docs/ai-analytics-plan.md) | Rencana analytics |
