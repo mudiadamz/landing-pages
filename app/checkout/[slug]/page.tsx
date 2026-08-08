@@ -366,7 +366,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
               <Button
                 variant="secondary"
                 size="lg"
-                href={`/lp/${page.slug}`}
+                href={`/preview/${page.slug}`}
                 fullWidth
                 leftIcon={<EyeIcon className="w-5 h-5" />}
               >

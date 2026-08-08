@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       contentId: product.id,
       contentName: product.title,
       seconds: Math.round(seconds),
-      eventSourceUrl: `${SITE_URL}/lp/${slug}`,
+      eventSourceUrl: `${SITE_URL}/preview/${slug}`,
       clientIp: ip,
       userAgent: req.headers.get("user-agent"),
       fbp: jar.get("_fbp")?.value ?? null,

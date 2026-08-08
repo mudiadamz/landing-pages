@@ -32,7 +32,7 @@ export function Shelf({ page, priority }: { page: LandingPagePublic; priority: b
 
   return (
     <li>
-      <Link href={`/lp/${page.slug}`} className="group block">
+      <Link href={`/preview/${page.slug}`} className="group block">
         <div className="relative aspect-[2/3] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
           {cover ? (
             <Image

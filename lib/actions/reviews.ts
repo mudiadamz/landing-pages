@@ -34,7 +34,7 @@ export type PublicReview = {
    * The product being reviewed, for linking back to it.
    *
    * Null when the product is unpublished or unreadable: hidden pages 404 on
-   * /lp/[slug] for anyone but the owner, so a link there would be a dead end.
+   * /preview/[slug] for anyone but the owner, so a link there would be a dead end.
    * Callers render the review without a link in that case.
    */
   product: { slug: string; title: string } | null;

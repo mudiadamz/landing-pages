@@ -13,7 +13,18 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/panel", "/login", "/signup", "/auth", "/api"],
+      // /preview (and its old /lp alias) give paid content away for free — they are
+      // for buyers deciding, not for search. /read is the buyer's own reader.
+      disallow: [
+        "/panel",
+        "/login",
+        "/signup",
+        "/auth",
+        "/api",
+        "/preview",
+        "/lp",
+        "/read",
+      ],
     },
     sitemap: `${base}/sitemap.xml`,
   };

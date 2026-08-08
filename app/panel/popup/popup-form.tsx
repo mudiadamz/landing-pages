@@ -116,7 +116,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
             className={`mt-1 ${input}`}
             value={cfg.href}
             onChange={(e) => set("href", e.target.value)}
-            placeholder="/lp/nama-produk atau https://…"
+            placeholder="/preview/nama-produk atau https://…"
           />
         </label>
         <label className="block">

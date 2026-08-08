@@ -5,7 +5,7 @@ import { setLandingPagePublished } from "@/lib/actions/landing-pages";
 
 /**
  * Quick action to show/hide a product. Hidden products drop out of the public
- * homepage listing and 404 for visitors on /lp/[slug] & /checkout/[slug].
+ * homepage listing and 404 for visitors on /preview/[slug] & /checkout/[slug].
  */
 export function VisibilityToggle({ id, published, size = "sm" }: { id: string; published: boolean; size?: "sm" | "lg" }) {
   const [visible, setVisible] = useState(published);

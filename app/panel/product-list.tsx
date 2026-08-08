@@ -124,7 +124,7 @@ function RowActions({ p, size = "sm" }: { p: ProductRow; size?: "sm" | "lg" }) {
       <Link href={`/panel/product/${p.id}/edit`} className={linkClass} title="Edit" aria-label="Edit">
         <EditIcon className={iconClass} />
       </Link>
-      <Link href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer" className={linkClass} title="Lihat preview" aria-label="Lihat preview">
+      <Link href={`/preview/${p.slug}`} target="_blank" rel="noopener noreferrer" className={linkClass} title="Lihat preview" aria-label="Lihat preview">
         <ExternalIcon className={iconClass} />
       </Link>
       <DeleteButton id={p.id} size={size} />

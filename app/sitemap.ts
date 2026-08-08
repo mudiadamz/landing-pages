@@ -45,8 +45,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  /**
+   * Products point at CHECKOUT, not the preview.
+   *
+   * The preview is noindex now, so listing it here would be a sitemap that asks to
+   * be crawled and a page that refuses — the worst of both. But dropping products
+   * from the sitemap entirely would delete the whole catalogue from search, so the
+   * indexable home for a product is /checkout/[slug]: it is public, it carries the
+   * title, description, price and reviews, and it is where a search visitor should
+   * land anyway.
+   */
   const productRoutes: MetadataRoute.Sitemap = pages.map((p) => ({
-    url: `${base}/lp/${p.slug}`,
+    url: `${base}/checkout/${p.slug}`,
     lastModified: now,
     changeFrequency: "weekly",
     priority: 0.8,

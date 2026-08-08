@@ -1,21 +1,30 @@
+import { createElement } from "react";
 import { currentSite } from "@/lib/site-resolve";
-import { resolveTemplate, type ChromeProps } from "./registry";
+import {
+  resolveTemplate,
+  resolveCategory,
+  type ChromeProps,
+  type TemplateProps,
+  type CategoryTemplateProps,
+} from "./registry";
 
 /**
- * Header and footer for whichever template this domain runs.
+ * Dispatchers: pick the component for whichever template this domain runs, and
+ * render it.
  *
- * Deliberately DROP-IN: same props as the shared SiteHeader/SiteFooter, so every
- * public page swaps two imports and nothing else. The alternative — a shell
- * component that owns each page's outer frame — would have meant rewriting the
- * wrapper markup of twelve pages at once, which is a lot of regression risk for
- * pages that are already correct.
+ * Every one of these exists so pages can render a STATICALLY IMPORTED component
+ * instead of assigning one from a function call mid-render. The registry returns
+ * stable references, so the assignment was harmless in practice — but it reads as
+ * "new component identity each render" to both the linter and the next person, and
+ * that pattern really does cause remounts when the reference isn't stable. Keeping
+ * the lookup inside a component removes the question.
  *
- * These are server components so the template lookup happens per request. The
- * template's own chrome may be a client component (the default one is); rendering
- * a client component from here is fine, the boundary just moves inward.
+ * The header/footer pair is DROP-IN with the shared SiteHeader/SiteFooter props, so
+ * the twelve public pages swapped two imports and kept their own wrapper markup.
  *
- * Not used on /lp/[slug] or /panel: the product preview is deliberately chrome-free
- * fullscreen, and the panel has its own sidebar.
+ * Templates must not import this module: chrome -> registry -> template -> chrome
+ * would be a runtime cycle. Each template imports its own chrome directly, which it
+ * pairs with by construction anyway.
  */
 
 export async function TemplateHeader(props: ChromeProps) {
@@ -28,4 +37,24 @@ export async function TemplateFooter() {
   const site = await currentSite();
   const { Footer } = resolveTemplate(site.template);
   return <Footer />;
+}
+
+/** Homepage body + frame for this domain's template. */
+export function TemplateHomeView(props: TemplateProps) {
+  const { Home } = resolveTemplate(props.site.template);
+  return <Home {...props} />;
+}
+
+/**
+ * Category listing, falling back to the marketplace one when unslotted.
+ *
+ * createElement rather than `const C = resolve(...); <C/>`. That form reads as a
+ * component created during render — React's lint rule flags it, and rightly so in
+ * general, because a fresh identity each render remounts the subtree and drops its
+ * state. Here the identity IS stable (resolveCategory returns the same object from
+ * the module-level TEMPLATES registry), so the warning is a false positive — but
+ * createElement states the intent directly instead of arguing with the rule.
+ */
+export function TemplateCategoryView(props: CategoryTemplateProps) {
+  return createElement(resolveCategory(props.site.template), props);
 }

@@ -74,7 +74,7 @@ export type TemplateDef = {
    * adding a template never means reimplementing the whole site.
    *
    * Pages deliberately NOT slotted, because a niche has no reason to differ:
-   *   /lp/[slug]            chrome-free fullscreen preview by design
+   *   /preview/[slug]            chrome-free fullscreen preview by design
    *   /checkout/*           a payment flow; divergence here buys risk, not identity
    *   /privacy /terms /refund  legal text, identical obligations on every domain
    *   /about /contact /hiring  parent-brand pages

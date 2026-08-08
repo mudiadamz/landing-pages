@@ -14,7 +14,7 @@ export type PreviewEpubSource = {
 
 /**
  * Resolve the EPUB that a product's public preview renders, and how much of it
- * may be shown. Mirrors app/lp/[slug]/page.tsx exactly, so the
+ * may be shown. Mirrors app/preview/[slug]/page.tsx exactly, so the
  * epub-text/epub-asset endpoints can never expose a file the preview page
  * wouldn't already show.
  *

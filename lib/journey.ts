@@ -80,7 +80,11 @@ export function getSessionEntry(): JourneyEntry {
 
 export function pageType(path: string): "home" | "preview" | "checkout" | "panel" | "other" {
   if (path === "/") return "home";
-  if (path.startsWith("/lp/")) return "preview";
+  // BOTH prefixes on purpose. The preview moved from /lp/ to /preview/, and
+  // lp_page_events holds months of rows recorded under the old path — anything that
+  // re-derives a type from a stored path (campaign reports, funnels) would classify
+  // that history as "other" and quietly show a collapsed preview step.
+  if (path.startsWith("/preview/") || path.startsWith("/lp/")) return "preview";
   if (path.startsWith("/checkout/")) return "checkout";
   if (path.startsWith("/panel")) return "panel";
   return "other";

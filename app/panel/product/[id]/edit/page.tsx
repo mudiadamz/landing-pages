@@ -71,7 +71,7 @@ export default async function EditPage({
             </Button>
           )}
           <Button
-            href={`/lp/${page.slug}`}
+            href={`/preview/${page.slug}`}
             external
             variant="secondary"
             size="sm"

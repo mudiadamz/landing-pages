@@ -35,7 +35,7 @@ export type BundleOffer = {
 function ItemRow({ item, label }: { item: NextItem; label: string }) {
   return (
     <Link
-      href={`/lp/${item.slug}`}
+      href={`/preview/${item.slug}`}
       className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 transition-colors hover:border-[var(--primary)]/40"
     >
       {item.thumbnailUrl ? (

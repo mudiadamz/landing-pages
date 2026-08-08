@@ -65,7 +65,7 @@ export function Testimonials({ reviews }: { reviews: PublicReview[] }) {
                       ·
                     </span>
                     <Link
-                      href={`/lp/${t.product.slug}`}
+                      href={`/preview/${t.product.slug}`}
                       className="font-medium text-[var(--primary)] hover:underline"
                     >
                       {t.product.title}

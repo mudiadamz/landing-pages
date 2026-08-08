@@ -52,7 +52,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
 
   return (
     <article className="group rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[var(--primary)]/30 transition-all duration-300 ease-out active:scale-[0.99]">
-      <Link href={`/lp/${page.slug}`} className="block">
+      <Link href={`/preview/${page.slug}`} className="block">
         <div className="relative aspect-video bg-[var(--background)] overflow-hidden rounded-t-2xl">
           {page.featured && (
             <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm">
@@ -166,7 +166,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
           <Button
             variant="secondary"
             size="md"
-            href={`/lp/${page.slug}`}
+            href={`/preview/${page.slug}`}
             fullWidth
             className="flex-1 text-center"
           >
@@ -194,7 +194,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
           ) : (
             <Button
               size="md"
-              href={externalUrl || `/lp/${page.slug}`}
+              href={externalUrl || `/preview/${page.slug}`}
               external={!!externalUrl}
               title={externalUrl ? "Beli sekarang" : "Preview"}
               className="flex-1"

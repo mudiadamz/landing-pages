@@ -3,7 +3,7 @@ import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { getHero } from "@/lib/actions/site-settings";
 import { currentSite } from "@/lib/site-resolve";
-import { resolveTemplate } from "@/lib/templates/registry";
+import { TemplateHomeView } from "@/lib/templates/chrome";
 
 type Props = { searchParams: Promise<{ sort?: string | string[] }> };
 
@@ -32,10 +32,8 @@ export default async function Home({ searchParams }: Props) {
     getHero(),
   ]);
 
-  const { Home: TemplateHome } = resolveTemplate(site.template);
-
   return (
-    <TemplateHome
+    <TemplateHomeView
       site={site}
       pages={pages}
       categories={categories}

@@ -97,7 +97,7 @@ export function UploadForm() {
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground font-mono text-sm focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Lowercase letters, numbers, hyphens. Used in /lp/[slug]
+          Lowercase letters, numbers, hyphens. Used in /preview/[slug]
         </p>
       </div>
       <Button

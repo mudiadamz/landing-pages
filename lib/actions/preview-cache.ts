@@ -43,7 +43,7 @@ export async function purgePreviewCache(
 
   // The page itself is not edge-cached (private, no-store), but it holds the
   // token, so its render has to be redone for the new URLs to be handed out.
-  revalidatePath(`/lp/${data.slug}`);
+  revalidatePath(`/preview/${data.slug}`);
   revalidatePath(`/read/${data.slug}`);
   revalidatePath(`/panel/product/${pageId}/edit`);
 

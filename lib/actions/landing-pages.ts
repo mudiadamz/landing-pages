@@ -296,7 +296,7 @@ export async function updateLandingPageHtml(id: string, html_content: string) {
 
 /**
  * Update editable page settings: title and the preview source. The preview
- * source controls what /lp/[slug] embeds — inline HTML (default), an uploaded
+ * source controls what /preview/[slug] embeds — inline HTML (default), an uploaded
  * PDF, or an external link.
  */
 export async function updateLandingPageSettings(
@@ -354,7 +354,7 @@ export async function updateLandingPageSettings(
   revalidatePath("/panel");
   revalidatePath(`/panel/product/${id}/edit`);
   if (slug) {
-    revalidatePath(`/lp/${slug}`);
+    revalidatePath(`/preview/${slug}`);
     revalidatePath(`/checkout/${slug}`);
   }
   revalidatePath("/");
@@ -655,7 +655,7 @@ export async function setLandingPageFeatured(id: string, featured: boolean) {
 
 /**
  * Show/hide a product. Hidden pages drop out of public listings and 404 for
- * non-owners on /lp/[slug] and /checkout/[slug] (the owner can still preview).
+ * non-owners on /preview/[slug] and /checkout/[slug] (the owner can still preview).
  */
 export async function setLandingPagePublished(id: string, published: boolean) {
   const supabase = await createClient();
@@ -677,7 +677,7 @@ export async function setLandingPagePublished(id: string, published: boolean) {
   revalidatePath("/panel");
   revalidatePath("/");
   if (data?.slug) {
-    revalidatePath(`/lp/${data.slug}`);
+    revalidatePath(`/preview/${data.slug}`);
     revalidatePath(`/checkout/${data.slug}`);
   }
 }

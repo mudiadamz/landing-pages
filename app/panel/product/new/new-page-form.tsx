@@ -110,7 +110,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
         />
         <p className="mt-1 text-xs text-[var(--muted)]">
           Terisi sendiri dari judul — boleh diubah manual. Alamat produk:{" "}
-          <span className="font-mono text-foreground">/lp/{effectiveSlug || "…"}</span>
+          <span className="font-mono text-foreground">/preview/{effectiveSlug || "…"}</span>
         </p>
       </div>
       <div>

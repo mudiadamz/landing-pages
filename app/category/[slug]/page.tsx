@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { currentSite } from "@/lib/site-resolve";
-import { resolveCategory } from "@/lib/templates/registry";
+import { TemplateCategoryView } from "@/lib/templates/chrome";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -46,10 +46,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const category = categories.find((c) => c.slug === slug);
   if (!category) notFound();
 
-  const CategoryView = resolveCategory(site.template);
-
   return (
-    <CategoryView
+    <TemplateCategoryView
       site={site}
       category={category}
       pages={pages}

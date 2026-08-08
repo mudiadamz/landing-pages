@@ -54,13 +54,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     checkoutData?.long_description,
     `Preview ${page.title} — template landing page siap pakai. Lihat demo langsung sebelum beli.`,
   );
-  const url = `/lp/${slug}`;
+  const url = `/preview/${slug}`;
   const ogImage = checkoutData?.thumbnail_landscape_url || checkoutData?.thumbnail_url;
   const images = ogImage ? [ogImage] : undefined;
   return {
     title: page.title,
     description,
-    alternates: { canonical: url },
+    /**
+     * Out of the index: this page gives paid content away for free, and an indexed
+     * excerpt is a scraper's front door.
+     *
+     * openGraph and twitter stay — they are NOT search indexing. They are what
+     * renders the link card when the URL is pasted into Instagram, WhatsApp or a
+     * DM, which is exactly how this page gets traffic. Stripping them would make
+     * every shared link and every ad creative look broken.
+     *
+     * `canonical` points at the checkout page instead of itself: the product's
+     * indexable home is /checkout/[slug], so any crawler that reaches the preview
+     * anyway is told where the real page is.
+     */
+    robots: { index: false, follow: false, nocache: true },
+    alternates: { canonical: `/checkout/${slug}` },
     openGraph: { title: page.title, description, url, images, type: "website" },
     twitter: { card: "summary_large_image", title: page.title, description, images },
   };

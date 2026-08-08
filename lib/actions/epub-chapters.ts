@@ -223,7 +223,7 @@ export async function saveEpubChapter(
 
   revalidatePath(`/panel/product/${pageId}/epub`);
   revalidatePath(`/panel/product/${pageId}/edit`);
-  revalidatePath(`/lp/${t.slug}`);
+  revalidatePath(`/preview/${t.slug}`);
   revalidatePath(`/read/${t.slug}`);
   // The pages above are shells; the chapter text the reader actually renders
   // comes from these routes, and they cache their own RESPONSE keyed on the

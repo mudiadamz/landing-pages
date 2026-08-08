@@ -127,7 +127,7 @@ export default async function PanelPage() {
               return (
                 <li key={f.id}>
                   <Link
-                    href={`/lp/${f.slug}`}
+                    href={`/preview/${f.slug}`}
                     className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-[var(--background)]"
                   >
                     <span className="min-w-0 flex-1 truncate text-sm text-foreground">

@@ -157,7 +157,7 @@ export function ProductActionsMenu({
     [slug, page],
   );
 
-  const nextPath = page === "checkout" ? `/checkout/${slug}` : `/lp/${slug}`;
+  const nextPath = page === "checkout" ? `/checkout/${slug}` : `/preview/${slug}`;
 
   // In-menu like toggle (login-gated; optimistic). Count doubles as the total.
   const [liked, setLiked] = useState(likedInitial);

@@ -4,7 +4,7 @@ import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { EpubReader } from "@/components/epub-reader";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
 import { PdfPreview } from "@/components/pdf-preview";
-import { PreviewSurface } from "../../lp/preview-surface";
+import { PreviewSurface } from "../../preview/preview-surface";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ImmersiveController } from "@/components/immersive-controller";
 import { epubVersionToken } from "@/lib/epub-version";
