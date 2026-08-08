@@ -43,7 +43,15 @@ export function readEpubFont(): number {
     if (raw === null) return EPUB_FONT_DEFAULT;
 
     const stored = parseInt(raw, 10);
-    if (!Number.isFinite(stored)) return EPUB_FONT_DEFAULT;
+    if (!Number.isFinite(stored)) {
+      // Real value found in the wild: "large", left over from when this setting was
+      // a keyword rather than a percent. It already fell through to the default, but
+      // it also sat there forever and left the migration stamp unwritten. Replace it
+      // so the persisted state matches what the reader is actually showing.
+      localStorage.setItem(EPUB_FONT_KEY, String(EPUB_FONT_DEFAULT));
+      localStorage.setItem(EPUB_FONT_SCALE_KEY, EPUB_FONT_SCALE_VERSION);
+      return EPUB_FONT_DEFAULT;
+    }
 
     // Written against the 19px base? Convert to the same physical size on the new
     // one, then stamp so it happens exactly once.
