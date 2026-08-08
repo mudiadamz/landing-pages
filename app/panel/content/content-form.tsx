@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 import { updateSiteContent } from "@/lib/actions/site-settings";
 import { uploadLibraryAsset } from "@/lib/actions/assets";
 import {
@@ -55,6 +56,10 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  // Local to the card rather than the page-wide banner: an upload error belongs next
+  // to the control that caused it, and the card has a slot for exactly that.
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoMeta, setPhotoMeta] = useState<FileMeta | null>(null);
 
   function set<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
     setContent((c) => ({ ...c, [key]: value }));
@@ -67,20 +72,27 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
 
   async function handleFounderPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    // Cleared first: the card re-uses one input for "Pilih file" and "Ganti file", so a
+    // second pick of the SAME filename fires no change event unless the value is reset.
+    e.target.value = "";
     if (!file) return;
     setPhotoUploading(true);
+    setPhotoError(null);
     setStatus(null);
     try {
       const fd = new FormData();
       fd.set("file", file);
       const res = await uploadLibraryAsset(fd);
-      if ("error" in res) setStatus({ error: res.error });
-      else setFounder({ photoUrl: res.url });
+      if ("error" in res) {
+        setPhotoError(res.error);
+        return;
+      }
+      setPhotoMeta({ name: file.name, size: file.size });
+      setFounder({ photoUrl: res.url });
     } catch {
-      setStatus({ error: "Gagal mengunggah foto." });
+      setPhotoError("Gagal mengunggah foto.");
     } finally {
       setPhotoUploading(false);
-      e.target.value = "";
     }
   }
 
@@ -144,42 +156,72 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
           Kartu bukti pembuat yang tampil di homepage, halaman kategori, dan checkout.
         </p>
 
-        <div className="flex items-start gap-4">
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--background)]">
-            {content.founder.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={content.founder.photoUrl} alt="Foto founder" className="h-full w-full object-cover" />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-xl font-semibold text-[var(--muted)]">
-                {content.founder.name.trim().charAt(0).toUpperCase() || "A"}
-              </span>
+        {/* FileUploadCard, like every other file input in the panel. This one used to
+            grow its own control — a hidden <input> behind a bordered label plus a
+            separate red "Hapus foto" link — which is exactly the drift the shared card
+            exists to stop: different empty state, different remove affordance, no
+            filename, no size, and errors landing in the page-wide banner instead of
+            next to the field. */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FileUploadCard
+            label="Foto founder"
+            hint="JPG · PNG · WebP · SVG. Dirender sebagai bulatan, jadi foto persegi paling aman."
+            accept="image/jpeg,image/png,image/webp,image/svg+xml,.jpg,.jpeg,.png,.webp,.svg"
+            badge="IMG"
+            badgeClass="bg-[var(--primary)]/10 text-[var(--primary)]"
+            url={content.founder.photoUrl}
+            meta={photoMeta}
+            uploading={photoUploading}
+            error={photoError}
+            statusText="Terpasang"
+            preview={
+              <div className="mb-2 flex justify-center">
+                <div className="relative h-16 w-16 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--background)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={content.founder.photoUrl}
+                    alt="Foto founder"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+            }
+            onUpload={handleFounderPhoto}
+            onRemove={() => {
+              setPhotoMeta(null);
+              setPhotoError(null);
+              setFounder({ photoUrl: "" });
+            }}
+          />
+
+          {/* Kept alongside the upload, not replaced by it: the DEFAULT photo is
+              /pas_foto.png, a file in public/, and there is no way to reach that — or
+              any other already-hosted image — through an upload control. */}
+          <div>
+            <label className={labelCls}>Atau tempel path / URL</label>
+            <input
+              className={inputCls}
+              value={content.founder.photoUrl}
+              onChange={(e) => {
+                setPhotoMeta(null);
+                setPhotoError(null);
+                setFounder({ photoUrl: e.target.value });
+              }}
+              placeholder="/pas_foto.png atau https://…"
+            />
+            <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+              Boleh file di <span className="font-mono">public/</span> —{" "}
+              <span className="font-mono">/pas_foto.png</span> itu nilai bawaannya.
+              Dikosongkan = pakai inisial nama.
+            </p>
+            {!content.founder.photoUrl && (
+              <div className="mt-3 flex items-center gap-2 text-xs text-[var(--muted)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] text-sm font-semibold">
+                  {content.founder.name.trim().charAt(0).toUpperCase() || "A"}
+                </span>
+                Tanpa foto, kartu memakai inisial ini.
+              </div>
             )}
-          </div>
-          <div className="flex flex-1 flex-col gap-2">
-            <div>
-              <label className={labelCls}>URL foto</label>
-              <input
-                className={inputCls}
-                value={content.founder.photoUrl}
-                onChange={(e) => setFounder({ photoUrl: e.target.value })}
-                placeholder="/pas_foto.png atau URL"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-foreground hover:bg-[var(--background)]">
-                <input type="file" accept="image/*" className="hidden" onChange={handleFounderPhoto} disabled={photoUploading} />
-                {photoUploading ? "Mengunggah…" : "Unggah foto"}
-              </label>
-              {content.founder.photoUrl && (
-                <button
-                  type="button"
-                  className="text-sm text-red-600 hover:opacity-80"
-                  onClick={() => setFounder({ photoUrl: "" })}
-                >
-                  Hapus foto
-                </button>
-              )}
-            </div>
           </div>
         </div>
 
