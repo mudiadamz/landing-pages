@@ -22,7 +22,7 @@ export async function FounderCredibility({ templateCount, className = "" }: Prop
   if (!founder.enabled) return null;
 
   const publishedLabel =
-    templateCount && templateCount > 0 ? `${templateCount} template diterbitkan · ` : "";
+    templateCount && templateCount > 0 ? `${templateCount} produk diterbitkan · ` : "";
 
   return (
     <div
