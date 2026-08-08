@@ -1,0 +1,80 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { requireAdmin } from "@/lib/actions/profiles";
+import { getCategories } from "@/lib/actions/landing-pages";
+import { editingSite, listSites, isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
+import { templatePickerOptions } from "@/lib/templates/registry";
+import { paletteOptions } from "@/lib/palette";
+import { SiteSwitcher } from "@/components/site-switcher";
+import { SiteProfileForm } from "./site-profile-form";
+
+export const metadata = { title: "Identitas situs" };
+
+/**
+ * The CONTENT half of a storefront: what it is called, what it looks like, and which
+ * slice of the catalog it shows.
+ *
+ * Split out of /panel/sites, which now owns only the plumbing (hostname, Vercel, on
+ * or off). Follows the same shape as the other per-domain settings screens — hero,
+ * konten situs, tracking, popup, custom JS — so which storefront you are editing
+ * comes from `?site=<id>` and the switcher, not from the host.
+ */
+export default async function BrandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ site?: string | string[] }>;
+}) {
+  if (!(await requireAdmin())) redirect("/panel");
+
+  // Same belt-and-braces guard as /panel/sites: this screen rewrites a site row, and
+  // app/panel/layout.tsx already keeps admin routes on the canonical origin.
+  if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/branding`);
+
+  const { site: siteParam } = await searchParams;
+  const [site, sites, categories] = await Promise.all([
+    editingSite(siteParam),
+    listSites(),
+    getCategories(),
+  ]);
+  const rootCategories = categories.filter((c) => !c.parent_id);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <Link
+          href="/panel/sites"
+          className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
+        >
+          ← Domain
+        </Link>
+        <h1 className="text-xl font-semibold tracking-tight">Identitas &amp; tampilan situs</h1>
+      </div>
+
+      <SiteSwitcher sites={sites} currentId={site.id} label="Situs yang diatur" />
+
+      {/* Keyed on the site so switching resets the form to that site's values instead
+          of keeping the previous one's in component state — the same reason the hero
+          and popup forms are keyed. */}
+      <SiteProfileForm
+        key={site.id}
+        siteId={site.id}
+        host={site.host}
+        initial={{
+          name: site.name,
+          tagline: site.tagline ?? "",
+          description: site.description ?? "",
+          categoryIds: site.category_ids ?? [],
+          template: site.template || "default",
+          palette: site.palette || "forest",
+          logoUrl: site.logo_url ?? "",
+          iconUrl: site.icon_url ?? "",
+        }}
+        rootCategories={rootCategories}
+        // Serialisable view — the registry also holds components, which cannot cross
+        // the server/client boundary as props.
+        templates={templatePickerOptions()}
+        palettes={paletteOptions()}
+      />
+    </div>
+  );
+}

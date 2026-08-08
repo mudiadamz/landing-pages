@@ -5,9 +5,25 @@ deskripsi SEO, **template tampilan**, **palet warna**, tracking, hero, popup, da
 custom JS sendiri — tapi **katalog produknya satu**. Domain memilih *kategori*, bukan produk, jadi tidak ada produk yang
 diduplikasi dan satu produk bisa tampil di beberapa storefront.
 
-Dikelola di **`/panel/sites`** (menu Situs → Domain). Panduan langkah Vercel &
-Supabase dengan nilai yang sudah terisi ada di tiap baris domain di panel itu —
-dokumen ini versi lengkapnya.
+Dikelola di **dua layar**, dan pembagiannya disengaja:
+
+| Layar | Isi | Kenapa dipisah |
+|---|---|---|
+| **`/panel/sites`** (Situs → Domain) | hostname, aktif/nonaktif, status Vercel, panduan DNS & Supabase, tambah/hapus domain | Mengubah host butuh DNS, domain di Vercel, dan redirect URL di Supabase. Salah satu huruf dan storefront-nya tidak bisa diakses — atau diam-diam menampilkan situs utama selamanya. |
+| **`/panel/branding`** (Situs → Identitas situs) | nama, tagline, deskripsi SEO, logo, ikon, template, palet, niche | Semuanya copy & styling: bisa dibalik, sering diubah, tanpa menyentuh dashboard pihak ketiga. |
+
+Dulu satu form. Akibatnya: mengganti logo berarti mengirim ulang field host, dan layar
+yang dibuka untuk memperbaiki tagline terlihat sama seperti layar yang bisa mematikan
+domain. Sekarang dua `SiteInput` terpisah dengan dua server action —
+`updateSiteDomain` tidak pernah menyentuh nama/logo, `updateSiteProfile` tidak pernah
+menyentuh `host`/`active`.
+
+`/panel/branding` memakai pola per-domain yang sama dengan Hero, Konten situs,
+Tracking, Popup, dan Custom JS: domain yang diatur datang dari `?site=<id>` +
+`SiteSwitcher`, bukan dari host (panel hanya jalan di domain utama).
+
+Panduan langkah Vercel & Supabase dengan nilai yang sudah terisi ada di tiap baris
+domain di `/panel/sites` — dokumen ini versi lengkapnya.
 
 ## Konsep
 
@@ -28,16 +44,23 @@ Tiga tempat. Melewatkan satu menghasilkan gejala yang terlihat seperti bug.
 
 ### 1. Panel — `/panel/sites` → **Tambah domain**
 
+Form ini cuma minta dua hal, lalu melempar Anda ke `/panel/branding` untuk sisanya.
+Domain baru belum bisa diakses sampai DNS propagasi, jadi tidak ada gunanya menuntut
+palet lebih dulu.
+
 - **Domain** — hostname saja: `resepku.com`. Tanpa `https://`, tanpa garis miring.
   Boleh subdomain. Form membersihkan input yang salah bentuk, tapi nilai yang
   tersimpan harus sama persis dengan header `Host`, kalau tidak domain itu akan
   selamanya menampilkan situs utama — dan itu membingungkan untuk dilacak.
-- **Nama situs** — dipakai di judul tab, `og:site_name`, dan JSON-LD.
-- **Tagline** — headline pendek; masuk ke judul: `Nama — tagline`.
-- **Deskripsi (SEO)** — snippet Google, 120–160 karakter. Beda pekerjaan dari
-  tagline; jangan disamakan.
-- **Niche** — centang kategori induk. Kosong = seluruh katalog.
-- **Logo & ikon** — opsional, lihat bagian di bawah.
+- **Nama situs** — dipakai di judul tab, `og:site_name`, dan JSON-LD. Bisa diubah nanti.
+
+Sisanya di **`/panel/branding`** (Situs → Identitas situs), tiga blok:
+
+- **Identitas** — nama, **tagline** (headline pendek; masuk ke judul `Nama — tagline`),
+  **deskripsi SEO** (snippet Google, 120–160 karakter — beda pekerjaan dari tagline,
+  jangan disamakan), **logo & ikon**.
+- **Tampilan** — template dan palet.
+- **Katalog (niche)** — centang kategori induk. Kosong = seluruh katalog.
 
 ### 2. Vercel — supaya domainnya sampai ke aplikasi
 
@@ -116,7 +139,7 @@ memakai Google One Tap — sekarang tidak dipakai.
 
 ## Logo & ikon
 
-Dua upload di `/panel/sites`, bukan satu, karena bentuk dan tugasnya berbeda:
+Dua upload di `/panel/branding`, bukan satu, karena bentuk dan tugasnya berbeda:
 
 | | Logo | Ikon |
 |---|---|---|

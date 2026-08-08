@@ -121,6 +121,7 @@ tak dikenal jatuh ke default alih-alih merusak halaman.
 | Permukaan bertema baru | slot **opsional** + fallback + dispatcher | `Categories` di `registry.tsx` |
 | Pengaturan per-domain | kolom di `lp_sites` **atau** key di `lp_site_settings` | `palette` / `hero` |
 | Aset milik domain | kolom URL di `lp_sites` + upload service-role di prefix sendiri | `logo_url`, `icon_url` |
+| Layar panel untuk satu tabel | pisah per **risiko**, bukan per tabel: satu action per himpunan kolom | `updateSiteDomain` / `updateSiteProfile` |
 | Identitas domain di client component | resolve di server, kirim sebagai prop **wajib** | `brand` di `ChromeProps` |
 | Pengaturan global admin | `lp_site_settings` di-pin ke canonical site | `panel_palette` |
 | Reader baru | reader per-request, key-kan komponen dinamis | `EpubViewer key={url \|\| slug}` |

@@ -76,6 +76,9 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Situs",
     items: [
       { href: "/panel/sites", label: "Domain", icon: GlobeIcon, adminOnly: true },
+      // Directly after Domain: same object, opposite half. Domain is the plumbing
+      // (hostname, Vercel, on/off), this is the content (name, logo, template, niche).
+      { href: "/panel/branding", label: "Identitas situs", icon: BadgeIcon, adminOnly: true },
       { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
       { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
@@ -94,6 +97,18 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
 ];
+
+/* A rosette: a mark applied to a thing, which is what a storefront's identity is.
+ * Deliberately unlike GlobeIcon next to it — the two rows edit the same object and
+ * a similar glyph would make them read as one screen split in half by accident. */
+function BadgeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="9" r="6" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 14.2L7 22l5-2.5 5 2.5-1.5-7.8" />
+    </svg>
+  );
+}
 
 /* A small card layered over a larger one — the popup sitting over the preview.
  * Its own glyph rather than the TargetIcon it used to share with Tracking, which

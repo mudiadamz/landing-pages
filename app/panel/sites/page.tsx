@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
-import { getCategories } from "@/lib/actions/landing-pages";
 import { getSites, isVercelConfigured } from "@/lib/actions/sites";
 import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
@@ -18,35 +18,38 @@ export default async function SitesPage() {
   // canonical domain's own host — a guard worth having twice.
   if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/sites`);
 
-  const [sites, categories, vercelAutomated] = await Promise.all([
-    getSites(),
-    getCategories(),
-    isVercelConfigured(),
-  ]);
-  const rootCategories = categories.filter((c) => !c.parent_id);
+  const [sites, vercelAutomated] = await Promise.all([getSites(), isVercelConfigured()]);
+
+  // Labels only. This screen names a site's template and palette in its summary line
+  // but no longer lets you change them, so it has no use for the full picker options.
+  const templateLabels = Object.fromEntries(
+    templatePickerOptions().map((t) => [t.key, t.label]),
+  );
+  const paletteLabels = Object.fromEntries(paletteOptions().map((p) => [p.key, p.label]));
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Domain</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Satu sistem, beberapa storefront. Tiap domain menampilkan kategori yang Anda pilih —
-          produknya tidak diduplikasi, cukup satu katalog.
+          Hostname, status Vercel, dan aktif/nonaktif. Nama, logo, template, palet, dan
+          niche ada di{" "}
+          <Link href="/panel/branding" className="text-[var(--primary)] hover:underline">
+            Identitas situs
+          </Link>
+          .
         </p>
       </div>
 
       <SitesManager
         sites={sites}
-        rootCategories={rootCategories}
         canonicalHost={canonicalOrigin().replace(/^https?:\/\//, "")}
         // Public anyway (it ships to the browser as a NEXT_PUBLIC var) and needed
         // verbatim: it is the one redirect URI Google is configured with.
         supabaseProjectUrl={(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}
         vercelAutomated={vercelAutomated}
-        // Serialisable view — the registry also holds components, which cannot cross
-        // the server/client boundary as props.
-        templates={templatePickerOptions()}
-        palettes={paletteOptions()}
+        templateLabels={templateLabels}
+        paletteLabels={paletteLabels}
       />
     </div>
   );

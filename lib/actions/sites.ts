@@ -23,8 +23,25 @@ import {
 // an action pointing at a symbol that doesn't exist at runtime. Consumers import
 // the type from lib/site-resolve.
 
-export type SiteInput = {
+/**
+ * The two halves of a site row, deliberately kept apart.
+ *
+ * They are different jobs with different risks. Changing the HOST means DNS, a
+ * Vercel domain and a Supabase redirect URL — get it wrong and the storefront is
+ * unreachable, or silently serves the canonical site forever. Changing the NAME or
+ * the palette is copy and styling: reversible, frequent, and nobody has to touch
+ * an external dashboard.
+ *
+ * One combined form made every rename look like an infrastructure change, and made
+ * every "just fix the logo" edit re-submit the host field. Two inputs, two actions,
+ * two screens — /panel/sites for the plumbing, /panel/branding for the content.
+ */
+export type SiteDomainInput = {
   host: string;
+  active: boolean;
+};
+
+export type SiteProfileInput = {
   name: string;
   tagline: string;
   description: string;
@@ -34,7 +51,12 @@ export type SiteInput = {
   /** Public URLs from uploadSiteBrandImage. Empty string clears back to the default. */
   logoUrl: string;
   iconUrl: string;
-  active: boolean;
+};
+
+/** Creating a domain asks the minimum: where it lives and what to call it. */
+export type SiteCreateInput = {
+  host: string;
+  name: string;
 };
 
 /**
@@ -215,8 +237,8 @@ function bustSiteCaches() {
 }
 
 export async function createSite(
-  input: SiteInput,
-): Promise<{ ok: boolean; error?: string; vercel?: VercelStatus }> {
+  input: SiteCreateInput,
+): Promise<{ ok: boolean; id?: string; error?: string; vercel?: VercelStatus }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
   const host = cleanHost(input.host);
@@ -225,21 +247,20 @@ export async function createSite(
   if (!input.name.trim()) return { ok: false, error: "Nama situs tidak boleh kosong." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("lp_sites").insert({
-    host,
-    name: input.name.trim(),
-    tagline: input.tagline.trim() || null,
-    description: input.description.trim() || null,
-    category_ids: input.categoryIds,
-    template: resolveTemplate(input.template).key,
-    palette: paletteFromKey(input.palette).preset,
-    logo_url: input.logoUrl?.trim() || null,
-    icon_url: input.iconUrl?.trim() || null,
-    active: input.active,
-    // Never through this form: the canonical site is the one that owns the panel
-    // and the payment callback, and having two would be ambiguous.
-    is_canonical: false,
-  });
+  // Host and name only. Everything else takes its column default, and the admin is
+  // sent to /panel/branding to choose it — a new domain is unreachable for as long
+  // as DNS takes anyway, so there is nothing gained by demanding its palette first.
+  const { data, error } = await supabase
+    .from("lp_sites")
+    .insert({
+      host,
+      name: input.name.trim(),
+      // Never through this form: the canonical site is the one that owns the panel
+      // and the payment callback, and having two would be ambiguous.
+      is_canonical: false,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     if (error.code === "23505" || /duplicate|unique/i.test(error.message)) {
@@ -254,25 +275,76 @@ export async function createSite(
   // exists and never fatal: a Vercel failure must not throw away the site the admin
   // just described, and the panel shows the reason plus a retry button.
   const vercel = await toStatus(() => addVercelDomain(host));
-  return { ok: true, vercel };
+  return { ok: true, id: data?.id, vercel };
 }
 
-export async function updateSite(
+/**
+ * The plumbing half: where the domain lives and whether it is switched on.
+ *
+ * Nothing here is cosmetic, which is the point of it being its own action — an
+ * accidental host edit takes a live storefront off the air, so it should not ride
+ * along with a logo change.
+ */
+export async function updateSiteDomain(
   id: string,
-  input: SiteInput,
+  input: SiteDomainInput,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
   const host = cleanHost(input.host);
   const err = hostError(host);
   if (err) return { ok: false, error: err };
+
+  const supabase = await createClient();
+  const { data: row } = await supabase
+    .from("lp_sites")
+    .select("host, is_canonical")
+    .eq("id", id)
+    .maybeSingle();
+
+  // The canonical host is the Duitku callback origin and the one host in Supabase's
+  // redirect allowlist. Renaming it from a form would break payment confirmation and
+  // every Google sign-in at once, so it is refused here as well as disabled in the UI.
+  if (row?.is_canonical && host !== row.host) {
+    return {
+      ok: false,
+      error: "Domain utama tidak bisa diganti di sini — callback pembayaran & login terikat ke host ini.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("lp_sites")
+    .update({ host, active: input.active, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    if (error.code === "23505" || /duplicate|unique/i.test(error.message)) {
+      return { ok: false, error: `Domain ${host} sudah dipakai situs lain.` };
+    }
+    console.error("updateSiteDomain error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  bustSiteCaches();
+  return { ok: true };
+}
+
+/**
+ * The content half: name, tagline, search snippet, logo, icon, template, palette and
+ * which slice of the catalog this storefront shows.
+ *
+ * Never touches `host` or `active`, so saving the copy cannot take a domain down.
+ */
+export async function updateSiteProfile(
+  id: string,
+  input: SiteProfileInput,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
   if (!input.name.trim()) return { ok: false, error: "Nama situs tidak boleh kosong." };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("lp_sites")
     .update({
-      host,
       name: input.name.trim(),
       tagline: input.tagline.trim() || null,
       description: input.description.trim() || null,
@@ -281,19 +353,16 @@ export async function updateSite(
       palette: paletteFromKey(input.palette).preset,
       logo_url: input.logoUrl?.trim() || null,
       icon_url: input.iconUrl?.trim() || null,
-      active: input.active,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 
   if (error) {
-    if (error.code === "23505" || /duplicate|unique/i.test(error.message)) {
-      return { ok: false, error: `Domain ${host} sudah dipakai situs lain.` };
-    }
-    console.error("updateSite error:", error);
+    console.error("updateSiteProfile error:", error);
     return { ok: false, error: "Gagal menyimpan." };
   }
   bustSiteCaches();
+  revalidatePath("/panel/branding");
   return { ok: true };
 }
 

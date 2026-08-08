@@ -90,13 +90,17 @@ tagline, deskripsi SEO, **template tampilan**, hero, popup, tracking, dan custom
 sendiri — tapi produknya **tidak diduplikasi**: domain memilih *kategori*, jadi
 satu produk bisa tampil di beberapa storefront.
 
-Palet warna juga per domain (5 preset contrast-checked, dipilih di `/panel/sites` →
-**Warna (palet)**). Toggle terang/gelap sengaja disembunyikan di semua halaman publik;
+Palet warna juga per domain (5 preset contrast-checked, dipilih di `/panel/branding` →
+**Tampilan → Palet warna**). Toggle terang/gelap sengaja disembunyikan di semua halaman publik;
 di panel masih ada.
 
-Dikelola di **`/panel/sites`**. Menambah domain butuh tiga tempat:
+Dikelola di dua layar: **`/panel/sites`** untuk hostname/Vercel/aktif, dan
+**`/panel/branding`** untuk nama, logo, template, palet, dan niche — dipisah karena
+mengubah host butuh DNS sementara mengubah tagline tidak. Menambah domain butuh tiga
+tempat:
 
-1. **Panel** — nama, niche, pengaturan per domain.
+1. **Panel** — hostname di `/panel/sites`, lalu nama/logo/template/niche di
+   `/panel/branding`.
 2. **Vercel** — otomatis kalau `VERCEL_API_TOKEN` diset (panel memakai REST API
    Vercel dan menampilkan record DNS yang diminta); manual kalau tidak.
 3. **Supabase** — tambahkan `https://<domain>/auth/callback` ke Redirect URLs,
@@ -109,7 +113,7 @@ layar **admin** dan callback Duitku.
 
 Tiap domain juga punya **logo** (wordmark lebar, dipakai di header) dan **ikon**
 (persegi, dipakai di tab browser, install PWA, apple-touch, dan avatar Link in bio).
-Diupload di `/panel/sites`; dikosongkan = pakai lambang ADM.UIUX. Ikon raster harus
+Diupload di `/panel/branding`; dikosongkan = pakai lambang ADM.UIUX. Ikon raster harus
 persegi minimal 192×192 dan bukan JPEG — sisanya di `docs/multi-domain.md` →
 "Logo & ikon".
 
@@ -119,8 +123,7 @@ persegi minimal 192×192 dan bukan JPEG — sisanya di `docs/multi-domain.md` �
 ## Template tampilan
 
 Tiap domain memilih frontend-nya sendiri, supaya storefront niche tidak semuanya
-terlihat seperti marketplace template. Dipilih di `/panel/sites` → **Tampilan
-(template)**.
+terlihat seperti marketplace template. Dipilih di `/panel/branding` → **Tampilan**.
 
 | Key | Label | Untuk |
 |---|---|---|
@@ -128,7 +131,7 @@ terlihat seperti marketplace template. Dipilih di `/panel/sites` → **Tampilan
 | `pustaka` | Pustaka | Rak buku: sampul portrait 2:3, masthead editorial, header/footer sendiri, tanpa blok founder. Ebook, novel, bacaan. |
 | `linkbio` | Link in bio | Satu kolom ala Linktree: avatar, bio, tumpukan tombol. **Tanpa header di halaman depan.** Untuk bio Instagram/TikTok. |
 
-**Yang dikuasai template** — badge-nya tampil live di picker `/panel/sites`,
+**Yang dikuasai template** — badge-nya tampil live di picker `/panel/branding`,
 diturunkan dari registry sendiri jadi tidak bisa basi:
 
 | Slot | Wajib | Halaman |

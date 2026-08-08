@@ -2,154 +2,108 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { createSite, updateSite, deleteSite, uploadSiteBrandImage } from "@/lib/actions/sites";
-import { FileUploadCard } from "@/components/file-upload-card";
-import {
-  BRAND_ICON_ACCEPT,
-  BRAND_LOGO_ACCEPT,
-  type BrandImageKind,
-} from "@/lib/site-brand";
+import { createSite, updateSiteDomain, deleteSite } from "@/lib/actions/sites";
 // Type-only, so nothing from site-resolve (which reads headers()) reaches the client.
 import type { Site } from "@/lib/site-resolve";
-import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import { DomainSetupGuide } from "./domain-setup-guide";
 import { VercelDomainStatus } from "./vercel-domain-status";
 
-type Draft = {
-  host: string;
-  name: string;
-  tagline: string;
-  description: string;
-  categoryIds: string[];
-  template: string;
-  palette: string;
-  logoUrl: string;
-  iconUrl: string;
-  active: boolean;
-};
-
-const EMPTY: Draft = {
-  host: "",
-  name: "",
-  tagline: "",
-  description: "",
-  categoryIds: [],
-  template: "default",
-  palette: "forest",
-  logoUrl: "",
-  iconUrl: "",
-  active: true,
-};
+/**
+ * The PLUMBING half of a storefront: which hostname it answers on, whether it is
+ * switched on, and its state at Vercel.
+ *
+ * Everything cosmetic — name, tagline, search snippet, logo, icon, template,
+ * palette, niche — moved to /panel/branding. The two were one form, which meant a
+ * copy edit re-submitted the host field, and the screen you open to fix a logo
+ * looked like the screen you open to take a domain off the air. Different risk,
+ * different screen.
+ */
 
 const CARD =
   "rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5 shadow-sm";
 const INPUT =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
 
+type DomainDraft = { host: string; active: boolean };
+type NewDraft = { host: string; name: string };
+
 export function SitesManager({
   sites,
-  rootCategories,
   canonicalHost,
   supabaseProjectUrl,
   vercelAutomated,
-  templates,
-  palettes,
+  templateLabels,
+  paletteLabels,
 }: {
   sites: Site[];
-  rootCategories: LandingPageCategory[];
   canonicalHost: string;
   supabaseProjectUrl: string;
   vercelAutomated: boolean;
-  templates: {
-    key: string;
-    label: string;
-    description: string;
-    defaultPalette: string | null;
-    coverage: { label: string; own: boolean }[];
-  }[];
-  palettes: { key: string; label: string; note: string; swatch: [string, string, string] }[];
+  /** key -> label, so the summary line can name the template without the registry. */
+  templateLabels: Record<string, string>;
+  paletteLabels: Record<string, string>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   // null = nothing open, "new" = the add form, otherwise the site id being edited.
   const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [draft, setDraft] = useState<DomainDraft>({ host: "", active: true });
+  const [newDraft, setNewDraft] = useState<NewDraft>({ host: "", name: "" });
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   function openNew() {
-    setDraft(EMPTY);
+    setNewDraft({ host: "", name: "" });
     setEditing("new");
     setMessage(null);
   }
 
   function openEdit(site: Site) {
-    setDraft({
-      host: site.host,
-      name: site.name,
-      tagline: site.tagline ?? "",
-      description: site.description ?? "",
-      categoryIds: site.category_ids ?? [],
-      template: site.template || "default",
-      palette: site.palette || "forest",
-      logoUrl: site.logo_url ?? "",
-      iconUrl: site.icon_url ?? "",
-      active: site.active,
-    });
+    setDraft({ host: site.host, active: site.active });
     setEditing(site.id);
     setMessage(null);
   }
 
-  function toggleCategory(id: string) {
-    setDraft((d) => ({
-      ...d,
-      categoryIds: d.categoryIds.includes(id)
-        ? d.categoryIds.filter((x) => x !== id)
-        : [...d.categoryIds, id],
-    }));
-  }
-
-  function save() {
-    const editingId = editing;
+  function saveDomain(id: string) {
     startTransition(async () => {
-      // Branched rather than a ternary: only createSite reports a Vercel outcome, and
-      // narrowing a union of the two return shapes loses that field.
-      if (editingId === "new") {
-        const res = await createSite(draft);
-        if (!res.ok) {
-          setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
-          return;
-        }
-        // The row is saved either way; what to say depends on how far Vercel got.
-        const v = res.vercel;
-        if (!v || v.kind === "not-configured") {
-          setMessage({
-            type: "ok",
-            text: `Domain ${draft.host} ditambahkan. Jangan lupa tambahkan juga di Vercel.`,
-          });
-        } else if (v.kind === "error") {
-          setMessage({
-            type: "err",
-            text: `Domain ${draft.host} tersimpan, tapi gagal ditambahkan ke Vercel: ${v.error}`,
-          });
-        } else {
-          setMessage({
-            type: "ok",
-            text: v.state.verified
-              ? `Domain ${draft.host} ditambahkan & aktif di Vercel. Tinggal langkah Supabase.`
-              : `Domain ${draft.host} ditambahkan ke Vercel — menunggu DNS. Record-nya ada di kartu domain.`,
-          });
-        }
-      } else {
-        const res = await updateSite(editingId!, draft);
-        if (!res.ok) {
-          setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
-          return;
-        }
-        setMessage({ type: "ok", text: "Perubahan tersimpan." });
+      const res = await updateSiteDomain(id, draft);
+      if (!res.ok) {
+        setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
+        return;
       }
+      setMessage({ type: "ok", text: "Pengaturan domain tersimpan." });
       setEditing(null);
       router.refresh();
+    });
+  }
+
+  function create() {
+    startTransition(async () => {
+      const res = await createSite(newDraft);
+      if (!res.ok) {
+        setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
+        return;
+      }
+      // The row exists either way; what to say depends on how far Vercel got.
+      const v = res.vercel;
+      const vercelNote =
+        !v || v.kind === "not-configured"
+          ? "Jangan lupa tambahkan juga di Vercel."
+          : v.kind === "error"
+            ? `Gagal ditambahkan ke Vercel: ${v.error}`
+            : v.state.verified
+              ? "Aktif di Vercel."
+              : "Ditambahkan ke Vercel — menunggu DNS.";
+      setMessage({
+        type: v?.kind === "error" ? "err" : "ok",
+        text: `Domain ${newDraft.host} ditambahkan. ${vercelNote} Lanjut atur identitas & tampilannya.`,
+      });
+      setEditing(null);
+      router.refresh();
+      // Straight to the half that is still empty. A fresh domain has default name,
+      // template and palette, and leaving the admin on this screen hides that.
+      if (res.id) router.push(`/panel/branding?site=${res.id}`);
     });
   }
 
@@ -170,13 +124,6 @@ export function SitesManager({
       if (res.ok) router.refresh();
     });
   }
-
-  const nicheLabel = (site: Site) => {
-    const ids = site.category_ids ?? [];
-    if (ids.length === 0) return "Seluruh katalog";
-    const names = rootCategories.filter((c) => ids.includes(c.id)).map((c) => c.name);
-    return names.length ? names.join(", ") : "Kategori terhapus";
-  };
 
   return (
     <div className="space-y-4">
@@ -199,8 +146,8 @@ export function SitesManager({
         <p className="font-medium text-foreground">Menambah domain butuh tiga tempat</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-[var(--muted)]">
           <li>
-            <strong className="text-foreground">Di sini</strong> — nama, niche, dan pengaturan
-            per domain.
+            <strong className="text-foreground">Di sini</strong> — hostname-nya, plus
+            aktif/nonaktif.
           </li>
           <li>
             <strong className="text-foreground">Vercel</strong> — supaya domainnya sampai ke
@@ -219,8 +166,9 @@ export function SitesManager({
           </li>
         </ol>
         <p className="mt-2 text-xs text-[var(--muted)]">
-          Tiap domain di bawah punya panduan langkah 2 &amp; 3 dengan nilai yang sudah terisi —
-          buka &ldquo;Langkah di luar panel ini&rdquo;. Referensi lengkap:{" "}
+          Nama situs, tagline, deskripsi SEO, logo, ikon, template, palet, dan niche
+          diatur di <strong className="text-foreground">Identitas situs</strong> — bukan di
+          sini. Referensi lengkap:{" "}
           <span className="font-mono text-foreground">docs/multi-domain.md</span>.
         </p>
       </div>
@@ -230,22 +178,16 @@ export function SitesManager({
         {sites.map((site) => (
           <li key={site.id} className={CARD}>
             {editing === site.id ? (
-              <SiteForm
+              <DomainForm
                 draft={draft}
                 setDraft={setDraft}
-                rootCategories={rootCategories}
-                toggleCategory={toggleCategory}
-                onSave={save}
+                onSave={() => saveDomain(site.id)}
                 onCancel={() => setEditing(null)}
                 pending={pending}
                 lockHost={site.is_canonical}
-                templates={templates}
-                palettes={palettes}
               />
             ) : (
               <div className="flex flex-wrap items-start justify-between gap-3">
-                {/* The mark, so a wrong or broken upload is visible from the list
-                    instead of only after opening the form. */}
                 {(site.icon_url || site.logo_url) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -270,27 +212,30 @@ export function SitesManager({
                       </span>
                     )}
                   </div>
+                  {/* Read-only here. The link is the only way to change it, which is
+                      what keeps the two halves separate in practice and not just on
+                      paper. */}
                   <p className="mt-1 text-sm text-foreground">{site.name}</p>
-                  {site.tagline && (
-                    <p className="text-xs text-[var(--muted)]">{site.tagline}</p>
-                  )}
                   <p className="mt-1 text-xs text-[var(--muted)]">
-                    Niche: <span className="text-foreground">{nicheLabel(site)}</span>
-                    {" · "}Tampilan:{" "}
+                    Tampilan:{" "}
                     <span className="text-foreground">
-                      {templates.find((t) => t.key === (site.template || "default"))?.label ??
-                        site.template}
+                      {templateLabels[site.template || "default"] ?? site.template}
                     </span>
                     {" · "}Warna:{" "}
                     <span className="text-foreground">
-                      {palettes.find((p) => p.key === (site.palette || "forest"))?.label ??
-                        site.palette}
+                      {paletteLabels[site.palette || "forest"] ?? site.palette}
                     </span>
                   </p>
+                  <Link
+                    href={`/panel/branding?site=${site.id}`}
+                    className="mt-1.5 inline-block text-xs font-medium text-[var(--primary)] hover:underline"
+                  >
+                    Identitas &amp; tampilan →
+                  </Link>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={() => openEdit(site)}>
-                    Edit
+                    Edit domain
                   </Button>
                   {!site.is_canonical && (
                     <Button
@@ -324,19 +269,51 @@ export function SitesManager({
       {/* Add */}
       {editing === "new" ? (
         <div className={CARD}>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Domain baru</h2>
-          <SiteForm
-            draft={draft}
-            setDraft={setDraft}
-            rootCategories={rootCategories}
-            toggleCategory={toggleCategory}
-            onSave={save}
-            onCancel={() => setEditing(null)}
-            pending={pending}
-            lockHost={false}
-            templates={templates}
-            palettes={palettes}
-          />
+          <h2 className="mb-1 text-sm font-semibold text-foreground">Domain baru</h2>
+          <p className="mb-3 text-xs text-[var(--muted)]">
+            Hostname dan nama dulu. Setelah tersimpan Anda langsung dibawa ke Identitas
+            situs untuk logo, template, palet, dan niche.
+          </p>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">
+                  Domain <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newDraft.host}
+                  onChange={(e) => setNewDraft((d) => ({ ...d, host: e.target.value }))}
+                  placeholder="resepku.com"
+                  className={`${INPUT} font-mono`}
+                />
+                <p className="text-xs text-[var(--muted)]">
+                  Tanpa https:// dan tanpa garis miring. Boleh subdomain.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">
+                  Nama situs <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newDraft.name}
+                  onChange={(e) => setNewDraft((d) => ({ ...d, name: e.target.value }))}
+                  placeholder="Resepku"
+                  className={INPUT}
+                />
+                <p className="text-xs text-[var(--muted)]">Bisa diubah nanti.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setEditing(null)} disabled={pending}>
+                Batal
+              </Button>
+              <Button onClick={create} loading={pending} disabled={pending}>
+                Simpan &amp; lanjut
+              </Button>
+            </div>
+          </div>
         </div>
       ) : (
         <Button onClick={openNew} disabled={pending}>
@@ -347,351 +324,40 @@ export function SitesManager({
   );
 }
 
-/**
- * One brand image upload. Uses FileUploadCard like every other file input in the
- * panel — the card owns the empty/filled states, the name, the size, and the
- * replace/remove controls.
- *
- * Removing only clears the column. The stored object stays, deliberately: the page
- * that is still serving the old URL from cache should keep rendering rather than
- * showing a broken image for a minute.
- */
-function BrandUpload({
-  kind,
-  label,
-  hint,
-  url,
-  onChange,
-}: {
-  kind: BrandImageKind;
-  label: string;
-  hint: string;
-  url: string;
-  onChange: (url: string) => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [meta, setMeta] = useState<{ name: string; size?: number } | null>(null);
-
-  async function handle(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setError(null);
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.set("kind", kind);
-      form.set("file", file);
-      const res = await uploadSiteBrandImage(form);
-      if (!res.ok || !res.url) {
-        setError(res.error ?? "Gagal mengunggah.");
-        return;
-      }
-      setMeta({ name: file.name, size: file.size });
-      onChange(res.url);
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <FileUploadCard
-      label={label}
-      hint={hint}
-      accept={kind === "icon" ? BRAND_ICON_ACCEPT : BRAND_LOGO_ACCEPT}
-      badge={kind === "icon" ? "ICO" : "IMG"}
-      badgeClass="bg-[var(--primary)]/10 text-[var(--primary)]"
-      url={url}
-      meta={meta}
-      uploading={uploading}
-      error={error}
-      statusText="Terpasang"
-      preview={
-        url ? (
-          // Checkerboard behind it, because both of these are usually transparent and
-          // a white logo on a white card looks like a failed upload.
-          <div
-            className="mb-2 flex items-center justify-center rounded-lg border border-[var(--border)] p-3"
-            style={{
-              backgroundImage:
-                "linear-gradient(45deg,rgba(128,128,128,.18) 25%,transparent 25%,transparent 75%,rgba(128,128,128,.18) 75%),linear-gradient(45deg,rgba(128,128,128,.18) 25%,transparent 25%,transparent 75%,rgba(128,128,128,.18) 75%)",
-              backgroundSize: "12px 12px",
-              backgroundPosition: "0 0, 6px 6px",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={url}
-              alt=""
-              className={
-                kind === "icon"
-                  ? "h-12 w-12 rounded-md object-cover"
-                  : "h-10 w-auto max-w-full object-contain"
-              }
-            />
-          </div>
-        ) : undefined
-      }
-      onUpload={handle}
-      onRemove={() => {
-        setMeta(null);
-        setError(null);
-        onChange("");
-      }}
-    />
-  );
-}
-
-function SiteForm({
+/** Host + active. Two fields, because those are the two that can break reachability. */
+function DomainForm({
   draft,
   setDraft,
-  rootCategories,
-  toggleCategory,
   onSave,
   onCancel,
   pending,
   lockHost,
-  templates,
-  palettes,
 }: {
-  draft: Draft;
-  setDraft: React.Dispatch<React.SetStateAction<Draft>>;
-  rootCategories: LandingPageCategory[];
-  toggleCategory: (id: string) => void;
+  draft: DomainDraft;
+  setDraft: React.Dispatch<React.SetStateAction<DomainDraft>>;
   onSave: () => void;
   onCancel: () => void;
   pending: boolean;
   lockHost: boolean;
-  templates: {
-    key: string;
-    label: string;
-    description: string;
-    defaultPalette: string | null;
-    coverage: { label: string; own: boolean }[];
-  }[];
-  palettes: { key: string; label: string; note: string; swatch: [string, string, string] }[];
 }) {
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">
-            Domain <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={draft.host}
-            onChange={(e) => setDraft((d) => ({ ...d, host: e.target.value }))}
-            placeholder="resepku.com"
-            disabled={lockHost}
-            className={`${INPUT} font-mono disabled:opacity-60`}
-          />
-          <p className="text-xs text-[var(--muted)]">
-            {lockHost
-              ? "Domain utama tidak bisa diubah di sini."
-              : "Tanpa https:// dan tanpa garis miring. Boleh subdomain."}
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">
-            Nama situs <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={draft.name}
-            onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            placeholder="Resepku"
-            className={INPUT}
-          />
-          <p className="text-xs text-[var(--muted)]">Dipakai di judul tab, OG, dan JSON-LD.</p>
-        </div>
-      </div>
-
       <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-foreground">Tagline</label>
+        <label className="block text-sm font-medium text-foreground">
+          Domain <span className="text-red-500">*</span>
+        </label>
         <input
           type="text"
-          value={draft.tagline}
-          onChange={(e) => setDraft((d) => ({ ...d, tagline: e.target.value }))}
-          placeholder="Resep rumahan yang beneran jadi"
-          maxLength={120}
-          className={INPUT}
+          value={draft.host}
+          onChange={(e) => setDraft((d) => ({ ...d, host: e.target.value }))}
+          placeholder="resepku.com"
+          disabled={lockHost}
+          className={`${INPUT} font-mono disabled:opacity-60`}
         />
         <p className="text-xs text-[var(--muted)]">
-          Muncul di judul tab: <span className="font-mono">{draft.name || "Nama"} — tagline</span>.
-        </p>
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-foreground">Deskripsi (SEO)</label>
-        <textarea
-          value={draft.description}
-          onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-          rows={3}
-          maxLength={200}
-          placeholder="Kalimat yang tampil di hasil pencarian Google…"
-          className={`${INPUT} resize-y`}
-        />
-        <p className="text-xs text-[var(--muted)]">
-          Ini snippet di Google — beda pekerjaan dari tagline, jadi tulis 120–160 karakter.
-          Sekarang {draft.description.trim().length}. Kosong = pakai teks bawaan.
-        </p>
-      </div>
-
-      {/* Logo & icon. Two uploads, because they are different shapes with different
-          jobs — see lib/site-brand.ts. Both optional: empty means this storefront
-          wears the ADM.UIUX mark. */}
-      <div className="space-y-2">
-        <span className="block text-sm font-medium text-foreground">Logo &amp; ikon</span>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <BrandUpload
-            kind="logo"
-            label="Logo (header)"
-            hint="Lebar/wordmark, PNG · WebP · JPEG · SVG, maks 300 KB. Menggantikan tulisan nama di header."
-            url={draft.logoUrl}
-            onChange={(url) => setDraft((d) => ({ ...d, logoUrl: url }))}
-          />
-          <BrandUpload
-            kind="icon"
-            label="Ikon (favicon & PWA)"
-            hint="Persegi, minimal 192×192, PNG · WebP · SVG, maks 200 KB. Dipakai di tab browser, install ke home screen, dan avatar Link in bio."
-            url={draft.iconUrl}
-            onChange={(url) => setDraft((d) => ({ ...d, iconUrl: url }))}
-          />
-        </div>
-        <p className="text-xs text-[var(--muted)]">
-          Dikosongkan = pakai lambang ADM.UIUX. Perubahan ikon baru terlihat di tab
-          setelah browser membuang cache favicon-nya — coba hard reload atau tab baru.
-        </p>
-      </div>
-
-      {/* Template picker. Cards rather than a <select>: the choice is visual, and the
-          one-line description is what makes it decidable without previewing. */}
-      <div className="space-y-2">
-        <span className="block text-sm font-medium text-foreground">Tampilan (template)</span>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {templates.map((t) => {
-            const active = draft.template === t.key;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setDraft((d) => ({ ...d, template: t.key }))}
-                aria-pressed={active}
-                className={`rounded-xl border p-3 text-left transition-colors ${
-                  active
-                    ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
-                    : "border-[var(--border)] hover:bg-[var(--background)]"
-                }`}
-              >
-                <span className="block text-sm font-medium text-foreground">{t.label}</span>
-                <span className="mt-0.5 block text-xs text-[var(--muted)]">{t.description}</span>
-                {/* Read live from the registry, so a new theme's coverage shows up here
-                    without anyone updating this list. "bawaan" = falls back to
-                    Marketplace for that surface. */}
-                <span className="mt-2 flex flex-wrap gap-1">
-                  {t.coverage.map((c) => (
-                    <span
-                      key={c.label}
-                      className={`rounded px-1.5 py-0.5 text-[10px] ${
-                        c.own
-                          ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                          : "bg-[var(--background)] text-[var(--muted)]"
-                      }`}
-                    >
-                      {c.label}
-                      {c.own ? "" : " · bawaan"}
-                    </span>
-                  ))}
-                </span>
-                {t.defaultPalette && (
-                  <span className="mt-1.5 block text-[10px] text-[var(--muted)]">
-                    Palet disarankan:{" "}
-                    {palettes.find((p) => p.key === t.defaultPalette)?.label ?? t.defaultPalette}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-xs text-[var(--muted)]">
-          Badge di atas = permukaan yang template ini punya sendiri;{" "}
-          <em>bawaan</em> berarti ikut tampilan Marketplace. Yang selalu sama di semua
-          template: halaman produk, checkout, reader, dan halaman legal.
-        </p>
-      </div>
-
-      {/* Palette. Swatches, not names: "Jade & Mango" means nothing until you see it.
-          Only preset keys are storable — the presets had their contrast measured,
-          free-text hex fields per domain would not. */}
-      <div className="space-y-2">
-        <span className="block text-sm font-medium text-foreground">Warna (palet)</span>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {palettes.map((p) => {
-            const active = draft.palette === p.key;
-            return (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => setDraft((d) => ({ ...d, palette: p.key }))}
-                aria-pressed={active}
-                className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
-                  active
-                    ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
-                    : "border-[var(--border)] hover:bg-[var(--background)]"
-                }`}
-              >
-                <span className="mt-0.5 flex shrink-0 gap-1" aria-hidden>
-                  {p.swatch.map((c, i) => (
-                    <span
-                      key={i}
-                      className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15"
-                      style={{ background: c }}
-                    />
-                  ))}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">{p.label}</span>
-                  <span className="mt-0.5 block text-xs text-[var(--muted)]">{p.note}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-xs text-[var(--muted)]">
-          Mengubah warna aksi, tint, dan aksen. Latar, teks, dan border tetap — di
-          situlah kontrasnya, jadi tidak bisa diatur sampai rusak.
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <span className="block text-sm font-medium text-foreground">Niche (kategori)</span>
-        {rootCategories.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-3 text-xs text-[var(--muted)]">
-            Belum ada kategori induk. Buat dulu di Kategori.
-          </p>
-        ) : (
-          <div className="space-y-1 rounded-xl border border-[var(--border)] p-2">
-            {rootCategories.map((c) => (
-              <label
-                key={c.id}
-                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-[var(--background)]"
-              >
-                <input
-                  type="checkbox"
-                  checked={draft.categoryIds.includes(c.id)}
-                  onChange={() => toggleCategory(c.id)}
-                  className="h-4 w-4 shrink-0 accent-[var(--primary)]"
-                />
-                <span className="truncate text-foreground">{c.name}</span>
-              </label>
-            ))}
-          </div>
-        )}
-        <p className="text-xs text-[var(--muted)]">
-          Sub-kategori ikut otomatis. <strong className="text-foreground">Kosong</strong> = tampilkan
-          seluruh katalog (itu yang dipakai domain utama).
+          {lockHost
+            ? "Domain utama tidak bisa diubah — callback pembayaran & login terikat ke host ini."
+            : "Harus sama persis dengan header Host. Salah satu huruf dan domain ini akan menampilkan situs utama, bukan error."}
         </p>
       </div>
 
