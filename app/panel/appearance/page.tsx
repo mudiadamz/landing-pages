@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getPanelPalette } from "@/lib/actions/site-settings";
 import { AppearanceForm } from "./appearance-form";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 export const metadata = { title: "Tampilan" };
 
@@ -12,15 +12,7 @@ export default async function AppearancePage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <Link
-          href="/panel"
-          className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Tampilan</h1>
-      </div>
+      <PanelPageHeader backHref="/panel" title="Tampilan" />
 
       <p className="text-sm text-[var(--muted)]">
         Palet warna untuk <strong className="text-foreground">panel admin</strong>. Halaman

@@ -14,6 +14,7 @@ import { ProfileForm } from "./profile-form";
 import { AvatarForm } from "./avatar-form";
 import { PublisherCard } from "./publisher-card";
 import { VerifyEmailRow } from "./verify-email-row";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 /**
  * Account page: who you are, what state the account is in, and the two things
@@ -87,15 +88,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <Link
-          href="/panel"
-          className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Profil</h1>
-      </div>
+      <PanelPageHeader backHref="/panel" title="Profil" />
 
       {/* Identity header */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">

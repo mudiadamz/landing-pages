@@ -3,6 +3,7 @@ import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById, getCategories, getLandingPagesForUser } from "@/lib/actions/landing-pages";
 import { ProductEditForm } from "./product-edit-form";
+import { PanelPageHeader } from "@/components/panel-page-header";
 import { Button } from "@/components/ui/button";
 import type { PreviewType } from "@/lib/actions/landing-pages";
 
@@ -40,52 +41,49 @@ export default async function EditPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          {/* Back goes to the product list, which is where you came from — not to
-              the panel home. */}
-          <Link
-            href="/panel/products"
-            className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
-          >
-            ← Kembali
-          </Link>
-          <h1 className="text-xl font-semibold tracking-tight">Edit produk digital</h1>
-          <span className="w-fit rounded bg-[var(--background)] px-2 py-1 font-mono text-sm text-[var(--muted)]">
-            {page.slug}
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {hasEpub && (
+      {/* Back goes to the product list, which is where you came from — not to
+          the panel home. The action labels hide below sm: on a phone they cost
+          the title the width it needs, and the icon plus aria-label carries
+          them. */}
+      <PanelPageHeader
+        backHref="/panel/products"
+        title="Edit produk digital"
+        identifier={page.slug}
+        actions={
+          <>
+            {hasEpub && (
+              <Button
+                href={`/panel/product/${id}/epub`}
+                variant="secondary"
+                size="sm"
+                aria-label="Isi EPUB"
+                leftIcon={
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                }
+              >
+                <span className="hidden sm:inline">Isi EPUB</span>
+              </Button>
+            )}
             <Button
-              href={`/panel/product/${id}/epub`}
+              href={`/preview/${page.slug}`}
+              external
               variant="secondary"
               size="sm"
+              aria-label="Preview"
               leftIcon={
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
               }
             >
-              Isi EPUB
+              <span className="hidden sm:inline">Preview</span>
             </Button>
-          )}
-          <Button
-            href={`/preview/${page.slug}`}
-            external
-            variant="secondary"
-            size="sm"
-            leftIcon={
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            }
-          >
-            Preview
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <ProductEditForm
         pageId={id}

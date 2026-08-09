@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { normalizeRole, normalizePublisherStatus } from "@/lib/profile-utils";
 import { PublisherApplyForm } from "./apply-form";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 export const metadata = { title: "Jadi publisher" };
 
@@ -37,15 +37,11 @@ export default async function PublisherPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <Link
-          href="/panel/profile"
-          className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
-        >
-          ← Kembali ke profil
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Jadi publisher</h1>
-      </div>
+      <PanelPageHeader
+        backHref="/panel/profile"
+        backLabel="Kembali ke profil"
+        title="Jadi publisher"
+      />
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
         <PublisherApplyForm

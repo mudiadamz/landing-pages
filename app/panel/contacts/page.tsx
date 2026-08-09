@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getContactsForAdmin } from "@/lib/actions/contacts";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 export default async function ContactsPage() {
   const ok = await requireFeature("contacts");
@@ -23,15 +23,7 @@ export default async function ContactsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-        <Link
-          href="/panel"
-          className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Pesan kontak</h1>
-      </div>
+      <PanelPageHeader backHref="/panel" title="Pesan kontak" />
 
       <SiteScopeCoverage
         host={scope.site.host}

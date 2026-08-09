@@ -6,6 +6,7 @@ import { getProductStats } from "@/lib/actions/product-stats";
 import { getProductSummary, type Range } from "@/lib/actions/product-insights";
 import { ProductStatsView } from "@/components/product-stats-view";
 import { ProductSummaryCard } from "@/components/product-summary-card";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -31,12 +32,7 @@ export default async function ProductStatsPage({ params, searchParams }: Props) 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <Link href="/panel/products" className="text-sm text-[var(--muted)] transition-colors hover:text-foreground">
-            ← Kembali
-          </Link>
-          <h1 className="truncate text-xl font-semibold tracking-tight">Statistik — {page.title}</h1>
-        </div>
+        <PanelPageHeader backHref="/panel/products" title="Statistik — {page.title}" />
         {/* Range selector (full server navigation so the initial data is correct). */}
         <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--background)] p-1">
           {RANGES.map((r) => (

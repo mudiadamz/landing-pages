@@ -8,6 +8,7 @@ import { ExcludedIps } from "./excluded-ips";
 import { listExcludedIps, getMyIp } from "@/lib/actions/excluded-ips";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 export const metadata = { title: "Analytics" };
 
@@ -34,17 +35,12 @@ export default async function AnalyticsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <Link href="/panel" className="text-sm text-[var(--muted)] transition-colors hover:text-foreground">
-            ← Kembali
-          </Link>
-          <h1 className="text-xl font-semibold tracking-tight">Analytics</h1>
-          <span className="w-fit rounded bg-[var(--background)] px-2 py-1 text-xs text-[var(--muted)]">
-            sesi &amp; perjalanan pengunjung
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PanelPageHeader
+        backHref="/panel"
+        title="Analytics"
+        description="Sesi & perjalanan pengunjung."
+        actions={
+          <>
           {/* Popup trigger — sits inline with the range picker so the exclusion
               list costs no vertical space above the numbers. */}
           <ExcludedIps initial={excludedIps} myIp={myIp} />
@@ -63,8 +59,9 @@ export default async function AnalyticsPage({
               </Link>
             ))}
           </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <SiteScopeCoverage
         host={scope.site.host}

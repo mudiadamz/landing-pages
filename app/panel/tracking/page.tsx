@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getTracking } from "@/lib/actions/site-settings";
 import { editingSite, listSites } from "@/lib/site-resolve";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { TrackingForm } from "./tracking-form";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 export const metadata = { title: "Tracking" };
 
@@ -17,12 +17,7 @@ export default async function TrackingPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <Link href="/panel" className="text-sm text-[var(--muted)] transition-colors hover:text-foreground">
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Tracking</h1>
-      </div>
+      <PanelPageHeader backHref="/panel" title="Tracking" />
 
       <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 

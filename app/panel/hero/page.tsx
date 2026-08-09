@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getHero } from "@/lib/actions/site-settings";
 import { editingSite, listSites } from "@/lib/site-resolve";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { HeroForm } from "./hero-form";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 export default async function HeroSettingsPage() {
   const ok = await requireFeature("hero");
@@ -17,15 +17,7 @@ export default async function HeroSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-        <Link
-          href="/panel"
-          className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Hero halaman utama</h1>
-      </div>
+      <PanelPageHeader backHref="/panel" title="Hero halaman utama" />
 
       <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 

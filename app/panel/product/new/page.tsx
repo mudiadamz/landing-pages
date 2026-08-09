@@ -1,9 +1,9 @@
 import { Fragment } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { NewPageForm } from "./new-page-form";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 const STEPS = [
   { n: 1, title: "Buat produk", desc: "Judul, URL & kategori" },
@@ -20,15 +20,7 @@ export default async function NewPagePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <Link
-          href="/panel/products"
-          className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Produk digital baru</h1>
-      </div>
+      <PanelPageHeader backHref="/panel/products" title="Produk digital baru" />
 
       {/* Step indicator: step 1 (this page) → step 2 (the edit page) */}
       <ol className="flex items-center gap-3 sm:gap-4">

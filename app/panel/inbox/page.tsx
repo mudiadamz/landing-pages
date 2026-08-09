@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getReceivedEmailsForAdmin, getReceivedEmailById } from "@/lib/actions/received-emails";
 import { DeleteEmailButton } from "./delete-email-button";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 type Props = { searchParams: Promise<{ id?: string }> };
 
@@ -33,15 +34,7 @@ export default async function InboxPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-        <Link
-          href="/panel"
-          className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Email masuk (admin@admuiux.com)</h1>
-      </div>
+      <PanelPageHeader backHref="/panel" title="Email masuk (admin@admuiux.com)" />
 
       {emails.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">

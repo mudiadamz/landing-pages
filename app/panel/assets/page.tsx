@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { listLibraryAssets } from "@/lib/actions/assets";
 import { AssetsBrowser } from "./assets-browser";
+import { PanelPageHeader } from "@/components/panel-page-header";
 
 export default async function AssetsPage() {
   const canSell = await canSellProducts();
@@ -12,15 +12,7 @@ export default async function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-        <Link
-          href="/panel/products"
-          className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Assets</h1>
-      </div>
+      <PanelPageHeader backHref="/panel/products" title="Assets" />
 
       <AssetsBrowser initialAssets={assets} />
     </div>
