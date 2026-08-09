@@ -401,7 +401,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Cari email, IP, kota, campaign, produk…"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm outline-none focus:border-[var(--primary)]"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-base sm:text-sm outline-none focus:border-[var(--primary)]"
           />
           {filteredSessions.length === 0 ? (
             <Empty>Tidak ada sesi.</Empty>

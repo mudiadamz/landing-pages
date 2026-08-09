@@ -1037,7 +1037,7 @@ export function ProductEditForm({
             value={title}
             maxLength={100}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             placeholder="Judul landing page"
           />
           <p className="text-right text-xs text-[var(--muted)]">{title.length}/100</p>
@@ -1073,7 +1073,7 @@ export function ProductEditForm({
               id="category"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             >
               <option value="">— Pilih kategori —</option>
               {categories
@@ -1616,7 +1616,7 @@ export function ProductEditForm({
               type="url"
               value={previewUrl}
               onChange={(e) => setPreviewUrl(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               placeholder="https://contoh.com/halaman"
             />
           </div>
@@ -1674,7 +1674,7 @@ export function ProductEditForm({
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="300.000"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
               </div>
             </div>
@@ -1691,7 +1691,7 @@ export function ProductEditForm({
                   value={priceDiscount}
                   onChange={(e) => setPriceDiscount(e.target.value)}
                   placeholder="50.000"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-20 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-20 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
                 {discountPct != null && (
                   <span className="absolute inset-y-0 right-2 my-auto flex h-6 items-center rounded-md bg-[var(--primary)]/10 px-2 text-xs font-semibold text-[var(--primary)]">
@@ -1722,7 +1722,7 @@ export function ProductEditForm({
               id="cta-action"
               value={actionType}
               onChange={(e) => setActionType(e.target.value as "checkout" | "link" | "calendar")}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
             >
               <option value="checkout">Checkout di situs ini (default)</option>
               <option value="link">Link eksternal</option>
@@ -1748,7 +1748,7 @@ export function ProductEditForm({
                 value={purchaseLink}
                 onChange={(e) => setPurchaseLink(e.target.value)}
                 placeholder="https://contoh.com/beli"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
             </div>
           )}
@@ -1770,7 +1770,7 @@ export function ProductEditForm({
                   maxLength={200}
                   onChange={(e) => setEventTitle(e.target.value)}
                   placeholder={title || "Judul acara"}
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
                 <p className="text-xs text-[var(--muted)]">Kosongkan untuk memakai judul produk.</p>
               </div>
@@ -1784,7 +1784,7 @@ export function ProductEditForm({
                     type="datetime-local"
                     value={eventStart}
                     onChange={(e) => setEventStart(e.target.value)}
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -1796,7 +1796,7 @@ export function ProductEditForm({
                     type="datetime-local"
                     value={eventEnd}
                     onChange={(e) => setEventEnd(e.target.value)}
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                   />
                   <p className="text-xs text-[var(--muted)]">Kosong = 1 jam setelah mulai.</p>
                 </div>
@@ -1812,7 +1812,7 @@ export function ProductEditForm({
                   maxLength={300}
                   onChange={(e) => setEventLocation(e.target.value)}
                   placeholder="Alamat, atau link Zoom/Google Meet"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
               </div>
               <div className="space-y-1.5">
@@ -1826,7 +1826,7 @@ export function ProductEditForm({
                   rows={3}
                   onChange={(e) => setEventDescription(e.target.value)}
                   placeholder="Catatan acara yang tampil di kalender…"
-                  className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
               </div>
             </div>
@@ -1890,7 +1890,7 @@ export function ProductEditForm({
                 type="datetime-local"
                 value={availableAt}
                 onChange={(e) => setAvailableAt(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
               />
               <p className="text-xs text-[var(--muted)]">
                 Memakai zona waktu perangkat Anda. Sebelum waktu ini, halaman preview &amp; checkout
@@ -1928,7 +1928,7 @@ export function ProductEditForm({
               id="deliverable-type"
               value={deliverableType}
               onChange={(e) => setDeliverableType(e.target.value as DeliverableType)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
             >
               <option value="zip">ZIP — file untuk di-download pembeli</option>
               <option value="pdf">PDF — dibaca pembeli di daftar pembelian</option>
@@ -2032,7 +2032,7 @@ export function ProductEditForm({
                   value={bundleSearch}
                   onChange={(e) => setBundleSearch(e.target.value)}
                   placeholder="Cari produk…"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
                 <span className="shrink-0 text-xs text-[var(--muted)]">{bundleIds.length} dipilih</span>
               </div>
@@ -2100,7 +2100,7 @@ export function ProductEditForm({
                   value={relatedSearch}
                   onChange={(e) => setRelatedSearch(e.target.value)}
                   placeholder="Cari produk…"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
                 <span className="shrink-0 rounded-md bg-[var(--background)] px-2 py-1 text-xs text-[var(--muted)]">
                   {relatedIds.length} dipilih
@@ -2162,7 +2162,7 @@ export function ProductEditForm({
                 value={seriesSearch}
                 onChange={(e) => setSeriesSearch(e.target.value)}
                 placeholder="Cari produk…"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
 
               {/* The pick stays visible even when the search hides its row —
@@ -2391,7 +2391,7 @@ function CutPercentField({
               }
             }}
             aria-label="Persen yang disembunyikan"
-            className="w-14 border-x border-[var(--border)] bg-transparent py-2 text-center text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="w-14 border-x border-[var(--border)] bg-transparent py-2 text-center text-base sm:text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <button
             type="button"

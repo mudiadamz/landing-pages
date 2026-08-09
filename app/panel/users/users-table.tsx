@@ -144,13 +144,13 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama atau email…"
-            className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+            className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-base sm:text-sm placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           aria-label="Filter role"
         >
           <option value="all">Semua role</option>
@@ -161,7 +161,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
         <select
           value={verifyFilter}
           onChange={(e) => setVerifyFilter(e.target.value as VerifyFilter)}
-          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           aria-label="Filter verifikasi email"
         >
           <option value="all">Semua email</option>
@@ -307,7 +307,7 @@ function RoleControl({
       value={user.role}
       disabled={disabled}
       onChange={(e) => onChange(user, e.target.value as Role)}
-      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
       aria-label="Ubah role"
     >
       <option value="customer">customer</option>

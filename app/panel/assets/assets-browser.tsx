@@ -96,7 +96,7 @@ export function AssetsBrowser({ initialAssets }: { initialAssets: Asset[] }) {
               setPage(1);
             }}
             placeholder="Cari nama file…"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
         </div>
       </div>

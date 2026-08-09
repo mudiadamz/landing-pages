@@ -86,7 +86,7 @@ export function ReviewForm({
           rows={3}
           maxLength={500}
           placeholder="Ceritakan pengalamanmu menggunakan landing page ini..."
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 resize-none"
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 resize-none"
         />
         <p className="mt-1 text-xs text-[var(--muted)] text-right">{text.length}/500</p>
       </div>

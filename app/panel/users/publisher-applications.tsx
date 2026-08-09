@@ -144,7 +144,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                   rows={2}
                   maxLength={500}
                   placeholder="mis. Foto KTP buram / nama tidak sesuai / selfie tidak jelas."
-                  className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                  className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <button

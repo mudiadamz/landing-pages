@@ -42,7 +42,7 @@ export function TrackingForm({ initialGtmId, siteId }: { initialGtmId: string; s
           placeholder="GTM-XXXXXXX"
           autoComplete="off"
           spellCheck={false}
-          className="w-full max-w-xs rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          className="w-full max-w-xs rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         <p className="mt-1 text-xs text-[var(--muted)]">Kosongkan untuk menonaktifkan GTM.</p>
       </div>

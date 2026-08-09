@@ -207,7 +207,7 @@ export function ProductList({
               setPage(1);
             }}
             placeholder="Cari judul atau slug…"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
         </div>
 
@@ -219,7 +219,7 @@ export function ProductList({
               setPage(1);
             }}
             aria-label="Filter kategori"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:w-56"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:w-56"
           >
             <option value="">Semua kategori</option>
             {categories
@@ -257,7 +257,7 @@ export function ProductList({
             setPage(1);
           }}
           aria-label="Urutkan"
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:hidden"
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:hidden"
         >
           <option value="updated:desc">Terbaru diperbarui</option>
           <option value="updated:asc">Terlama diperbarui</option>

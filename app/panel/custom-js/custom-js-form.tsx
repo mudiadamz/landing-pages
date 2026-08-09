@@ -43,7 +43,7 @@ export function CustomJsForm({ initialScript, siteId }: { initialScript: string;
         onChange={(e) => setScript(e.target.value)}
         placeholder="// Contoh: console.log('hello');"
         rows={12}
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm font-mono text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+        className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-base sm:text-sm font-mono text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         spellCheck={false}
       />
       <div className="flex items-center gap-3">

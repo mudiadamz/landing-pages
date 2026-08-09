@@ -194,13 +194,13 @@ function ExcludedIpsDialog({
               value={ip}
               onChange={(e) => setIp(e.target.value)}
               placeholder="mis. 103.12.34.56"
-              className="min-w-[10rem] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="min-w-[10rem] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 font-mono text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Catatan (opsional)"
-              className="min-w-[8rem] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="min-w-[8rem] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
             <button
               type="button"
