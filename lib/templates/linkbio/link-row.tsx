@@ -29,6 +29,11 @@ export function LinkRow({ page, priority }: { page: LandingPagePublic; priority:
   const hasDiscount = !page.is_free && discount > 0 && discount < price;
   const display = hasDiscount ? discount : price;
   const thumb = page.thumbnail_url || page.thumbnail_landscape_url || "";
+  // Whatever category the product carries. A product is assigned one category,
+  // and in a hierarchy that is usually the child — so this is the sub-category
+  // when there is one, and the top-level name when the product sits directly
+  // under a parent, rather than showing nothing in that case.
+  const category = page.category?.name?.trim() || "";
 
   return (
     <li>
@@ -53,14 +58,26 @@ export function LinkRow({ page, priority }: { page: LandingPagePublic; priority:
           <span className="block truncate text-sm font-medium text-foreground">
             {page.title}
           </span>
-          <span className="mt-0.5 block text-xs text-[var(--muted)]">
-            {upcoming
-              ? "Segera"
-              : page.is_free
-                ? "Gratis · baca sekarang"
-                : hasDiscount
-                  ? `${formatPrice(display)} · dari ${formatPrice(price)}`
-                  : formatPrice(display)}
+          {/* Price, then what the thing IS. The row already says how much and
+              carries a picture; the category is the one word that tells a
+              visitor whether it is for them, and the stack has no other place
+              to put it. It shrinks before the price does — a clipped category
+              still reads, a clipped price misleads. */}
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-[var(--muted)]">
+            <span className="shrink-0">
+              {upcoming
+                ? "Segera"
+                : page.is_free
+                  ? "Gratis · baca sekarang"
+                  : hasDiscount
+                    ? `${formatPrice(display)} · dari ${formatPrice(price)}`
+                    : formatPrice(display)}
+            </span>
+            {category && (
+              <span className="min-w-0 truncate rounded-full border border-[var(--border)] px-1.5 py-px text-[11px] leading-normal">
+                {category}
+              </span>
+            )}
           </span>
         </span>
 
