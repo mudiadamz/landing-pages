@@ -14,6 +14,7 @@ import {
 } from "@/lib/profile-utils";
 import { ALL_FEATURE_KEYS, type FeatureKey } from "@/lib/features";
 import { sniffBrandImage } from "@/lib/site-brand";
+import { imageMaxBytes, imageMaxLabel } from "@/lib/upload-limit";
 import {
   DEFAULT_ROLE_PERMISSIONS,
   normalizeRolePermissions,
@@ -357,6 +358,20 @@ export async function updateProfile(formData: FormData) {
     return { ok: false, error: "Gagal menyimpan." };
   }
   return { ok: true };
+}
+
+/**
+ * The image size cap that applies to the signed-in user, for the client-side
+ * direct-to-Storage uploads that have no Server Action to check them.
+ *
+ * Server-authoritative: the browser asks rather than deciding, so the number
+ * cannot be edited in devtools. The CHECK still runs in the browser, which makes
+ * it a UI limit on that path — real enforcement for those uploads would need a
+ * Storage policy, since the file never passes through our server.
+ */
+export async function imageUploadLimit(): Promise<{ bytes: number; label: string }> {
+  const isAdmin = await requireAdmin();
+  return { bytes: imageMaxBytes(isAdmin), label: imageMaxLabel(isAdmin) };
 }
 
 /** Everyone gets 512 KB — an avatar renders at 96px at most. */

@@ -3,7 +3,14 @@
 import { unzipSync } from "fflate";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
+import {
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  imageMaxBytes,
+  imageMaxLabel,
+  isImageType,
+} from "@/lib/upload-limit";
+import { requireAdmin } from "@/lib/actions/profiles";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BUCKET = "landing-assets";
@@ -58,8 +65,14 @@ export async function uploadAsset(
   if (!allowed.includes(file.type)) {
     return { error: "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)." };
   }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return { error: `Ukuran file melebihi ${MAX_UPLOAD_LABEL}.` };
+  // Images from non-admins are held to a tighter cap than the 10 MB file limit;
+  // video keeps the file limit, where 2 MB would be a couple of seconds.
+  const image = isImageType(file.type);
+  const isAdmin = image ? await requireAdmin() : false;
+  if (file.size > (image ? imageMaxBytes(isAdmin) : MAX_UPLOAD_BYTES)) {
+    return {
+      error: `Ukuran file melebihi ${image ? imageMaxLabel(isAdmin) : MAX_UPLOAD_LABEL}.`,
+    };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -104,6 +117,14 @@ export async function uploadLibraryAsset(
   ];
   if (!allowed.includes(file.type)) {
     return { error: "File type not allowed. Use images (jpg, png, gif, webp, svg) or videos (mp4, webm, ogg)." };
+  }
+  // This path had no size check at all — the library accepted a 40 MB photo.
+  const image = isImageType(file.type);
+  const isAdmin = image ? await requireAdmin() : false;
+  if (file.size > (image ? imageMaxBytes(isAdmin) : MAX_UPLOAD_BYTES)) {
+    return {
+      error: `Ukuran file melebihi ${image ? imageMaxLabel(isAdmin) : MAX_UPLOAD_LABEL}.`,
+    };
   }
 
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");

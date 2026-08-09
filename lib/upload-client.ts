@@ -12,6 +12,7 @@
  */
 import { createClient } from "@/lib/supabase/client";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
+import { imageUploadLimit } from "@/lib/actions/profiles";
 
 const ASSETS = "landing-assets";
 const DOWNLOADS = "landing-downloads";
@@ -108,9 +109,13 @@ export async function uploadPreviewEpubClient(pageId: string, file: File, previo
   return uploadPublic(pageId, file, "preview", "application/epub+zip", previousUrl);
 }
 export async function uploadThumbnailClient(pageId: string, file: File, previousUrl?: string | null): Promise<UploadResult> {
-  const big = tooBig(file);
-  if (big) return { error: big };
   if (file.type && !file.type.startsWith("image/")) return { error: "File harus berupa gambar." };
+  // The cap comes from the server, not from a constant compiled into the bundle:
+  // it depends on whether this user is an admin, and that is not the browser's
+  // to decide. The file itself goes straight to Storage, so this check is the
+  // UI's — a Storage policy would be what stops a crafted request.
+  const { bytes, label } = await imageUploadLimit();
+  if (file.size > bytes) return { error: `Ukuran file melebihi ${label}.` };
   return uploadPublic(pageId, file, "", file.type || "application/octet-stream", previousUrl);
 }
 
