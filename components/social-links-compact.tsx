@@ -32,7 +32,7 @@ export function SocialLinksCompact({
       className={`flex flex-wrap items-center justify-center gap-2 ${className}`}
       aria-label="Tautan media sosial"
     >
-      {visible.map(({ name, href, icon }) => (
+      {visible.map(({ name, href, icon, brand, brandDark }) => (
         <li key={name}>
           <a
             href={href}
@@ -42,7 +42,11 @@ export function SocialLinksCompact({
             // a screen reader nothing.
             aria-label={name}
             title={name}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/15 active:scale-[0.96]"
+            // Each network's own colour, via a variable so the dark value can
+            // ride the same class — an inline style cannot carry a dark variant,
+            // and Threads and TikTok are black marks that vanish on a dark page.
+            style={{ "--sc": brand, "--sc-dark": brandDark } as React.CSSProperties}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[var(--sc)] transition-colors hover:bg-[var(--primary)]/15 active:scale-[0.96] dark:text-[var(--sc-dark)]"
           >
             {icon}
           </a>
