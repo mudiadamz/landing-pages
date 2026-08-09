@@ -103,7 +103,7 @@ export function SearchResults({ pages }: { pages: LandingPagePublic[] }) {
     <>
       {open && (
         <div className="mt-5">
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--accent-subtle)] px-3 py-2.5 transition-colors focus-within:bg-[var(--primary)]/15">
+          <div className="flex items-center gap-2 rounded-xl bg-[var(--card)] px-3 py-2.5 transition-colors focus-within:bg-[var(--accent-subtle)]">
             <SearchIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
             <input
               ref={inputRef}

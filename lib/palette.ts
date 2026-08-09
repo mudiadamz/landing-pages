@@ -1,10 +1,14 @@
 /* Panel colour palette, editable at /panel/appearance.
  *
- * Only four tokens are configurable, deliberately. Backgrounds, text and
- * borders stay fixed: those carry the contrast the whole panel is legible by,
- * and handing them to a colour picker is how an admin locks themselves out of
- * reading their own dashboard. What's left is the part that actually sets the
- * mood — the action colour, its tint, and one accent.
+ * Only the mood tokens are configurable, deliberately. Backgrounds, text and
+ * borders stay fixed here: those carry the contrast the whole panel is legible
+ * by, and handing them to a colour picker is how an admin locks themselves out
+ * of reading their own dashboard. What's left is the part that actually sets the
+ * mood — the action colour, its tint, and two accents.
+ *
+ * A TEMPLATE may still declare its own page/card surfaces (see registry
+ * `surfaces`); that is a fixed, contrast-checked pair chosen by whoever wrote
+ * the template, not a field anyone types into.
  *
  * Framework-free (like hero-config) so the client form and the server layout can
  * both import it.
@@ -20,6 +24,16 @@ export type PaletteTokens = {
   /** The one non-semantic accent, for marks and highlights. */
   accent: string;
   accentDark: string;
+  /**
+   * A second accent, so a palette can carry three colours rather than two.
+   *
+   * Two colours forces every secondary surface to be a tint of the primary,
+   * which is why the flat templates read as one hue with the volume changed.
+   * This one is for the surfaces that are neither the action nor the highlight:
+   * a chip, a tag, an alternating row.
+   */
+  secondary: string;
+  secondaryDark: string;
 };
 
 export type PalettePreset = {
@@ -44,6 +58,7 @@ export const PALETTE_PRESETS: PalettePreset[] = [
       primary: "#1a5f4a", primaryDark: "#3d8b6e",
       subtle: "#e8f0ee", subtleDark: "#1a2e26",
       accent: "#e8a87c", accentDark: "#d4956a",
+      secondary: "#c2410c", secondaryDark: "#fb923c",
     },
   },
   {
@@ -54,6 +69,7 @@ export const PALETTE_PRESETS: PalettePreset[] = [
       primary: "#0b7a55", primaryDark: "#25c07f",
       subtle: "#e6f4ee", subtleDark: "#102a20",
       accent: "#e2600f", accentDark: "#ff9642",
+      secondary: "#0369a1", secondaryDark: "#38bdf8",
     },
   },
   {
@@ -64,6 +80,7 @@ export const PALETTE_PRESETS: PalettePreset[] = [
       primary: "#3b3ba8", primaryDark: "#8b8bf0",
       subtle: "#ecebfa", subtleDark: "#1c1c33",
       accent: "#f5c518", accentDark: "#ffd84d",
+      secondary: "#be185d", secondaryDark: "#f472b6",
     },
   },
   {
@@ -74,6 +91,7 @@ export const PALETTE_PRESETS: PalettePreset[] = [
       primary: "#c93a35", primaryDark: "#ff7a72",
       subtle: "#fdeceb", subtleDark: "#34191a",
       accent: "#0d8a8a", accentDark: "#2dd4d4",
+      secondary: "#7c3aed", secondaryDark: "#a78bfa",
     },
   },
   {
@@ -88,6 +106,7 @@ export const PALETTE_PRESETS: PalettePreset[] = [
       // A different hue from the primary on purpose: two neighbouring teals read
       // as one colour that failed, and the accent is what makes it lively.
       accent: "#7c3aed", accentDark: "#a78bfa",
+      secondary: "#e11d48", secondaryDark: "#fb7185",
     },
   },
   {
@@ -98,6 +117,7 @@ export const PALETTE_PRESETS: PalettePreset[] = [
       primary: "#6d3ff2", primaryDark: "#a78bfa",
       subtle: "#f0ebfe", subtleDark: "#211a33",
       accent: "#e0453f", accentDark: "#ff7a72",
+      secondary: "#0d9488", secondaryDark: "#2dd4bf",
     },
   },
 ];
@@ -133,6 +153,8 @@ export function normalizeTokens(value: unknown): PaletteTokens {
     subtleDark: hex(v.subtleDark, DEFAULT_TOKENS.subtleDark),
     accent: hex(v.accent, DEFAULT_TOKENS.accent),
     accentDark: hex(v.accentDark, DEFAULT_TOKENS.accentDark),
+    secondary: hex(v.secondary, DEFAULT_TOKENS.secondary),
+    secondaryDark: hex(v.secondaryDark, DEFAULT_TOKENS.secondaryDark),
   };
 }
 
@@ -159,10 +181,28 @@ export function paletteCss(config: PaletteConfig): string {
   const t = normalizeTokens(config.tokens);
   return (
     `:root{--primary:${t.primary};--ring:${t.primary};` +
-    `--accent-subtle:${t.subtle};--accent:${t.accent}}` +
+    `--accent-subtle:${t.subtle};--accent:${t.accent};--secondary:${t.secondary}}` +
     `html.dark{--primary:${t.primaryDark};--ring:${t.primaryDark};` +
-    `--accent-subtle:${t.subtleDark};--accent:${t.accentDark}}`
+    `--accent-subtle:${t.subtleDark};--accent:${t.accentDark};--secondary:${t.secondaryDark}}`
   );
+}
+
+/**
+ * Page and card colours a template may set for itself.
+ *
+ * Separate from the palette on purpose: the palette is per-domain and picked in
+ * the panel, while these belong to the template's design and are checked once by
+ * whoever wrote it. Light values only — a template that wants its own surfaces
+ * is light-only in practice, and globals.css keeps `html.dark` more specific, so
+ * dark mode is unaffected either way.
+ */
+export type Surfaces = { background: string; card: string };
+
+/** What the panel re-asserts, so a storefront's surfaces never reach the admin UI. */
+export const PANEL_SURFACES: Surfaces = { background: "#fdfcfb", card: "#ffffff" };
+
+export function surfaceCss(s: Surfaces): string {
+  return `:root{--background:${hex(s.background, PANEL_SURFACES.background)};--card:${hex(s.card, PANEL_SURFACES.card)}}`;
 }
 
 /**

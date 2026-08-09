@@ -30,6 +30,8 @@ const FIELDS: { key: keyof PaletteTokens; label: string }[] = [
   { key: "subtleDark", label: "Latar aktif (gelap)" },
   { key: "accent", label: "Aksen (terang)" },
   { key: "accentDark", label: "Aksen (gelap)" },
+  { key: "secondary", label: "Aksen kedua (terang)" },
+  { key: "secondaryDark", label: "Aksen kedua (gelap)" },
 ];
 
 export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
@@ -90,6 +92,7 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
                 <Swatch color={p.tokens.primary} />
                 <Swatch color={p.tokens.subtle} />
                 <Swatch color={p.tokens.accent} />
+                <Swatch color={p.tokens.secondary} />
                 <Swatch color={p.tokens.primaryDark} />
                 <span className="ml-auto text-xs font-medium text-[var(--primary)]">
                   {active ? "Dipakai" : ""}

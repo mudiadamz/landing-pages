@@ -18,7 +18,7 @@ import { GtmScripts } from "@/components/gtm-scripts";
 import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
 import { currentOrigin, currentSite, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
-import { paletteCss, paletteFromKey } from "@/lib/palette";
+import { paletteCss, paletteFromKey, surfaceCss } from "@/lib/palette";
 import { DEFAULT_APPLE_ICON, DEFAULT_ICON } from "@/lib/site-brand";
 
 const geistSans = Geist({
@@ -142,7 +142,8 @@ export default async function RootLayout({
   // Some templates ship light only. The theme cookie is shared across storefronts
   // (one browser, one cookie), so without this a visitor who turned dark on
   // another domain would arrive here to a half-dark page with no way back.
-  const lightOnly = !!resolveTemplate(site.template).lightOnly;
+  const template = resolveTemplate(site.template);
+  const lightOnly = !!template.lightOnly;
   const isDark = themeCookie?.value === "dark" && !lightOnly;
 
   return (
@@ -192,7 +193,13 @@ export default async function RootLayout({
             fixed, which is where the contrast lives. */}
         <style
           id="site-palette"
-          dangerouslySetInnerHTML={{ __html: paletteCss(paletteFromKey(site.palette)) }}
+          dangerouslySetInnerHTML={{
+            __html:
+              paletteCss(paletteFromKey(site.palette)) +
+              // The template's own page/card colours, after the palette so they
+              // win. The panel re-asserts its own inside this one.
+              (template.surfaces ? surfaceCss(template.surfaces) : ""),
+          }}
         />
         <JsonLd
           data={{

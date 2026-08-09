@@ -3,6 +3,7 @@ import type { HeroConfig } from "@/lib/hero-config";
 import type { PublicReview } from "@/lib/actions/reviews";
 import type { Site } from "@/lib/site-resolve";
 import type { SiteBrand } from "@/lib/site-brand";
+import type { Surfaces } from "@/lib/palette";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
@@ -124,6 +125,15 @@ export type TemplateDef = {
    */
   lightOnly?: boolean;
   /**
+   * Page and card colours this template paints itself on, overriding the fixed
+   * pair in globals.css. A light-grey page with white cards separates the two
+   * without a border, which is what lets a flat design have layers at all.
+   *
+   * The panel re-asserts its own (PANEL_SURFACES), so a storefront's choice
+   * never leaks into the admin UI on the same domain.
+   */
+  surfaces?: Surfaces;
+  /**
    * Palette preset this theme was designed against. Only a SUGGESTION shown in the
    * panel — the palette is stored per domain, so two sites on one theme can differ,
    * and an admin's explicit choice is never overwritten.
@@ -170,6 +180,9 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Category: LinkbioCategory,
     Categories: LinkbioCategories,
     lightOnly: true,
+    // Cool grey page, white cards. The rows stop being tinted blocks and become
+    // real surfaces, which is what "flat" needs to avoid reading as one wash.
+    surfaces: { background: "#eef2f6", card: "#ffffff" },
     defaultPalette: "breeze",
   },
 };

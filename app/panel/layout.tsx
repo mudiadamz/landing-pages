@@ -6,7 +6,7 @@ import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { getPanelPalette } from "@/lib/actions/site-settings";
-import { paletteCss } from "@/lib/palette";
+import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
 import { PanelSidebar } from "@/components/panel-sidebar";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
@@ -106,7 +106,13 @@ export default async function PanelLayout({
       {/* Panel palette (/panel/appearance). Rendered here so it exists only on
           panel routes, but the selectors are :root / html.dark — dialogs portal
           to document.body, and a wrapper class would leave them uncoloured. */}
-      <style dangerouslySetInnerHTML={{ __html: paletteCss(palette) }} />
+      {/* Panel palette, plus its OWN surfaces re-asserted. A storefront template
+          may repaint --background/--card at :root (see registry `surfaces`), and
+          on the canonical domain that style is on this page too — the admin UI
+          should not inherit a storefront's page colour. */}
+      <style
+        dangerouslySetInnerHTML={{ __html: paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
+      />
       <PanelSidebar
         role={profile?.role}
         canSell={!!canSell}
