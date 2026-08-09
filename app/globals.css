@@ -250,10 +250,21 @@ html.dark .epub-surface {
   pointer-events: none;
 }
 /* In the inline reader the readout is the door to the chapter list, so it takes
-   taps — and needs a target big enough to hit one-handed. */
+   taps — and needs a target big enough to hit one-handed.
+
+   Sized to the 44px minimum touch target rather than to its own text: at the old
+   0.35rem/0.7rem it measured about 26px tall, a thumb-sized miss in the corner of
+   a screen someone is reading one-handed. The type grows with it, since a pill
+   that big around 11px text reads as padding rather than as a control. */
 .reader-place.is-button {
   pointer-events: auto;
-  padding: 0.35rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 64px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
   cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   transition: opacity 300ms ease-out, color 150ms ease-out, transform 120ms ease-out;

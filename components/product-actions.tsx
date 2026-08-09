@@ -497,30 +497,38 @@ export function ProductActionsMenu({
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <AlignIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
           <span className="text-sm text-foreground">Perataan</span>
+          {/* Icons, not words: the two labels ("Rata kanan-kiri" / "Rata kiri")
+              were longer than the row had space for, and the shape of the lines
+              says which is which faster than reading either does. The words move
+              to aria-label, so the control still announces itself. */}
           <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5">
             <button
               type="button"
               onClick={() => onAlign("justify")}
               aria-pressed={align === "justify"}
-              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              aria-label="Rata kanan-kiri"
+              title="Rata kanan-kiri"
+              className={`rounded-md p-2 transition-colors ${
                 align === "justify"
                   ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              Rata kanan-kiri
+              <AlignJustifyIcon className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => onAlign("left")}
               aria-pressed={align === "left"}
-              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              aria-label="Rata kiri"
+              title="Rata kiri"
+              className={`rounded-md p-2 transition-colors ${
                 align === "left"
                   ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
                   : "text-[var(--muted)] hover:text-foreground"
               }`}
             >
-              Rata kiri
+              <AlignLeftIcon className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -904,6 +912,25 @@ function AlignIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
       <path strokeLinecap="round" d="M4 6h16M4 10h16M4 14h16M4 18h10" />
+    </svg>
+  );
+}
+
+/* The two alignment choices, drawn as the shape each produces: every line
+   reaching both edges, versus a ragged right. They differ only in the last line,
+   which is exactly the difference being chosen. */
+function AlignJustifyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+    </svg>
+  );
+}
+
+function AlignLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" d="M4 6h16M4 10h11M4 14h16M4 18h8" />
     </svg>
   );
 }

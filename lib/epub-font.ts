@@ -10,13 +10,22 @@ export const EPUB_FONT_EVENT = "lp-epub-font";
 /**
  * Base body size, in px, that 100% means.
  *
- * Rebased from 19px: the old 112% was the size that actually read well, so it is
- * now the default and the readout says 100%. 19 × 1.12 = 21.28.
+ * Rebased twice, both times for the same reason: the size people actually read
+ * at should be the one the readout calls 100%, so nobody has to discover it.
+ * 19 → 21.28 (×1.12), then 21.28 → 26.6 (×1.25).
  */
-export const EPUB_FONT_BASE_PX = 21.28;
+export const EPUB_FONT_BASE_PX = 26.6;
 
-/** Factor between the old base and this one, used only to migrate saved choices. */
-const LEGACY_REBASE = 1.12;
+/**
+ * Distance from each older base to the current one, used only to migrate saved
+ * choices. Which one applies is decided by the stamp: a value stamped "2" was
+ * already rebased onto 21.28 and has only the second hop left, while an unstamped
+ * one predates both and has to travel the whole way (1.12 × 1.25 = 1.4).
+ *
+ * Applying a single factor to both would shrink the stamped values twice.
+ */
+const REBASE_FROM_19 = 1.4;
+const REBASE_FROM_21 = 1.25;
 
 /**
  * A reader who had saved "112%" means a SIZE, not a number. After the rebase that
@@ -24,10 +33,21 @@ const LEGACY_REBASE = 1.12;
  * rescaled once and stamped, rather than silently reinterpreted.
  */
 const EPUB_FONT_SCALE_KEY = "lp-epub-font-scale";
-const EPUB_FONT_SCALE_VERSION = "2";
+const EPUB_FONT_SCALE_VERSION = "3";
+/** The stamp written by the previous rebase — its values sit on the 21.28 base. */
+const EPUB_FONT_SCALE_V2 = "2";
 
 export const EPUB_FONT_DEFAULT = 100;
-export const EPUB_FONT_MIN = 70;
+/**
+ * The floor is rebased with the base, not left at 70.
+ *
+ * Percentages are relative, so raising the base shrinks what the old numbers can
+ * reach: 70% of 26.6 is 18.6px, well above the 14.9px the old 70% gave. Left
+ * alone, the smallest text in the reader would silently become bigger than it
+ * was, and the migration would clamp anyone who had chosen it back up — taking
+ * away a size they had picked deliberately. 56% of 26.6 is that same 14.9px.
+ */
+export const EPUB_FONT_MIN = 56;
 export const EPUB_FONT_MAX = 240;
 export const EPUB_FONT_STEP = 6;
 
@@ -53,10 +73,13 @@ export function readEpubFont(): number {
       return EPUB_FONT_DEFAULT;
     }
 
-    // Written against the 19px base? Convert to the same physical size on the new
-    // one, then stamp so it happens exactly once.
-    if (localStorage.getItem(EPUB_FONT_SCALE_KEY) !== EPUB_FONT_SCALE_VERSION) {
-      const migrated = clampEpubFont(stored / LEGACY_REBASE);
+    // Written against an older base? Convert to the same physical size on the new
+    // one, then stamp so it happens exactly once. How far it travels depends on
+    // where it started, which is exactly what the old stamp records.
+    const stamp = localStorage.getItem(EPUB_FONT_SCALE_KEY);
+    if (stamp !== EPUB_FONT_SCALE_VERSION) {
+      const factor = stamp === EPUB_FONT_SCALE_V2 ? REBASE_FROM_21 : REBASE_FROM_19;
+      const migrated = clampEpubFont(stored / factor);
       localStorage.setItem(EPUB_FONT_KEY, String(migrated));
       localStorage.setItem(EPUB_FONT_SCALE_KEY, EPUB_FONT_SCALE_VERSION);
       return migrated;
@@ -94,7 +117,7 @@ export function setEpubFont(pct: number): void {
 // column edges so it hugs (or bleeds past) the window; positive insets it.
 export const EPUB_MARGIN_KEY = "lp-epub-margin";
 export const EPUB_MARGIN_EVENT = "lp-epub-margin";
-export const EPUB_MARGIN_DEFAULT = 14;
+export const EPUB_MARGIN_DEFAULT = 10;
 export const EPUB_MARGIN_MIN = -48;
 export const EPUB_MARGIN_MAX = 200;
 export const EPUB_MARGIN_STEP = 4;
@@ -135,12 +158,13 @@ export function setEpubMargin(px: number): void {
 export const EPUB_ALIGN_KEY = "lp-epub-align";
 export const EPUB_ALIGN_EVENT = "lp-epub-align";
 export type EpubAlign = "justify" | "left";
-/* Ragged-right by default.
-   Justified text in a phone-width column with long Indonesian words opens
-   rivers of white space between words — visible on the first screen of
-   "Sampai Hujan Reda" — and rivers read as effort. Readers who prefer
-   justified can still switch; the setting is remembered. */
-export const EPUB_ALIGN_DEFAULT: EpubAlign = "left";
+/* Justified by default — the book-typography convention, and what Adam wants a
+   reader to open to.
+   The known cost: a phone-width column of long Indonesian words opens rivers of
+   white space between them (visible on the first screen of "Sampai Hujan Reda").
+   Ragged-right remains one tap away and the choice is remembered, so the reader
+   who is bothered by rivers fixes it once. */
+export const EPUB_ALIGN_DEFAULT: EpubAlign = "justify";
 
 export function clampEpubAlign(v: unknown): EpubAlign {
   return v === "left" || v === "justify" ? v : EPUB_ALIGN_DEFAULT;
