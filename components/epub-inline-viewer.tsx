@@ -112,6 +112,15 @@ function buildEpubHtml(bytes: Uint8Array): { html: string; blobs: string[] } {
   const parser = new DOMParser();
   const chapters: string[] = [];
 
+  // Same contract as the server path (lib/epub-server): an id per chapter file,
+  // derived from the path so a dropped cover page cannot shift them.
+  const anchorId = (path: string) => `epub-${path.replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase()}`;
+  const spinePaths = new Set<string>();
+  for (const idref of spine) {
+    const href = manifest.get(idref);
+    if (href) spinePaths.add(resolvePath(opfDir, href));
+  }
+
   for (const idref of spine) {
     const href = manifest.get(idref);
     if (!href) continue;
@@ -154,7 +163,26 @@ function buildEpubHtml(bytes: Uint8Array): { html: string; blobs: string[] } {
         }
       });
 
-      chapters.push(`<section class="epub-chapter">${body.innerHTML}</section>`);
+      // Internal links point at FILES, and the whole book is one page here, so
+      // they would resolve against /preview/<slug> and 404. Point them at the
+      // target chapter's anchor instead; a link to a file outside the spine
+      // loses its href rather than staying a trap.
+      body.querySelectorAll("a[href]").forEach((a) => {
+        const value = (a.getAttribute("href") ?? "").trim();
+        if (!value || /^(https?:|mailto:|tel:|#|data:)/i.test(value)) return;
+        const [file, frag] = value.split("#");
+        const target = resolvePath(dirOf(path), file);
+        if (!spinePaths.has(target)) {
+          a.removeAttribute("href");
+          a.setAttribute("data-epub-dead", "1");
+          return;
+        }
+        a.setAttribute("href", `#${frag ? frag : anchorId(target)}`);
+      });
+
+      chapters.push(
+        `<section class="epub-chapter" id="${anchorId(path)}">${body.innerHTML}</section>`,
+      );
     } catch {
       /* skip an unreadable chapter */
     }

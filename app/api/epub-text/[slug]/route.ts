@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { extractEpubChapters } from "@/lib/epub-server";
+import { neutralizeDeadFragments, extractEpubChapters } from "@/lib/epub-server";
 import { resolvePreviewEpubSource } from "@/lib/epub-source";
 import { keepCountForCut, visibleChars } from "@/lib/epub-cut";
 
@@ -40,7 +40,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     // Truncate before serialising: `chapters` is what leaves the building.
     const lens = allChapters.map(visibleChars);
     const keep = cutPercent === null ? allChapters.length : keepCountForCut(lens, cutPercent);
-    const chapters = allChapters.slice(0, keep);
+    // After the cut, so links to withheld chapters stop being live.
+    const chapters = neutralizeDeadFragments(allChapters.slice(0, keep));
 
     // Counts, not content: how much is being held back is the one thing the
     // gate at the end of the preview has to be able to say precisely.

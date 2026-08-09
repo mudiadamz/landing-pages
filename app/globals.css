@@ -840,3 +840,21 @@ a:hover .cat-tile .cat-icon { transform: scale(1.15) rotate(-7deg); }
 .monaco-editor .inputarea {
   font-size: 16px !important;
 }
+
+/* A table-of-contents entry whose chapter is behind the paywall (or simply not
+   in this file). The href is gone, so it cannot be tapped — this stops it
+   LOOKING tappable too, while leaving the title readable: the reader should see
+   that the chapter exists. */
+.epub-inline a[data-epub-dead] {
+  color: inherit;
+  opacity: 0.55;
+  text-decoration: none;
+  cursor: default;
+}
+/* The anchor a rewritten TOC link aims at. Zero-height, and scroll-margin so a
+   jump leaves the heading below any floating chrome rather than under it. */
+.epub-inline .epub-anchor {
+  display: block;
+  height: 0;
+  scroll-margin-top: 4.5rem;
+}

@@ -111,6 +111,27 @@ export function findEpubCoverPath(bytes: Uint8Array): string | null {
 export type EpubChapters = { chapters: string[] };
 
 /**
+ * Strip hrefs that point at anchors no longer on the page.
+ *
+ * Run AFTER any truncation, not before: an excerpt cuts the last chapters, and
+ * the book's table of contents still lists them. Rewritten links to those
+ * chapters are not 404s any more, but they are taps that do nothing, which is
+ * its own kind of broken. The text stays and only the href goes, so the reader
+ * sees the chapter exists — which is the honest state for a paywalled book.
+ */
+export function neutralizeDeadFragments(chapters: string[]): string[] {
+  const present = new Set<string>();
+  for (const html of chapters) {
+    for (const m of html.matchAll(/\bid=["']([^"']+)["']/g)) present.add(m[1]);
+  }
+  return chapters.map((html) =>
+    html.replace(/(<a\b[^>]*?\bhref=)(["'])#(.*?)\2/gi, (full, _p: string, _q: string, frag: string) =>
+      present.has(frag) ? full : full.replace(/\bhref=(["'])#.*?\1/i, 'data-epub-dead="1"'),
+    ),
+  );
+}
+
+/**
  * Ordered spine chapters as raw HTML body markup. `assetUrl(path)` maps an
  * in-archive image path to a URL the browser can fetch lazily.
  */
@@ -136,7 +157,18 @@ export function extractEpubChapters(
   }
   const spine = [...opf.matchAll(/<itemref\b[^>]*\bidref="([^"]+)"/g)].map((m) => m[1]);
 
+  /**
+   * A stable in-page anchor id for a chapter file.
+   *
+   * Derived from the path rather than the spine index, because a preview drops
+   * the leading cover pages further down and index-based ids would all shift by
+   * one — silently pointing every TOC entry at the wrong chapter.
+   */
+  const anchorId = (path: string) => `epub-${path.replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase()}`;
+
   const chapters: string[] = [];
+  /** Which files made it into the spine, so a link can be told from a dead one. */
+  const chapterPaths: string[] = [];
   for (const idref of spine) {
     const href = manifest.get(idref);
     if (!href) continue;
@@ -160,10 +192,50 @@ export function extractEpubChapters(
       },
     );
 
+    // An anchor the book's own table of contents can point at. First child of
+    // the chapter, so landing on it puts the heading at the top of the screen.
+    html = `<a id="${anchorId(path)}" class="epub-anchor" aria-hidden="true"></a>${html}`;
+
     chapters.push(html);
+    chapterPaths.push(path);
   }
 
   if (chapters.length === 0) throw new Error("No readable chapters");
+
+  /**
+   * Rewrite the book's internal links so they scroll instead of navigating.
+   *
+   * An EPUB's table of contents links to files — "Text/chapter1.xhtml". The
+   * whole book is rendered into ONE page here, so those hrefs resolve against
+   * /preview/<slug> and 404. Each becomes a fragment pointing at the chapter's
+   * anchor; a link to a file that is not in the spine loses its href entirely
+   * rather than staying a trap.
+   *
+   * Fragment-only links (#note-3) and external ones are left exactly as they
+   * are: the first already works in a single page, and the second is the only
+   * kind that SHOULD leave.
+   */
+  const known = new Set(chapterPaths);
+  for (let i = 0; i < chapters.length; i++) {
+    chapters[i] = chapters[i].replace(
+      /(<a\b[^>]*?\bhref=)(["'])(.*?)\2/gi,
+      (full, prefix: string, quote: string, href: string) => {
+        const value = href.trim();
+        if (!value) return full;
+        if (/^(https?:|mailto:|tel:|#|data:)/i.test(value)) return full;
+
+        const [file, frag] = value.split("#");
+        const target = resolveEpubPath(dirOf(chapterPaths[i] ?? ""), file);
+        if (!known.has(target)) {
+          // Dead inside this page — drop the href, keep the words.
+          return full.replace(/\bhref=(["']).*?\1/i, 'data-epub-dead="1"');
+        }
+        // Prefer the book's own fragment when it has one: it aims at a heading
+        // inside the chapter, which is more precise than the chapter's start.
+        return `${prefix}${quote}#${frag ? frag : anchorId(target)}${quote}`;
+      },
+    );
+  }
 
   // A free preview opens with the splash already showing the cover, so the
   // book's own cover page just repeats it — and because it fills the screen,
