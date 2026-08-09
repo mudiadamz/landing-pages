@@ -23,6 +23,15 @@ export type FounderCard = {
   /** Contact link text + target rendered at the end of the bio. */
   contactLabel: string;
   contactHref: string;
+  /**
+   * Show the blue tick after the name on the storefront.
+   *
+   * The storefront's own claim about its owner — it asserts nothing about any
+   * third party's verification programme. On in the default content, so it
+   * appears without anyone having to find the switch; off is one checkbox away
+   * in /panel/content.
+   */
+  verified: boolean;
 };
 
 export type SiteContent = {
@@ -74,6 +83,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     photoUrl: "/pas_foto.png",
     contactLabel: "Hubungi langsung",
     contactHref: "/contact",
+    verified: true,
   },
 
   licenseHeading: "Ketentuan & lisensi",
@@ -164,6 +174,7 @@ export function normalizeContent(raw: unknown): SiteContent {
     photoUrl: rf.photoUrl ?? df.photoUrl,
     contactLabel: rf.contactLabel ?? df.contactLabel,
     contactHref: rf.contactHref ?? df.contactHref,
+    verified: typeof rf.verified === "boolean" ? rf.verified : df.verified,
   };
 
   return {

@@ -235,6 +235,18 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
             />
           </div>
           <div>
+            <label className={labelCls}>Centang biru</label>
+            <label className="flex min-h-11 items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={content.founder.verified}
+                onChange={(e) => setFounder({ verified: e.target.checked })}
+                className="h-4 w-4 rounded border-[var(--border)] accent-[var(--primary)]"
+              />
+              Tampilkan centang setelah nama
+            </label>
+          </div>
+          <div>
             <label className={labelCls}>Peran / jabatan</label>
             <input
               className={inputCls}

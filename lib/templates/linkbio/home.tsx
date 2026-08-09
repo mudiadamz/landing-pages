@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SocialLinksCompact } from "@/components/social-links-compact";
 import { BrandAvatar } from "@/components/site-logo";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { VerifiedBadge } from "@/components/verified-badge";
 import { siteBrand } from "@/lib/site-brand";
 import { LinkbioFooter } from "./chrome";
 import { SearchProvider, SearchToggle, SearchField } from "./linkbio-search";
@@ -96,8 +97,9 @@ export function LinkbioHome({
           ) : (
             <BrandAvatar brand={siteBrand(site)} />
           )}
-          <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            {showFounder ? founder.name : site.name}
+          <h1 className="mt-4 flex items-center justify-center gap-1.5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            <span className="min-w-0 truncate">{showFounder ? founder.name : site.name}</span>
+            {showFounder && founder.verified && <VerifiedBadge className="h-5 w-5 sm:h-6 sm:w-6" />}
           </h1>
           {(showFounder ? founder.role : site.tagline) && (
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
