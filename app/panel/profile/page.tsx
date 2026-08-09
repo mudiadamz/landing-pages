@@ -11,6 +11,7 @@ import {
   type PublisherStatus,
 } from "@/lib/profile-utils";
 import { ProfileForm } from "./profile-form";
+import { AvatarForm } from "./avatar-form";
 import { PublisherCard } from "./publisher-card";
 import { VerifyEmailRow } from "./verify-email-row";
 
@@ -60,7 +61,7 @@ export default async function ProfilePage() {
       // One string literal, deliberately: supabase-js infers the row type from
       // the literal, and a concatenated expression collapses it to an error type.
       .select(
-        "id, full_name, role, publisher_status, publisher_reject_note, email_verified_at, publisher_display_name, publisher_real_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
+        "id, full_name, role, publisher_status, publisher_reject_note, email_verified_at, avatar_url, publisher_display_name, publisher_real_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
       )
       .eq("id", user.id)
       .single(),
@@ -73,6 +74,7 @@ export default async function ProfilePage() {
   const fullName =
     row?.full_name?.trim() || (user.user_metadata?.full_name as string | undefined)?.trim() || "";
   const email = user.email ?? null;
+  const avatarUrl = row?.avatar_url ?? "";
   const verified = !!row?.email_verified_at;
   const publisherBadge = PUBLISHER_BADGE[publisherStatus];
 
@@ -100,9 +102,14 @@ export default async function ProfilePage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <span
             aria-hidden
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-2xl font-semibold uppercase text-[var(--primary)]"
+            className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-subtle)] text-2xl font-semibold uppercase text-[var(--primary)]"
           >
-            {(fullName || email || "?").charAt(0)}
+            {avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              (fullName || email || "?").charAt(0)
+            )}
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold text-foreground">
@@ -204,6 +211,24 @@ export default async function ProfilePage() {
         </header>
         <div className="p-4 sm:p-6">
           <ProfileForm initialFullName={fullName} />
+        </div>
+      </section>
+
+      {/* Photo. Its own section rather than a control inside the identity header:
+          the header is what the account IS, and everything editable on this page
+          sits in a titled card below it. */}
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
+          <h2 className="text-base font-semibold text-foreground">Foto profil</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            Muncul di sidebar panel dan di halaman ini.
+          </p>
+        </header>
+        <div className="p-4 sm:p-6">
+          <AvatarForm
+            initialUrl={avatarUrl}
+            initial={(fullName || email || "?").charAt(0)}
+          />
         </div>
       </section>
 

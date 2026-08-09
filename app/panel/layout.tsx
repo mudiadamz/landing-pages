@@ -111,6 +111,7 @@ export default async function PanelLayout({
         role={profile?.role}
         canSell={!!canSell}
         displayName={displayName}
+        avatarUrl={profile?.avatar_url ?? ""}
         pendingActions={pendingActions}
         features={features}
         sites={siteOptions}

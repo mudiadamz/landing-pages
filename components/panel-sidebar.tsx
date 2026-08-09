@@ -17,6 +17,8 @@ type Props = {
   role?: Role;
   canSell?: boolean;
   displayName?: string;
+  /** Their picture, or empty — the initial letter is the fallback. */
+  avatarUrl?: string;
   pendingActions?: number;
   features?: FeatureKey[];
   /** Empty for non-admins: the scope only drives admin screens. */
@@ -427,6 +429,7 @@ export function PanelSidebar({
   role,
   canSell,
   displayName,
+  avatarUrl = "",
   pendingActions,
   features,
   sites = [],
@@ -526,8 +529,13 @@ export function PanelSidebar({
             onClick={close}
             className="mx-3 mt-3 flex shrink-0 items-center gap-3 rounded-lg border border-[var(--border)] px-3 py-2.5 transition-colors hover:bg-[var(--background)]"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-sm font-semibold uppercase text-[var(--primary)]">
-              {displayName.trim().charAt(0) || "?"}
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-subtle)] text-sm font-semibold uppercase text-[var(--primary)]">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                displayName.trim().charAt(0) || "?"
+              )}
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium text-foreground">{displayName}</span>

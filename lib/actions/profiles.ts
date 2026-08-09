@@ -13,6 +13,7 @@ import {
   type PublisherStatus,
 } from "@/lib/profile-utils";
 import { ALL_FEATURE_KEYS, type FeatureKey } from "@/lib/features";
+import { sniffBrandImage } from "@/lib/site-brand";
 import {
   DEFAULT_ROLE_PERMISSIONS,
   normalizeRolePermissions,
@@ -30,6 +31,8 @@ export type Profile = {
    * now (see the 20260729 migration). Google signups arrive already verified.
    */
   email_verified_at: string | null;
+  /** Public URL of their picture, or null — the initial letter is the fallback. */
+  avatar_url: string | null;
 };
 
 /** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
@@ -110,7 +113,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role, publisher_status, email_verified_at")
+    .select("id, full_name, role, publisher_status, email_verified_at, avatar_url")
     .eq("id", user.id)
     .single();
 
@@ -121,6 +124,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
     role: normalizeRole(data.role),
     publisher_status: normalizePublisherStatus(data.publisher_status),
     email_verified_at: data.email_verified_at ?? null,
+    avatar_url: data.avatar_url ?? null,
   } as Profile;
 });
 
@@ -352,5 +356,93 @@ export async function updateProfile(formData: FormData) {
     console.error("updateProfile error:", error);
     return { ok: false, error: "Gagal menyimpan." };
   }
+  return { ok: true };
+}
+
+/** Everyone gets 512 KB — an avatar renders at 96px at most. */
+const AVATAR_MAX_BYTES = 512 * 1024;
+
+/**
+ * Set the signed-in user's picture. Any role: a buyer, a publisher and an admin
+ * all reach the same profile screen and all get the same control.
+ *
+ * Uses the service-role client, so the gate is explicit (I6): the path is built
+ * from `user.id` read out of the session, never from anything the form sent, so
+ * a request cannot write into someone else's prefix or point their row at a file.
+ *
+ * SVG is refused even though sniffBrandImage accepts it. Site branding is
+ * uploaded by admins and an SVG there is a vector logo; an avatar is uploaded by
+ * anyone with an account, and an SVG is a script that the storage domain would
+ * serve as image/svg+xml. The other three formats cannot carry one.
+ */
+export async function uploadProfileAvatar(
+  form: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Belum masuk." };
+
+  const file = form.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "File tidak ditemukan." };
+  if (file.size > AVATAR_MAX_BYTES) {
+    return { ok: false, error: "Ukuran maksimal 512 KB — kompres dulu." };
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const sniffed = sniffBrandImage(bytes);
+  if (!sniffed || sniffed.ext === "svg") {
+    return { ok: false, error: "Format harus PNG, WebP, atau JPEG." };
+  }
+
+  const admin = createAdminClient();
+  // Timestamped, like the branding uploads: replacing a picture leaves the old
+  // object behind rather than racing a delete against a page still serving it.
+  const path = `avatars/${user.id}/${Date.now()}.${sniffed.ext}`;
+  const { error: upErr } = await admin.storage
+    .from("landing-assets")
+    // The sniffed type, never the declared one — this becomes the Content-Type
+    // the public bucket serves it with.
+    .upload(path, bytes, { contentType: sniffed.contentType, upsert: false });
+  if (upErr) {
+    console.error("uploadProfileAvatar upload error:", upErr);
+    return { ok: false, error: "Gagal mengunggah." };
+  }
+
+  const { data } = admin.storage.from("landing-assets").getPublicUrl(path);
+  const url = data.publicUrl;
+
+  const { error } = await supabase
+    .from("lp_profiles")
+    .update({ avatar_url: url })
+    .eq("id", user.id);
+  if (error) {
+    console.error("uploadProfileAvatar save error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+
+  revalidatePath("/panel");
+  return { ok: true, url };
+}
+
+/** Clear the picture and fall back to the initial letter. */
+export async function removeProfileAvatar(): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Belum masuk." };
+
+  const { error } = await supabase
+    .from("lp_profiles")
+    .update({ avatar_url: null })
+    .eq("id", user.id);
+  if (error) {
+    console.error("removeProfileAvatar error:", error);
+    return { ok: false, error: "Gagal menghapus." };
+  }
+
+  revalidatePath("/panel");
   return { ok: true };
 }
