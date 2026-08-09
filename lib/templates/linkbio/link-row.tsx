@@ -43,7 +43,10 @@ export function LinkRow({ page, priority }: { page: LandingPagePublic; priority:
           bar, so the row no longer has to choose between "look" and "buy". */}
       <Link
         href={`/checkout/${page.slug}`}
-        className="group flex min-h-16 items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--primary)]/50 hover:shadow-md active:translate-y-0 active:scale-[0.99]"
+        // Flat: no shadow, no lift, no border. The row is a solid tinted block,
+        // and pressing it deepens the tint rather than raising it off the page —
+        // depth cues are the one thing this look does not use.
+        className="group flex min-h-16 items-center gap-3 rounded-2xl bg-[var(--accent-subtle)] p-2.5 transition-colors duration-150 hover:bg-[var(--primary)]/15 active:bg-[var(--primary)]/25"
       >
         <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--background)]">
           {thumb ? (
@@ -78,7 +81,7 @@ export function LinkRow({ page, priority }: { page: LandingPagePublic; priority:
                     : formatPrice(display)}
             </span>
             {category && (
-              <span className="min-w-0 truncate rounded-full border border-[var(--border)] px-1.5 py-px text-[11px] leading-normal">
+              <span className="min-w-0 truncate rounded-full bg-[var(--primary)]/10 px-1.5 py-px text-[11px] font-medium leading-normal text-[var(--primary)]">
                 {category}
               </span>
             )}

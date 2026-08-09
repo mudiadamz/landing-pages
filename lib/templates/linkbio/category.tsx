@@ -74,7 +74,7 @@ export function LinkbioCategories({ site, categories, user }: CategoriesTemplate
               <li key={parent.id}>
                 <Link
                   href={`/category/${parent.slug}`}
-                  className="group flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--primary)]/50 hover:shadow-md active:translate-y-0"
+                  className="group flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-[var(--accent-subtle)] px-4 py-3 transition-colors duration-150 hover:bg-[var(--primary)]/15 active:bg-[var(--primary)]/25"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-foreground">

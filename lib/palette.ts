@@ -77,6 +77,20 @@ export const PALETTE_PRESETS: PalettePreset[] = [
     },
   },
   {
+    key: "breeze",
+    label: "Breeze",
+    note: "Teal laut dengan aksen ungu-biru — sejuk, segar, hidup. Dipakai Link in bio.",
+    tokens: {
+      // 5.1:1 on the light background. The teal is the whole mood here, so it
+      // had to be the readable one rather than the bright one.
+      primary: "#0f766e", primaryDark: "#2dd4bf",
+      subtle: "#e3f6f2", subtleDark: "#0f2e2a",
+      // A different hue from the primary on purpose: two neighbouring teals read
+      // as one colour that failed, and the accent is what makes it lively.
+      accent: "#7c3aed", accentDark: "#a78bfa",
+    },
+  },
+  {
     key: "violet",
     label: "Violet",
     note: "Ungu modern dengan aksen koral — bersih, agak 'tool'.",

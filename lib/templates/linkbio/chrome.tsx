@@ -14,7 +14,7 @@ import type { ChromeProps } from "../registry";
  */
 export function LinkbioHeader({ user, brand }: ChromeProps) {
   return (
-    <header className="border-b border-[var(--border)]">
+    <header className="bg-[var(--accent-subtle)]/40">
       <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-5 py-3.5">
         <Link
           href="/"
@@ -42,7 +42,7 @@ export function LinkbioHeader({ user, brand }: ChromeProps) {
 export async function LinkbioFooter() {
   const site = await currentSite();
   return (
-    <footer className="mt-10 shrink-0 border-t border-[var(--border)]">
+    <footer className="mt-10 shrink-0 bg-[var(--accent-subtle)]/40">
       <div className="mx-auto flex max-w-xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-5 py-7 text-xs text-[var(--muted)]">
         <span>
           © {new Date().getFullYear()} {site.name}

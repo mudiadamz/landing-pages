@@ -114,6 +114,16 @@ export type TemplateDef = {
    */
   hasBottomNav?: boolean;
   /**
+   * Template renders in light only — no dark variant, and no theme switch.
+   *
+   * Read in app/layout.tsx, which drops the `dark` class and stops the inline
+   * theme script re-applying it, so there is no flash of the wrong theme and no
+   * way for a cookie set on another storefront to arrive dark. A template that
+   * declares this must also not render ThemeSwitch: a toggle that does nothing
+   * is worse than no toggle.
+   */
+  lightOnly?: boolean;
+  /**
    * Palette preset this theme was designed against. Only a SUGGESTION shown in the
    * panel — the palette is stored per domain, so two sites on one theme can differ,
    * and an admin's explicit choice is never overwritten.
@@ -159,7 +169,8 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Footer: LinkbioFooter,
     Category: LinkbioCategory,
     Categories: LinkbioCategories,
-    defaultPalette: "tropical",
+    lightOnly: true,
+    defaultPalette: "breeze",
   },
 };
 

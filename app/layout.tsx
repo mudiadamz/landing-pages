@@ -17,6 +17,7 @@ import { SessionTracker } from "@/components/session-tracker";
 import { GtmScripts } from "@/components/gtm-scripts";
 import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
 import { currentOrigin, currentSite, type Site } from "@/lib/site-resolve";
+import { resolveTemplate } from "@/lib/templates/registry";
 import { paletteCss, paletteFromKey } from "@/lib/palette";
 import { DEFAULT_APPLE_ICON, DEFAULT_ICON } from "@/lib/site-brand";
 
@@ -136,9 +137,13 @@ export default async function RootLayout({
   // rather than holding up the first byte of every page.
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme");
-  const isDark = themeCookie?.value === "dark";
   // Which storefront: drives the JSON-LD org name and the iOS home-screen title.
   const [site, origin] = await Promise.all([currentSite(), currentOrigin()]);
+  // Some templates ship light only. The theme cookie is shared across storefronts
+  // (one browser, one cookie), so without this a visitor who turned dark on
+  // another domain would arrive here to a half-dark page with no way back.
+  const lightOnly = !!resolveTemplate(site.template).lightOnly;
+  const isDark = themeCookie?.value === "dark" && !lightOnly;
 
   return (
     <html lang="id" suppressHydrationWarning className={isDark ? "dark" : undefined}>
@@ -171,7 +176,7 @@ export default async function RootLayout({
         )}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
+            __html: `(function(){var lightOnly=${lightOnly ? "true" : "false"};var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=!lightOnly&&t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
           }}
         />
       </head>

@@ -103,7 +103,7 @@ export function SearchResults({ pages }: { pages: LandingPagePublic[] }) {
     <>
       {open && (
         <div className="mt-5">
-          <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 focus-within:border-[var(--primary)]/50">
+          <div className="flex items-center gap-2 rounded-xl bg-[var(--accent-subtle)] px-3 py-2.5 transition-colors focus-within:bg-[var(--primary)]/15">
             <SearchIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
             <input
               ref={inputRef}
@@ -145,7 +145,7 @@ export function SearchResults({ pages }: { pages: LandingPagePublic[] }) {
       )}
 
       {results.length === 0 ? (
-        <p className="mt-7 rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center text-sm text-[var(--muted)]">
+        <p className="mt-7 rounded-2xl bg-[var(--accent-subtle)] px-6 py-12 text-center text-sm text-[var(--muted)]">
           {searching ? "Coba kata lain." : "Belum ada tautan di sini."}
         </p>
       ) : (
