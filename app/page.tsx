@@ -7,7 +7,12 @@ import { TemplateHomeView } from "@/lib/templates/chrome";
 import { getSiteContent } from "@/lib/actions/site-settings";
 
 type Props = {
-  searchParams: Promise<{ sort?: string | string[]; q?: string | string[]; page?: string | string[] }>;
+  searchParams: Promise<{
+    sort?: string | string[];
+    q?: string | string[];
+    page?: string | string[];
+    cat?: string | string[];
+  }>;
 };
 
 /**
@@ -25,12 +30,22 @@ export default async function Home({ searchParams }: Props) {
   const sort: HomepageSort = one(sp.sort) === "popular" ? "popular" : "newest";
   const q = one(sp.q).trim();
   const page = Math.max(1, parseInt(one(sp.page), 10) || 1);
+  // Category chips are a toggle set, carried as one comma-separated `cat`.
+  // Deduped and capped: the parameter is user-editable and feeds an `in (...)`.
+  const categorySlugs = [
+    ...new Set(
+      (Array.isArray(sp.cat) ? sp.cat.join(",") : sp.cat ?? "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
+    ),
+  ].slice(0, 20);
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const [site, listing, categories, reviews, reviewCounts, hero, content] = await Promise.all([
     currentSite(),
-    getHomepageListing({ sort, q, page }),
+    getHomepageListing({ sort, q, page, categorySlugs }),
     getCategories(),
     getPublicReviews(),
     getReviewCounts(),
@@ -44,6 +59,7 @@ export default async function Home({ searchParams }: Props) {
       pages={listing.items}
       listing={listing}
       query={q}
+      activeCategories={categorySlugs}
       categories={categories}
       reviews={reviews}
       reviewCounts={reviewCounts}

@@ -62,7 +62,17 @@ export function SearchToggle() {
 }
 
 /** The field. A GET form, so the browser owns the navigation. */
-export function SearchField({ total }: { total: number }) {
+export function SearchField({
+  total,
+  categories = [],
+  sort,
+}: {
+  total: number;
+  /** Carried as hidden fields: a GET form submits only its own inputs, so
+      without these, searching would silently clear the category filter. */
+  categories?: string[];
+  sort?: string;
+}) {
   const { open, setOpen, query } = useSearch();
   const inputRef = useRef<HTMLInputElement>(null);
   // Focus on open, but never steal the caret on a page that loaded WITH a query
@@ -77,6 +87,8 @@ export function SearchField({ total }: { total: number }) {
 
   return (
     <form method="GET" action="/" className="mt-5">
+      {categories.length > 0 && <input type="hidden" name="cat" value={categories.join(",")} />}
+      {sort && sort !== "newest" && <input type="hidden" name="sort" value={sort} />}
       <div className="flex items-center gap-2 rounded-xl bg-[var(--card)] px-3 py-2.5 transition-colors focus-within:bg-[var(--accent-subtle)]">
         <SearchIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
         <input

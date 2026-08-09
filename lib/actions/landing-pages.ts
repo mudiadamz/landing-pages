@@ -531,6 +531,8 @@ const getCachedListing = unstable_cache(
 
 export async function getHomepageListing(opts: {
   categorySlug?: string | null;
+  /** Several at once, for the homepage's toggle chips. Union, not intersection. */
+  categorySlugs?: string[];
   sort?: HomepageSort;
   page?: number;
   q?: string;
@@ -542,17 +544,20 @@ export async function getHomepageListing(opts: {
   // Resolved OUTSIDE the cache, like the listing above: the site comes from the
   // request, and a cached function cannot read it (I1).
   const site = await currentSite();
-  const categoryIds = await resolveListingCategoryIds(
-    opts.categorySlug?.trim() || "",
-    site.category_ids ?? [],
-  );
+  const slugs = [
+    ...(opts.categorySlug?.trim() ? [opts.categorySlug.trim()] : []),
+    ...(opts.categorySlugs ?? []).map((s) => s.trim()).filter(Boolean),
+  ];
+  const categoryIds = await resolveListingCategoryIds(slugs, site.category_ids ?? []);
   if (categoryIds === "none") {
     return { items: [], total: 0, pageCount: 1, page: 1 };
   }
 
   return q
     ? queryListing({ categoryIds, sort, q, page })
-    : getCachedListing(categoryIds, sort, page);
+    : // categoryIds is part of the key (I2): without it, two different chip
+      // selections would share one cached page.
+      getCachedListing(categoryIds, sort, page);
 }
 
 /**
@@ -563,16 +568,25 @@ export async function getHomepageListing(opts: {
  * which means "no filter, whole catalogue".
  */
 async function resolveListingCategoryIds(
-  slug: string,
+  slugs: string[],
   siteCategoryIds: string[],
 ): Promise<string[] | null | "none"> {
   let categoryIds: string[] | null = null;
 
-  if (slug) {
+  if (slugs.length > 0) {
     const cats = await getCategories();
-    const target = cats.find((c) => c.slug === slug);
-    if (!target) return "none";
-    categoryIds = [target.id, ...cats.filter((c) => c.parent_id === target.id).map((c) => c.id)];
+    const picked = new Set<string>();
+    for (const slug of slugs) {
+      const target = cats.find((c) => c.slug === slug);
+      // An unknown slug is ignored rather than emptying the page: chips are
+      // toggled from a URL anyone can edit, and one stale name should not make
+      // the whole storefront look empty.
+      if (!target) continue;
+      picked.add(target.id);
+      for (const c of cats) if (c.parent_id === target.id) picked.add(c.id);
+    }
+    if (picked.size === 0) return "none";
+    categoryIds = [...picked];
   }
 
   if (siteCategoryIds.length > 0) {

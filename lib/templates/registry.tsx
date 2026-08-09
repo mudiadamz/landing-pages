@@ -60,6 +60,8 @@ export type TemplateProps = {
   listing: HomepageListing;
   /** The active search term, echoed back so a template can prefill its field. */
   query: string;
+  /** Category slugs currently toggled on. Empty = the whole catalogue. */
+  activeCategories: string[];
 };
 
 /**
@@ -81,7 +83,7 @@ export type ChromeProps = {
   brand: SiteBrand;
 };
 
-export type CategoryTemplateProps = Omit<TemplateProps, "hero" | "founder" | "listing" | "query"> & {
+export type CategoryTemplateProps = Omit<TemplateProps, "hero" | "founder" | "listing" | "query" | "activeCategories"> & {
   category: LandingPageCategory;
 };
 

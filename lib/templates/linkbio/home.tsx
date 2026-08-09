@@ -7,6 +7,7 @@ import { LinkbioFooter } from "./chrome";
 import { SearchProvider, SearchToggle, SearchField } from "./linkbio-search";
 import { LinkRow } from "./link-row";
 import { Pager } from "./pager";
+import { listingHref, toggleCategoryHref } from "./listing-url";
 import type { TemplateProps } from "../registry";
 
 /** Signed-in goes to the panel; everyone else to the login screen. */
@@ -33,7 +34,19 @@ function AccountIcon({ className }: { className?: string }) {
  * Categories become filter chips rather than a nav rail, because on this shape
  * they are a way to shorten the list, not a place to go.
  */
-export function LinkbioHome({ site, pages, categories, user, founder, listing, query, sort }: TemplateProps) {
+export function LinkbioHome({
+  site,
+  pages,
+  categories,
+  user,
+  founder,
+  listing,
+  query,
+  sort,
+  activeCategories,
+}: TemplateProps) {
+  // Everything the three controls have to preserve about each other.
+  const state = { categories: activeCategories, query, sort };
   const parents = categories.filter((c) => !c.parent_id);
   // A founder card that is switched off, or has no name, falls back to the
   // storefront's own identity rather than rendering an empty person.
@@ -96,24 +109,45 @@ export function LinkbioHome({ site, pages, categories, user, founder, listing, q
           <SocialLinksCompact className="mt-4" />
         </div>
 
-        {/* Filter chips — only worth showing when there is more than one */}
+        {/* Filter chips. Each one toggles its category on the page itself rather
+            than navigating to a category route — pressing an active chip turns
+            it off, and several can be on at once (union, not intersection).
+            Links rather than buttons, so the filter is in the URL and survives a
+            reload, a share and the back button. */}
         {parents.length > 1 && (
-          <nav className="mt-7 flex flex-wrap justify-center gap-2">
-            {parents.map((c) => (
+          <nav className="mt-7 flex flex-wrap justify-center gap-2" aria-label="Filter kategori">
+            {parents.map((c) => {
+              const on = activeCategories.includes(c.slug);
+              return (
+                <Link
+                  key={c.id}
+                  href={toggleCategoryHref(state, c.slug)}
+                  aria-pressed={on}
+                  scroll={false}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    on
+                      ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                      : "bg-[var(--accent-subtle)] text-[var(--primary)] hover:bg-[var(--primary)]/15"
+                  }`}
+                >
+                  {c.name}
+                </Link>
+              );
+            })}
+            {activeCategories.length > 0 && (
               <Link
-                key={c.id}
-                href={`/category/${c.slug}`}
-                className="rounded-full bg-[var(--accent-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/15"
+                href={listingHref({ categories: [], query, sort })}
+                className="rounded-full px-3 py-1.5 text-xs font-medium text-[var(--muted)] underline-offset-4 transition-colors hover:text-foreground hover:underline"
               >
-                {c.name}
+                Semua
               </Link>
-            ))}
+            )}
           </nav>
         )}
 
         {/* The field submits to the server; `pages` is already the matching
             page of results. */}
-        <SearchField total={listing.total} />
+        <SearchField total={listing.total} categories={activeCategories} sort={sort} />
 
         {pages.length === 0 ? (
           <p className="mt-7 rounded-2xl bg-[var(--accent-subtle)] px-6 py-12 text-center text-sm text-[var(--muted)]">
@@ -129,7 +163,13 @@ export function LinkbioHome({ site, pages, categories, user, founder, listing, q
           </ul>
         )}
 
-        <Pager page={listing.page} pageCount={listing.pageCount} query={query} sort={sort} />
+        <Pager
+          page={listing.page}
+          pageCount={listing.pageCount}
+          query={query}
+          sort={sort}
+          categories={activeCategories}
+        />
       </main>
 
       <LinkbioFooter />

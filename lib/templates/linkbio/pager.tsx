@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { listingHref } from "./listing-url";
 
 /**
  * Prev / next for the stack, with the page count between them.
@@ -17,22 +18,17 @@ export function Pager({
   pageCount,
   query,
   sort,
+  categories,
 }: {
   page: number;
   pageCount: number;
   query?: string;
   sort?: string;
+  categories: string[];
 }) {
   if (pageCount <= 1) return null;
 
-  const href = (p: number) => {
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (sort && sort !== "newest") params.set("sort", sort);
-    if (p > 1) params.set("page", String(p));
-    const qs = params.toString();
-    return qs ? `/?${qs}` : "/";
-  };
+  const href = (p: number) => listingHref({ categories, query, sort, page: p });
 
   const box =
     "flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-medium transition-colors";
