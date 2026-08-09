@@ -37,7 +37,14 @@ const EPUB_FONT_SCALE_VERSION = "3";
 /** The stamp written by the previous rebase — its values sit on the 21.28 base. */
 const EPUB_FONT_SCALE_V2 = "2";
 
-export const EPUB_FONT_DEFAULT = 100;
+/**
+ * 82%, not 100%.
+ *
+ * On the 26.6px base that is ~21.8px — the size the book actually opens well at
+ * on a phone. Deliberately left ON the 6% step grid (100 - 3 x 6), so the
+ * readout lands on round numbers as a reader steps up or down from it.
+ */
+export const EPUB_FONT_DEFAULT = 82;
 /**
  * The floor is rebased with the base, not left at 70.
  *

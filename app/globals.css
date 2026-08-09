@@ -493,6 +493,49 @@ html.dark .epub-surface {
   max-width: 100%;
   height: auto;
 }
+
+/* Nothing in a book may be wider than the column.
+   A single wide element — a table, a code block, a long unbroken URL — makes the
+   DOCUMENT wider than the viewport, and a mobile browser answers that by zooming
+   the whole page out to fit. The text goes small, pinch-zoom starts from the
+   wrong scale, and it reads as "the zoom is broken" rather than "one table is
+   too wide". So the wide thing scrolls inside itself and the page stays put. */
+.epub-inline table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.epub-inline pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.epub-inline code {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+/* EPUBs carry presentational width/height attributes from the authoring tool,
+   which a stripped stylesheet leaves in force. */
+.epub-inline [width],
+.epub-inline [style*="width"] {
+  max-width: 100%;
+}
+/* Backstop: clip rather than scroll, so an element that still escapes cannot
+   turn the page into a horizontally pannable surface. `clip` and not `hidden`
+   because hidden makes this a scroll container, which breaks anchor jumps from
+   the table of contents. */
+.epub-inline {
+  overflow-x: clip;
+}
+/* Safari inflates text on its own after a layout it considers too narrow, which
+   fights the reader's own size control. */
+.epub-surface {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 .epub-inline p {
   margin: 0 0 1em;
 }
