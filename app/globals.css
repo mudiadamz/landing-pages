@@ -813,3 +813,16 @@ a:hover .cat-tile .cat-icon { transform: scale(1.15) rotate(-7deg); }
   .cat-tile:hover .cat-icon,
   a:hover .cat-tile .cat-icon { transform: none; }
 }
+
+/* Monaco's focus target is a transparent <textarea class="inputarea"> that
+   inherits the editor's fontSize (13-14px here). Safari on iOS zooms the
+   viewport whenever a focused field is under 16px and does not zoom back out
+   when it loses focus, so opening the HTML editor left the whole panel
+   magnified until you pinched it back yourself.
+
+   The element renders no visible glyphs — it only carries the caret and IME
+   composition — so raising it changes nothing on screen while removing the
+   trigger. The rendered code keeps the size set in the editor's options. */
+.monaco-editor .inputarea {
+  font-size: 16px !important;
+}
