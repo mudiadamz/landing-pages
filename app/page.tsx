@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
-import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
+import { getHomepageListing, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { getHero } from "@/lib/actions/site-settings";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateHomeView } from "@/lib/templates/chrome";
 import { getSiteContent } from "@/lib/actions/site-settings";
 
-type Props = { searchParams: Promise<{ sort?: string | string[] }> };
+type Props = {
+  searchParams: Promise<{ sort?: string | string[]; q?: string | string[]; page?: string | string[] }>;
+};
 
 /**
  * Loads the data, then hands it to whichever template this domain runs.
@@ -19,14 +21,16 @@ type Props = { searchParams: Promise<{ sort?: string | string[] }> };
 export default async function Home({ searchParams }: Props) {
   const supabase = await createClient();
   const sp = await searchParams;
-  const sortParam = Array.isArray(sp.sort) ? sp.sort[0] : sp.sort;
-  const sort: HomepageSort = sortParam === "popular" ? "popular" : "newest";
+  const one = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v) ?? "";
+  const sort: HomepageSort = one(sp.sort) === "popular" ? "popular" : "newest";
+  const q = one(sp.q).trim();
+  const page = Math.max(1, parseInt(one(sp.page), 10) || 1);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [site, pages, categories, reviews, reviewCounts, hero, content] = await Promise.all([
+  const [site, listing, categories, reviews, reviewCounts, hero, content] = await Promise.all([
     currentSite(),
-    getLandingPagesForHomepage(null, sort),
+    getHomepageListing({ sort, q, page }),
     getCategories(),
     getPublicReviews(),
     getReviewCounts(),
@@ -37,7 +41,9 @@ export default async function Home({ searchParams }: Props) {
   return (
     <TemplateHomeView
       site={site}
-      pages={pages}
+      pages={listing.items}
+      listing={listing}
+      query={q}
       categories={categories}
       reviews={reviews}
       reviewCounts={reviewCounts}

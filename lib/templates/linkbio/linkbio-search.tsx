@@ -1,38 +1,24 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { LinkRow } from "./link-row";
-import type { LandingPagePublic } from "@/lib/actions/landing-pages";
+import Link from "next/link";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Search for the link-in-bio homepage: an icon in the top row, a field below the
- * profile, and the stack filtered as you type.
+ * Search for the link-in-bio homepage: an icon in the top row and a field below
+ * the profile that submits to the server.
  *
- * Filtering happens in the browser over the rows already on the page rather than
- * through a route: the homepage holds the whole (capped) catalogue, so there is
- * nothing to fetch and results land as fast as someone types. A results page
- * would also be a second surface to leave, and the premise of this template is
- * that the links ARE the page.
+ * It used to filter in the browser over the rows already rendered, which was
+ * fine while the whole catalogue fitted in one page and quietly wrong the moment
+ * it did not — a match on page three was unfindable. The field is a GET form
+ * now: the query goes to the server, the server matches, and the URL holds the
+ * state, so a search can be linked, shared and reloaded.
  *
- * Split into a provider, a toggle and a results list because the icon and the
- * stack live at opposite ends of the layout. The provider takes server-rendered
- * children and passes them through untouched, so the homepage stays a server
- * component — only these three pieces ship as JS.
+ * Split into a provider and two pieces because the icon and the field sit at
+ * opposite ends of the layout. The provider takes server-rendered children and
+ * passes them through, so the homepage stays a server component.
  */
 
-type SearchCtx = {
-  open: boolean;
-  setOpen: (v: boolean) => void;
-  q: string;
-  setQ: (v: string) => void;
-};
+type SearchCtx = { open: boolean; setOpen: (v: boolean) => void; query: string };
 
 const Ctx = createContext<SearchCtx | null>(null);
 
@@ -42,18 +28,17 @@ function useSearch(): SearchCtx {
   return ctx;
 }
 
-export function SearchProvider({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-
-  // Closing clears, so reopening never starts inside a stale filter the visitor
-  // has forgotten they applied.
-  const setOpenAndClear = (v: boolean) => {
-    setOpen(v);
-    if (!v) setQ("");
-  };
-
-  const value = useMemo(() => ({ open, setOpen: setOpenAndClear, q, setQ }), [open, q]);
+export function SearchProvider({
+  query,
+  children,
+}: {
+  query: string;
+  children: React.ReactNode;
+}) {
+  // Open when a search is active: arriving on /?q=novel with the field collapsed
+  // would show filtered results and no visible reason why.
+  const [open, setOpen] = useState(!!query);
+  const value = useMemo(() => ({ open, setOpen, query }), [open, query]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
@@ -76,89 +61,65 @@ export function SearchToggle() {
   );
 }
 
-/** The field (when open) and the filtered stack. */
-export function SearchResults({ pages }: { pages: LandingPagePublic[] }) {
-  const { open, setOpen, q, setQ } = useSearch();
+/** The field. A GET form, so the browser owns the navigation. */
+export function SearchField({ total }: { total: number }) {
+  const { open, setOpen, query } = useSearch();
   const inputRef = useRef<HTMLInputElement>(null);
+  // Focus on open, but never steal the caret on a page that loaded WITH a query
+  // — at that point the visitor is reading results, not typing.
+  const openedByUser = useRef(false);
 
-  // Opening puts the caret in the field — otherwise the icon opens a box and
-  // then asks for a second tap to use it.
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open && openedByUser.current) inputRef.current?.focus();
   }, [open]);
 
-  // Title and category both match. Category is what people type when they can't
-  // remember a title ("novel"), and it is already printed on every row.
-  const results = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    if (!needle) return pages;
-    return pages.filter((p) =>
-      `${p.title} ${p.category?.name ?? ""}`.toLowerCase().includes(needle),
-    );
-  }, [pages, q]);
-
-  const searching = !!q.trim();
+  if (!open) return null;
 
   return (
-    <>
-      {open && (
-        <div className="mt-5">
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--card)] px-3 py-2.5 transition-colors focus-within:bg-[var(--accent-subtle)]">
-            <SearchIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-            <input
-              ref={inputRef}
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => {
-                // Esc clears first and closes second — one step back at a time,
-                // rather than throwing the panel away over a typo.
-                if (e.key !== "Escape") return;
-                if (q) setQ("");
-                else setOpen(false);
-              }}
-              placeholder="Cari produk…"
-              aria-label="Cari produk"
-              // 16px on phones: under that, Safari zooms the page on focus and
-              // never zooms back out.
-              className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-[var(--muted)] sm:text-sm"
-            />
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Tutup pencarian"
-              className="-mr-1 shrink-0 rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:text-foreground"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          {searching && (
-            <p aria-live="polite" className="mt-2 px-1 text-xs text-[var(--muted)]">
-              {results.length === 0
-                ? "Tidak ada yang cocok."
-                : `${results.length} hasil`}
-            </p>
-          )}
-        </div>
-      )}
-
-      {results.length === 0 ? (
-        <p className="mt-7 rounded-2xl bg-[var(--accent-subtle)] px-6 py-12 text-center text-sm text-[var(--muted)]">
-          {searching ? "Coba kata lain." : "Belum ada tautan di sini."}
+    <form method="GET" action="/" className="mt-5">
+      <div className="flex items-center gap-2 rounded-xl bg-[var(--card)] px-3 py-2.5 transition-colors focus-within:bg-[var(--accent-subtle)]">
+        <SearchIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
+        <input
+          ref={inputRef}
+          type="search"
+          name="q"
+          defaultValue={query}
+          placeholder="Cari produk…"
+          aria-label="Cari produk"
+          // 16px on phones: under that, Safari zooms the page on focus and never
+          // zooms back out.
+          className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-[var(--muted)] sm:text-sm"
+        />
+        {query ? (
+          /* A link, not a reset button: clearing a search means going back to the
+             unfiltered page, which is a navigation. */
+          <Link
+            href="/"
+            aria-label="Hapus pencarian"
+            className="-mr-1 shrink-0 rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:text-foreground"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              openedByUser.current = false;
+              setOpen(false);
+            }}
+            aria-label="Tutup pencarian"
+            className="-mr-1 shrink-0 rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:text-foreground"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {query && (
+        <p className="mt-2 px-1 text-xs text-[var(--muted)]">
+          {total === 0 ? "Tidak ada yang cocok." : `${total} hasil untuk "${query}"`}
         </p>
-      ) : (
-        <ul className="mt-7 space-y-2.5">
-          {results.map((page, i) => (
-            // priority only while unfiltered: after a search the top rows are
-            // different products, and the hint would point at images that are no
-            // longer first.
-            <LinkRow key={page.id} page={page} priority={!searching && i < 3} />
-          ))}
-        </ul>
       )}
-    </>
+    </form>
   );
 }
 
@@ -167,6 +128,14 @@ function SearchIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
       <circle cx="11" cy="11" r="7" />
       <path strokeLinecap="round" d="M20 20l-3.5-3.5" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }

@@ -5,6 +5,7 @@ import type { Site } from "@/lib/site-resolve";
 import type { SiteBrand } from "@/lib/site-brand";
 import type { Surfaces } from "@/lib/palette";
 import type { FounderCard } from "@/lib/content-config";
+import type { HomepageListing } from "@/lib/actions/landing-pages";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
@@ -51,6 +52,14 @@ export type TemplateProps = {
    * already renders, so the two can never drift into two different people.
    */
   founder: FounderCard;
+  /**
+   * Paging state for `pages`, which is now ONE page of the catalogue rather than
+   * all of it. A template that ignores this still renders correctly — it just
+   * shows the first page and no pager.
+   */
+  listing: HomepageListing;
+  /** The active search term, echoed back so a template can prefill its field. */
+  query: string;
 };
 
 /**
@@ -72,7 +81,7 @@ export type ChromeProps = {
   brand: SiteBrand;
 };
 
-export type CategoryTemplateProps = Omit<TemplateProps, "hero" | "founder"> & {
+export type CategoryTemplateProps = Omit<TemplateProps, "hero" | "founder" | "listing" | "query"> & {
   category: LandingPageCategory;
 };
 

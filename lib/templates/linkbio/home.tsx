@@ -4,7 +4,9 @@ import { BrandAvatar } from "@/components/site-logo";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { siteBrand } from "@/lib/site-brand";
 import { LinkbioFooter } from "./chrome";
-import { SearchProvider, SearchToggle, SearchResults } from "./linkbio-search";
+import { SearchProvider, SearchToggle, SearchField } from "./linkbio-search";
+import { LinkRow } from "./link-row";
+import { Pager } from "./pager";
 import type { TemplateProps } from "../registry";
 
 /** Signed-in goes to the panel; everyone else to the login screen. */
@@ -31,14 +33,14 @@ function AccountIcon({ className }: { className?: string }) {
  * Categories become filter chips rather than a nav rail, because on this shape
  * they are a way to shorten the list, not a place to go.
  */
-export function LinkbioHome({ site, pages, categories, user, founder }: TemplateProps) {
+export function LinkbioHome({ site, pages, categories, user, founder, listing, query, sort }: TemplateProps) {
   const parents = categories.filter((c) => !c.parent_id);
   // A founder card that is switched off, or has no name, falls back to the
   // storefront's own identity rather than rendering an empty person.
   const showFounder = founder.enabled && !!founder.name.trim();
 
   return (
-    <SearchProvider>
+    <SearchProvider query={query}>
     <div
       data-template="linkbio"
       className="flex min-h-screen flex-col bg-background text-foreground"
@@ -109,8 +111,25 @@ export function LinkbioHome({ site, pages, categories, user, founder }: Template
           </nav>
         )}
 
-        {/* The search field (when open) and the stack it filters. */}
-        <SearchResults pages={pages} />
+        {/* The field submits to the server; `pages` is already the matching
+            page of results. */}
+        <SearchField total={listing.total} />
+
+        {pages.length === 0 ? (
+          <p className="mt-7 rounded-2xl bg-[var(--accent-subtle)] px-6 py-12 text-center text-sm text-[var(--muted)]">
+            {query ? "Coba kata lain." : "Belum ada tautan di sini."}
+          </p>
+        ) : (
+          <ul className="mt-7 space-y-2.5">
+            {pages.map((page, i) => (
+              /* priority only on the first page: on page two the top rows are
+                 different products and the hint would preload the wrong images. */
+              <LinkRow key={page.id} page={page} priority={listing.page === 1 && i < 3} />
+            ))}
+          </ul>
+        )}
+
+        <Pager page={listing.page} pageCount={listing.pageCount} query={query} sort={sort} />
       </main>
 
       <LinkbioFooter />

@@ -422,6 +422,173 @@ export async function getLandingPagesForHomepage(
   return getCachedHomepagePages(slug, sort, site.category_ids ?? []);
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Paged + searchable listing                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Rows per page in the storefront listing.
+ *
+ * NOT exported: this module is "use server", where every export is compiled into
+ * a server action and only async functions are allowed (I5). Nothing outside
+ * needs the number anyway — callers get `pageCount` in the result.
+ */
+const HOMEPAGE_PAGE_SIZE = 12;
+
+export type HomepageListing = {
+  items: LandingPagePublic[];
+  /** Total matching rows, for the pager and the "N hasil" line. */
+  total: number;
+  pageCount: number;
+  /** 1-based, already clamped to the available range. */
+  page: number;
+};
+
+/**
+ * A search term safe to drop into a PostgREST `or(...)` filter.
+ *
+ * That syntax is comma-separated and parenthesised, so a raw comma or bracket
+ * from a visitor rewrites the filter rather than being matched by it, and `%`
+ * or `_` would turn their query into a wildcard. Everything else survives, and
+ * the length cap keeps a pathological string out of the query planner.
+ */
+function sanitizeQuery(raw: string): string {
+  return raw.replace(/[,()%_*\\]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+type ListingArgs = {
+  categoryIds: string[] | null;
+  sort: HomepageSort;
+  q: string;
+  page: number;
+};
+
+/**
+ * One query, used by both the cached and uncached paths.
+ *
+ * `count: "exact"` rather than counting a second time: the pager needs a total
+ * and PostgREST returns it in the same round trip.
+ */
+async function queryListing({ categoryIds, sort, q, page }: ListingArgs): Promise<HomepageListing> {
+  const supabase = createAnonClient();
+  const from = (page - 1) * HOMEPAGE_PAGE_SIZE;
+
+  let query = supabase
+    .from("lp_landing_pages")
+    .select(
+      "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
+      { count: "exact" },
+    )
+    .eq("published", true)
+    .order("featured", { ascending: false });
+
+  query =
+    sort === "popular"
+      ? query.order("sold_count", { ascending: false, nullsFirst: false })
+      : query.order("created_at", { ascending: false });
+
+  if (categoryIds) query = query.in("category_id", categoryIds);
+  if (q) query = query.or(`title.ilike.%${q}%,long_description.ilike.%${q}%`);
+
+  const { data, error, count } = await query.range(from, from + HOMEPAGE_PAGE_SIZE - 1);
+  if (error) {
+    console.error("queryListing error:", error);
+    // Throw rather than return empty: an empty result would be CACHED as if the
+    // storefront had no products (see docs/architecture.md §5).
+    throw new Error(error.message);
+  }
+
+  type Row = Omit<LandingPagePublic, "category"> & {
+    landing_page_categories: LandingPageCategory | null;
+  };
+  const items = ((data ?? []) as unknown as Row[]).map(({ landing_page_categories, ...p }) => ({
+    ...p,
+    category: landing_page_categories ?? null,
+  })) as LandingPagePublic[];
+
+  const total = count ?? items.length;
+  return {
+    items,
+    total,
+    pageCount: Math.max(1, Math.ceil(total / HOMEPAGE_PAGE_SIZE)),
+    page,
+  };
+}
+
+/**
+ * Cached only when there is no search term.
+ *
+ * A query string is visitor-supplied and unbounded, so caching per term would
+ * mint a cache entry for every thing anyone ever typed. Browsing (page + sort +
+ * category) is a small, known key space and is cached as before.
+ */
+const getCachedListing = unstable_cache(
+  async (categoryIds: string[] | null, sort: HomepageSort, page: number) =>
+    queryListing({ categoryIds, sort, q: "", page }),
+  ["homepage-listing"],
+  { revalidate: 60, tags: ["categories", "homepage-pages"] },
+);
+
+export async function getHomepageListing(opts: {
+  categorySlug?: string | null;
+  sort?: HomepageSort;
+  page?: number;
+  q?: string;
+}): Promise<HomepageListing> {
+  const sort = opts.sort ?? "newest";
+  const q = sanitizeQuery(opts.q ?? "");
+  const page = Math.max(1, Math.floor(opts.page ?? 1));
+
+  // Resolved OUTSIDE the cache, like the listing above: the site comes from the
+  // request, and a cached function cannot read it (I1).
+  const site = await currentSite();
+  const categoryIds = await resolveListingCategoryIds(
+    opts.categorySlug?.trim() || "",
+    site.category_ids ?? [],
+  );
+  if (categoryIds === "none") {
+    return { items: [], total: 0, pageCount: 1, page: 1 };
+  }
+
+  return q
+    ? queryListing({ categoryIds, sort, q, page })
+    : getCachedListing(categoryIds, sort, page);
+}
+
+/**
+ * The category ids a listing may include: the browsed category expanded to its
+ * children, intersected with the storefront's own niche.
+ *
+ * "none" means "this storefront carries nothing matching" — distinct from null,
+ * which means "no filter, whole catalogue".
+ */
+async function resolveListingCategoryIds(
+  slug: string,
+  siteCategoryIds: string[],
+): Promise<string[] | null | "none"> {
+  let categoryIds: string[] | null = null;
+
+  if (slug) {
+    const cats = await getCategories();
+    const target = cats.find((c) => c.slug === slug);
+    if (!target) return "none";
+    categoryIds = [target.id, ...cats.filter((c) => c.parent_id === target.id).map((c) => c.id)];
+  }
+
+  if (siteCategoryIds.length > 0) {
+    const cats = await getCategories();
+    const allowed = new Set<string>();
+    for (const rootId of siteCategoryIds) {
+      allowed.add(rootId);
+      for (const c of cats) if (c.parent_id === rootId) allowed.add(c.id);
+    }
+    categoryIds = categoryIds === null ? [...allowed] : categoryIds.filter((id) => allowed.has(id));
+    if (categoryIds.length === 0) return "none";
+  }
+
+  return categoryIds;
+}
+
 const getCachedHomepagePages = unstable_cache(
   async (
     slug: string,
