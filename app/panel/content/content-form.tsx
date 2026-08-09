@@ -70,6 +70,34 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
     set("founder", { ...content.founder, ...patch });
   }
 
+  const [coverMeta, setCoverMeta] = useState<{ name: string; size: number } | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+
+  async function handleFounderCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setCoverUploading(true);
+    setCoverError(null);
+    setStatus(null);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await uploadLibraryAsset(fd);
+      if ("error" in res) {
+        setCoverError(res.error);
+        return;
+      }
+      setCoverMeta({ name: file.name, size: file.size });
+      setFounder({ coverUrl: res.url });
+    } catch {
+      setCoverError("Gagal mengunggah cover.");
+    } finally {
+      setCoverUploading(false);
+    }
+  }
+
   async function handleFounderPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     // Cleared first: the card re-uses one input for "Pilih file" and "Ganti file", so a
@@ -191,6 +219,35 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
               setPhotoMeta(null);
               setPhotoError(null);
               setFounder({ photoUrl: "" });
+            }}
+          />
+
+          <FileUploadCard
+            label="Cover / background atas"
+            hint="Landscape, mis. 1200×600. Tampil di balik foto & nama di homepage, sampai ke tepi paling atas layar."
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            badge="IMG"
+            badgeClass="bg-[var(--primary)]/10 text-[var(--primary)]"
+            url={content.founder.coverUrl}
+            meta={coverMeta}
+            uploading={coverUploading}
+            error={coverError}
+            statusText="Terpasang"
+            preview={
+              <div className="mb-2 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={content.founder.coverUrl}
+                  alt="Cover homepage"
+                  className="h-20 w-full object-cover"
+                />
+              </div>
+            }
+            onUpload={handleFounderCover}
+            onRemove={() => {
+              setCoverMeta(null);
+              setCoverError(null);
+              setFounder({ coverUrl: "" });
             }}
           />
 

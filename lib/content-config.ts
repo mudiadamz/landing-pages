@@ -32,6 +32,14 @@ export type FounderCard = {
    * in /panel/content.
    */
   verified: boolean;
+  /**
+   * Banner behind the top of the storefront homepage. Empty = no cover.
+   *
+   * Lives on the founder card because that is what it sits behind — the photo,
+   * the name and the line under it — so the two are chosen together rather than
+   * from opposite ends of the panel.
+   */
+  coverUrl: string;
 };
 
 export type SiteContent = {
@@ -84,6 +92,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     contactLabel: "Hubungi langsung",
     contactHref: "/contact",
     verified: true,
+    coverUrl: "",
   },
 
   licenseHeading: "Ketentuan & lisensi",
@@ -175,6 +184,7 @@ export function normalizeContent(raw: unknown): SiteContent {
     contactLabel: rf.contactLabel ?? df.contactLabel,
     contactHref: rf.contactHref ?? df.contactHref,
     verified: typeof rf.verified === "boolean" ? rf.verified : df.verified,
+    coverUrl: rf.coverUrl ?? df.coverUrl,
   };
 
   return {

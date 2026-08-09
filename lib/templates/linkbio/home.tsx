@@ -52,19 +52,44 @@ export function LinkbioHome({
   // A founder card that is switched off, or has no name, falls back to the
   // storefront's own identity rather than rendering an empty person.
   const showFounder = founder.enabled && !!founder.name.trim();
+  // The cover belongs to the founder card, and shows only when that card does.
+  const cover = showFounder ? founder.coverUrl.trim() : "";
 
   return (
     <SearchProvider query={query}>
     <div
       data-template="linkbio"
-      className="flex min-h-screen flex-col bg-background text-foreground"
+      className="relative flex min-h-screen flex-col bg-background text-foreground"
     >
+      {/* Cover. Starts at the document's true top and, with viewport-fit=cover,
+          is pulled up by the safe-area inset so it fills the status-bar strip in
+          a standalone window instead of leaving a band of page colour there.
+          A regular browser tab paints its own chrome and no page can reach it —
+          the image stops at the top of the viewport there.
+
+          Fades into the page rather than ending on a line, so the profile below
+          sits ON the cover instead of under a separate block. aria-hidden: it is
+          decoration, and the name it sits behind is the actual heading. */}
+      {cover && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 z-0 overflow-hidden"
+          style={{
+            top: "calc(-1 * env(safe-area-inset-top, 0px))",
+            height: "calc(15rem + env(safe-area-inset-top, 0px))",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={cover} alt="" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[var(--background)]" />
+        </div>
+      )}
       {/* Three icons, and deliberately only three.
           The page still renders no header — a nav bar would turn the bio card
           back into a website (see below). These sit in the margin above the card
           as bare glyphs with no bar, no border and no wordmark, so they read as
           controls on the page rather than as chrome around it. */}
-      <div className="mx-auto flex w-full max-w-xl items-center justify-end gap-0.5 px-3 pt-3">
+      <div className="relative z-10 mx-auto flex w-full max-w-xl items-center justify-end gap-0.5 px-3 pt-3">
         <SearchToggle />
         <Link
           href={user ? "/panel" : "/login"}
@@ -77,7 +102,7 @@ export function LinkbioHome({
         <ThemeSwitch />
       </div>
 
-      <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-6 sm:pt-8">
+      <main className="relative z-10 mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-6 sm:pt-8">
         {/* Profile: the FOUNDER, not the storefront.
             A link-in-bio page is somebody's page — the photo, the name and the
             one line under it are the same card the checkout page already shows,

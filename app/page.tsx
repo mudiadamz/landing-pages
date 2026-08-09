@@ -1,3 +1,4 @@
+import type { Viewport } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getHomepageListing, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
@@ -5,6 +6,17 @@ import { getHero } from "@/lib/actions/site-settings";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateHomeView } from "@/lib/templates/chrome";
 import { getSiteContent } from "@/lib/actions/site-settings";
+
+/**
+ * viewport-fit=cover so the top cover can reach past the notch into the status
+ * bar area in a standalone/PWA window, where env(safe-area-inset-top) is what
+ * the browser hands us.
+ *
+ * Declared on THIS route rather than the root layout: globally it would let
+ * every fixed top element — the panel's sticky header, for one — slide under the
+ * status bar in standalone mode, which is a regression nobody asked for.
+ */
+export const viewport: Viewport = { viewportFit: "cover" };
 
 type Props = {
   searchParams: Promise<{
