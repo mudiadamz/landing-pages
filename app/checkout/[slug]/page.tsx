@@ -14,7 +14,10 @@ import { FounderCredibility } from "@/components/founder-credibility";
 import { JsonLd } from "@/components/json-ld";
 import { SITE_URL, buildMetaDescription } from "@/lib/seo";
 import { RichText } from "@/components/rich-text";
+import { currentSite } from "@/lib/site-resolve";
+import { resolveTemplate } from "@/lib/templates/registry";
 import { CheckoutForm } from "./checkout-form";
+import { CheckoutCtaBar, CHECKOUT_CTA_ID } from "./checkout-cta-bar";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
@@ -91,10 +94,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CheckoutPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const [supabase, page, sp] = await Promise.all([
+  const [supabase, page, sp, site] = await Promise.all([
     createClient(),
     getCheckoutPage(slug),
     searchParams,
+    // Which chrome this storefront draws — the floating CTA has to clear a
+    // bottom nav on the templates that fix one to the edge.
+    currentSite(),
   ]);
   if (!page) notFound();
   const adHeadline = sanitizeAdHeadline(sp.h);
@@ -194,7 +200,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
       <ProductTracker slug={page.slug} page="checkout" />
       <TemplateHeader user={user} />
 
-      <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      {/* pb clears the floating CTA bar, which is fixed and would otherwise sit
+          over the last rows of the page once scrolled to the bottom. */}
+      <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-28 sm:pb-28">
         <Link
           href="/"
           className="text-sm text-[var(--muted)] hover:text-foreground transition-colors mb-6 inline-block"
@@ -359,7 +367,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             </div>
 
             {/* CTA — guarantee surfaced at the hesitation point, payment methods below */}
-            <div className="border-t border-[var(--border)] pt-5 space-y-3">
+            <div id={CHECKOUT_CTA_ID} className="border-t border-[var(--border)] pt-5 space-y-3">
               {!showAsFree && <GuaranteeBadge />}
               {/* Live demo — the proof. Let cold traffic touch the real, public,
                   no-login product right before the purchase wall. */}
@@ -428,6 +436,15 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
       </main>
 
       <TemplateFooter />
+
+      {/* Preview and pay, kept at the thumb. Hides itself once the real CTA
+          block is on screen — two buy buttons at once is just noise. */}
+      <CheckoutCtaBar
+        slug={page.slug}
+        previewLabel={previewButtonLabel}
+        payLabel={showAsFree ? "Ambil gratis" : "Beli sekarang"}
+        aboveBottomNav={!!resolveTemplate(site.template).hasBottomNav}
+      />
     </div>
   );
 }

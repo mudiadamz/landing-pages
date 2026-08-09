@@ -37,8 +37,12 @@ export function LinkRow({ page, priority }: { page: LandingPagePublic; priority:
 
   return (
     <li>
+      {/* Checkout, not preview. Checkout is the product page — it carries the
+          price, the description, the reviews and the buy button, and it is what
+          the sitemap points at. Preview is one tap from there, now on a floating
+          bar, so the row no longer has to choose between "look" and "buy". */}
       <Link
-        href={`/preview/${page.slug}`}
+        href={`/checkout/${page.slug}`}
         className="group flex min-h-16 items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--primary)]/50 hover:shadow-md active:translate-y-0 active:scale-[0.99]"
       >
         <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--background)]">

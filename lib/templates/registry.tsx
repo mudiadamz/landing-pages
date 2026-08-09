@@ -105,6 +105,15 @@ export type TemplateDef = {
   /** Category index (/categories). */
   Categories?: (props: CategoriesTemplateProps) => React.ReactNode;
   /**
+   * Whether this template's Footer mounts the fixed mobile bottom nav.
+   *
+   * Anything else that fixes itself to the bottom edge — the checkout CTA bar —
+   * has to sit above that nav or cover it. Declared here rather than sniffed,
+   * because only the template knows what chrome it draws, and a fourth template
+   * that adds a nav would otherwise silently start hiding the buy button.
+   */
+  hasBottomNav?: boolean;
+  /**
    * Palette preset this theme was designed against. Only a SUGGESTION shown in the
    * panel — the palette is stored per domain, so two sites on one theme can differ,
    * and an admin's explicit choice is never overwritten.
@@ -124,6 +133,7 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Footer: SiteFooter,
     Category: DefaultCategory,
     Categories: DefaultCategories,
+    hasBottomNav: true,
     defaultPalette: "forest",
   },
   pustaka: {
@@ -136,6 +146,7 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Footer: PustakaFooter,
     Category: PustakaCategory,
     Categories: PustakaCategories,
+    hasBottomNav: true,
     defaultPalette: "ink",
   },
   linkbio: {
