@@ -1,4 +1,4 @@
-const links = [
+export const SOCIAL_LINKS = [
   {
     name: "Threads",
     label: "Threads",
@@ -43,6 +43,8 @@ const links = [
   },
 ] as const;
 
+export type SocialLink = (typeof SOCIAL_LINKS)[number];
+
 type Props = {
   className?: string;
   variant?: "row" | "stack";
@@ -55,7 +57,7 @@ export function SocialLinks({ className = "", variant = "row" }: Props) {
       className={`flex flex-wrap gap-3 ${isStack ? "flex-col" : "flex-row"} ${className}`}
       aria-label="Tautan media sosial"
     >
-      {links.map(({ name, label, href, icon }) => (
+      {SOCIAL_LINKS.map(({ name, label, href, icon }) => (
         <li key={name}>
           <a
             href={href}

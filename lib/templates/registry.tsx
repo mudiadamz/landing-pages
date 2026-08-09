@@ -4,6 +4,7 @@ import type { PublicReview } from "@/lib/actions/reviews";
 import type { Site } from "@/lib/site-resolve";
 import type { SiteBrand } from "@/lib/site-brand";
 import type { Surfaces } from "@/lib/palette";
+import type { FounderCard } from "@/lib/content-config";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
@@ -42,6 +43,14 @@ export type TemplateProps = {
   hero: HeroConfig;
   sort: HomepageSort;
   user: { id: string } | null;
+  /**
+   * The founder card from site content — the person behind the storefront.
+   *
+   * Passed in rather than fetched by the template: presentation does not fetch
+   * (see docs/architecture.md §2), and this is the same card the checkout page
+   * already renders, so the two can never drift into two different people.
+   */
+  founder: FounderCard;
 };
 
 /**
@@ -63,7 +72,7 @@ export type ChromeProps = {
   brand: SiteBrand;
 };
 
-export type CategoryTemplateProps = Omit<TemplateProps, "hero"> & {
+export type CategoryTemplateProps = Omit<TemplateProps, "hero" | "founder"> & {
   category: LandingPageCategory;
 };
 

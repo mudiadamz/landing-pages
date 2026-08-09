@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SocialLinks } from "@/components/social-links";
+import { SocialLinksCompact } from "@/components/social-links-compact";
 import { BrandAvatar } from "@/components/site-logo";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { siteBrand } from "@/lib/site-brand";
@@ -31,8 +31,11 @@ function AccountIcon({ className }: { className?: string }) {
  * Categories become filter chips rather than a nav rail, because on this shape
  * they are a way to shorten the list, not a place to go.
  */
-export function LinkbioHome({ site, pages, categories, user }: TemplateProps) {
+export function LinkbioHome({ site, pages, categories, user, founder }: TemplateProps) {
   const parents = categories.filter((c) => !c.parent_id);
+  // A founder card that is switched off, or has no name, falls back to the
+  // storefront's own identity rather than rendering an empty person.
+  const showFounder = founder.enabled && !!founder.name.trim();
 
   return (
     <SearchProvider>
@@ -59,19 +62,36 @@ export function LinkbioHome({ site, pages, categories, user }: TemplateProps) {
       </div>
 
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-6 sm:pt-8">
-        {/* Profile. The site icon IS the profile photo here — this is the surface the
-            square upload exists for, and initials are the stand-in, not the design. */}
+        {/* Profile: the FOUNDER, not the storefront.
+            A link-in-bio page is somebody's page — the photo, the name and the
+            one line under it are the same card the checkout page already shows,
+            so the person is identical on both and cannot drift. The site's own
+            icon and name are the fallback for a storefront whose founder card is
+            switched off. */}
         <div className="flex flex-col items-center text-center">
-          <BrandAvatar brand={siteBrand(site)} />
+          {showFounder && founder.photoUrl ? (
+            /* Plain <img>: the photo can be a local path or an uploaded URL,
+               and next/image would need every storage host configured. */
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={founder.photoUrl}
+              alt={founder.name}
+              className="h-24 w-24 rounded-full object-cover"
+            />
+          ) : (
+            <BrandAvatar brand={siteBrand(site)} />
+          )}
           <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            {site.name}
+            {showFounder ? founder.name : site.name}
           </h1>
-          {site.tagline && (
+          {(showFounder ? founder.role : site.tagline) && (
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
-              {site.tagline}
+              {showFounder ? founder.role : site.tagline}
             </p>
           )}
-          <SocialLinks variant="row" className="mt-4 justify-center gap-x-4 text-xs" />
+          {/* Icons only, and capped: labels wrapped this row onto a second line
+              to spell out four words the glyphs already say. */}
+          <SocialLinksCompact className="mt-4" />
         </div>
 
         {/* Filter chips — only worth showing when there is more than one */}

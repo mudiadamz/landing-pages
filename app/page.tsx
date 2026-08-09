@@ -4,6 +4,7 @@ import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { getHero } from "@/lib/actions/site-settings";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateHomeView } from "@/lib/templates/chrome";
+import { getSiteContent } from "@/lib/actions/site-settings";
 
 type Props = { searchParams: Promise<{ sort?: string | string[] }> };
 
@@ -23,13 +24,14 @@ export default async function Home({ searchParams }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [site, pages, categories, reviews, reviewCounts, hero] = await Promise.all([
+  const [site, pages, categories, reviews, reviewCounts, hero, content] = await Promise.all([
     currentSite(),
     getLandingPagesForHomepage(null, sort),
     getCategories(),
     getPublicReviews(),
     getReviewCounts(),
     getHero(),
+    getSiteContent(),
   ]);
 
   return (
@@ -42,6 +44,7 @@ export default async function Home({ searchParams }: Props) {
       hero={hero}
       sort={sort}
       user={user}
+      founder={content.founder}
     />
   );
 }
