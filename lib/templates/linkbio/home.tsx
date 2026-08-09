@@ -4,7 +4,7 @@ import { BrandAvatar } from "@/components/site-logo";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { siteBrand } from "@/lib/site-brand";
 import { LinkbioFooter } from "./chrome";
-import { LinkRow } from "./link-row";
+import { SearchProvider, SearchToggle, SearchResults } from "./linkbio-search";
 import type { TemplateProps } from "../registry";
 
 /** Signed-in goes to the panel; everyone else to the login screen. */
@@ -35,16 +35,18 @@ export function LinkbioHome({ site, pages, categories, user }: TemplateProps) {
   const parents = categories.filter((c) => !c.parent_id);
 
   return (
+    <SearchProvider>
     <div
       data-template="linkbio"
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
-      {/* Two icons, and deliberately only two.
+      {/* Three icons, and deliberately only three.
           The page still renders no header — a nav bar would turn the bio card
           back into a website (see below). These sit in the margin above the card
           as bare glyphs with no bar, no border and no wordmark, so they read as
           controls on the page rather than as chrome around it. */}
       <div className="mx-auto flex w-full max-w-xl items-center justify-end gap-0.5 px-3 pt-3">
+        <SearchToggle />
         <Link
           href={user ? "/panel" : "/login"}
           aria-label={user ? "Buka panel" : "Masuk"}
@@ -87,21 +89,12 @@ export function LinkbioHome({ site, pages, categories, user }: TemplateProps) {
           </nav>
         )}
 
-        {/* The stack */}
-        {pages.length === 0 ? (
-          <p className="mt-10 rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center text-sm text-[var(--muted)]">
-            Belum ada tautan di sini.
-          </p>
-        ) : (
-          <ul className="mt-7 space-y-2.5">
-            {pages.map((page, i) => (
-              <LinkRow key={page.id} page={page} priority={i < 3} />
-            ))}
-          </ul>
-        )}
+        {/* The search field (when open) and the stack it filters. */}
+        <SearchResults pages={pages} />
       </main>
 
       <LinkbioFooter />
     </div>
+    </SearchProvider>
   );
 }
