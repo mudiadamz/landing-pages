@@ -179,7 +179,6 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Footer: LinkbioFooter,
     Category: LinkbioCategory,
     Categories: LinkbioCategories,
-    lightOnly: true,
     // Cool grey page, white cards. The rows stop being tinted blocks and become
     // real surfaces, which is what "flat" needs to avoid reading as one wash.
     surfaces: { background: "#eef2f6", card: "#ffffff" },

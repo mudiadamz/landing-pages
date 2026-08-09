@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
 import { BrandAvatar } from "@/components/site-logo";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { siteBrand } from "@/lib/site-brand";
 import { LinkbioFooter } from "./chrome";
 import { SearchProvider, SearchToggle, SearchResults } from "./linkbio-search";
@@ -39,7 +40,7 @@ export function LinkbioHome({ site, pages, categories, user }: TemplateProps) {
       data-template="linkbio"
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
-      {/* Two icons, and deliberately only two.
+      {/* Three icons, and deliberately only three.
           The page still renders no header — a nav bar would turn the bio card
           back into a website (see below). These sit in the margin above the card
           as bare glyphs with no bar, no border and no wordmark, so they read as
@@ -54,6 +55,7 @@ export function LinkbioHome({ site, pages, categories, user }: TemplateProps) {
         >
           <AccountIcon className="h-5 w-5" />
         </Link>
+        <ThemeSwitch />
       </div>
 
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-6 sm:pt-8">
