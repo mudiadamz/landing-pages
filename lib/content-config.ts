@@ -40,6 +40,16 @@ export type FounderCard = {
    * from opposite ends of the panel.
    */
   coverUrl: string;
+  /**
+   * `#rrggbb` tinting the browser toolbar on the homepage, so Safari's chrome
+   * blends into the cover instead of ending it on a hard edge.
+   *
+   * A colour, not the image: `theme-color` is the only hook a page has into
+   * browser chrome and it takes one flat value. Sampled from the top of the
+   * cover when one is uploaded, and editable afterwards. Empty = leave the
+   * toolbar alone.
+   */
+  coverThemeColor: string;
 };
 
 export type SiteContent = {
@@ -93,6 +103,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     contactHref: "/contact",
     verified: true,
     coverUrl: "",
+    coverThemeColor: "",
   },
 
   licenseHeading: "Ketentuan & lisensi",
@@ -185,6 +196,10 @@ export function normalizeContent(raw: unknown): SiteContent {
     contactHref: rf.contactHref ?? df.contactHref,
     verified: typeof rf.verified === "boolean" ? rf.verified : df.verified,
     coverUrl: rf.coverUrl ?? df.coverUrl,
+    // Validated, not trusted: this value is interpolated into a meta tag.
+    coverThemeColor: /^#[0-9a-f]{6}$/i.test((rf.coverThemeColor ?? "").trim())
+      ? (rf.coverThemeColor as string).trim().toLowerCase()
+      : df.coverThemeColor,
   };
 
   return {

@@ -14,19 +14,6 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  const isPanelRoute = pathname.startsWith("/panel");
-  // The owner's reader. Guarded here so a signed-out visitor gets a real 307
-  // before anything renders — the page streams, so a redirect thrown inside it
-  // would arrive after the 200 was already committed.
-  const isReadRoute = pathname.startsWith("/read/");
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
-
-  // Everything else skips the session lookup entirely — it costs a request to
-  // Supabase, and public pages don't need it.
-  if (!isPanelRoute && !isAuthRoute && !isReadRoute) {
-    return NextResponse.next({ request });
-  }
-
   /**
    * Forward the pathname to the server components.
    *
@@ -41,6 +28,23 @@ export async function updateSession(request: NextRequest) {
     headers.set("x-pathname", pathname);
     return NextResponse.next({ request: { headers } });
   };
+
+  const isPanelRoute = pathname.startsWith("/panel");
+  // The owner's reader. Guarded here so a signed-out visitor gets a real 307
+  // before anything renders — the page streams, so a redirect thrown inside it
+  // would arrive after the 200 was already committed.
+  const isReadRoute = pathname.startsWith("/read/");
+  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
+
+  // Everything else skips the session lookup entirely — it costs a request to
+  // Supabase, and public pages don't need it.
+  if (!isPanelRoute && !isAuthRoute && !isReadRoute) {
+    // Still carries x-pathname: the session lookup is what public pages skip,
+    // not the header. The root layout reads it to know whether it is rendering
+    // the homepage, and returning a bare next() here left it blank on "/" — the
+    // one route that asked.
+    return nextWithPath();
+  }
 
   let supabaseResponse = nextWithPath();
 

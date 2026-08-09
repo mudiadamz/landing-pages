@@ -74,6 +74,51 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
 
+/**
+ * Average colour of the cover's top strip, for the browser toolbar.
+ *
+ * The top strip rather than the whole image, because that is the edge the
+ * toolbar actually touches — averaging the whole picture blends a dark sky with
+ * a bright foreground into a grey that matches neither.
+ *
+ * Best effort: a cross-origin image with no CORS headers taints the canvas and
+ * getImageData throws, in which case the field simply stays as it was and can be
+ * filled by hand.
+ */
+async function sampleTopColor(url: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onerror = () => resolve("");
+    img.onload = () => {
+      try {
+        const w = 32;
+        const h = Math.max(1, Math.round((img.height / img.width) * w));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve("");
+        ctx.drawImage(img, 0, 0, w, h);
+        const strip = Math.max(1, Math.round(h * 0.15));
+        const { data } = ctx.getImageData(0, 0, w, strip);
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          n++;
+        }
+        const hex = (v: number) => Math.round(v / n).toString(16).padStart(2, "0");
+        resolve(`#${hex(r)}${hex(g)}${hex(b)}`);
+      } catch {
+        resolve("");
+      }
+    };
+    img.src = url;
+  });
+}
+
   async function handleFounderCover(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -90,7 +135,9 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
         return;
       }
       setCoverMeta({ name: file.name, size: file.size });
-      setFounder({ coverUrl: res.url });
+      // Sampled here, not on the server: the bytes are already in the browser.
+      const sampled = await sampleTopColor(res.url);
+      setFounder(sampled ? { coverUrl: res.url, coverThemeColor: sampled } : { coverUrl: res.url });
     } catch {
       setCoverError("Gagal mengunggah cover.");
     } finally {
@@ -250,6 +297,29 @@ export function ContentForm({ initialContent, siteId }: { initialContent: SiteCo
               setFounder({ coverUrl: "" });
             }}
           />
+
+          <div>
+            <label className={labelCls}>Warna toolbar browser</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={content.founder.coverThemeColor || "#ffffff"}
+                onChange={(e) => setFounder({ coverThemeColor: e.target.value })}
+                aria-label="Pilih warna toolbar"
+                className="h-11 w-12 shrink-0 cursor-pointer rounded-lg border border-[var(--border)] bg-[var(--background)] p-1"
+              />
+              <input
+                className={inputCls}
+                value={content.founder.coverThemeColor}
+                onChange={(e) => setFounder({ coverThemeColor: e.target.value })}
+                placeholder="#1b2a4a"
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+              Warna bar atas Safari/Chrome di homepage, diambil otomatis dari bagian
+              atas cover saat diunggah. Kosongkan = ikut warna halaman.
+            </p>
+          </div>
 
           {/* Kept alongside the upload, not replaced by it: the DEFAULT photo is
               /pas_foto.png, a file in public/, and there is no way to reach that — or

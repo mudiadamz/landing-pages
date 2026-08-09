@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Suspense } from "react";
 import { getCustomJs, getTracking } from "@/lib/actions/site-settings";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -18,6 +18,7 @@ import { GtmScripts } from "@/components/gtm-scripts";
 import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
 import { currentOrigin, currentSite, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
+import { getSiteContent } from "@/lib/actions/site-settings";
 import { paletteCss, paletteFromKey, surfaceCss } from "@/lib/palette";
 import { DEFAULT_APPLE_ICON, DEFAULT_ICON } from "@/lib/site-brand";
 
@@ -144,6 +145,13 @@ export default async function RootLayout({
   // another domain would arrive here to a half-dark page with no way back.
   const template = resolveTemplate(site.template);
   const lightOnly = !!template.lightOnly;
+
+  // The homepage may tint the browser toolbar to match its cover. Read only for
+  // "/" — every other route would pay for a lookup it never uses, and the header
+  // comes from middleware (see app/panel/layout.tsx, which reads the same one).
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const coverTheme =
+    pathname === "/" ? (await getSiteContent()).founder.coverThemeColor : "";
   const isDark = themeCookie?.value === "dark" && !lightOnly;
 
   return (
@@ -152,7 +160,14 @@ export default async function RootLayout({
         {/* Tints the iOS Safari toolbar to match the theme (kept in sync by the
             inline script below and lib/use-theme on toggle) so the browser chrome
             doesn't stay light behind a dark page — e.g. on the /lp preview. */}
-        <meta name="theme-color" content={isDark ? "#0d0d0f" : "#fdfcfb"} />
+        {/* A cover colour wins over the page colour, and is marked so the script
+            below leaves it alone — otherwise the toolbar would blend for one
+            frame and then snap back to the page background. */}
+        <meta
+          name="theme-color"
+          content={coverTheme || (isDark ? "#0d0d0f" : "#fdfcfb")}
+          {...(coverTheme ? { "data-locked": "true" } : {})}
+        />
         {/* Add-to-home-screen support: manifest (auto-linked by app/manifest.ts)
             drives Chrome/Android/desktop installs; these tags cover iOS Safari,
             which has no install API and uses the apple-touch-icon + Share sheet.
@@ -177,7 +192,7 @@ export default async function RootLayout({
         )}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var lightOnly=${lightOnly ? "true" : "false"};var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=!lightOnly&&t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
+            __html: `(function(){var lightOnly=${lightOnly ? "true" : "false"};var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=!lightOnly&&t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc&&!mc.hasAttribute('data-locked')){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
           }}
         />
       </head>
