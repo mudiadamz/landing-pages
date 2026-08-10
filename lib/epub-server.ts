@@ -108,6 +108,72 @@ export function findEpubCoverPath(bytes: Uint8Array): string | null {
   return null;
 }
 
+/** What a book can tell us about itself, for the one-step product form. */
+export type EpubMeta = {
+  title: string;
+  description: string;
+  /** Path inside the archive, or null when the book ships no cover. */
+  coverPath: string | null;
+};
+
+const stripTags = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#\d+;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Title, description and cover, read out of the book itself.
+ *
+ * The OPF is the authority for title and description — it is what the author
+ * filled in. `dc:description` is often missing though, so the opening prose is
+ * the fallback: a blurb taken from the book's own first words is closer to the
+ * truth than an empty field, and the seller can rewrite it in the full form.
+ */
+export function extractEpubMeta(bytes: Uint8Array): EpubMeta {
+  const files = unzipSync(bytes);
+  const container = strFromU8(files["META-INF/container.xml"] ?? new Uint8Array());
+  const opfPath = container.match(/full-path="([^"]+)"/)?.[1];
+  const opf = opfPath && files[opfPath] ? strFromU8(files[opfPath]) : "";
+
+  const tag = (name: string) => {
+    const m = opf.match(new RegExp(`<dc:${name}[^>]*>([\\s\\S]*?)</dc:${name}>`, "i"));
+    return m ? stripTags(m[1]) : "";
+  };
+
+  let description = tag("description");
+  if (!description) {
+    // First readable prose in the spine. dropLeadingImageOnly skips the cover
+    // page, which otherwise contributes an empty string here.
+    try {
+      const { chapters } = extractEpubChapters(bytes, () => "", { dropLeadingImageOnly: true });
+      for (const c of chapters) {
+        const text = stripTags(c);
+        if (text.length > 80) {
+          description = text.slice(0, 320).trim();
+          // End on a sentence rather than mid-word.
+          const cut = description.lastIndexOf(". ");
+          if (cut > 120) description = description.slice(0, cut + 1);
+          break;
+        }
+      }
+    } catch {
+      /* a book we cannot read simply has no blurb */
+    }
+  }
+
+  return {
+    title: tag("title"),
+    description,
+    coverPath: findEpubCoverPath(bytes),
+  };
+}
+
 export type EpubChapters = { chapters: string[] };
 
 /**

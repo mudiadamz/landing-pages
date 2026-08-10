@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { redirect } from "next/navigation";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { NewPageForm } from "./new-page-form";
+import { NewProductModeTabs } from "./mode-tabs";
 import { PanelPageHeader } from "@/components/panel-page-header";
 
 const STEPS = [
@@ -60,16 +60,8 @@ export default async function NewPagePage() {
         })}
       </ol>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm sm:p-6">
-        <div className="mb-5">
-          <h2 className="text-base font-semibold text-foreground">Info dasar</h2>
-          <p className="text-sm text-[var(--muted)]">
-            Langkah 1 dari 2 — mulai dari judul, URL &amp; kategori produk. Detail, harga, dan file
-            diatur di langkah berikutnya.
-          </p>
-        </div>
-        <NewPageForm categories={categories} />
-      </div>
+      <NewProductModeTabs categories={categories} />
+
     </div>
   );
 }

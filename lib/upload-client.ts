@@ -119,6 +119,31 @@ export async function uploadThumbnailClient(pageId: string, file: File, previous
   return uploadPublic(pageId, file, "", file.type || "application/octet-stream", previousUrl);
 }
 
+/**
+ * The EPUB for a product that does not exist yet.
+ *
+ * Every other upload here is keyed by pageId, but the short form has no page
+ * until the file has been read — so this parks the book under the seller's own
+ * `_new/` prefix and hands the path to createProductFromEpub, which stores it as
+ * the product's deliverable exactly where it landed. RLS still scopes the write
+ * to the caller's own folder.
+ */
+export async function uploadNewEpubClient(file: File): Promise<UploadResult> {
+  const big = tooBig(file);
+  if (big) return { error: big };
+  if (!isEpub(file)) return { error: "Hanya file EPUB yang diizinkan" };
+
+  const { supabase, uid } = await session();
+  if (!uid) return { error: "Unauthorized" };
+
+  const path = `${uid}/_new/${Date.now()}-${clean(file.name)}`;
+  const { error } = await supabase.storage
+    .from(DOWNLOADS)
+    .upload(path, file, { contentType: "application/epub+zip", upsert: false });
+  if (error) return { error: error.message };
+  return { url: path };
+}
+
 /* ---- Deliverables (private bucket) ---- */
 export async function uploadZipClient(pageId: string, file: File, previousPath?: string | null): Promise<UploadResult> {
   const big = tooBig(file);
