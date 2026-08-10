@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/actions/profiles";
-import { getOtherLinks } from "@/lib/actions/site-settings";
+import { getOtherLinks, getSocialUrls } from "@/lib/actions/site-settings";
 import { PanelPageHeader } from "@/components/panel-page-header";
-import { LinksForm } from "./links-form";
+import { LinksTabs } from "./tabs";
 
 /**
  * The owner's other places on the internet, shown behind the link icon on the
@@ -15,20 +15,13 @@ import { LinksForm } from "./links-form";
 export default async function LinksPage() {
   if (!(await requireAdmin())) redirect("/panel");
 
-  const links = await getOtherLinks();
+  const [links, socialUrls] = await Promise.all([getOtherLinks(), getSocialUrls()]);
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader backHref="/panel" title="Link lainnya" />
+      <PanelPageHeader backHref="/panel" title="Link & sosial" />
 
-      <p className="text-sm text-[var(--muted)]">
-        Situs lain milik Anda — toko lain, portfolio, newsletter. Muncul di homepage
-        lewat ikon link di samping ikon media sosial, dalam satu popup.
-      </p>
-
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
-        <LinksForm initial={links} />
-      </div>
+      <LinksTabs socialUrls={socialUrls} otherLinks={links} />
     </div>
   );
 }

@@ -1,7 +1,11 @@
-/* Brand marks. `brand` is each network's own colour; `brandDark` is the value
-   for dark mode, where the two black marks would otherwise disappear. */
+/* Brand marks: glyph and colour per network, keyed by the same id the settings
+   use. Deliberately NOT data — the mark belongs to the network, so no storefront
+   can point the Instagram icon at YouTube. Only the address is editable.
+   `brand` is the network's colour; `brandDark` the value for dark mode, where
+   the two black marks would otherwise disappear. */
 export const SOCIAL_LINKS = [
   {
+    key: "threads" as const,
     name: "Threads",
     brand: "#000000",
     brandDark: "#ffffff",
@@ -14,6 +18,7 @@ export const SOCIAL_LINKS = [
     ),
   },
   {
+    key: "tiktok" as const,
     name: "TikTok",
     brand: "#000000",
     brandDark: "#ffffff",
@@ -26,6 +31,7 @@ export const SOCIAL_LINKS = [
     ),
   },
   {
+    key: "instagram" as const,
     name: "Instagram",
     brand: "#e4405f",
     brandDark: "#f56040",
@@ -40,6 +46,7 @@ export const SOCIAL_LINKS = [
     ),
   },
   {
+    key: "youtube" as const,
     name: "YouTube",
     brand: "#ff0000",
     brandDark: "#ff4444",
@@ -58,16 +65,23 @@ export type SocialLink = (typeof SOCIAL_LINKS)[number];
 type Props = {
   className?: string;
   variant?: "row" | "stack";
+  /** Per-network addresses from site settings; omitted = the shipped defaults. */
+  urls?: Partial<Record<SocialLink["key"], string>>;
 };
 
-export function SocialLinks({ className = "", variant = "row" }: Props) {
+export function SocialLinks({ className = "", variant = "row", urls }: Props) {
   const isStack = variant === "stack";
+  // A network with no address is not shown — that is how a storefront without a
+  // TikTok stops displaying a TikTok icon.
+  const shown = SOCIAL_LINKS.map((l) => ({ ...l, href: urls?.[l.key] ?? l.href })).filter(
+    (l) => !!l.href,
+  );
   return (
     <ul
       className={`flex flex-wrap gap-3 ${isStack ? "flex-col" : "flex-row"} ${className}`}
       aria-label="Tautan media sosial"
     >
-      {SOCIAL_LINKS.map(({ name, label, href, icon, brand, brandDark }) => (
+      {shown.map(({ name, label, href, icon, brand, brandDark }) => (
         <li key={name}>
           <a
             href={href}

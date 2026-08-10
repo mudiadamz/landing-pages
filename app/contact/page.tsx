@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { SocialLinks } from "@/components/social-links";
+import { getSocialUrls } from "@/lib/actions/site-settings";
 import { ContactForm } from "@/components/contact-form";
 import { SupportContactImages } from "@/components/support-contact-images";
 
@@ -16,9 +17,11 @@ export default async function ContactPage() {
   const [
     { data: { user } },
     categories,
+    socialUrls,
   ] = await Promise.all([
     supabase.auth.getUser(),
     getCategories(),
+    getSocialUrls(),
   ]);
 
   return (
@@ -43,7 +46,7 @@ export default async function ContactPage() {
             </p>
             <SupportContactImages />
             <h2 className="text-base font-semibold text-foreground mb-3 mt-10">Media sosial</h2>
-            <SocialLinks variant="stack" />
+            <SocialLinks variant="stack" urls={socialUrls} />
           </div>
         </section>
       </main>

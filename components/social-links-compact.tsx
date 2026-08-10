@@ -18,14 +18,21 @@ import { SOCIAL_LINKS } from "@/components/social-links";
 export function SocialLinksCompact({
   className = "",
   maxVisible = 5,
+  urls,
 }: {
   className?: string;
   maxVisible?: number;
+  /** Per-network addresses from site settings; omitted = the shipped defaults. */
+  urls?: Partial<Record<(typeof SOCIAL_LINKS)[number]["key"], string>>;
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  const overflow = SOCIAL_LINKS.length - maxVisible;
-  const visible = expanded ? SOCIAL_LINKS : SOCIAL_LINKS.slice(0, maxVisible);
+  // A network with no address drops out entirely rather than linking nowhere.
+  const all = SOCIAL_LINKS.map((l) => ({ ...l, href: urls?.[l.key] ?? l.href })).filter(
+    (l) => !!l.href,
+  );
+  const overflow = all.length - maxVisible;
+  const visible = expanded ? all : all.slice(0, maxVisible);
 
   return (
     <ul

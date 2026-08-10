@@ -1,6 +1,7 @@
 "use server";
 
 import { unstable_cache, updateTag, revalidateTag, revalidatePath } from "next/cache";
+import { DEFAULT_SOCIAL_URLS, normalizeSocialUrls, type SocialUrls } from "@/lib/social";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireFeature, requireAdmin } from "./profiles";
@@ -26,6 +27,7 @@ const ROLE_PERMS_KEY = "role_permissions";
 const TRACKING_KEY = "tracking";
 const PALETTE_KEY = "panel_palette";
 const OTHER_LINKS_KEY = "other_links";
+const SOCIAL_KEY = "social_links";
 
 /* Role-based feature access (edited at /panel/roles). The cached reader lives in
  * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
@@ -275,6 +277,74 @@ export async function updateOtherLinks(
   // updateTag and is presumably subject to the same 120s delay — worth a sweep,
   // but not a thing to fix silently in passing.
   revalidateTag("other-links", "max");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Social profiles                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The URL per network, editable at /panel/links.
+ *
+ * Only the ADDRESS is data. The glyph and the brand colour stay in code
+ * (components/social-links) because they belong to the network, not to the
+ * storefront — nobody should be able to point the Instagram icon at YouTube.
+ *
+ * An empty string hides that network entirely, which is how a storefront with
+ * no TikTok stops showing a TikTok icon.
+ */
+const readSocialUrls = unstable_cache(
+  async (siteId: string): Promise<SocialUrls> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", SOCIAL_KEY)
+        .maybeSingle();
+      if (!data?.value) return DEFAULT_SOCIAL_URLS;
+      return normalizeSocialUrls(JSON.parse(data.value as string));
+    } catch {
+      return DEFAULT_SOCIAL_URLS;
+    }
+  },
+  ["social-links"],
+  { revalidate: 120, tags: ["social-links"] },
+);
+
+export async function getSocialUrls(siteId?: string): Promise<SocialUrls> {
+  return readSocialUrls(siteId ?? (await currentSiteId()));
+}
+
+export async function updateSocialUrls(
+  urls: SocialUrls,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizeSocialUrls(urls);
+  const supabase = await createClient();
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: SOCIAL_KEY,
+      value: JSON.stringify(clean),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
+
+  if (error) {
+    console.error("updateSocialUrls error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  revalidateTag("social-links", "max");
   revalidatePath("/", "layout");
   return { ok: true };
 }

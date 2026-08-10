@@ -50,20 +50,20 @@ export function OtherLinksButton({ links }: { links: OtherLink[] }) {
 
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => setOpen(false)}
               aria-hidden
             />
-            {/* A sheet on a phone, a dialog on a laptop: at the bottom edge it is
-                within thumb reach, and it is the shape a list of links takes on
-                every app this visitor already uses. */}
+            {/* Centred at every size. It was a bottom sheet on phones, which puts
+                it in thumb reach but also reads as a system menu rather than as
+                this page's own list. */}
             <div
               role="dialog"
               aria-modal="true"
               aria-label="Link lainnya"
-              className="relative max-h-[80vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--card)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl sm:max-w-md sm:rounded-2xl sm:p-6"
+              className="relative max-h-[80vh] w-full max-w-md overflow-y-auto rounded-2xl bg-[var(--card)] p-4 shadow-xl sm:p-6"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>

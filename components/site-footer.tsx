@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
+import { getSocialUrls } from "@/lib/actions/site-settings";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
@@ -15,10 +16,11 @@ import { currentSite } from "@/lib/site-resolve";
  * there is no client boundary forcing the brand through props.
  */
 export async function SiteFooter() {
-  const [content, supabase, site] = await Promise.all([
+  const [content, supabase, site, socialUrls] = await Promise.all([
     getSiteContent(),
     createClient(),
     currentSite(),
+    getSocialUrls(),
   ]);
   const {
     data: { user },
@@ -40,7 +42,7 @@ export async function SiteFooter() {
             </p>
             <div>
               <p className="text-xs font-medium text-foreground mb-2">Sosial media</p>
-              <SocialLinks variant="row" className="gap-x-4 gap-y-2 text-xs" />
+              <SocialLinks variant="row" className="gap-x-4 gap-y-2 text-xs" urls={socialUrls} />
             </div>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">

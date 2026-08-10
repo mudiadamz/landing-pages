@@ -47,6 +47,7 @@ export function LinkbioHome({
   sort,
   activeCategories,
   otherLinks,
+  socialUrls,
 }: TemplateProps) {
   // Everything the three controls have to preserve about each other.
   const state = { categories: activeCategories, query, sort };
@@ -137,7 +138,7 @@ export function LinkbioHome({
               to spell out four words the glyphs already say. The link button
               joins the same row and renders nothing when the list is empty. */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <SocialLinksCompact />
+            <SocialLinksCompact urls={socialUrls} />
             <OtherLinksButton links={otherLinks} />
           </div>
         </div>

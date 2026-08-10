@@ -105,7 +105,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
       // Other places the owner exists, not other storefronts this app serves —
       // those are "Domain" above.
-      { href: "/panel/links", label: "Link lainnya", icon: ChainIcon, adminOnly: true },
+      { href: "/panel/links", label: "Link & sosial", icon: ChainIcon, adminOnly: true },
     ],
   },
   {
