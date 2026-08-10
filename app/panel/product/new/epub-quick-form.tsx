@@ -153,7 +153,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
         Otomatis dari EPUB: <strong className="text-foreground">judul</strong>,{" "}
         <strong className="text-foreground">sampul</strong>,{" "}
         <strong className="text-foreground">deskripsi</strong>, dan{" "}
-        <strong className="text-foreground">preview 70% isi buku</strong>. Semuanya masih
+        <strong className="text-foreground">preview 30% isi buku</strong>. Semuanya masih
         bisa diubah di form lengkap setelah ini.
       </div>
 

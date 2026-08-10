@@ -10,8 +10,15 @@ import { slugFromTitle, isValidSlug } from "@/lib/slug";
 const DOWNLOADS = "landing-downloads";
 const ASSETS = "landing-assets";
 
-/** How much of the book the free preview shows. */
-const PREVIEW_PERCENT = 70;
+/**
+ * How much of the book a free reader sees.
+ *
+ * Stored as `preview_cut_percent`, which is the share WITHHELD — keepCountForCut
+ * keeps `100 - cut`. Written as the shown share and inverted at the insert,
+ * because "30" in the column means 70% visible and reading it the other way
+ * round is a one-character mistake that silently gives the book away.
+ */
+const PREVIEW_SHOWN_PERCENT = 30;
 
 /**
  * Create a product from an EPUB alone.
@@ -115,11 +122,11 @@ export async function createProductFromEpub(input: {
       category_id: input.categoryId?.trim() || null,
       price: isFree ? 0 : price,
       is_free: isFree,
-      // The buyer's file IS the preview, cut at 70% — one upload doing both
-      // jobs, which is the whole point of the short form.
+      // The buyer's file IS the preview, showing PREVIEW_SHOWN_PERCENT of it —
+      // one upload doing both jobs, which is the whole point of the short form.
       story_epub_url: path,
       preview_type: "excerpt",
-      preview_cut_percent: PREVIEW_PERCENT,
+      preview_cut_percent: 100 - PREVIEW_SHOWN_PERCENT,
       user_id: user.id,
       // A draft, like every other new product: the seller checks the derived
       // title and blurb before anyone sees them.
