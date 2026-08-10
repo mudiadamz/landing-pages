@@ -199,14 +199,17 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Footer: LinkbioFooter,
     Category: LinkbioCategory,
     Categories: LinkbioCategories,
-    // Warm mortar page, warm-white cards — brick-wall rather than the cool grey
-    // it started as, which fought every warm palette on the picker.
+    // A warm page, kept light: #f0e7e0 was warm enough to read as a colour
+    // rather than as paper, which is a lot of wall behind a bio card.
     //
-    // The card is off-white, not pure #fff: against a warm page a pure white
-    // card reads blue, and the row would look like a different material rather
-    // than the same wall lit differently. Body text is 13.8:1 on the page and
-    // muted text 5.5:1, so nothing lost contrast in the move.
-    surfaces: { background: "#f0e7e0", card: "#fffaf6" },
+    // The card lifts to #fffdfb as the page lightens. Separation is what a flat
+    // design has instead of shadows, and it shrinks as the two colours converge
+    // — at 1.13 this holds the 1.125 the original grey/white pair had, so the
+    // rows read as raised for exactly the same reason they used to.
+    //
+    // Still off-white and not #fff: against a warm page a pure white card reads
+    // blue, and the row stops looking like the same wall lit differently.
+    surfaces: { background: "#f5eee8", card: "#fffdfb" },
     defaultPalette: "breeze",
   },
 };
