@@ -126,6 +126,24 @@ export const PALETTE_PRESETS: PalettePreset[] = [
     },
   },
   {
+    key: "corporate",
+    label: "Corporate Blue",
+    note: "Biru navy dengan aksen cyan & bronze — tenang, rapi, cocok untuk produk B2B, template bisnis, atau materi profesional.",
+    tokens: {
+      // 8.2:1 on the light background, 8.7:1 on the dark — measured. Navy rather
+      // than a bright royal blue: the bright one is a link colour, and every
+      // heading painted in it reads as something to click.
+      primary: "#1e4d8c", primaryDark: "#7fb0f2",
+      subtle: "#e9eff8", subtleDark: "#152233",
+      // Cyan for marks, close enough to stay in the family and far enough to be
+      // seen against the navy.
+      accent: "#0e7490", accentDark: "#3fc4dd",
+      // The one warm note. Three cool tones would be a single blue wash with the
+      // brightness changed, which is the failure this third colour exists to fix.
+      secondary: "#b45309", secondaryDark: "#e8a15c",
+    },
+  },
+  {
     key: "violet",
     label: "Violet",
     note: "Ungu modern dengan aksen koral — bersih, agak 'tool'.",
