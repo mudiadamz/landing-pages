@@ -97,6 +97,11 @@ body {
   --epub-gold-tint: rgba(168, 121, 31, 0.13);
   --epub-row-tint: rgba(53, 50, 44, 0.045);
   --epub-rule: rgba(53, 50, 44, 0.18);
+  /* Code surfaces. A shade off the paper rather than a slab of grey — the block
+     should read as a quoted machine voice, not as a hole in the page. */
+  --epub-code-bg: #f1ebdf;
+  --epub-code-inline-bg: rgba(53, 50, 44, 0.07);
+  --epub-code-token: #3a6ea5;
 }
 html.dark .epub-surface {
   background: #17181a;
@@ -107,6 +112,9 @@ html.dark .epub-surface {
   --epub-gold-tint: rgba(217, 171, 90, 0.16);
   --epub-row-tint: rgba(195, 190, 180, 0.06);
   --epub-rule: rgba(195, 190, 180, 0.2);
+  --epub-code-bg: #1f2124;
+  --epub-code-inline-bg: rgba(195, 190, 180, 0.1);
+  --epub-code-token: #8ab4f8;
 }
 
 /* Server-rendered book-cover splash (see EpubBootSplash). Styled in plain CSS
@@ -568,15 +576,57 @@ html.dark .epub-surface {
   padding-bottom: 0.5em;
   text-align: left;
 }
+/* Code blocks, read as code.
+   `white-space: pre` and not pre-wrap: wrapping a code sample destroys the one
+   thing that makes it readable, its alignment. The line scrolls INSIDE the block
+   instead, which keeps the document itself the width of the screen — the same
+   containment the tables use, for the same reason.
+
+   Smaller than the prose deliberately: a code sample is scanned, not read, and
+   at body size a single line pushes the block into a scrollbar it does not need. */
 .epub-inline pre {
-  max-width: 100%;
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(9px, 0.44em, 13px);
+  line-height: 1.55;
+  font-weight: 400;
+  white-space: pre;
   overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
+  max-width: 100%;
+  tab-size: 2;
+  margin: 1.5em 0;
+  padding: 0.9em 1em;
+  border-radius: 0.6em;
+  background: var(--epub-code-bg);
+  border: 1px solid var(--epub-rule);
+  /* Prose may be justified and hyphenated; code may be neither. */
+  text-align: left;
+  hyphens: none;
 }
+/* A <code> inside a <pre> is the same block — it must not stack a second
+   background and padding on top of it. */
+.epub-inline pre code {
+  font: inherit;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+/* Inline code, sized against the sentence it sits in rather than the page, so it
+   tracks the reader's font control without ever out-measuring the words. */
 .epub-inline code {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  background: var(--epub-code-inline-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 0.3em;
   overflow-wrap: break-word;
   word-break: break-word;
+  hyphens: none;
+}
+/* The books mark tokens with their own <span class="g">, and the stylesheet that
+   coloured it is stripped during sanitising — so it arrives as plain text and
+   the example loses the distinction it was written to show. */
+.epub-inline pre .g {
+  color: var(--epub-code-token);
 }
 /* EPUBs carry presentational width/height attributes from the authoring tool,
    which a stripped stylesheet leaves in force. */
