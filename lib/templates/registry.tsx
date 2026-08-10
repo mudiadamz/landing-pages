@@ -199,9 +199,14 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     Footer: LinkbioFooter,
     Category: LinkbioCategory,
     Categories: LinkbioCategories,
-    // Cool grey page, white cards. The rows stop being tinted blocks and become
-    // real surfaces, which is what "flat" needs to avoid reading as one wash.
-    surfaces: { background: "#eef2f6", card: "#ffffff" },
+    // Warm mortar page, warm-white cards — brick-wall rather than the cool grey
+    // it started as, which fought every warm palette on the picker.
+    //
+    // The card is off-white, not pure #fff: against a warm page a pure white
+    // card reads blue, and the row would look like a different material rather
+    // than the same wall lit differently. Body text is 13.8:1 on the page and
+    // muted text 5.5:1, so nothing lost contrast in the move.
+    surfaces: { background: "#f0e7e0", card: "#fffaf6" },
     defaultPalette: "breeze",
   },
 };
