@@ -88,11 +88,25 @@ body {
      interrupting it. Kept above 4.5:1 on the surface so it stays readable
      for a whole paragraph, not just a word. */
   --epub-em: #7d5537;
+  /* The chapter rule. Deep enough to read as gold on cream rather than as a
+     yellow highlighter, which is what the bright golds do on this paper. */
+  --epub-gold: #a8791f;
+  /* Table tints as explicit alpha rather than color-mix: the CSS minifier emits
+     an OPAQUE currentColor fallback for color-mix, so a browser without it would
+     get a solid black zebra stripe and a solid gold header row. */
+  --epub-gold-tint: rgba(168, 121, 31, 0.13);
+  --epub-row-tint: rgba(53, 50, 44, 0.045);
+  --epub-rule: rgba(53, 50, 44, 0.18);
 }
 html.dark .epub-surface {
   background: #17181a;
   color: #c3beb4;
   --epub-em: #c99a74;
+  /* Lifted for the dark surface — the light gold turns to mud on #17181a. */
+  --epub-gold: #d9ab5a;
+  --epub-gold-tint: rgba(217, 171, 90, 0.16);
+  --epub-row-tint: rgba(195, 190, 180, 0.06);
+  --epub-rule: rgba(195, 190, 180, 0.2);
 }
 
 /* Server-rendered book-cover splash (see EpubBootSplash). Styled in plain CSS
@@ -500,12 +514,59 @@ html.dark .epub-surface {
    the whole page out to fit. The text goes small, pinch-zoom starts from the
    wrong scale, and it reads as "the zoom is broken" rather than "one table is
    too wide". So the wide thing scrolls inside itself and the page stays put. */
+/* Tables carry reference material — specs, comparisons, schedules — and at body
+   size a four-column one is mostly line breaks. Small enough to fit dense rows,
+   and in em so the reader's own size control still moves it; clamped so it never
+   drops below legible or grows into the prose.
+
+   `display: block` is what makes the horizontal scroll work (see the overflow
+   note above), so the inner table keeps table layout via its own wrapper rules. */
 .epub-inline table {
   display: block;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   max-width: 100%;
   overflow-x: auto;
   border-collapse: collapse;
+  font-size: clamp(10px, 0.5em, 15px);
+  line-height: 1.45;
+  font-weight: 400;
+  margin: 1.6em 0;
+  /* Body text may be justified; a table cell never should be. */
+  text-align: left;
+}
+.epub-inline th,
+.epub-inline td {
+  padding: 0.5em 0.7em;
+  border: 1px solid var(--epub-rule);
+  vertical-align: top;
+  text-align: left;
+  /* Dense means narrow: let long values wrap instead of forcing a wider table. */
+  overflow-wrap: break-word;
+  hyphens: none;
+}
+/* No `nowrap`: these books write full sentences as headers ("Apa yang terjadi"),
+   and holding them on one line widens the table past the screen — the opposite
+   of dense. Wrapping a header costs one line; a scrollbar costs the whole
+   comparison a reader opened the table to make.
+
+   The EPUBs emit bare <tr> with no <thead>, so the header cells are th inside
+   the parser's implicit tbody — which is also why the zebra rule below matches. */
+.epub-inline th {
+  font-weight: 600;
+  background: var(--epub-gold-tint);
+}
+/* Zebra rows — the thing that actually keeps an eye on one line across five
+   columns. Tinted from the gold so the table belongs to the same book as the
+   chapter rules above it. */
+.epub-inline tbody tr:nth-child(even) {
+  background: var(--epub-row-tint);
+}
+.epub-inline caption {
+  font-size: 0.55em;
+  opacity: 0.7;
+  padding-bottom: 0.5em;
+  text-align: left;
 }
 .epub-inline pre {
   max-width: 100%;
@@ -571,17 +632,27 @@ html.dark .epub-surface {
   position: relative;
   padding-bottom: 0.7em;
 }
-/* Hairline under the chapter title, sized to the text rather than the column. */
+/* A gold block under the chapter title, sized to the text rather than the
+   column. Was a 1px hairline at 25% — visible only if you looked for it, which
+   is not what a chapter opening is for. Solid and gold reads as a deliberate
+   mark of the book rather than a border that happened. */
 .epub-inline .chapter-title::after {
   content: "";
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 2.2em;
-  height: 1px;
+  width: 2.4em;
+  height: 0.22em;
+  min-height: 3px;
+  border-radius: 999px;
   transform: translateX(-50%);
-  background: currentColor;
-  opacity: 0.25;
+  background: var(--epub-gold);
+}
+/* The compact opening chapter gets a proportionally smaller block, or the rule
+   would outweigh the title it sits under. */
+.epub-inline .epub-first-chapter .chapter-title::after {
+  width: 1.8em;
+  height: 0.18em;
 }
 /* A chapter-num immediately followed by a title is one unit — close the gap. */
 .epub-inline .chapter-num + .chapter-title { margin-top: 0; }
