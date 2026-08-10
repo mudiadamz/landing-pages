@@ -29,6 +29,12 @@
   --accent-cool: #41b3a3;
   --accent-gold: #e8c547;
   --accent-coral: #e27d60;
+  /* The category tag on a product row.
+     Deliberately NOT a palette token: it labels what a thing IS, the same way a
+     tag does anywhere else, and on a brick or forest palette a tag tinted with
+     the brand colour stops reading as metadata and starts reading as a button. */
+  --tag-bg: #e4eefb;
+  --tag-fg: #1e4d8c;
 }
 
 html.dark {
@@ -47,6 +53,8 @@ html.dark {
   --accent-cool: #38a396;
   --accent-gold: #d4ad3d;
   --accent-coral: #c96d52;
+  --tag-bg: rgba(127, 176, 242, 0.16);
+  --tag-fg: #9cc2f7;
 }
 
 @theme inline {

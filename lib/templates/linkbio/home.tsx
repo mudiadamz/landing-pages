@@ -142,7 +142,7 @@ export function LinkbioHome({
             Links rather than buttons, so the filter is in the URL and survives a
             reload, a share and the back button. */}
         {parents.length > 1 && (
-          <nav className="mt-7 flex flex-wrap justify-center gap-2" aria-label="Filter kategori">
+          <nav className="mt-7 flex flex-wrap justify-center gap-x-3 gap-y-3" aria-label="Filter kategori">
             {parents.map((c) => {
               const on = activeCategories.includes(c.slug);
               return (
@@ -151,13 +151,27 @@ export function LinkbioHome({
                   href={toggleCategoryHref(state, c.slug)}
                   aria-pressed={on}
                   scroll={false}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`relative rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                     on
                       ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
                       : "bg-[var(--accent-subtle)] text-[var(--primary)] hover:bg-[var(--primary)]/15"
                   }`}
                 >
                   {c.name}
+                  {/* A red x on the corner of a selected chip.
+                      Not a button — a link cannot contain one, and it would be a
+                      second control for the thing the chip already does. This is
+                      a mark ON the chip saying which way tapping it goes; the
+                      whole chip stays the target, which is also the only size
+                      worth aiming at with a thumb. */}
+                  {on && (
+                    <span
+                      aria-hidden
+                      className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[var(--background)]"
+                    >
+                      ×
+                    </span>
+                  )}
                 </Link>
               );
             })}

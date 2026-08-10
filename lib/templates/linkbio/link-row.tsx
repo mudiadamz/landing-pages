@@ -81,7 +81,7 @@ export function LinkRow({ page, priority }: { page: LandingPagePublic; priority:
                     : formatPrice(display)}
             </span>
             {category && (
-              <span className="min-w-0 truncate rounded-full bg-[var(--secondary)]/10 px-1.5 py-px text-[11px] font-medium leading-normal text-[var(--secondary)]">
+              <span className="min-w-0 truncate rounded-full bg-[var(--tag-bg)] px-1.5 py-px text-[11px] font-medium leading-normal text-[var(--tag-fg)]">
                 {category}
               </span>
             )}
