@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { getSiteContent } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { SupportContactImages } from "@/components/support-contact-images";
 
@@ -16,10 +17,13 @@ export default async function AboutPage() {
   const [
     { data: { user } },
     categories,
+    content,
   ] = await Promise.all([
     supabase.auth.getUser(),
     getCategories(),
+    getSiteContent(),
   ]);
+  const { founder } = content;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -55,38 +59,39 @@ export default async function AboutPage() {
                 />
               </div>
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground m-0">
-                Tentang
+                {content.aboutHeading}
               </h1>
             </div>
             <div className="space-y-4 text-[var(--muted)] leading-relaxed">
-              <p>
-                ADM.UIUX membantumu menemukan, melihat preview, dan membeli produk digital siap pakai — mulai dari landing page, template, hingga aset digital lainnya. Mau yang gratis atau premium, jelajahi koleksi kami dan mulai dalam hitungan menit.
-              </p>
-              <p>
-                Buat akun untuk menyimpan pembelian dan mengakses panel untuk mengelola kontenmu. Kami fokus pada kesederhanaan dan kualitas.
-              </p>
+              {content.aboutParagraphs.map((text, i) => (
+                <p key={i}>{text}</p>
+              ))}
               <div className="pt-6 border-t border-[var(--border)]">
-                <h2 className="text-base font-semibold text-foreground mb-3">Tentang penulis</h2>
+                <h2 className="text-base font-semibold text-foreground mb-3">{content.aboutAuthorHeading}</h2>
                 <div className="flex flex-col sm:flex-row gap-4 items-start">
                   <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card)]">
-                    <Image
-                      src="/pas_foto.png"
-                      alt="Adam Mudianto"
-                      width={112}
-                      height={112}
+                    {/* The founder card, not a second copy of it: the photo, the
+                        name and the sentence all come from /panel/content, so
+                        this page cannot describe a different person than the
+                        homepage does. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={founder.photoUrl || "/pas_foto.png"}
+                      alt={founder.name}
                       className="object-cover w-full h-full"
                     />
                   </div>
                   <p className="flex-1 mt-0">
-                    Nama saya <strong className="text-foreground">Adam Mudianto</strong>. Saya software developer dengan pengalaman lebih dari 15 tahun. Membangun produk digital siap pakai untuk memudahkan proyek Anda.
+                    Nama saya <strong className="text-foreground">{founder.name}</strong>
+                    {founder.role ? ` — ${founder.role}.` : "."} {founder.bio}
                   </p>
                 </div>
               </div>
               <div className="pt-6 mt-6 border-t border-[var(--border)]">
-                <h2 className="text-base font-semibold text-foreground mb-3">Kontak support</h2>
-                <p className="text-sm text-[var(--muted)] mb-4">
-                  Untuk pertanyaan produk, pembelian, atau dukungan teknis, hubungi kami:
-                </p>
+                <h2 className="text-base font-semibold text-foreground mb-3">
+                  {content.supportContactHeading}
+                </h2>
+                <p className="text-sm text-[var(--muted)] mb-4">{content.supportContactIntro}</p>
                 <SupportContactImages />
               </div>
             </div>

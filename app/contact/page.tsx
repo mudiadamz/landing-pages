@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { SocialLinks } from "@/components/social-links";
-import { getSocialUrls } from "@/lib/actions/site-settings";
+import { getSocialUrls, getSiteContent } from "@/lib/actions/site-settings";
 import { ContactForm } from "@/components/contact-form";
 import { SupportContactImages } from "@/components/support-contact-images";
 
@@ -18,10 +18,12 @@ export default async function ContactPage() {
     { data: { user } },
     categories,
     socialUrls,
+    content,
   ] = await Promise.all([
     supabase.auth.getUser(),
     getCategories(),
     getSocialUrls(),
+    getSiteContent(),
   ]);
 
   return (
@@ -31,19 +33,19 @@ export default async function ContactPage() {
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-6">
-              Kontak
+              {content.contactHeading}
             </h1>
             <p className="text-[var(--muted)] leading-relaxed mb-6">
-              Ada pertanyaan atau masukan? Isi form di bawah atau hubungi lewat media sosial.
+              {content.contactIntro}
             </p>
             <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-8 mb-10">
               <h2 className="text-base font-semibold text-foreground mb-4">Kirim pesan</h2>
               <ContactForm />
             </div>
-            <h2 className="text-base font-semibold text-foreground mb-3">Kontak support</h2>
-            <p className="text-sm text-[var(--muted)] mb-4">
-              Untuk pertanyaan produk, pembelian, atau dukungan teknis, hubungi kami:
-            </p>
+            <h2 className="text-base font-semibold text-foreground mb-3">
+              {content.supportContactHeading}
+            </h2>
+            <p className="text-sm text-[var(--muted)] mb-4">{content.supportContactIntro}</p>
             <SupportContactImages />
             <h2 className="text-base font-semibold text-foreground mb-3 mt-10">Media sosial</h2>
             <SocialLinks variant="stack" urls={socialUrls} />

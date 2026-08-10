@@ -194,7 +194,7 @@ async function sampleTopColor(url: string): Promise<string> {
   // Which group is open. Not in the URL: this is a settings page reached from
   // one nav entry, and a shareable link to "the FAQ tab" is not a thing anyone
   // has ever needed.
-  const [tab, setTab] = useState<"founder" | "buyer" | "legal" | "footer">("founder");
+  const [tab, setTab] = useState<"founder" | "pages" | "buyer" | "legal" | "footer">("founder");
 
   function handleSave() {
     startTransition(async () => {
@@ -208,7 +208,7 @@ async function sampleTopColor(url: string): Promise<string> {
           fields were built. Seven sections in one 600-line scroll meant the
           FAQ lived below three screens of founder card, and nobody scrolls
           a settings page looking for a field they cannot see. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         <button
           type="button"
           onClick={() => setTab("founder")}
@@ -222,6 +222,21 @@ async function sampleTopColor(url: string): Promise<string> {
           <span className="block text-sm font-semibold">Founder</span>
           <span className={`mt-0.5 block text-xs ${tab === "founder" ? "opacity-80" : "text-[var(--muted)]"}`}>
             Foto, nama & kartu kredibilitas
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("pages")}
+          aria-pressed={tab === "pages"}
+          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
+            tab === "pages"
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
+          }`}
+        >
+          <span className="block text-sm font-semibold">Halaman</span>
+          <span className={`mt-0.5 block text-xs ${tab === "pages" ? "opacity-80" : "text-[var(--muted)]"}`}>
+            Tentang & Kontak
           </span>
         </button>
         <button
@@ -471,6 +486,111 @@ async function sampleTopColor(url: string): Promise<string> {
               placeholder="/contact"
             />
           </div>
+        </div>
+      </section>
+        </div>
+      )}
+
+      {tab === "pages" && (
+        <div className="space-y-6">
+      {/* Halaman Tentang & Kontak — the two standalone pages whose copy used to
+          live in the JSX. The author block on /about is NOT edited here: it reads
+          the founder card above, so the person is described once. */}
+      <section className={sectionCls}>
+        <SectionTitle>Halaman Tentang</SectionTitle>
+        <div>
+          <label className={labelCls}>Judul halaman</label>
+          <input
+            className={inputCls}
+            value={content.aboutHeading}
+            onChange={(e) => set("aboutHeading", e.target.value)}
+          />
+        </div>
+        <div className="space-y-3">
+          <label className={labelCls}>Paragraf</label>
+          {content.aboutParagraphs.map((text, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <textarea
+                className={inputCls}
+                rows={3}
+                value={text}
+                onChange={(e) =>
+                  set(
+                    "aboutParagraphs",
+                    content.aboutParagraphs.map((p, idx) => (idx === i ? e.target.value : p)),
+                  )
+                }
+              />
+              <RemoveButton
+                onClick={() =>
+                  set(
+                    "aboutParagraphs",
+                    content.aboutParagraphs.filter((_, idx) => idx !== i),
+                  )
+                }
+              />
+            </div>
+          ))}
+          <AddButton onClick={() => set("aboutParagraphs", [...content.aboutParagraphs, ""])}>
+            + Tambah paragraf
+          </AddButton>
+        </div>
+        <div>
+          <label className={labelCls}>Judul blok penulis</label>
+          <input
+            className={inputCls}
+            value={content.aboutAuthorHeading}
+            onChange={(e) => set("aboutAuthorHeading", e.target.value)}
+          />
+          <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+            Foto, nama, dan kalimatnya diambil dari <strong>Kartu founder</strong> di tab
+            Founder — supaya tidak ada dua versi orang yang sama.
+          </p>
+        </div>
+      </section>
+
+      <section className={sectionCls}>
+        <SectionTitle>Halaman Kontak</SectionTitle>
+        <div>
+          <label className={labelCls}>Judul halaman</label>
+          <input
+            className={inputCls}
+            value={content.contactHeading}
+            onChange={(e) => set("contactHeading", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Pengantar</label>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={content.contactIntro}
+            onChange={(e) => set("contactIntro", e.target.value)}
+          />
+        </div>
+      </section>
+
+      <section className={sectionCls}>
+        <SectionTitle>Kontak support</SectionTitle>
+        <p className="text-xs text-[var(--muted)]">
+          Dipakai di halaman Tentang dan Kontak.
+        </p>
+        <div>
+          <label className={labelCls}>Judul</label>
+          <input
+            className={inputCls}
+            value={content.supportContactHeading}
+            onChange={(e) => set("supportContactHeading", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Pengantar</label>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={content.supportContactIntro}
+            onChange={(e) => set("supportContactIntro", e.target.value)}
+          />
         </div>
       </section>
         </div>

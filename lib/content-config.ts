@@ -59,6 +59,20 @@ export type SiteContent = {
   /** Founder credibility card. */
   founder: FounderCard;
 
+  /* ---- Halaman Tentang ---- */
+  aboutHeading: string;
+  /** Body paragraphs. The author block below them comes from `founder`, so the
+   *  person is not described twice in two places that can disagree. */
+  aboutParagraphs: string[];
+  aboutAuthorHeading: string;
+
+  /* ---- Halaman Kontak ---- */
+  contactHeading: string;
+  contactIntro: string;
+  /** Heading above the support contacts, shared by /about and /contact. */
+  supportContactHeading: string;
+  supportContactIntro: string;
+
   /** "Ketentuan & lisensi" block. */
   licenseHeading: string;
   licenseParagraphs: string[];
@@ -105,6 +119,18 @@ export const DEFAULT_CONTENT: SiteContent = {
     coverUrl: "",
     coverThemeColor: "",
   },
+
+  aboutHeading: "Tentang",
+  aboutParagraphs: [
+    "ADM.UIUX membantumu menemukan, melihat preview, dan membeli produk digital siap pakai — mulai dari landing page, template, hingga aset digital lainnya. Mau yang gratis atau premium, jelajahi koleksi kami dan mulai dalam hitungan menit.",
+    "Buat akun untuk menyimpan pembelian dan mengakses panel untuk mengelola kontenmu. Kami fokus pada kesederhanaan dan kualitas.",
+  ],
+  aboutAuthorHeading: "Tentang penulis",
+
+  contactHeading: "Kontak",
+  contactIntro: "Ada pertanyaan atau masukan? Isi form di bawah atau hubungi lewat media sosial.",
+  supportContactHeading: "Kontak support",
+  supportContactIntro: "Untuk pertanyaan produk, pembelian, atau dukungan teknis, hubungi kami:",
 
   licenseHeading: "Ketentuan & lisensi",
   licenseParagraphs: [
@@ -205,6 +231,13 @@ export function normalizeContent(raw: unknown): SiteContent {
   return {
     footerTagline: v.footerTagline ?? DEFAULT_CONTENT.footerTagline,
     founder,
+    aboutHeading: v.aboutHeading ?? DEFAULT_CONTENT.aboutHeading,
+    aboutParagraphs: strArr(v.aboutParagraphs, DEFAULT_CONTENT.aboutParagraphs),
+    aboutAuthorHeading: v.aboutAuthorHeading ?? DEFAULT_CONTENT.aboutAuthorHeading,
+    contactHeading: v.contactHeading ?? DEFAULT_CONTENT.contactHeading,
+    contactIntro: v.contactIntro ?? DEFAULT_CONTENT.contactIntro,
+    supportContactHeading: v.supportContactHeading ?? DEFAULT_CONTENT.supportContactHeading,
+    supportContactIntro: v.supportContactIntro ?? DEFAULT_CONTENT.supportContactIntro,
     licenseHeading: v.licenseHeading ?? DEFAULT_CONTENT.licenseHeading,
     licenseParagraphs: strArr(v.licenseParagraphs, DEFAULT_CONTENT.licenseParagraphs),
     howToHeading: v.howToHeading ?? DEFAULT_CONTENT.howToHeading,
