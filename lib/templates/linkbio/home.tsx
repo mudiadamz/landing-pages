@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SocialLinksCompact } from "@/components/social-links-compact";
+import { OtherLinksButton } from "./other-links";
 import { BrandAvatar } from "@/components/site-logo";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { VerifiedBadge } from "@/components/verified-badge";
@@ -45,6 +46,7 @@ export function LinkbioHome({
   query,
   sort,
   activeCategories,
+  otherLinks,
 }: TemplateProps) {
   // Everything the three controls have to preserve about each other.
   const state = { categories: activeCategories, query, sort };
@@ -132,8 +134,12 @@ export function LinkbioHome({
             </p>
           )}
           {/* Icons only, and capped: labels wrapped this row onto a second line
-              to spell out four words the glyphs already say. */}
-          <SocialLinksCompact className="mt-4" />
+              to spell out four words the glyphs already say. The link button
+              joins the same row and renders nothing when the list is empty. */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <SocialLinksCompact />
+            <OtherLinksButton links={otherLinks} />
+          </div>
         </div>
 
         {/* Filter chips. Each one toggles its category on the page itself rather

@@ -6,6 +6,7 @@ import type { SiteBrand } from "@/lib/site-brand";
 import type { Surfaces } from "@/lib/palette";
 import type { FounderCard } from "@/lib/content-config";
 import type { HomepageListing } from "@/lib/actions/landing-pages";
+import type { OtherLink } from "@/lib/actions/site-settings";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DefaultHome } from "./default/home";
@@ -62,6 +63,8 @@ export type TemplateProps = {
   query: string;
   /** Category slugs currently toggled on. Empty = the whole catalogue. */
   activeCategories: string[];
+  /** The owner's other sites, shown behind the link icon. Empty = no icon. */
+  otherLinks: OtherLink[];
 };
 
 /**
@@ -83,7 +86,7 @@ export type ChromeProps = {
   brand: SiteBrand;
 };
 
-export type CategoryTemplateProps = Omit<TemplateProps, "hero" | "founder" | "listing" | "query" | "activeCategories"> & {
+export type CategoryTemplateProps = Omit<TemplateProps, "hero" | "founder" | "listing" | "query" | "activeCategories" | "otherLinks"> & {
   category: LandingPageCategory;
 };
 

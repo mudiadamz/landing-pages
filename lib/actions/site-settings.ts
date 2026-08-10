@@ -1,6 +1,6 @@
 "use server";
 
-import { unstable_cache, updateTag, revalidatePath } from "next/cache";
+import { unstable_cache, updateTag, revalidateTag, revalidatePath } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireFeature, requireAdmin } from "./profiles";
@@ -25,6 +25,7 @@ const CONTENT_KEY = "site_content";
 const ROLE_PERMS_KEY = "role_permissions";
 const TRACKING_KEY = "tracking";
 const PALETTE_KEY = "panel_palette";
+const OTHER_LINKS_KEY = "other_links";
 
 /* Role-based feature access (edited at /panel/roles). The cached reader lives in
  * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
@@ -177,6 +178,103 @@ export async function updateSiteContent(
     return { ok: false, error: "Gagal menyimpan." };
   }
   updateTag("site-content");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Other links — the storefront owner's other places on the internet          */
+/* -------------------------------------------------------------------------- */
+
+export type OtherLink = {
+  label: string;
+  url: string;
+  /** One line under the label. Optional. */
+  note: string;
+};
+
+/** Enough to fill a sheet without turning it into a directory. */
+const MAX_OTHER_LINKS = 20;
+
+/**
+ * A stored list, cleaned on the way in AND on the way out.
+ *
+ * Only http(s) survives: the label and URL are rendered into an anchor on a
+ * public page, so a `javascript:` href would be stored XSS with a nice title on
+ * it. Rows without both a label and a usable URL are dropped rather than
+ * rendered as a dead entry.
+ */
+function normalizeOtherLinks(raw: unknown): OtherLink[] {
+  if (!Array.isArray(raw)) return [];
+  const out: OtherLink[] = [];
+  for (const item of raw) {
+    const v = (item ?? {}) as Partial<OtherLink>;
+    const label = typeof v.label === "string" ? v.label.trim().slice(0, 80) : "";
+    const url = typeof v.url === "string" ? v.url.trim().slice(0, 500) : "";
+    const note = typeof v.note === "string" ? v.note.trim().slice(0, 120) : "";
+    if (!label || !url) continue;
+    if (!/^https?:\/\//i.test(url)) continue;
+    out.push({ label, url, note });
+    if (out.length >= MAX_OTHER_LINKS) break;
+  }
+  return out;
+}
+
+const readOtherLinks = unstable_cache(
+  async (siteId: string): Promise<OtherLink[]> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", OTHER_LINKS_KEY)
+        .maybeSingle();
+      if (!data?.value) return [];
+      return normalizeOtherLinks(JSON.parse(data.value as string));
+    } catch {
+      return [];
+    }
+  },
+  ["other-links"],
+  { revalidate: 120, tags: ["other-links"] },
+);
+
+export async function getOtherLinks(siteId?: string): Promise<OtherLink[]> {
+  return readOtherLinks(siteId ?? (await currentSiteId()));
+}
+
+export async function updateOtherLinks(
+  links: OtherLink[],
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizeOtherLinks(links);
+  const supabase = await createClient();
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: OTHER_LINKS_KEY,
+      value: JSON.stringify(clean),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
+
+  if (error) {
+    console.error("updateOtherLinks error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  // revalidateTag(tag, "max") and not updateTag: updateTag only knows fetch tags
+  // and cacheTag() inside 'use cache', NOT the { tags: [...] } option this file's
+  // readers use (docs/architecture.md I3). Every other writer here still calls
+  // updateTag and is presumably subject to the same 120s delay — worth a sweep,
+  // but not a thing to fix silently in passing.
+  revalidateTag("other-links", "max");
   revalidatePath("/", "layout");
   return { ok: true };
 }
