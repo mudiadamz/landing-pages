@@ -191,6 +191,11 @@ async function sampleTopColor(url: string): Promise<string> {
     set("faqs", content.faqs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
   }
 
+  // Which group is open. Not in the URL: this is a settings page reached from
+  // one nav entry, and a shareable link to "the FAQ tab" is not a thing anyone
+  // has ever needed.
+  const [tab, setTab] = useState<"founder" | "buyer" | "legal" | "footer">("founder");
+
   function handleSave() {
     startTransition(async () => {
       setStatus(await updateSiteContent(content, siteId));
@@ -199,20 +204,75 @@ async function sampleTopColor(url: string): Promise<string> {
 
   return (
     <div className="space-y-6">
-      {/* Footer */}
-      <section className={sectionCls}>
-        <SectionTitle>Footer</SectionTitle>
-        <div>
-          <label className={labelCls}>Tagline footer</label>
-          <textarea
-            className={inputCls}
-            rows={2}
-            value={content.footerTagline}
-            onChange={(e) => set("footerTagline", e.target.value)}
-          />
-        </div>
-      </section>
+      {/* Four groups by what someone came to change, not by the order these
+          fields were built. Seven sections in one 600-line scroll meant the
+          FAQ lived below three screens of founder card, and nobody scrolls
+          a settings page looking for a field they cannot see. */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <button
+          type="button"
+          onClick={() => setTab("founder")}
+          aria-pressed={tab === "founder"}
+          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
+            tab === "founder"
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
+          }`}
+        >
+          <span className="block text-sm font-semibold">Founder</span>
+          <span className={`mt-0.5 block text-xs ${tab === "founder" ? "opacity-80" : "text-[var(--muted)]"}`}>
+            Foto, nama & kartu kredibilitas
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("buyer")}
+          aria-pressed={tab === "buyer"}
+          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
+            tab === "buyer"
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
+          }`}
+        >
+          <span className="block text-sm font-semibold">Info pembeli</span>
+          <span className={`mt-0.5 block text-xs ${tab === "buyer" ? "opacity-80" : "text-[var(--muted)]"}`}>
+            Cara beli, support & FAQ
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("legal")}
+          aria-pressed={tab === "legal"}
+          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
+            tab === "legal"
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
+          }`}
+        >
+          <span className="block text-sm font-semibold">Ketentuan</span>
+          <span className={`mt-0.5 block text-xs ${tab === "legal" ? "opacity-80" : "text-[var(--muted)]"}`}>
+            Lisensi & syarat publisher
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("footer")}
+          aria-pressed={tab === "footer"}
+          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
+            tab === "footer"
+              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
+          }`}
+        >
+          <span className="block text-sm font-semibold">Footer</span>
+          <span className={`mt-0.5 block text-xs ${tab === "footer" ? "opacity-80" : "text-[var(--muted)]"}`}>
+            Tagline di kaki halaman
+          </span>
+        </button>
+      </div>
 
+      {tab === "founder" && (
+        <div className="space-y-6">
       {/* Kartu kredibilitas founder */}
       <section className={sectionCls}>
         <div className="flex items-center justify-between gap-3">
@@ -413,35 +473,11 @@ async function sampleTopColor(url: string): Promise<string> {
           </div>
         </div>
       </section>
-
-      {/* Ketentuan & lisensi */}
-      <section className={sectionCls}>
-        <SectionTitle>Ketentuan & lisensi</SectionTitle>
-        <div>
-          <label className={labelCls}>Judul</label>
-          <input
-            className={inputCls}
-            value={content.licenseHeading}
-            onChange={(e) => set("licenseHeading", e.target.value)}
-          />
         </div>
-        <div className="space-y-3">
-          <label className={labelCls}>Paragraf</label>
-          {content.licenseParagraphs.map((p, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <textarea
-                className={inputCls}
-                rows={3}
-                value={p}
-                onChange={(e) => setStr("licenseParagraphs", i, e.target.value)}
-              />
-              <RemoveButton onClick={() => removeStr("licenseParagraphs", i)} />
-            </div>
-          ))}
-          <AddButton onClick={() => addStr("licenseParagraphs")}>Tambah paragraf</AddButton>
-        </div>
-      </section>
+      )}
 
+      {tab === "buyer" && (
+        <div className="space-y-6">
       {/* Cara pembelian */}
       <section className={sectionCls}>
         <SectionTitle>Cara pembelian</SectionTitle>
@@ -479,7 +515,6 @@ async function sampleTopColor(url: string): Promise<string> {
           </AddButton>
         </div>
       </section>
-
       {/* Jaminan support */}
       <section className={sectionCls}>
         <SectionTitle>Jaminan support</SectionTitle>
@@ -524,7 +559,6 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
       </section>
-
       {/* FAQ */}
       <section className={sectionCls}>
         <SectionTitle>FAQ</SectionTitle>
@@ -562,7 +596,38 @@ async function sampleTopColor(url: string): Promise<string> {
           </AddButton>
         </div>
       </section>
+        </div>
+      )}
 
+      {tab === "legal" && (
+        <div className="space-y-6">
+      {/* Ketentuan & lisensi */}
+      <section className={sectionCls}>
+        <SectionTitle>Ketentuan & lisensi</SectionTitle>
+        <div>
+          <label className={labelCls}>Judul</label>
+          <input
+            className={inputCls}
+            value={content.licenseHeading}
+            onChange={(e) => set("licenseHeading", e.target.value)}
+          />
+        </div>
+        <div className="space-y-3">
+          <label className={labelCls}>Paragraf</label>
+          {content.licenseParagraphs.map((p, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <textarea
+                className={inputCls}
+                rows={3}
+                value={p}
+                onChange={(e) => setStr("licenseParagraphs", i, e.target.value)}
+              />
+              <RemoveButton onClick={() => removeStr("licenseParagraphs", i)} />
+            </div>
+          ))}
+          <AddButton onClick={() => addStr("licenseParagraphs")}>Tambah paragraf</AddButton>
+        </div>
+      </section>
       {/* Publisher terms — shown inside the publisher application form, not on
           any public page. Edited here because it is site copy like the rest. */}
       <section className={sectionCls}>
@@ -597,6 +662,26 @@ async function sampleTopColor(url: string): Promise<string> {
           <AddButton onClick={() => addStr("publisherTerms")}>Tambah ketentuan</AddButton>
         </div>
       </section>
+        </div>
+      )}
+
+      {tab === "footer" && (
+        <div className="space-y-6">
+      {/* Footer */}
+      <section className={sectionCls}>
+        <SectionTitle>Footer</SectionTitle>
+        <div>
+          <label className={labelCls}>Tagline footer</label>
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={content.footerTagline}
+            onChange={(e) => set("footerTagline", e.target.value)}
+          />
+        </div>
+      </section>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="sticky bottom-0 flex items-center gap-3 border-t border-[var(--border)] bg-[var(--background)] py-3">
