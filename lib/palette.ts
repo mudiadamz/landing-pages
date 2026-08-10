@@ -110,6 +110,22 @@ export const PALETTE_PRESETS: PalettePreset[] = [
     },
   },
   {
+    key: "brick",
+    label: "Brick Wall",
+    note: "Bata merah, mortar oker & patina tembaga — hangat, earthy, sedikit industrial.",
+    tokens: {
+      // 6.5:1 on the light background, 7.5:1 on the dark one — measured, not
+      // eyeballed. A brick that reads as brick rather than as a warning colour.
+      primary: "#9c3f2b", primaryDark: "#e08b6f",
+      // The mortar line: warm, barely there, so a filled row still looks like wall.
+      subtle: "#f7ebe6", subtleDark: "#33201b",
+      // Copper patina — the green that actually turns up on old brickwork, and
+      // the one hue that stops three warm tones reading as one.
+      accent: "#3f6b6b", accentDark: "#6fb0ac",
+      secondary: "#a86a2e", secondaryDark: "#e0a862",
+    },
+  },
+  {
     key: "violet",
     label: "Violet",
     note: "Ungu modern dengan aksen koral — bersih, agak 'tool'.",
