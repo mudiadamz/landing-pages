@@ -18,7 +18,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const page = await getPublishedPage(slug);
-  if (!page) return { title: "Halaman" };
+  // notFound() here as well as in the component: metadata resolves first, so
+  // this is the earliest point a missing page is known.
+  //
+  // It does NOT currently produce a 404 status. Every dynamic route in this app
+  // answers a missing record with the 404 BODY under a 200 — /checkout/<missing>
+  // and /preview/<missing> do the same, and only genuinely unmatched paths get a
+  // real 404. So this is the app's existing behaviour, not this route's, and it
+  // is worth fixing once for all of them rather than papered over here.
+  if (!page) notFound();
   const text = page.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   return {
     title: page.title,
