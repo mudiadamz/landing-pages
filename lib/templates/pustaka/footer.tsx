@@ -23,6 +23,7 @@ export async function PustakaFooter() {
   const links: [string, string][] = [
     ["/", "Beranda"],
     ["/categories", "Semua kategori"],
+    ["/about", "Tentang"],
     ["/contact", "Kontak"],
     ["/privacy", "Privasi"],
     ["/terms", "Ketentuan"],

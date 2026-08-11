@@ -47,6 +47,14 @@ export async function LinkbioFooter() {
         <span>
           © {new Date().getFullYear()} {site.name}
         </span>
+        {/* Tentang and Kontak first: they are what a visitor is looking for,
+            and the legal three are what they are required to be able to find. */}
+        <Link href="/about" className="transition-colors hover:text-foreground">
+          Tentang
+        </Link>
+        <Link href="/contact" className="transition-colors hover:text-foreground">
+          Kontak
+        </Link>
         <Link href="/privacy" className="transition-colors hover:text-foreground">
           Privasi
         </Link>
