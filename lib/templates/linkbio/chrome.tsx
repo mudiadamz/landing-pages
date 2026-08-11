@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { currentSite } from "@/lib/site-resolve";
+import { getPublishedPages } from "@/lib/actions/pages";
 import { SiteLogo } from "@/components/site-logo";
 import type { ChromeProps } from "../registry";
 
@@ -40,7 +41,7 @@ export function LinkbioHeader({ user, brand }: ChromeProps) {
 
 /** One line. A link-in-bio page has a colophon, not a sitemap. */
 export async function LinkbioFooter() {
-  const site = await currentSite();
+  const [site, pages] = await Promise.all([currentSite(), getPublishedPages()]);
   return (
     <footer className="mt-10 shrink-0 bg-[var(--accent-subtle)]/40">
       <div className="mx-auto flex max-w-xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-5 py-7 text-xs text-[var(--muted)]">
@@ -55,6 +56,14 @@ export async function LinkbioFooter() {
         <Link href="/contact" className="transition-colors hover:text-foreground">
           Kontak
         </Link>
+        {/* Whatever the storefront has written. Between the two fixed pages and
+            the legal three, because that is the order of how likely a visitor is
+            to want them. */}
+        {pages.map((p) => (
+          <Link key={p.id} href={`/p/${p.slug}`} className="transition-colors hover:text-foreground">
+            {p.title}
+          </Link>
+        ))}
         <Link href="/privacy" className="transition-colors hover:text-foreground">
           Privasi
         </Link>

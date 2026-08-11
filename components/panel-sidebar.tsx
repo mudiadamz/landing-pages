@@ -105,6 +105,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
       // Other places the owner exists, not other storefronts this app serves —
       // those are "Domain" above.
+      { href: "/panel/pages", label: "Halaman", icon: PageIcon, adminOnly: true },
       { href: "/panel/links", label: "Link & sosial", icon: ChainIcon, adminOnly: true },
     ],
   },
@@ -209,6 +210,15 @@ function HeroIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function PageIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4h7l4 4v12a1 1 0 01-1 1H7a1 1 0 01-1-1V5a1 1 0 011-1z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 4v5h5M9 13h6M9 16h4" />
+    </svg>
+  );
+}
+
 function ChainIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
