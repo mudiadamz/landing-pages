@@ -14,7 +14,9 @@
     "db:push": "supabase db push",
     "db:migrate": "supabase migration up",
     "pdf:epub": "node scripts/pdf-to-epub.mjs",
-    "gen:splash": "node scripts/gen-ios-splash.mjs"
+    "gen:splash": "node scripts/gen-ios-splash.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -42,11 +44,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "sharp": "^0.34.5",
     "supabase": "^2.76.15",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.10"
   }
 }
