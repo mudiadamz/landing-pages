@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/actions/profiles";
 import { listPages } from "@/lib/actions/pages";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { NewPageButton } from "./new-page-button";
+import { t } from "@/lib/i18n";
 
 /**
  * Editorial pages for this storefront.
@@ -28,7 +29,7 @@ export default async function PagesIndex() {
 
       {pages.length === 0 ? (
         <p className="rounded-2xl bg-[var(--accent-subtle)] px-6 py-12 text-center text-sm text-[var(--muted)]">
-          Belum ada halaman.
+          {t("panel.noPages")}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -53,7 +54,7 @@ export default async function PagesIndex() {
                       : "bg-[var(--accent-subtle)] text-[var(--muted)]"
                   }`}
                 >
-                  {p.published ? "Terbit" : "Draf"}
+                  {p.published ? t("panel.published") : t("panel.draft")}
                 </span>
               </Link>
             </li>

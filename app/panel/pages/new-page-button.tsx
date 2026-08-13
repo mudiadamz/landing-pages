@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createPage } from "@/lib/actions/pages";
+import { t } from "@/lib/i18n";
 
 /** Asks for the one thing a new page cannot be given automatically: its title. */
 export function NewPageButton() {
@@ -25,7 +26,7 @@ export function NewPageButton() {
   if (!open) {
     return (
       <Button type="button" size="sm" onClick={() => setOpen(true)}>
-        + Halaman
+        {t("panel.newPage")}
       </Button>
     );
   }
@@ -37,12 +38,12 @@ export function NewPageButton() {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && title.trim() && create()}
-        placeholder="Judul halaman"
+        placeholder={t("panel.pageTitlePlaceholder")}
         maxLength={120}
         className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
       />
       <Button type="button" size="sm" onClick={create} disabled={busy || !title.trim()}>
-        {busy ? "Membuat…" : "Buat"}
+        {busy ? t("panel.creating") : t("panel.create")}
       </Button>
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>

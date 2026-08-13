@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { updateOtherLinks, type OtherLink } from "@/lib/actions/site-settings";
+import { t } from "@/lib/i18n";
 
 const EMPTY: OtherLink = { label: "", url: "", note: "" };
 
@@ -50,7 +51,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
     const res = await updateOtherLinks(rows);
     setSaving(false);
     if (res.ok) {
-      setStatus("Tersimpan.");
+      setStatus(t("common.saved"));
       // Dropped rows (no label, no URL, or a non-http link) never reach the
       // page — show that here rather than letting the form claim they saved.
       setRows((r) =>
@@ -59,7 +60,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
           : [EMPTY],
       );
     } else {
-      setError(res.error ?? "Gagal menyimpan.");
+      setError(res.error ?? t("common.failed"));
     }
   }
 
@@ -77,7 +78,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
                 type="button"
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                aria-label="Naikkan"
+                aria-label={t("panel.moveUp")}
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground disabled:opacity-30"
               >
                 ↑
@@ -86,7 +87,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
                 type="button"
                 onClick={() => move(i, 1)}
                 disabled={i === rows.length - 1}
-                aria-label="Turunkan"
+                aria-label={t("panel.moveDown")}
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground disabled:opacity-30"
               >
                 ↓
@@ -94,7 +95,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
               <button
                 type="button"
                 onClick={() => remove(i)}
-                aria-label="Hapus link"
+                aria-label={t("panel.removeLink")}
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-red-500/10 hover:text-red-500"
               >
                 ×
@@ -107,7 +108,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
               className={input}
               value={row.label}
               onChange={(e) => patch(i, { label: e.target.value })}
-              placeholder="Nama situs"
+              placeholder={t("panel.linkName")}
               maxLength={80}
             />
             <input
@@ -123,7 +124,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
             className={`${input} mt-2`}
             value={row.note}
             onChange={(e) => patch(i, { note: e.target.value })}
-            placeholder="Keterangan singkat (opsional)"
+            placeholder={t("panel.linkNote")}
             maxLength={120}
           />
         </div>
@@ -137,10 +138,10 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
           onClick={() => setRows((r) => [...r, EMPTY])}
           disabled={rows.length >= 20}
         >
-          + Tambah link
+          {t("panel.addLink")}
         </Button>
         <Button type="button" size="md" onClick={save} disabled={saving}>
-          {saving ? "Menyimpan…" : "Simpan"}
+          {saving ? t("common.saving") : t("common.save")}
         </Button>
         {status && <span className="text-sm text-green-600 dark:text-green-400">{status}</span>}
         {error && <span className="text-sm text-red-500 dark:text-red-400">{error}</span>}

@@ -5,6 +5,7 @@ import { SocialForm } from "./social-form";
 import { LinksForm } from "./links-form";
 import type { OtherLink } from "@/lib/actions/site-settings";
 import type { SocialUrls } from "@/lib/social";
+import { t } from "@/lib/i18n";
 
 /**
  * Two lists that both answer "where else can I find you", so they share a screen
@@ -45,8 +46,8 @@ export function LinksTabs({
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-2 sm:flex-row">
-        {button("social", "Media sosial", "Alamat tiap jaringan")}
-        {button("other", "Link lainnya", "Situs lain milik Anda")}
+        {button("social", t("panel.tabSocial"), t("panel.tabSocialSub"))}
+        {button("other", t("panel.tabOther"), t("panel.tabOtherSub"))}
       </div>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">

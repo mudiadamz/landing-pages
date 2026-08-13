@@ -90,6 +90,42 @@ export const id = {
   "reader.alignLeft": "Rata kiri",
   "reader.loadFailed": "Gagal memuat EPUB.",
   "reader.textFailed": "Gagal memuat teks.",
+  "reader.actionsMenu": "Menu tindakan",
+  "reader.share": "Bagikan",
+  "reader.shareOther": "Bagikan lainnya…",
+  "reader.signInGoogle": "Masuk dengan Google",
+  "reader.copied": "Link disalin ke clipboard",
+
+  /* ---- panel: shared shell ---- */
+  "panel.publish": "Terbitkan",
+  "panel.published": "Terbit",
+  "panel.draft": "Draf",
+  "panel.order": "Urutan",
+  "panel.title": "Judul",
+  "panel.url": "URL",
+  "panel.deletePage": "Hapus halaman",
+  "panel.viewPage": "Lihat halaman ↗",
+  "panel.newPage": "+ Halaman",
+  "panel.pageTitlePlaceholder": "Judul halaman",
+  "panel.creating": "Membuat…",
+  "panel.create": "Buat",
+  "panel.noPages": "Belum ada halaman.",
+  "panel.pagesIntro":
+    "Halaman bebas dengan editor teks — \u201cTentang kami\u201d, \u201cCara kerja\u201d, apa pun. Yang sudah dipublikasikan muncul di footer.",
+  "panel.linksHint":
+    "Hanya link http:// atau https:// yang disimpan. Baris tanpa nama atau tanpa URL diabaikan.",
+  "panel.socialHint":
+    "Hanya http:// atau https:// yang disimpan. Field kosong = ikon jaringan itu tidak ditampilkan di situs.",
+  "panel.addLink": "+ Tambah link",
+  "panel.linkName": "Nama situs",
+  "panel.linkNote": "Keterangan singkat (opsional)",
+  "panel.moveUp": "Naikkan",
+  "panel.moveDown": "Turunkan",
+  "panel.removeLink": "Hapus link",
+  "panel.tabSocial": "Media sosial",
+  "panel.tabSocialSub": "Alamat tiap jaringan",
+  "panel.tabOther": "Link lainnya",
+  "panel.tabOtherSub": "Situs lain milik Anda",
 } as const;
 
 export type MessageKey = keyof typeof id;

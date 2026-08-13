@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { savePage, deletePage } from "@/lib/actions/pages";
 import { RichEditor, type RichEditorHandle } from "../rich-editor";
 import type { EditorialPage } from "@/lib/page-types";
+import { t } from "@/lib/i18n";
 
 export function PageEditForm({ page }: { page: EditorialPage }) {
   const router = useRouter();
@@ -35,10 +36,10 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
     });
     setSaving(false);
     if (res.ok) {
-      setStatus("Tersimpan.");
+      setStatus(t("common.saved"));
       router.refresh();
     } else {
-      setError(res.error ?? "Gagal menyimpan.");
+      setError(res.error ?? t("common.failed"));
     }
   }
 
@@ -46,7 +47,7 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
     if (!confirm(`Hapus halaman "${page.title}"? Tindakan ini tidak bisa dibatalkan.`)) return;
     const res = await deletePage(page.id);
     if (res.ok) router.push("/panel/pages");
-    else setError(res.error ?? "Gagal menghapus.");
+    else setError(res.error ?? t("common.failed"));
   }
 
   const input =
@@ -57,12 +58,12 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className={label} htmlFor="page-title">Judul</label>
+          <label className={label} htmlFor="page-title">{t("panel.title")}</label>
           <input id="page-title" className={input} value={title} maxLength={120}
                  onChange={(e) => { setTitle(e.target.value); setStatus(null); }} />
         </div>
         <div>
-          <label className={label} htmlFor="page-slug">URL</label>
+          <label className={label} htmlFor="page-slug">{t("panel.url")}</label>
           <div className="flex items-center gap-2">
             <span className="shrink-0 font-mono text-sm text-[var(--muted)]">/p/</span>
             <input id="page-slug" className={input} value={slug}
@@ -82,10 +83,10 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
           <input type="checkbox" checked={published}
                  onChange={(e) => { setPublished(e.target.checked); setStatus(null); }}
                  className="h-4 w-4 rounded border-[var(--border)] accent-[var(--primary)]" />
-          Terbitkan
+          {t("panel.publish")}
         </label>
         <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-          Urutan
+          {t("panel.order")}
           <input inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}
                  className="w-16 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-2 text-base sm:text-sm text-foreground" />
         </label>
@@ -93,15 +94,15 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
 
       <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-4">
         <Button type="button" size="md" onClick={save} disabled={saving}>
-          {saving ? "Menyimpan…" : "Simpan"}
+          {saving ? t("common.saving") : t("common.save")}
         </Button>
         {published && (
           <a href={`/p/${page.slug}`} target="_blank" rel="noreferrer"
-             className="text-sm text-[var(--muted)] hover:text-foreground">Lihat halaman ↗</a>
+             className="text-sm text-[var(--muted)] hover:text-foreground">{t("panel.viewPage")}</a>
         )}
         <button type="button" onClick={remove}
                 className="ml-auto text-sm text-[var(--muted)] transition-colors hover:text-red-500">
-          Hapus halaman
+          {t("panel.deletePage")}
         </button>
         {status && <span className="text-sm text-green-600 dark:text-green-400">{status}</span>}
         {error && <span className="text-sm text-red-500 dark:text-red-400">{error}</span>}

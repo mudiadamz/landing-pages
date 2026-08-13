@@ -29,6 +29,7 @@ import {
   EPUB_MARGIN_MAX,
 } from "@/lib/epub-font";
 import { useChromeHidden } from "@/lib/immersive";
+import { t } from "@/lib/i18n";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -280,7 +281,7 @@ export function ProductActionsMenu({
     }
     try {
       await navigator.clipboard.writeText(url);
-      showHint("Link disalin ke clipboard");
+      showHint(t("reader.copied"));
     } catch {
       showHint(url);
     }
@@ -433,13 +434,13 @@ export function ProductActionsMenu({
       {epub && (
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <TextSizeIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-          <span className="text-sm text-foreground">Font</span>
+          <span className="text-sm text-foreground">{t("reader.font")}</span>
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"
               onClick={() => onFont(fontPct - EPUB_FONT_STEP)}
               disabled={fontPct <= EPUB_FONT_MIN}
-              aria-label="Perkecil font"
+              aria-label={t("reader.fontSmaller")}
               className={STEPPER_BTN}
             >
               −
@@ -451,7 +452,7 @@ export function ProductActionsMenu({
               type="button"
               onClick={() => onFont(fontPct + EPUB_FONT_STEP)}
               disabled={fontPct >= EPUB_FONT_MAX}
-              aria-label="Perbesar font"
+              aria-label={t("reader.fontBigger")}
               className={STEPPER_BTN}
             >
               +
@@ -464,13 +465,13 @@ export function ProductActionsMenu({
       {epub && (
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <MarginIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-          <span className="text-sm text-foreground">Margin</span>
+          <span className="text-sm text-foreground">{t("reader.margin")}</span>
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"
               onClick={() => onMargin(marginPx - EPUB_MARGIN_STEP)}
               disabled={marginPx <= EPUB_MARGIN_MIN}
-              aria-label="Kurangi margin"
+              aria-label={t("reader.marginLess")}
               className={STEPPER_BTN}
             >
               −
@@ -482,7 +483,7 @@ export function ProductActionsMenu({
               type="button"
               onClick={() => onMargin(marginPx + EPUB_MARGIN_STEP)}
               disabled={marginPx >= EPUB_MARGIN_MAX}
-              aria-label="Tambah margin"
+              aria-label={t("reader.marginMore")}
               className={STEPPER_BTN}
             >
               +
@@ -496,7 +497,7 @@ export function ProductActionsMenu({
       {epub && (
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <AlignIcon className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-          <span className="text-sm text-foreground">Perataan</span>
+          <span className="text-sm text-foreground">{t("reader.align")}</span>
           {/* Icons, not words: the two labels ("Rata kanan-kiri" / "Rata kiri")
               were longer than the row had space for, and the shape of the lines
               says which is which faster than reading either does. The words move
@@ -506,8 +507,8 @@ export function ProductActionsMenu({
               type="button"
               onClick={() => onAlign("justify")}
               aria-pressed={align === "justify"}
-              aria-label="Rata kanan-kiri"
-              title="Rata kanan-kiri"
+              aria-label={t("reader.alignJustify")}
+              title={t("reader.alignJustify")}
               className={`rounded-md p-2 transition-colors ${
                 align === "justify"
                   ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
@@ -520,8 +521,8 @@ export function ProductActionsMenu({
               type="button"
               onClick={() => onAlign("left")}
               aria-pressed={align === "left"}
-              aria-label="Rata kiri"
-              title="Rata kiri"
+              aria-label={t("reader.alignLeft")}
+              title={t("reader.alignLeft")}
               className={`rounded-md p-2 transition-colors ${
                 align === "left"
                   ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
@@ -537,7 +538,7 @@ export function ProductActionsMenu({
       <div className="my-1 h-px bg-[var(--border)]" />
 
       <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
-        Bagikan
+        {t("reader.share")}
       </p>
       {SHARE_TARGETS.map(({ key, label, Icon }) => (
         <MenuButton
@@ -547,7 +548,7 @@ export function ProductActionsMenu({
           label={label}
         />
       ))}
-      <MenuButton onClick={nativeShare} icon={<ShareIcon className="h-4 w-4" />} label="Bagikan lainnya…" />
+      <MenuButton onClick={nativeShare} icon={<ShareIcon className="h-4 w-4" />} label={t("reader.shareOther")} />
 
       <div className="my-1 h-px bg-[var(--border)]" />
 
@@ -567,7 +568,7 @@ export function ProductActionsMenu({
       onClick={() => setOpen((v) => !v)}
       aria-haspopup="menu"
       aria-expanded={open}
-      aria-label="Menu tindakan"
+      aria-label={t("reader.actionsMenu")}
       title="Menu tindakan"
       className={
         variant === "floating"

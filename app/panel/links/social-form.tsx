@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SOCIAL_LINKS } from "@/components/social-links";
 import { updateSocialUrls } from "@/lib/actions/site-settings";
 import type { SocialUrls } from "@/lib/social";
+import { t } from "@/lib/i18n";
 
 /**
  * The address per network. Only the address.
@@ -29,8 +30,8 @@ export function SocialForm({ initial }: { initial: SocialUrls }) {
     setStatus(null);
     const res = await updateSocialUrls(urls);
     setSaving(false);
-    if (res.ok) setStatus("Tersimpan.");
-    else setError(res.error ?? "Gagal menyimpan.");
+    if (res.ok) setStatus(t("common.saved"));
+    else setError(res.error ?? t("common.failed"));
   }
 
   return (
@@ -63,7 +64,7 @@ export function SocialForm({ initial }: { initial: SocialUrls }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" size="md" onClick={save} disabled={saving}>
-          {saving ? "Menyimpan…" : "Simpan"}
+          {saving ? t("common.saving") : t("common.save")}
         </Button>
         {status && <span className="text-sm text-green-600 dark:text-green-400">{status}</span>}
         {error && <span className="text-sm text-red-500 dark:text-red-400">{error}</span>}
