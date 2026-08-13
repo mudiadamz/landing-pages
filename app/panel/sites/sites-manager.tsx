@@ -8,6 +8,7 @@ import { createSite, updateSiteDomain, deleteSite, selectPanelSite } from "@/lib
 import type { Site } from "@/lib/site-resolve";
 import { DomainSetupGuide } from "./domain-setup-guide";
 import { VercelDomainStatus } from "./vercel-domain-status";
+import { t } from "@/lib/i18n";
 
 /**
  * The PLUMBING half of a storefront: which hostname it answers on, whether it is
@@ -183,7 +184,7 @@ export function SitesManager({
         </ol>
         <p className="mt-2 text-xs text-[var(--muted)]">
           Nama situs, tagline, deskripsi SEO, logo, ikon, template, palet, dan niche
-          diatur di <strong className="text-foreground">Identitas situs</strong> — bukan di
+          diatur di <strong className="text-foreground">{t("sites.identity")}</strong> — bukan di
           sini. Referensi lengkap:{" "}
           <span className="font-mono text-foreground">docs/multi-domain.md</span>.
         </p>
@@ -258,7 +259,7 @@ export function SitesManager({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={() => openEdit(site)}>
-                    Edit domain
+                    {t("sites.editDomain")}
                   </Button>
                   {!site.is_canonical && (
                     <Button
@@ -292,7 +293,7 @@ export function SitesManager({
       {/* Add */}
       {editing === "new" ? (
         <div className={CARD}>
-          <h2 className="mb-1 text-sm font-semibold text-foreground">Domain baru</h2>
+          <h2 className="mb-1 text-sm font-semibold text-foreground">{t("sites.newDomain")}</h2>
           <p className="mb-3 text-xs text-[var(--muted)]">
             Hostname dan nama dulu. Setelah tersimpan Anda langsung dibawa ke Identitas
             situs untuk logo, template, palet, dan niche.
@@ -316,7 +317,7 @@ export function SitesManager({
               </div>
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-foreground">
-                  Nama situs <span className="text-red-500">*</span>
+                  {t("sites.siteName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -325,7 +326,7 @@ export function SitesManager({
                   placeholder="Resepku"
                   className={INPUT}
                 />
-                <p className="text-xs text-[var(--muted)]">Bisa diubah nanti.</p>
+                <p className="text-xs text-[var(--muted)]">{t("sites.changeableLater")}</p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
@@ -333,14 +334,14 @@ export function SitesManager({
                 Batal
               </Button>
               <Button onClick={create} loading={pending} disabled={pending}>
-                Simpan &amp; lanjut
+                {t("sites.saveAndNext")}
               </Button>
             </div>
           </div>
         </div>
       ) : (
         <Button onClick={openNew} disabled={pending}>
-          Tambah domain
+          {t("sites.addDomain")}
         </Button>
       )}
     </div>
@@ -392,7 +393,7 @@ function DomainForm({
           className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
         />
         <span>
-          <span className="block text-sm font-medium text-foreground">Aktif</span>
+          <span className="block text-sm font-medium text-foreground">{t("sites.active")}</span>
           <span className="block text-xs text-[var(--muted)]">
             Kalau dimatikan, domain ini menampilkan situs utama — bukan halaman error.
           </span>

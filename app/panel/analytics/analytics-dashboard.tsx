@@ -5,6 +5,7 @@ import type { Analytics, SessionListRow } from "@/lib/actions/analytics";
 import type { ProductSummary } from "@/lib/actions/product-insights";
 import { ProductSummaryCard } from "@/components/product-summary-card";
 import { SessionRow } from "./session-row";
+import { t } from "@/lib/i18n";
 
 type Tab = "overview" | "products" | "acquisition" | "geography" | "entry" | "engagement" | "sessions";
 
@@ -127,7 +128,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
   const sortBy = (key: SortKey) =>
     setSort((prev) => (prev.key === key ? { key, dir: prev.dir === "desc" ? "asc" : "desc" } : { key, dir: "desc" }));
 
-  if (!data.ok) return <Empty>Tidak ada akses atau data gagal dimuat.</Empty>;
+  if (!data.ok) return <Empty>{t("analytics.noAccess")}</Empty>;
 
   const { overview, campaigns, referrers, geography, entryPoints, engagement, sessions } = data;
 
@@ -217,7 +218,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
             </div>
           </div>
           {filteredProducts.length === 0 ? (
-            <Empty>Tidak ada produk pada filter ini.</Empty>
+            <Empty>{t("analytics.noProducts")}</Empty>
           ) : (
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               {filteredProducts.map((p) => (
@@ -270,7 +271,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
           <div>
             <h2 className="mb-2 text-sm font-semibold">Referrer</h2>
             {referrers.length === 0 ? (
-              <Empty>Belum ada referrer eksternal.</Empty>
+              <Empty>{t("analytics.noReferrer")}</Empty>
             ) : (
               <TableShell>
                 <thead>
@@ -304,7 +305,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
             (dari lama-baca &amp; kedalaman scroll).
           </p>
           {engagement.length === 0 ? (
-            <Empty>Belum ada kunjungan preview.</Empty>
+            <Empty>{t("analytics.noPreview")}</Empty>
           ) : (
             <TableShell>
               <thead>
@@ -343,7 +344,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
       {tab === "entry" && (
         <div>
           {entryPoints.length === 0 ? (
-            <Empty>Belum ada data entry point.</Empty>
+            <Empty>{t("analytics.noEntry")}</Empty>
           ) : (
             <TableShell>
               <thead>
@@ -400,22 +401,22 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari email, IP, kota, campaign, produk…"
+            placeholder={t("analytics.searchPlaceholder")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-base sm:text-sm outline-none focus:border-[var(--primary)]"
           />
           {filteredSessions.length === 0 ? (
-            <Empty>Tidak ada sesi.</Empty>
+            <Empty>{t("analytics.noSessions")}</Empty>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)]">
                     <SortTh label="Waktu" col="time" sort={sort} onSort={sortBy} />
-                    <Th>Pengunjung</Th>
+                    <Th>{t("analytics.visitor")}</Th>
                     <SortTh right label="Durasi" col="duration" sort={sort} onSort={sortBy} />
                     <Th>Lokasi</Th>
                     <Th>Sumber</Th>
-                    <Th>Masuk via</Th>
+                    <Th>{t("analytics.enteredVia")}</Th>
                     <Th>Perangkat</Th>
                     <SortTh right label="Hal." col="pageviews" sort={sort} onSort={sortBy} />
                   </tr>

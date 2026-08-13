@@ -126,6 +126,33 @@ export const id = {
   "panel.tabSocialSub": "Alamat tiap jaringan",
   "panel.tabOther": "Link lainnya",
   "panel.tabOtherSub": "Situs lain milik Anda",
+
+  /* ---- panel: analytics ---- */
+  "analytics.noAccess": "Tidak ada akses atau data gagal dimuat.",
+  "analytics.noProducts": "Tidak ada produk pada filter ini.",
+  "analytics.noUtm": "Belum ada trafik ber-UTM. Tambahkan",
+  "analytics.noReferrer": "Belum ada referrer eksternal.",
+  "analytics.noPreview": "Belum ada kunjungan preview.",
+  "analytics.noEntry": "Belum ada data entry point.",
+  "analytics.noSessions": "Tidak ada sesi.",
+  "analytics.sessions": "Sesi",
+  "analytics.product": "Produk",
+  "analytics.visitor": "Pengunjung",
+  "analytics.entryPage": "Halaman masuk",
+  "analytics.enteredVia": "Masuk via",
+  "analytics.searchPlaceholder": "Cari email, IP, kota, campaign, produk…",
+
+  /* ---- panel: domains ---- */
+  "sites.newDomain": "Domain baru",
+  "sites.addDomain": "Tambah domain",
+  "sites.editDomain": "Edit domain",
+  "sites.domain": "Domain",
+  "sites.siteName": "Nama situs",
+  "sites.changeableLater": "Bisa diubah nanti.",
+  "sites.saveAndNext": "Simpan & lanjut",
+  "sites.active": "Aktif",
+  "sites.inactive": "nonaktif",
+  "sites.identity": "Identitas situs",
 } as const;
 
 export type MessageKey = keyof typeof id;
