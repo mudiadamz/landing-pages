@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isMissingRecord } from "@/lib/missing-record";
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -12,6 +13,19 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.delete("category");
       return NextResponse.redirect(url, 301);
     }
+  }
+
+  /**
+   * A missing record answered with a REAL 404, before the response starts.
+   *
+   * `notFound()` inside a page renders the right body under a 200, because by
+   * the time it runs the response is already streaming and the status is spent.
+   * A rewrite from here carries a status, so this is the only layer that can
+   * answer honestly. Costs one cached, time-limited, fail-open lookup on the
+   * paths that can actually miss.
+   */
+  if (await isMissingRecord(pathname, request.headers.get("host") ?? "")) {
+    return NextResponse.rewrite(new URL("/not-found-page", request.url), { status: 404 });
   }
 
   /**
