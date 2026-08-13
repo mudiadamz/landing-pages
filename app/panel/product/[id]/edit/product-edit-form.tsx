@@ -42,6 +42,10 @@ import {
   fileNameFromUrl,
   type FileMeta,
 } from "@/components/file-upload-card";
+import { ToggleCard } from "@/components/toggle-card";
+import { ScheduleTab } from "./tabs/schedule-tab";
+import { RelatedTab } from "./tabs/related-tab";
+import { t } from "@/lib/i18n";
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
@@ -81,13 +85,13 @@ type TabKey =
   | "pengiriman"
   | "terkait";
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "detail", label: "Detail" },
-  { key: "thumbnail", label: "Thumbnail" },
-  { key: "preview", label: "Preview" },
-  { key: "harga", label: "Harga" },
-  { key: "jadwal", label: "Jadwal" },
-  { key: "pengiriman", label: "Pengiriman" },
-  { key: "terkait", label: "Terkait" },
+  { key: "detail", label: t("product.tabDetail") },
+  { key: "thumbnail", label: t("product.tabThumbnail") },
+  { key: "preview", label: t("product.tabPreview") },
+  { key: "harga", label: t("product.tabPrice") },
+  { key: "jadwal", label: t("product.tabSchedule") },
+  { key: "pengiriman", label: t("product.tabDelivery") },
+  { key: "terkait", label: t("product.tabRelated") },
 ];
 const PANEL_CLASS =
   "rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-6";
@@ -1863,48 +1867,13 @@ export function ProductEditForm({
       </section>
 
       {/* ========================= Tab: Jadwal ========================= */}
-      <section className={tab === "jadwal" ? PANEL_CLASS : "hidden"}>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Jadwal rilis</h2>
-          <p className="text-sm text-[var(--muted)]">
-            Terbitkan sekarang, atau tahan dulu sampai tanggal yang Anda tentukan.
-          </p>
-        </div>
-
-        {/* Scheduled release ("upcoming"): before the time, visitors see only a
-            countdown and can't read/buy. */}
-        <div className="space-y-3">
-          <ToggleCard
-            checked={scheduleEnabled}
-            onChange={setScheduleEnabled}
-            title="Jadwalkan rilis (upcoming)"
-            description="Tampilkan hitung mundur dulu — pengunjung baru bisa baca & beli setelah waktunya tiba."
-          />
-          {scheduleEnabled ? (
-            <div className="space-y-1.5">
-              <label htmlFor="available-at" className="block text-sm font-medium text-foreground">
-                Tanggal &amp; waktu rilis <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="available-at"
-                type="datetime-local"
-                value={availableAt}
-                onChange={(e) => setAvailableAt(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
-              />
-              <p className="text-xs text-[var(--muted)]">
-                Memakai zona waktu perangkat Anda. Sebelum waktu ini, halaman preview &amp; checkout
-                hanya menampilkan hitung mundur (Anda sendiri tetap bisa membukanya untuk cek).
-                Setelah lewat, produk otomatis terbuka.
-              </p>
-            </div>
-          ) : (
-            <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
-              Tanpa jadwal, produk langsung bisa dibaca &amp; dibeli begitu dipublikasikan.
-            </p>
-          )}
-        </div>
-      </section>
+      <ScheduleTab
+        className={tab === "jadwal" ? PANEL_CLASS : "hidden"}
+        enabled={scheduleEnabled}
+        onEnabledChange={setScheduleEnabled}
+        availableAt={availableAt}
+        onAvailableAtChange={setAvailableAt}
+      />
 
       {/* ========================= Tab: Pengiriman ========================= */}
       <section className={tab === "pengiriman" ? PANEL_CLASS : "hidden"}>
@@ -2078,147 +2047,19 @@ export function ProductEditForm({
       </section>
 
       {/* ========================= Tab: Terkait ========================= */}
-      <section className={tab === "terkait" ? PANEL_CLASS : "hidden"}>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Produk terkait</h2>
-          <p className="text-sm text-[var(--muted)]">
-            Muncul di akhir preview (setelah halaman terakhir). Pilih dari produk Anda sendiri.
-          </p>
-        </div>
-
-        {/* Related products picker */}
-        <div className="space-y-2">
-          {relatedOptions.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
-              Belum ada produk lain untuk dijadikan produk terkait.
-            </p>
-          ) : (
-            <div className="space-y-2 rounded-xl border border-[var(--border)] p-3">
-              <div className="flex items-center justify-between gap-2">
-                <input
-                  type="text"
-                  value={relatedSearch}
-                  onChange={(e) => setRelatedSearch(e.target.value)}
-                  placeholder="Cari produk…"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-                <span className="shrink-0 rounded-md bg-[var(--background)] px-2 py-1 text-xs text-[var(--muted)]">
-                  {relatedIds.length} dipilih
-                </span>
-              </div>
-
-              <div className="max-h-56 space-y-0.5 overflow-y-auto">
-                {relatedOptions
-                  .filter((o) => o.title.toLowerCase().includes(relatedSearch.trim().toLowerCase()))
-                  .map((o) => {
-                    const checked = relatedIds.includes(o.id);
-                    return (
-                      <label
-                        key={o.id}
-                        className={`flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
-                          checked ? "bg-[var(--primary)]/5" : "hover:bg-[var(--background)]"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleRelated(o.id)}
-                          className="h-4 w-4 shrink-0 rounded border-[var(--border)] accent-[var(--primary)]"
-                        />
-                        <span className="min-w-0 flex-1 truncate text-foreground">{o.title}</span>
-                        <span className="shrink-0 font-mono text-xs text-[var(--muted)]">{o.slug}</span>
-                      </label>
-                    );
-                  })}
-                {relatedOptions.filter((o) =>
-                  o.title.toLowerCase().includes(relatedSearch.trim().toLowerCase()),
-                ).length === 0 && (
-                  <p className="px-2.5 py-3 text-center text-xs text-[var(--muted)]">
-                    Tidak ada produk yang cocok.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Series continuation */}
-        <div className="space-y-2 border-t border-[var(--border)] pt-5">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Lanjutan seri</h2>
-            <p className="text-sm text-[var(--muted)]">
-              Kalau produk ini bagian dari seri, pilih part berikutnya. Tombol &ldquo;Baca
-              kelanjutannya&rdquo; akan muncul di akhir preview supaya pembaca tidak berhenti di sini.
-            </p>
-          </div>
-          {relatedOptions.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
-              Belum ada produk lain untuk dijadikan lanjutan seri.
-            </p>
-          ) : (
-            <div className="space-y-2 rounded-xl border border-[var(--border)] p-3">
-              <input
-                type="text"
-                value={seriesSearch}
-                onChange={(e) => setSeriesSearch(e.target.value)}
-                placeholder="Cari produk…"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-              />
-
-              {/* The pick stays visible even when the search hides its row —
-                  otherwise typing looks like it cleared the selection. */}
-              {selectedNext && (
-                <div className="flex items-center gap-2 rounded-lg bg-[var(--primary)]/5 px-2.5 py-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate text-foreground">
-                    {selectedNext.title}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setNextProductId("")}
-                    className="shrink-0 rounded-md px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              )}
-
-              <div className="max-h-56 space-y-0.5 overflow-y-auto">
-                {seriesMatches.map((o) => {
-                  const checked = nextProductId === o.id;
-                  return (
-                    <label
-                      key={o.id}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
-                        checked ? "bg-[var(--primary)]/5" : "hover:bg-[var(--background)]"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="next-product"
-                        checked={checked}
-                        // Picking the current one again clears it, so the only
-                        // way out isn't hunting for the "Hapus" button.
-                        onClick={() => setNextProductId(checked ? "" : o.id)}
-                        onChange={() => {}}
-                        className="h-4 w-4 shrink-0 accent-[var(--primary)]"
-                      />
-                      <span className="min-w-0 flex-1 truncate text-foreground">{o.title}</span>
-                      <span className="shrink-0 font-mono text-xs text-[var(--muted)]">
-                        {o.slug}
-                      </span>
-                    </label>
-                  );
-                })}
-                {seriesMatches.length === 0 && (
-                  <p className="px-2.5 py-3 text-center text-xs text-[var(--muted)]">
-                    Tidak ada produk yang cocok.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
+      <RelatedTab
+        className={tab === "terkait" ? PANEL_CLASS : "hidden"}
+        relatedOptions={relatedOptions}
+        relatedIds={relatedIds}
+        toggleRelated={toggleRelated}
+        relatedSearch={relatedSearch}
+        onRelatedSearchChange={setRelatedSearch}
+        seriesSearch={seriesSearch}
+        onSeriesSearchChange={setSeriesSearch}
+        seriesMatches={seriesMatches}
+        selectedNext={selectedNext}
+        onNextProductIdChange={setNextProductId}
+      />
 
       {/* ===================== Action bar ==================================== */}
       {/* Sits at the end of the form, not floating over it — it used to cover the
@@ -2413,40 +2254,6 @@ function CutPercentField({
     </div>
   );
 }
-
-function ToggleCard({
-  checked,
-  onChange,
-  title,
-  description,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  title: string;
-  description: string;
-}) {
-  return (
-    <label
-      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
-        checked
-          ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
-          : "border-[var(--border)] hover:bg-[var(--background)]"
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border)] accent-[var(--primary)]"
-      />
-      <span className="min-w-0">
-        <span className="block text-sm font-medium text-foreground">{title}</span>
-        <span className="block text-xs text-[var(--muted)]">{description}</span>
-      </span>
-    </label>
-  );
-}
-
 
 function CheckItem({ children }: { children: React.ReactNode }) {
   return (

@@ -153,6 +153,37 @@ export const id = {
   "sites.active": "Aktif",
   "sites.inactive": "nonaktif",
   "sites.identity": "Identitas situs",
+
+  /* ---- panel: product editor ---- */
+  "product.tabDetail": "Detail",
+  "product.tabThumbnail": "Thumbnail",
+  "product.tabPreview": "Preview",
+  "product.tabPrice": "Harga",
+  "product.tabSchedule": "Jadwal",
+  "product.tabDelivery": "Pengiriman",
+  "product.tabRelated": "Terkait",
+
+  "product.scheduleHeading": "Jadwal rilis",
+  "product.scheduleIntro":
+    "Terbitkan sekarang, atau tahan dulu sampai tanggal yang Anda tentukan.",
+  "product.scheduleToggle": "Jadwalkan rilis (upcoming)",
+  "product.scheduleToggleHint":
+    "Tampilkan hitung mundur dulu — pengunjung baru bisa baca & beli setelah waktunya tiba.",
+  "product.scheduleWhen": "Tanggal & waktu rilis",
+  "product.scheduleNote":
+    "Memakai zona waktu perangkat Anda. Sebelum waktu ini, halaman preview & checkout hanya menampilkan hitung mundur (Anda sendiri tetap bisa membukanya untuk cek). Setelah lewat, produk otomatis terbuka.",
+  "product.scheduleNone":
+    "Tanpa jadwal, produk langsung bisa dibaca & dibeli begitu dipublikasikan.",
+
+  "product.relatedHeading": "Produk terkait",
+  "product.relatedIntro":
+    "Muncul di akhir preview (setelah halaman terakhir). Pilih dari produk Anda sendiri.",
+  "product.relatedEmpty": "Belum ada produk lain untuk dijadikan produk terkait.",
+  "product.relatedSearch": "Cari produk…",
+  "product.relatedSelected": "{count} dipilih",
+  "product.relatedNoMatch": "Tidak ada produk yang cocok.",
+  "product.seriesHeading": "Lanjutan seri",
+  "product.seriesEmpty": "Belum ada produk lain untuk dijadikan lanjutan seri.",
 } as const;
 
 export type MessageKey = keyof typeof id;
