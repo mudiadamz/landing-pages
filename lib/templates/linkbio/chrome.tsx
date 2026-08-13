@@ -3,6 +3,7 @@ import { currentSite } from "@/lib/site-resolve";
 import { getPublishedPages } from "@/lib/actions/pages";
 import { SiteLogo } from "@/components/site-logo";
 import type { ChromeProps } from "../registry";
+import { t } from "@/lib/i18n";
 
 /**
  * Chrome for the link-in-bio theme — deliberately almost nothing.
@@ -32,7 +33,7 @@ export function LinkbioHeader({ user, brand }: ChromeProps) {
           href={user ? "/panel/purchases" : "/login"}
           className="shrink-0 text-xs text-[var(--muted)] transition-colors hover:text-foreground"
         >
-          {user ? "Pembelian saya" : "Masuk"}
+          {user ? t("nav.myPurchases") : t("nav.signIn")}
         </Link>
       </div>
     </header>
@@ -51,10 +52,10 @@ export async function LinkbioFooter() {
         {/* Tentang and Kontak first: they are what a visitor is looking for,
             and the legal three are what they are required to be able to find. */}
         <Link href="/about" className="transition-colors hover:text-foreground">
-          Tentang
+          {t("nav.about")}
         </Link>
         <Link href="/contact" className="transition-colors hover:text-foreground">
-          Kontak
+          {t("nav.contact")}
         </Link>
         {/* Whatever the storefront has written. Between the two fixed pages and
             the legal three, because that is the order of how likely a visitor is
@@ -65,13 +66,13 @@ export async function LinkbioFooter() {
           </Link>
         ))}
         <Link href="/privacy" className="transition-colors hover:text-foreground">
-          Privasi
+          {t("nav.privacy")}
         </Link>
         <Link href="/terms" className="transition-colors hover:text-foreground">
-          Ketentuan
+          {t("nav.terms")}
         </Link>
         <Link href="/refund" className="transition-colors hover:text-foreground">
-          Pengembalian dana
+          {t("nav.refund")}
         </Link>
       </div>
     </footer>

@@ -1,3 +1,5 @@
+import { t } from "@/lib/i18n";
+
 /**
  * The blue rosette-and-tick that follows a name.
  *
@@ -11,7 +13,7 @@
  */
 export function VerifiedBadge({
   className = "h-5 w-5",
-  label = "Terverifikasi",
+  label = t("home.verified"),
 }: {
   className?: string;
   label?: string;

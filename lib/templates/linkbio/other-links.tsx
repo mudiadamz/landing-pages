@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { OtherLink } from "@/lib/actions/site-settings";
+import { t } from "@/lib/i18n";
 
 /**
  * A link icon after the social row, opening a sheet of the owner's other sites.
@@ -41,8 +42,8 @@ export function OtherLinksButton({ links }: { links: OtherLink[] }) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={`Link lainnya (${links.length})`}
-        title="Link lainnya"
+        aria-label={`${t("home.otherLinks")} (${links.length})`}
+        title={t("home.otherLinks")}
         className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/15 active:scale-[0.96]"
       >
         <LinkIcon className="h-5 w-5" />
@@ -62,20 +63,20 @@ export function OtherLinksButton({ links }: { links: OtherLink[] }) {
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="Link lainnya"
+              aria-label={t("home.otherLinks")}
               className="relative max-h-[80vh] w-full max-w-md overflow-y-auto rounded-2xl bg-[var(--card)] p-4 shadow-xl sm:p-6"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-foreground">Link lainnya</h2>
+                  <h2 className="text-base font-semibold text-foreground">{t("home.otherLinks")}</h2>
                   <p className="mt-0.5 text-sm text-[var(--muted)]">
-                    Situs lain milik kami.
+                    {t("home.otherLinksSub")}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  aria-label="Tutup"
+                  aria-label={t("common.close")}
                   className="-mr-1 -mt-1 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

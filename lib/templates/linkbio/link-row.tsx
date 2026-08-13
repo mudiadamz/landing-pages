@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { isUpcoming } from "@/lib/product-status";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
+import { t } from "@/lib/i18n";
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -73,9 +74,9 @@ export function LinkRow({ page, priority }: { page: LandingPagePublic; priority:
           <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-[var(--muted)]">
             <span className="shrink-0">
               {upcoming
-                ? "Segera"
+                ? t("home.upcoming")
                 : page.is_free
-                  ? "Gratis · baca sekarang"
+                  ? t("home.freeRead")
                   : hasDiscount
                     ? `${formatPrice(display)} · dari ${formatPrice(price)}`
                     : formatPrice(display)}

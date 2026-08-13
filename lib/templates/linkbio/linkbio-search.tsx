@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * Search for the link-in-bio homepage: an icon in the top row and a field below
@@ -50,8 +51,8 @@ export function SearchToggle() {
       type="button"
       onClick={() => setOpen(!open)}
       aria-expanded={open}
-      aria-label={open ? "Tutup pencarian" : "Cari produk"}
-      title={open ? "Tutup pencarian" : "Cari produk"}
+      aria-label={open ? t("home.searchClose") : t("home.searchOpen")}
+      title={open ? t("home.searchClose") : t("home.searchOpen")}
       className={`rounded-lg p-2 transition-all duration-150 hover:bg-[var(--accent-subtle)] active:scale-[0.95] ${
         open ? "text-[var(--primary)]" : "text-[var(--muted)] hover:text-foreground"
       }`}
@@ -96,8 +97,8 @@ export function SearchField({
           type="search"
           name="q"
           defaultValue={query}
-          placeholder="Cari produk…"
-          aria-label="Cari produk"
+          placeholder={t("home.searchPlaceholder")}
+          aria-label={t("home.searchLabel")}
           // 16px on phones: under that, Safari zooms the page on focus and never
           // zooms back out.
           className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-[var(--muted)] sm:text-sm"
@@ -107,7 +108,7 @@ export function SearchField({
              unfiltered page, which is a navigation. */
           <Link
             href="/"
-            aria-label="Hapus pencarian"
+            aria-label={t("home.searchClear")}
             className="-mr-1 shrink-0 rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:text-foreground"
           >
             <CloseIcon className="h-4 w-4" />
@@ -119,7 +120,7 @@ export function SearchField({
               openedByUser.current = false;
               setOpen(false);
             }}
-            aria-label="Tutup pencarian"
+            aria-label={t("home.searchClose")}
             className="-mr-1 shrink-0 rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:text-foreground"
           >
             <CloseIcon className="h-4 w-4" />
@@ -128,7 +129,7 @@ export function SearchField({
       </div>
       {query && (
         <p className="mt-2 px-1 text-xs text-[var(--muted)]">
-          {total === 0 ? "Tidak ada yang cocok." : `${total} hasil untuk "${query}"`}
+          {total === 0 ? t("home.searchNoMatch") : `${total} hasil untuk "${query}"`}
         </p>
       )}
     </form>
