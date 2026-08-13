@@ -53,6 +53,56 @@ describe("dictionary integrity", () => {
     expect(missing).toEqual([]);
   });
 
+
+  /**
+   * Keys that exist but nothing calls yet — screens still holding their own
+   * hardcoded copy of the string.
+   *
+   * This is a backlog, not an exemption. Each entry names a surface that has
+   * not been converted: the analytics dashboard, the sites manager, the
+   * checkout/preview buttons, the theme switch. When one of those is converted
+   * its key stops being unused and must be deleted from this list, which is why
+   * the test fails on a stale entry as well as on a new one.
+   */
+  const NOT_YET_CONVERTED = [
+    "analytics.entryPage",
+    "analytics.noUtm",
+    "analytics.product",
+    "analytics.sessions",
+    "checkout.buyNow",
+    "checkout.getFree",
+    "common.add",
+    "common.all",
+    "common.back",
+    "common.edit",
+    "common.free",
+    "common.price",
+    "common.required",
+    "common.search",
+    "home.themeToggle",
+    "nav.categories",
+    "nav.home",
+    "nav.profile",
+    "panel.socialHint",
+    "reader.signInGoogle",
+    "sites.domain",
+    "sites.inactive",
+  ];
+
+  it("has no unused keys beyond the declared backlog", () => {
+    // The other direction of the missing-key test. A key with no caller is
+    // usually the residue of a half-finished move: the string was added to the
+    // dictionary and the component kept its hardcoded copy, so the translation
+    // exists and nothing renders it.
+    const used = new Set<string>();
+    for (const file of files) {
+      if (file.endsWith(join("lib", "i18n", "id.ts"))) continue;
+      for (const [, key] of readFileSync(file, "utf8").matchAll(CALL)) used.add(key);
+    }
+    const unused = Object.keys(id).filter((k) => !used.has(k));
+    expect(unused.sort()).toEqual([...NOT_YET_CONVERTED].sort());
+  });
+
   it("has no blank values", () => {
     const blank = Object.entries(id).filter(([, v]) => !String(v).trim());
     expect(blank).toEqual([]);
@@ -74,6 +124,12 @@ describe("dictionary integrity", () => {
     "Link lainnya": ["home.otherLinks", "panel.tabOther"],
     Preview: ["checkout.preview", "product.tabPreview"],
     "Nama situs": ["panel.linkName", "sites.siteName"],
+    // The public footer link vs the panel tab that edits it. A translator may
+    // well want the visitor-facing word and the editor's word to differ.
+    Ketentuan: ["nav.terms", "content.tabLegal"],
+    // One is a placeholder ("Judul halaman"), the other a field label. Same
+    // words today, different jobs — and placeholders often shorten first.
+    "Judul halaman": ["panel.pageTitlePlaceholder", "content.pageTitle"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

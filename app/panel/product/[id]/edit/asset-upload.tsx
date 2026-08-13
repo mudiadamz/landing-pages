@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { uploadAsset, listAssets, uploadSiteZip } from "@/lib/actions/assets";
+import { t } from "@/lib/i18n";
 
 export function AssetUpload({
   pageId,
@@ -73,7 +74,7 @@ export function AssetUpload({
         router.refresh();
       }
     } catch (err) {
-      setZipError(err instanceof Error ? err.message : "Failed to upload ZIP.");
+      setZipError(err instanceof Error ? err.message : t("assets.zipFailed"));
     } finally {
       setZipLoading(false);
       e.target.value = "";
@@ -86,12 +87,10 @@ export function AssetUpload({
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-foreground mb-3">Upload situs (.zip)</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-3">{t("assets.zipHeading")}</h3>
       <p className="text-xs text-[var(--muted)] mb-3">
-        Berisi <code className="font-mono">index.html</code> beserta folder seperti{" "}
-        <code className="font-mono">images/</code> dan <code className="font-mono">fonts/</code>.
-        Semua file & folder otomatis terupload dan <code className="font-mono">index.html</code>{" "}
-        dipakai sebagai preview.
+        {t("assets.zipIntroBefore")} <code className="font-mono">index.html</code>{" "}
+        {t("assets.zipIntroAfter")}
       </p>
 
       <label className="block">
@@ -103,7 +102,7 @@ export function AssetUpload({
           className="hidden"
         />
         <span className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-[var(--border)] rounded-lg text-sm font-medium text-[var(--muted)] hover:border-[var(--primary)] hover:text-[var(--primary)] cursor-pointer transition-colors">
-          {zipLoading ? "Mengupload & mengekstrak…" : "Pilih file .zip"}
+          {zipLoading ? t("assets.zipUploading") : t("assets.zipPick")}
         </span>
       </label>
 
@@ -116,9 +115,9 @@ export function AssetUpload({
 
       <div className="my-4 border-t border-[var(--border)]" />
 
-      <h3 className="text-sm font-semibold text-foreground mb-3">Assets</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-3">{t("assets.heading")}</h3>
       <p className="text-xs text-[var(--muted)] mb-3">
-        Upload images or videos. Copy the URL and paste into your HTML.
+        {t("assets.intro")}
       </p>
 
       <label className="block">
@@ -130,7 +129,7 @@ export function AssetUpload({
           className="hidden"
         />
         <span className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-[var(--border)] rounded-lg text-sm font-medium text-[var(--muted)] hover:border-[var(--primary)] hover:text-[var(--primary)] cursor-pointer transition-colors">
-          {loading ? "Uploading…" : "Choose file (image or video)"}
+          {loading ? t("product.uploading") : t("assets.pickFile")}
         </span>
       </label>
 
@@ -140,9 +139,9 @@ export function AssetUpload({
 
       <div className="mt-4 space-y-2 max-h-[200px] overflow-y-auto">
         {loadingList ? (
-          <p className="text-xs text-[var(--muted)]">Loading…</p>
+          <p className="text-xs text-[var(--muted)]">{t("common.loading")}</p>
         ) : assets.length === 0 ? (
-          <p className="text-xs text-[var(--muted)]">No assets yet</p>
+          <p className="text-xs text-[var(--muted)]">{t("assets.empty")}</p>
         ) : (
           assets.map((a) => (
             <div
@@ -169,7 +168,7 @@ export function AssetUpload({
                   onClick={() => copyUrl(a.url)}
                   className="text-xs text-[var(--primary)] hover:underline"
                 >
-                  Copy URL
+                  {t("assets.copyUrl")}
                 </button>
               </div>
             </div>

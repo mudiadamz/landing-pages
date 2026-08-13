@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MAX_CUT_PERCENT, MIN_CUT_PERCENT, clampCutPercent } from "@/lib/epub-cut";
+import { t } from "@/lib/i18n";
 
 const CUT_PRESETS = [30, 40, 50, 60, 70, 80];
 
@@ -52,9 +53,11 @@ export function CutPercentField({
   return (
     <div className="space-y-2">
       <div>
-        <span className="block text-sm font-medium text-foreground">Bagian yang disembunyikan</span>
+        <span className="block text-sm font-medium text-foreground">{t("product.cutHeading")}</span>
         <span className="text-xs text-[var(--muted)]">
-          Pembaca dapat <strong className="text-foreground">{100 - value}%</strong> awal buku.
+          {t("product.cutReaderGetsBefore")}{" "}
+          <strong className="text-foreground">{100 - value}%</strong>{" "}
+          {t("product.cutReaderGetsAfter")}
         </span>
       </div>
 
@@ -82,7 +85,7 @@ export function CutPercentField({
             type="button"
             onClick={() => step(-5)}
             disabled={value <= MIN_CUT_PERCENT}
-            aria-label="Kurangi 5%"
+            aria-label={t("product.cutMinus")}
             className="px-3 py-2 text-sm font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground disabled:opacity-40"
           >
             −
@@ -102,14 +105,14 @@ export function CutPercentField({
                 commitDraft();
               }
             }}
-            aria-label="Persen yang disembunyikan"
+            aria-label={t("product.cutHeading")}
             className="w-14 border-x border-[var(--border)] bg-transparent py-2 text-center text-base sm:text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <button
             type="button"
             onClick={() => step(5)}
             disabled={value >= MAX_CUT_PERCENT}
-            aria-label="Tambah 5%"
+            aria-label={t("product.cutPlus")}
             className="px-3 py-2 text-sm font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground disabled:opacity-40"
           >
             +
@@ -118,9 +121,7 @@ export function CutPercentField({
       </div>
 
       <p className="text-xs text-[var(--muted)]">
-        Dihitung dari panjang teks, lalu dibulatkan ke batas bab terdekat — preview tidak pernah
-        berhenti di tengah kalimat. Bab terakhir selalu ditahan. Rentang {MIN_CUT_PERCENT}–
-        {MAX_CUT_PERCENT}%.
+        {t("product.cutHint", { min: MIN_CUT_PERCENT, max: MAX_CUT_PERCENT })}
       </p>
     </div>
   );

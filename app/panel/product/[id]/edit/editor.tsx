@@ -7,6 +7,7 @@ import { updateLandingPageHtml } from "@/lib/actions/landing-pages";
 import { parseHtmlContent, mergeHtmlContent } from "@/lib/editor-utils";
 import { AssetUpload } from "./asset-upload";
 import { Button } from "@/components/ui/button";
+import { t } from "@/lib/i18n";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -39,7 +40,7 @@ export function Editor({
   const save = useCallback(async () => {
     const merged = mergeHtmlContent(html, css, js);
     if (merged === lastSavedRef.current) {
-      setMessage({ type: "ok", text: "No changes." });
+      setMessage({ type: "ok", text: t("editor.noChanges") });
       return;
     }
     setSaving(true);
@@ -47,12 +48,12 @@ export function Editor({
     try {
       await updateLandingPageHtml(id, merged);
       lastSavedRef.current = merged;
-      setMessage({ type: "ok", text: "Saved." });
+      setMessage({ type: "ok", text: t("common.saved") });
       router.refresh();
     } catch (err) {
       setMessage({
         type: "err",
-        text: err instanceof Error ? err.message : "Failed to save",
+        text: err instanceof Error ? err.message : t("common.failed"),
       });
     } finally {
       setSaving(false);
@@ -66,7 +67,7 @@ export function Editor({
     setCss(p.css);
     setJs(p.js);
     lastSavedRef.current = mergeHtmlContent(p.html, p.css, p.js);
-    setMessage({ type: "ok", text: "Site ZIP uploaded — preview updated." });
+    setMessage({ type: "ok", text: t("editor.zipApplied") });
   }, []);
 
   const handleKeyDown = useCallback(
@@ -115,10 +116,10 @@ export function Editor({
             disabled={saving}
             className="py-2.5 shadow-sm hover:opacity-95"
           >
-            {saving ? "Saving…" : "Save"}
+            {saving ? t("common.saving") : t("common.save")}
           </Button>
           <span className="text-xs text-[var(--muted)] hidden sm:inline">
-            Cmd/Ctrl+S to save
+            {t("editor.saveHint")}
           </span>
           {message && (
             <span

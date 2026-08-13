@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { fileNameFromUrl, formatBytes, type FileMeta } from "@/components/file-upload-card";
 import { uploadPreviewPdfClient } from "@/lib/upload-client";
 import { ExternalIcon, FileTextIcon, TrashIcon } from "./icons";
+import { t } from "@/lib/i18n";
 
 /**
  * One PDF slot — drop zone when empty, file row when filled.
@@ -39,7 +40,7 @@ export function PdfPreviewSlot({
   const upload = useCallback(
     async (file: File) => {
       if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-        onError("File harus berformat PDF.");
+        onError(t("product.pdfOnly"));
         return;
       }
       setUploading(true);
@@ -97,9 +98,9 @@ export function PdfPreviewSlot({
       >
         <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
           <FileTextIcon className="h-4 w-4" />
-          {uploading ? "Mengupload…" : url ? "Ganti file PDF" : "Pilih file PDF"}
+          {uploading ? t("product.uploading") : url ? t("product.replacePdf") : t("product.pickPdf")}
         </span>
-        <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop file PDF di sini</span>
+        <span className="text-xs text-[var(--muted)]">{t("product.dropPdf")}</span>
       </button>
 
       {url && (
@@ -119,8 +120,8 @@ export function PdfPreviewSlot({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            title="Buka PDF"
-            aria-label="Buka PDF"
+            title={t("product.openPdf")}
+            aria-label={t("product.openPdf")}
             className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground"
           >
             <ExternalIcon className="h-4 w-4" />
@@ -128,8 +129,8 @@ export function PdfPreviewSlot({
           <button
             type="button"
             onClick={onClear}
-            title="Hapus PDF"
-            aria-label="Hapus PDF"
+            title={t("product.removePdf")}
+            aria-label={t("product.removePdf")}
             className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
           >
             <TrashIcon className="h-4 w-4" />

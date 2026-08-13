@@ -2,6 +2,7 @@
 
 import { ToggleCard } from "@/components/toggle-card";
 import { PresetTextField } from "../preset-text-field";
+import { t } from "@/lib/i18n";
 
 /**
  * Harga, dan what the button does.
@@ -83,22 +84,22 @@ export function PriceTab({
   return (
   <section className={className}>
     <div>
-      <h2 className="text-base font-semibold text-foreground">Harga &amp; penjualan</h2>
-      <p className="text-sm text-[var(--muted)]">Harga, status, dan tombol beli.</p>
+      <h2 className="text-base font-semibold text-foreground">{t("product.priceHeading")}</h2>
+      <p className="text-sm text-[var(--muted)]">{t("product.priceIntro")}</p>
     </div>
 
     <ToggleCard
       checked={isFree}
       onChange={setIsFree}
-      title="Gratis (Free)"
-      description="Produk ini dapat diakses secara gratis"
+      title={t("product.freeToggle")}
+      description={t("product.freeToggleHint")}
     />
 
     {/* Prices */}
     {!isFree && (
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Normal price (IDR)</label>
+          <label className="block text-sm font-medium text-foreground">{t("product.priceNormal")}</label>
           <div className="relative">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center border-r border-[var(--border)] px-3 text-sm text-[var(--muted)]">
               Rp
@@ -115,7 +116,7 @@ export function PriceTab({
           </div>
         </div>
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Discount price (IDR)</label>
+          <label className="block text-sm font-medium text-foreground">{t("product.priceDiscount")}</label>
           <div className="relative">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center border-r border-[var(--border)] px-3 text-sm text-[var(--muted)]">
               Rp
@@ -131,7 +132,7 @@ export function PriceTab({
             />
             {discountPct != null && (
               <span className="absolute inset-y-0 right-2 my-auto flex h-6 items-center rounded-md bg-[var(--primary)]/10 px-2 text-xs font-semibold text-[var(--primary)]">
-                {discountPct}% OFF
+                {t("product.discountOff", { pct: discountPct })}
               </span>
             )}
           </div>
@@ -142,17 +143,17 @@ export function PriceTab({
     {/* Preview buy-now card: text overrides + action */}
     <div className="space-y-3 rounded-xl border border-[var(--border)] p-4">
       <div>
-        <h3 className="text-sm font-semibold text-foreground">Tombol beli</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t("product.ctaHeading")}</h3>
         <p className="text-xs text-[var(--muted)]">
-          Atur teks &amp; tujuan tombol beli — berlaku di kartu &ldquo;beli sekarang&rdquo;
-          pada halaman preview <strong className="text-foreground">dan</strong> di halaman
-          checkout. Kosongkan teks untuk memakai bawaan.
+          {t("product.ctaIntroBefore")}{" "}
+          <strong className="text-foreground">{t("product.ctaIntroAnd")}</strong>{" "}
+          {t("product.ctaIntroAfter")}
         </p>
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="cta-action" className="block text-sm font-medium text-foreground">
-          Aksi tombol
+          {t("product.ctaAction")}
         </label>
         <select
           id="cta-action"
@@ -160,23 +161,23 @@ export function PriceTab({
           onChange={(e) => setActionType(e.target.value as "checkout" | "link" | "calendar")}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
         >
-          <option value="checkout">Checkout di situs ini (default)</option>
-          <option value="link">Link eksternal</option>
-          <option value="calendar">Tambahkan ke kalender</option>
+          <option value="checkout">{t("product.ctaActionCheckout")}</option>
+          <option value="link">{t("product.ctaActionLink")}</option>
+          <option value="calendar">{t("product.ctaActionCalendar")}</option>
         </select>
         <p className="text-xs text-[var(--muted)]">
           {actionType === "link"
-            ? "Tombol mengarah ke URL yang Anda isi (membuka tab baru), melewati checkout bawaan."
+            ? t("product.ctaHintLink")
             : actionType === "calendar"
-              ? "Tombol menambahkan acara ke kalender pengunjung (file .ics — jalan di iOS, Android & desktop)."
-              : "Tombol mengarah ke halaman checkout produk ini."}
+              ? t("product.ctaHintCalendar")
+              : t("product.ctaHintCheckout")}
         </p>
       </div>
 
       {actionType === "link" && (
         <div className="space-y-1.5">
           <label htmlFor="cta-link" className="block text-sm font-medium text-foreground">
-            URL tujuan
+            {t("product.ctaUrl")}
           </label>
           <input
             id="cta-link"
@@ -192,12 +193,11 @@ export function PriceTab({
       {actionType === "calendar" && (
         <div className="space-y-4 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
           <p className="text-xs text-[var(--muted)]">
-            Detail acara yang ditambahkan ke kalender pengunjung. Waktu memakai zona waktu
-            lokal perangkat pengunjung.
+            {t("product.eventIntro")}
           </p>
           <div className="space-y-1.5">
             <label htmlFor="event-title" className="block text-sm font-medium text-foreground">
-              Judul acara
+              {t("product.eventTitle")}
             </label>
             <input
               id="event-title"
@@ -205,15 +205,15 @@ export function PriceTab({
               value={eventTitle}
               maxLength={200}
               onChange={(e) => setEventTitle(e.target.value)}
-              placeholder={title || "Judul acara"}
+              placeholder={title || t("product.eventTitle")}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
-            <p className="text-xs text-[var(--muted)]">Kosongkan untuk memakai judul produk.</p>
+            <p className="text-xs text-[var(--muted)]">{t("product.eventTitleHint")}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label htmlFor="event-start" className="block text-sm font-medium text-foreground">
-                Mulai <span className="text-red-500">*</span>
+                {t("product.eventStart")} <span className="text-red-500">*</span>
               </label>
               <input
                 id="event-start"
@@ -225,7 +225,7 @@ export function PriceTab({
             </div>
             <div className="space-y-1.5">
               <label htmlFor="event-end" className="block text-sm font-medium text-foreground">
-                Selesai
+                {t("product.eventEnd")}
               </label>
               <input
                 id="event-end"
@@ -234,12 +234,12 @@ export function PriceTab({
                 onChange={(e) => setEventEnd(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
-              <p className="text-xs text-[var(--muted)]">Kosong = 1 jam setelah mulai.</p>
+              <p className="text-xs text-[var(--muted)]">{t("product.eventEndHint")}</p>
             </div>
           </div>
           <div className="space-y-1.5">
             <label htmlFor="event-location" className="block text-sm font-medium text-foreground">
-              Lokasi
+              {t("product.eventLocation")}
             </label>
             <input
               id="event-location"
@@ -247,13 +247,13 @@ export function PriceTab({
               value={eventLocation}
               maxLength={300}
               onChange={(e) => setEventLocation(e.target.value)}
-              placeholder="Alamat, atau link Zoom/Google Meet"
+              placeholder={t("product.eventLocationPlaceholder")}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="event-desc" className="block text-sm font-medium text-foreground">
-              Deskripsi
+              {t("product.eventDescription")}
             </label>
             <textarea
               id="event-desc"
@@ -261,7 +261,7 @@ export function PriceTab({
               maxLength={1000}
               rows={3}
               onChange={(e) => setEventDescription(e.target.value)}
-              placeholder="Catatan acara yang tampil di kalender…"
+              placeholder={t("product.eventDescPlaceholder")}
               className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
           </div>
@@ -271,7 +271,7 @@ export function PriceTab({
       <div className="grid gap-4 sm:grid-cols-2">
         <PresetTextField
           id="cta-label"
-          label="Teks tombol"
+          label={t("product.ctaLabelField")}
           value={ctaLabel}
           onChange={setCtaLabel}
           options={labelPresets}
@@ -280,7 +280,7 @@ export function PriceTab({
         />
         <PresetTextField
           id="cta-note"
-          label="Teks keterangan"
+          label={t("product.ctaNoteField")}
           value={ctaNote}
           onChange={setCtaNote}
           options={notePresets}
@@ -290,8 +290,7 @@ export function PriceTab({
       </div>
 
       <p className="text-xs text-[var(--muted)]">
-        Tombol beli tampil di akhir halaman preview, setelah pembaca selesai —
-        tidak lagi mengapung di atas bacaan.
+        {t("product.ctaFooterNote")}
       </p>
 
     </div>

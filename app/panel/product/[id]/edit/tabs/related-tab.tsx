@@ -42,7 +42,7 @@ export function RelatedTab({
           <div>
             <h2 className="text-base font-semibold text-foreground">{t("product.relatedHeading")}</h2>
             <p className="text-sm text-[var(--muted)]">
-              Muncul di akhir preview (setelah halaman terakhir). Pilih dari produk Anda sendiri.
+              {t("product.relatedIntro")}
             </p>
           </div>
 

@@ -258,7 +258,7 @@ export function ProductEditForm({
     setPurging(true);
     setPurged(null);
     const res = await purgePreviewCache(pageId);
-    setPurged(res.ok ? "Cache preview dibuang. Pengunjung dapat versi terbaru." : res.error);
+    setPurged(res.ok ? t("product.cachePurged") : res.error);
     setPurging(false);
   }, [pageId]);
 
@@ -283,8 +283,8 @@ export function ProductEditForm({
   const defaultCtaLabel =
     actionType === "calendar" ? "Tambahkan ke kalender" : isFree ? "Ambil gratis" : "Beli sekarang";
   const defaultCtaNote = isFree
-    ? "Ambil sekarang — akses penuh, selamanya."
-    : "Miliki sekarang — akses penuh, selamanya.";
+    ? t("product.ctaNoteFreeDefault")
+    : t("product.ctaNotePaidDefault");
   const labelPresets =
     actionType === "calendar"
       ? CTA_LABELS_CALENDAR
@@ -471,7 +471,7 @@ export function ProductEditForm({
       setZipUrl(res.url);
       setZipMeta({ name: file.name, size: file.size });
     } catch (err) {
-      setZipError(err instanceof Error ? err.message : "Upload gagal");
+      setZipError(err instanceof Error ? err.message : t("product.uploadFailed"));
     } finally {
       setZipUploading(false);
       e.target.value = "";
@@ -499,7 +499,7 @@ export function ProductEditForm({
       setStoryUrl(res.url);
       setStoryMeta({ name: file.name, size: file.size });
     } catch (err) {
-      setStoryError(err instanceof Error ? err.message : "Upload gagal");
+      setStoryError(err instanceof Error ? err.message : t("product.uploadFailed"));
     } finally {
       setStoryUploading(false);
       e.target.value = "";
@@ -527,7 +527,7 @@ export function ProductEditForm({
       setStoryUrlDark(res.url);
       setStoryMetaDark({ name: file.name, size: file.size });
     } catch (err) {
-      setStoryErrorDark(err instanceof Error ? err.message : "Upload gagal");
+      setStoryErrorDark(err instanceof Error ? err.message : t("product.uploadFailed"));
     } finally {
       setStoryUploadingDark(false);
       e.target.value = "";
@@ -553,9 +553,9 @@ export function ProductEditForm({
       }
       setPreviewUrl(res.url);
       setEpubMeta({ name: file.name, size: file.size });
-      setMessage({ type: "ok", text: "EPUB terupload. Klik Simpan perubahan untuk menerapkan." });
+      setMessage({ type: "ok", text: t("product.epubUploaded") });
     } catch (err) {
-      setEpubError(err instanceof Error ? err.message : "Upload gagal");
+      setEpubError(err instanceof Error ? err.message : t("product.uploadFailed"));
     } finally {
       setEpubUploading(false);
       e.target.value = "";
@@ -582,7 +582,7 @@ export function ProductEditForm({
       setStoryEpubUrl(res.url);
       setStoryEpubMeta({ name: file.name, size: file.size });
     } catch (err) {
-      setStoryEpubError(err instanceof Error ? err.message : "Upload gagal");
+      setStoryEpubError(err instanceof Error ? err.message : t("product.uploadFailed"));
     } finally {
       setStoryEpubUploading(false);
       e.target.value = "";
@@ -598,7 +598,7 @@ export function ProductEditForm({
   const uploadThumbFile = useCallback(
     async (file: File) => {
       if (file.type && !file.type.startsWith("image/")) {
-        setThumbError("File harus berupa gambar.");
+        setThumbError(t("product.imageOnly"));
         return;
       }
       setThumbUploading(true);
@@ -667,7 +667,7 @@ export function ProductEditForm({
   const uploadThumbWideFile = useCallback(
     async (file: File) => {
       if (file.type && !file.type.startsWith("image/")) {
-        setThumbWideError("File harus berupa gambar.");
+        setThumbWideError(t("product.imageOnly"));
         return;
       }
       setThumbWideUploading(true);
@@ -689,7 +689,7 @@ export function ProductEditForm({
   const uploadExtraFile = useCallback(
     async (file: File) => {
       if (file.type && !file.type.startsWith("image/")) {
-        setExtraError("File harus berupa gambar.");
+        setExtraError(t("product.imageOnly"));
         return;
       }
       setExtraUploading(true);
@@ -740,27 +740,27 @@ export function ProductEditForm({
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setTab("detail");
-      setMessage({ type: "err", text: "Judul tidak boleh kosong." });
+      setMessage({ type: "err", text: t("product.errTitleEmpty") });
       return;
     }
     if (previewType === "pdf" && !previewUrl.trim() && !previewUrlDark.trim()) {
       setTab("preview");
-      setMessage({ type: "err", text: "Upload minimal satu PDF (terang atau gelap)." });
+      setMessage({ type: "err", text: t("product.errNeedPdf") });
       return;
     }
     if (previewType === "excerpt" && !storyEpubUrl.trim()) {
       setTab("preview");
-      setMessage({ type: "err", text: "Upload file EPUB pembeli dulu di tab Preview." });
+      setMessage({ type: "err", text: t("product.errNeedBuyerEpub") });
       return;
     }
     if (previewType === "epub" && !previewUrl.trim()) {
       setTab("preview");
-      setMessage({ type: "err", text: "Upload file EPUB dulu." });
+      setMessage({ type: "err", text: t("product.errNeedEpub") });
       return;
     }
     if (previewType === "link" && !previewUrl.trim()) {
       setTab("preview");
-      setMessage({ type: "err", text: "Isi URL link dulu." });
+      setMessage({ type: "err", text: t("product.errNeedUrl") });
       return;
     }
     if (
@@ -770,23 +770,23 @@ export function ProductEditForm({
       setTab("preview");
       setMessage({
         type: "err",
-        text: "Untuk preview 'sama dgn deliverable', upload file PDF/EPUB pembeli dulu di tab Preview.",
+        text: t("product.errNeedDeliverable"),
       });
       return;
     }
     if (actionType === "link" && !purchaseLink.trim()) {
       setTab("harga");
-      setMessage({ type: "err", text: "Isi URL tujuan tombol beli dulu." });
+      setMessage({ type: "err", text: t("product.errNeedCtaUrl") });
       return;
     }
     if (actionType === "calendar" && !eventStart.trim()) {
       setTab("harga");
-      setMessage({ type: "err", text: "Isi tanggal & waktu mulai acara dulu." });
+      setMessage({ type: "err", text: t("product.errNeedEventStart") });
       return;
     }
     if (scheduleEnabled && !availableAt.trim()) {
       setTab("jadwal");
-      setMessage({ type: "err", text: "Isi tanggal & waktu rilis dulu." });
+      setMessage({ type: "err", text: t("product.errNeedReleaseDate") });
       return;
     }
     setSaving(publish ? "publish" : "draft");
@@ -846,16 +846,16 @@ export function ProductEditForm({
       if (publish && !isPublished) {
         await setLandingPagePublished(pageId, true);
         setIsPublished(true);
-        setMessage({ type: "ok", text: "Produk dipublikasikan — sudah tampil di homepage." });
+        setMessage({ type: "ok", text: t("product.published") });
       } else {
         setMessage({
           type: "ok",
-          text: isPublished ? "Perubahan tersimpan." : "Draft tersimpan — belum tampil ke pengunjung.",
+          text: isPublished ? t("product.changesSaved") : t("product.draftSaved"),
         });
       }
       router.refresh();
     } catch (err) {
-      setMessage({ type: "err", text: err instanceof Error ? err.message : "Gagal menyimpan" });
+      setMessage({ type: "err", text: err instanceof Error ? err.message : t("common.failed") });
     } finally {
       setSaving(null);
     }
@@ -1075,7 +1075,7 @@ export function ProductEditForm({
       <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-3 shadow-sm sm:gap-3 sm:px-4">
         {!isPublished && !message && (
           <span className="min-w-0 flex-1 text-xs text-[var(--muted)]">
-            Masih draft — belum tampil ke pengunjung.
+            {t("product.stillDraft")}
           </span>
         )}
         {message && (
@@ -1095,7 +1095,7 @@ export function ProductEditForm({
           disabled={!!saving}
           className="hidden sm:inline-flex"
         >
-          Batal
+          {t("common.cancel")}
         </Button>
         {isPublished ? (
           <Button
@@ -1104,10 +1104,10 @@ export function ProductEditForm({
             disabled={!!saving}
             className="shrink-0"
           >
-            {saving ? "Menyimpan…" : (
+            {saving ? t("common.saving") : (
               <>
-                <span className="sm:hidden">Simpan</span>
-                <span className="hidden sm:inline">Simpan perubahan</span>
+                <span className="sm:hidden">{t("common.save")}</span>
+                <span className="hidden sm:inline">{t("product.saveChanges")}</span>
               </>
             )}
           </Button>
@@ -1120,7 +1120,7 @@ export function ProductEditForm({
               disabled={!!saving}
               className="shrink-0"
             >
-              {saving === "draft" ? "Menyimpan…" : "Simpan draft"}
+              {saving === "draft" ? t("common.saving") : t("product.saveDraft")}
             </Button>
             <Button
               onClick={() => handleSaveAll(true)}
@@ -1128,7 +1128,7 @@ export function ProductEditForm({
               disabled={!!saving}
               className="shrink-0"
             >
-              {saving === "publish" ? "Publishing…" : "Publish"}
+              {saving === "publish" ? t("product.publishing") : t("panel.publish")}
             </Button>
           </>
         )}

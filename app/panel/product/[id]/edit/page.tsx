@@ -6,6 +6,7 @@ import { ProductEditForm } from "./product-edit-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { Button } from "@/components/ui/button";
 import type { PreviewType } from "@/lib/actions/landing-pages";
+import { t } from "@/lib/i18n";
 
 export default async function EditPage({
   params,
@@ -47,7 +48,7 @@ export default async function EditPage({
           them. */}
       <PanelPageHeader
         backHref="/panel/products"
-        title="Edit produk digital"
+        title={t("product.editHeading")}
         identifier={page.slug}
         actions={
           <>
@@ -56,7 +57,7 @@ export default async function EditPage({
                 href={`/panel/product/${id}/epub`}
                 variant="secondary"
                 size="sm"
-                aria-label="Isi EPUB"
+                aria-label={t("product.epubContents")}
                 leftIcon={
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -71,7 +72,7 @@ export default async function EditPage({
               external
               variant="secondary"
               size="sm"
-              aria-label="Preview"
+              aria-label={t("checkout.preview")}
               leftIcon={
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

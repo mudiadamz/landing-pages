@@ -13,6 +13,7 @@ import {
   type FaqItem,
   type FounderCard,
 } from "@/lib/content-config";
+import { t } from "@/lib/i18n";
 
 const labelCls = "block text-xs font-medium text-[var(--muted)] mb-1.5";
 const inputCls =
@@ -41,7 +42,7 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      aria-label="Hapus"
+      aria-label={t("common.delete")}
       className="shrink-0 rounded-lg p-2 text-[var(--muted)] hover:text-red-600 hover:bg-[var(--background)] transition-colors"
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,7 +140,7 @@ async function sampleTopColor(url: string): Promise<string> {
       const sampled = await sampleTopColor(res.url);
       setFounder(sampled ? { coverUrl: res.url, coverThemeColor: sampled } : { coverUrl: res.url });
     } catch {
-      setCoverError("Gagal mengunggah cover.");
+      setCoverError(t("content.coverUploadFailed"));
     } finally {
       setCoverUploading(false);
     }
@@ -165,7 +166,7 @@ async function sampleTopColor(url: string): Promise<string> {
       setPhotoMeta({ name: file.name, size: file.size });
       setFounder({ photoUrl: res.url });
     } catch {
-      setPhotoError("Gagal mengunggah foto.");
+      setPhotoError(t("content.photoUploadFailed"));
     } finally {
       setPhotoUploading(false);
     }
@@ -219,9 +220,9 @@ async function sampleTopColor(url: string): Promise<string> {
               : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
           }`}
         >
-          <span className="block text-sm font-semibold">Founder</span>
+          <span className="block text-sm font-semibold">{t("content.tabFounder")}</span>
           <span className={`mt-0.5 block text-xs ${tab === "founder" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            Foto, nama & kartu kredibilitas
+            {t("content.tabFounderSub")}
           </span>
         </button>
         <button
@@ -234,9 +235,9 @@ async function sampleTopColor(url: string): Promise<string> {
               : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
           }`}
         >
-          <span className="block text-sm font-semibold">Halaman</span>
+          <span className="block text-sm font-semibold">{t("content.tabPages")}</span>
           <span className={`mt-0.5 block text-xs ${tab === "pages" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            Tentang & Kontak
+            {t("content.tabPagesSub")}
           </span>
         </button>
         <button
@@ -249,9 +250,9 @@ async function sampleTopColor(url: string): Promise<string> {
               : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
           }`}
         >
-          <span className="block text-sm font-semibold">Info pembeli</span>
+          <span className="block text-sm font-semibold">{t("content.tabBuyer")}</span>
           <span className={`mt-0.5 block text-xs ${tab === "buyer" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            Cara beli, support & FAQ
+            {t("content.tabBuyerSub")}
           </span>
         </button>
         <button
@@ -264,9 +265,9 @@ async function sampleTopColor(url: string): Promise<string> {
               : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
           }`}
         >
-          <span className="block text-sm font-semibold">Ketentuan</span>
+          <span className="block text-sm font-semibold">{t("content.tabLegal")}</span>
           <span className={`mt-0.5 block text-xs ${tab === "legal" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            Lisensi & syarat publisher
+            {t("content.tabLegalSub")}
           </span>
         </button>
         <button
@@ -279,9 +280,9 @@ async function sampleTopColor(url: string): Promise<string> {
               : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
           }`}
         >
-          <span className="block text-sm font-semibold">Footer</span>
+          <span className="block text-sm font-semibold">{t("content.tabFooter")}</span>
           <span className={`mt-0.5 block text-xs ${tab === "footer" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            Tagline di kaki halaman
+            {t("content.tabFooterSub")}
           </span>
         </button>
       </div>
@@ -291,7 +292,7 @@ async function sampleTopColor(url: string): Promise<string> {
       {/* Kartu kredibilitas founder */}
       <section className={sectionCls}>
         <div className="flex items-center justify-between gap-3">
-          <SectionTitle>Kartu founder</SectionTitle>
+          <SectionTitle>{t("content.founderCard")}</SectionTitle>
           <label className="flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
             <input
               type="checkbox"
@@ -299,11 +300,11 @@ async function sampleTopColor(url: string): Promise<string> {
               onChange={(e) => setFounder({ enabled: e.target.checked })}
               className="h-4 w-4 rounded border-[var(--border)] accent-[var(--primary)]"
             />
-            Tampilkan
+            {t("content.show")}
           </label>
         </div>
         <p className="text-xs text-[var(--muted)]">
-          Kartu bukti pembuat yang tampil di homepage, halaman kategori, dan checkout.
+          {t("content.founderCardIntro")}
         </p>
 
         {/* FileUploadCard, like every other file input in the panel. This one used to
@@ -314,8 +315,8 @@ async function sampleTopColor(url: string): Promise<string> {
             next to the field. */}
         <div className="grid gap-3 sm:grid-cols-2">
           <FileUploadCard
-            label="Foto founder"
-            hint="JPG · PNG · WebP · SVG. Dirender sebagai bulatan, jadi foto persegi paling aman."
+            label={t("content.founderPhoto")}
+            hint={t("content.founderPhotoHint")}
             accept="image/jpeg,image/png,image/webp,image/svg+xml,.jpg,.jpeg,.png,.webp,.svg"
             badge="IMG"
             badgeClass="bg-[var(--primary)]/10 text-[var(--primary)]"
@@ -323,14 +324,14 @@ async function sampleTopColor(url: string): Promise<string> {
             meta={photoMeta}
             uploading={photoUploading}
             error={photoError}
-            statusText="Terpasang"
+            statusText={t("content.attached")}
             preview={
               <div className="mb-2 flex justify-center">
                 <div className="relative h-16 w-16 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--background)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={content.founder.photoUrl}
-                    alt="Foto founder"
+                    alt={t("content.founderPhoto")}
                     className="h-full w-full object-cover"
                   />
                 </div>
@@ -345,8 +346,8 @@ async function sampleTopColor(url: string): Promise<string> {
           />
 
           <FileUploadCard
-            label="Cover / background atas"
-            hint="Landscape, mis. 1200×600. Tampil di balik foto & nama di homepage, sampai ke tepi paling atas layar."
+            label={t("content.cover")}
+            hint={t("content.coverHint")}
             accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
             badge="IMG"
             badgeClass="bg-[var(--primary)]/10 text-[var(--primary)]"
@@ -354,13 +355,13 @@ async function sampleTopColor(url: string): Promise<string> {
             meta={coverMeta}
             uploading={coverUploading}
             error={coverError}
-            statusText="Terpasang"
+            statusText={t("content.attached")}
             preview={
               <div className="mb-2 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={content.founder.coverUrl}
-                  alt="Cover homepage"
+                  alt={t("content.cover")}
                   className="h-20 w-full object-cover"
                 />
               </div>
@@ -374,13 +375,13 @@ async function sampleTopColor(url: string): Promise<string> {
           />
 
           <div>
-            <label className={labelCls}>Warna toolbar browser</label>
+            <label className={labelCls}>{t("content.toolbarColor")}</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={content.founder.coverThemeColor || "#ffffff"}
                 onChange={(e) => setFounder({ coverThemeColor: e.target.value })}
-                aria-label="Pilih warna toolbar"
+                aria-label={t("content.toolbarColorPick")}
                 className="h-11 w-12 shrink-0 cursor-pointer rounded-lg border border-[var(--border)] bg-[var(--background)] p-1"
               />
               <input
@@ -391,8 +392,7 @@ async function sampleTopColor(url: string): Promise<string> {
               />
             </div>
             <p className="mt-1.5 text-[11px] text-[var(--muted)]">
-              Warna bar atas Safari/Chrome di homepage, diambil otomatis dari bagian
-              atas cover saat diunggah. Kosongkan = ikut warna halaman.
+              {t("content.toolbarColorHint")}
             </p>
           </div>
 
@@ -400,7 +400,7 @@ async function sampleTopColor(url: string): Promise<string> {
               /pas_foto.png, a file in public/, and there is no way to reach that — or
               any other already-hosted image — through an upload control. */}
           <div>
-            <label className={labelCls}>Atau tempel path / URL</label>
+            <label className={labelCls}>{t("content.orPasteUrl")}</label>
             <input
               className={inputCls}
               value={content.founder.photoUrl}
@@ -409,19 +409,17 @@ async function sampleTopColor(url: string): Promise<string> {
                 setPhotoError(null);
                 setFounder({ photoUrl: e.target.value });
               }}
-              placeholder="/pas_foto.png atau https://…"
+              placeholder={t("content.photoUrlPlaceholder")}
             />
             <p className="mt-1.5 text-[11px] text-[var(--muted)]">
-              Boleh file di <span className="font-mono">public/</span> —{" "}
-              <span className="font-mono">/pas_foto.png</span> itu nilai bawaannya.
-              Dikosongkan = pakai inisial nama.
+              {t("content.photoUrlHint")}
             </p>
             {!content.founder.photoUrl && (
               <div className="mt-3 flex items-center gap-2 text-xs text-[var(--muted)]">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] text-sm font-semibold">
                   {content.founder.name.trim().charAt(0).toUpperCase() || "A"}
                 </span>
-                Tanpa foto, kartu memakai inisial ini.
+                {t("content.initialsFallback")}
               </div>
             )}
           </div>
@@ -429,7 +427,7 @@ async function sampleTopColor(url: string): Promise<string> {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelCls}>Nama</label>
+            <label className={labelCls}>{t("content.name")}</label>
             <input
               className={inputCls}
               value={content.founder.name}
@@ -437,7 +435,7 @@ async function sampleTopColor(url: string): Promise<string> {
             />
           </div>
           <div>
-            <label className={labelCls}>Centang biru</label>
+            <label className={labelCls}>{t("content.verifiedBadge")}</label>
             <label className="flex min-h-11 items-center gap-2 text-sm text-foreground">
               <input
                 type="checkbox"
@@ -445,21 +443,21 @@ async function sampleTopColor(url: string): Promise<string> {
                 onChange={(e) => setFounder({ verified: e.target.checked })}
                 className="h-4 w-4 rounded border-[var(--border)] accent-[var(--primary)]"
               />
-              Tampilkan centang setelah nama
+              {t("content.verifiedBadgeHint")}
             </label>
           </div>
           <div>
-            <label className={labelCls}>Peran / jabatan</label>
+            <label className={labelCls}>{t("content.role")}</label>
             <input
               className={inputCls}
               value={content.founder.role}
               onChange={(e) => setFounder({ role: e.target.value })}
-              placeholder="Founder · software developer 15+ tahun"
+              placeholder={t("content.rolePlaceholder")}
             />
           </div>
         </div>
         <div>
-          <label className={labelCls}>Deskripsi singkat</label>
+          <label className={labelCls}>{t("content.bio")}</label>
           <textarea
             className={inputCls}
             rows={2}
@@ -469,16 +467,16 @@ async function sampleTopColor(url: string): Promise<string> {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelCls}>Teks link kontak</label>
+            <label className={labelCls}>{t("content.contactLabel")}</label>
             <input
               className={inputCls}
               value={content.founder.contactLabel}
               onChange={(e) => setFounder({ contactLabel: e.target.value })}
-              placeholder="Hubungi langsung"
+              placeholder={t("content.contactLabelPlaceholder")}
             />
           </div>
           <div>
-            <label className={labelCls}>Tujuan link kontak</label>
+            <label className={labelCls}>{t("content.contactHref")}</label>
             <input
               className={inputCls}
               value={content.founder.contactHref}
@@ -497,9 +495,9 @@ async function sampleTopColor(url: string): Promise<string> {
           live in the JSX. The author block on /about is NOT edited here: it reads
           the founder card above, so the person is described once. */}
       <section className={sectionCls}>
-        <SectionTitle>Halaman Tentang</SectionTitle>
+        <SectionTitle>{t("content.aboutPage")}</SectionTitle>
         <div>
-          <label className={labelCls}>Judul halaman</label>
+          <label className={labelCls}>{t("content.pageTitle")}</label>
           <input
             className={inputCls}
             value={content.aboutHeading}
@@ -507,7 +505,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div className="space-y-3">
-          <label className={labelCls}>Paragraf</label>
+          <label className={labelCls}>{t("content.paragraphs")}</label>
           {content.aboutParagraphs.map((text, i) => (
             <div key={i} className="flex items-start gap-2">
               <textarea
@@ -532,27 +530,27 @@ async function sampleTopColor(url: string): Promise<string> {
             </div>
           ))}
           <AddButton onClick={() => set("aboutParagraphs", [...content.aboutParagraphs, ""])}>
-            + Tambah paragraf
+            + {t("content.addParagraph")}
           </AddButton>
         </div>
         <div>
-          <label className={labelCls}>Judul blok penulis</label>
+          <label className={labelCls}>{t("content.authorBlockTitle")}</label>
           <input
             className={inputCls}
             value={content.aboutAuthorHeading}
             onChange={(e) => set("aboutAuthorHeading", e.target.value)}
           />
           <p className="mt-1.5 text-[11px] text-[var(--muted)]">
-            Foto, nama, dan kalimatnya diambil dari <strong>Kartu founder</strong> di tab
-            Founder — supaya tidak ada dua versi orang yang sama.
+            {t("content.authorBlockHintBefore")}{" "}
+            <strong>{t("content.founderCard")}</strong> {t("content.authorBlockHintAfter")}
           </p>
         </div>
       </section>
 
       <section className={sectionCls}>
-        <SectionTitle>Halaman Kontak</SectionTitle>
+        <SectionTitle>{t("content.contactPage")}</SectionTitle>
         <div>
-          <label className={labelCls}>Judul halaman</label>
+          <label className={labelCls}>{t("content.pageTitle")}</label>
           <input
             className={inputCls}
             value={content.contactHeading}
@@ -560,7 +558,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div>
-          <label className={labelCls}>Pengantar</label>
+          <label className={labelCls}>{t("content.intro")}</label>
           <textarea
             className={inputCls}
             rows={2}
@@ -571,12 +569,12 @@ async function sampleTopColor(url: string): Promise<string> {
       </section>
 
       <section className={sectionCls}>
-        <SectionTitle>Kontak support</SectionTitle>
+        <SectionTitle>{t("content.supportContact")}</SectionTitle>
         <p className="text-xs text-[var(--muted)]">
-          Dipakai di halaman Tentang dan Kontak.
+          {t("content.supportContactHint")}
         </p>
         <div>
-          <label className={labelCls}>Judul</label>
+          <label className={labelCls}>{t("panel.title")}</label>
           <input
             className={inputCls}
             value={content.supportContactHeading}
@@ -584,7 +582,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div>
-          <label className={labelCls}>Pengantar</label>
+          <label className={labelCls}>{t("content.intro")}</label>
           <textarea
             className={inputCls}
             rows={2}
@@ -600,9 +598,9 @@ async function sampleTopColor(url: string): Promise<string> {
         <div className="space-y-6">
       {/* Cara pembelian */}
       <section className={sectionCls}>
-        <SectionTitle>Cara pembelian</SectionTitle>
+        <SectionTitle>{t("content.howToBuy")}</SectionTitle>
         <div>
-          <label className={labelCls}>Judul</label>
+          <label className={labelCls}>{t("panel.title")}</label>
           <input
             className={inputCls}
             value={content.howToHeading}
@@ -610,7 +608,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div className="space-y-3">
-          <label className={labelCls}>Langkah</label>
+          <label className={labelCls}>{t("content.steps")}</label>
           {content.howToSteps.map((s, i) => (
             <div key={i} className="flex items-start gap-2">
               <div className="grid flex-1 grid-cols-1 sm:grid-cols-[12rem_1fr] gap-2">
@@ -618,28 +616,28 @@ async function sampleTopColor(url: string): Promise<string> {
                   className={inputCls}
                   value={s.label}
                   onChange={(e) => setStep(i, { label: e.target.value })}
-                  placeholder="Label (tebal)"
+                  placeholder={t("content.stepLabel")}
                 />
                 <input
                   className={inputCls}
                   value={s.text}
                   onChange={(e) => setStep(i, { text: e.target.value })}
-                  placeholder="Keterangan"
+                  placeholder={t("content.stepText")}
                 />
               </div>
               <RemoveButton onClick={() => set("howToSteps", content.howToSteps.filter((_, idx) => idx !== i))} />
             </div>
           ))}
           <AddButton onClick={() => set("howToSteps", [...content.howToSteps, { label: "", text: "" }])}>
-            Tambah langkah
+            {t("content.addStep")}
           </AddButton>
         </div>
       </section>
       {/* Jaminan support */}
       <section className={sectionCls}>
-        <SectionTitle>Jaminan support</SectionTitle>
+        <SectionTitle>{t("content.supportPromise")}</SectionTitle>
         <div>
-          <label className={labelCls}>Judul</label>
+          <label className={labelCls}>{t("panel.title")}</label>
           <input
             className={inputCls}
             value={content.supportHeading}
@@ -647,7 +645,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div>
-          <label className={labelCls}>Pembuka</label>
+          <label className={labelCls}>{t("content.opening")}</label>
           <textarea
             className={inputCls}
             rows={2}
@@ -656,7 +654,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div className="space-y-3">
-          <label className={labelCls}>Poin (bullet)</label>
+          <label className={labelCls}>{t("content.bullets")}</label>
           {content.supportPoints.map((p, i) => (
             <div key={i} className="flex items-start gap-2">
               <input
@@ -667,10 +665,10 @@ async function sampleTopColor(url: string): Promise<string> {
               <RemoveButton onClick={() => removeStr("supportPoints", i)} />
             </div>
           ))}
-          <AddButton onClick={() => addStr("supportPoints")}>Tambah poin</AddButton>
+          <AddButton onClick={() => addStr("supportPoints")}>{t("content.addBullet")}</AddButton>
         </div>
         <div>
-          <label className={labelCls}>Penutup (diikuti link “halaman Kontak”)</label>
+          <label className={labelCls}>{t("content.closing")}</label>
           <textarea
             className={inputCls}
             rows={2}
@@ -681,9 +679,9 @@ async function sampleTopColor(url: string): Promise<string> {
       </section>
       {/* FAQ */}
       <section className={sectionCls}>
-        <SectionTitle>FAQ</SectionTitle>
+        <SectionTitle>{t("content.faq")}</SectionTitle>
         <div>
-          <label className={labelCls}>Judul</label>
+          <label className={labelCls}>{t("panel.title")}</label>
           <input
             className={inputCls}
             value={content.faqHeading}
@@ -698,21 +696,21 @@ async function sampleTopColor(url: string): Promise<string> {
                   className={inputCls}
                   value={f.q}
                   onChange={(e) => setFaq(i, { q: e.target.value })}
-                  placeholder="Pertanyaan"
+                  placeholder={t("content.question")}
                 />
                 <textarea
                   className={inputCls}
                   rows={2}
                   value={f.a}
                   onChange={(e) => setFaq(i, { a: e.target.value })}
-                  placeholder="Jawaban"
+                  placeholder={t("content.answer")}
                 />
               </div>
               <RemoveButton onClick={() => set("faqs", content.faqs.filter((_, idx) => idx !== i))} />
             </div>
           ))}
           <AddButton onClick={() => set("faqs", [...content.faqs, { q: "", a: "" }])}>
-            Tambah pertanyaan
+            {t("content.addQuestion")}
           </AddButton>
         </div>
       </section>
@@ -723,9 +721,9 @@ async function sampleTopColor(url: string): Promise<string> {
         <div className="space-y-6">
       {/* Ketentuan & lisensi */}
       <section className={sectionCls}>
-        <SectionTitle>Ketentuan & lisensi</SectionTitle>
+        <SectionTitle>{t("content.license")}</SectionTitle>
         <div>
-          <label className={labelCls}>Judul</label>
+          <label className={labelCls}>{t("panel.title")}</label>
           <input
             className={inputCls}
             value={content.licenseHeading}
@@ -733,7 +731,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div className="space-y-3">
-          <label className={labelCls}>Paragraf</label>
+          <label className={labelCls}>{t("content.paragraphs")}</label>
           {content.licenseParagraphs.map((p, i) => (
             <div key={i} className="flex items-start gap-2">
               <textarea
@@ -745,20 +743,20 @@ async function sampleTopColor(url: string): Promise<string> {
               <RemoveButton onClick={() => removeStr("licenseParagraphs", i)} />
             </div>
           ))}
-          <AddButton onClick={() => addStr("licenseParagraphs")}>Tambah paragraf</AddButton>
+          <AddButton onClick={() => addStr("licenseParagraphs")}>{t("content.addParagraph")}</AddButton>
         </div>
       </section>
       {/* Publisher terms — shown inside the publisher application form, not on
           any public page. Edited here because it is site copy like the rest. */}
       <section className={sectionCls}>
-        <SectionTitle>Ketentuan publisher</SectionTitle>
+        <SectionTitle>{t("content.publisherTerms")}</SectionTitle>
         <p className="text-xs text-[var(--muted)]">
           Ditampilkan di formulir pengajuan publisher (Profil → Jadi publisher). Pemohon
           harus mencentang persetujuan sebelum bisa mengirim, dan waktu persetujuannya
           dicatat.
         </p>
         <div>
-          <label className={labelCls}>Judul</label>
+          <label className={labelCls}>{t("panel.title")}</label>
           <input
             className={inputCls}
             value={content.publisherTermsHeading}
@@ -766,20 +764,20 @@ async function sampleTopColor(url: string): Promise<string> {
           />
         </div>
         <div className="space-y-2">
-          {content.publisherTerms.map((t, i) => (
+          {content.publisherTerms.map((term, i) => (
             <div key={i} className="flex items-start gap-2">
               <span className="mt-2 shrink-0 text-xs text-[var(--muted)]">{i + 1}.</span>
               <textarea
                 className={inputCls}
                 rows={2}
-                value={t}
+                value={term}
                 onChange={(e) => setStr("publisherTerms", i, e.target.value)}
-                placeholder="Satu poin ketentuan"
+                placeholder={t("content.publisherTermPlaceholder")}
               />
               <RemoveButton onClick={() => removeStr("publisherTerms", i)} />
             </div>
           ))}
-          <AddButton onClick={() => addStr("publisherTerms")}>Tambah ketentuan</AddButton>
+          <AddButton onClick={() => addStr("publisherTerms")}>{t("content.addTerm")}</AddButton>
         </div>
       </section>
         </div>
@@ -789,9 +787,9 @@ async function sampleTopColor(url: string): Promise<string> {
         <div className="space-y-6">
       {/* Footer */}
       <section className={sectionCls}>
-        <SectionTitle>Footer</SectionTitle>
+        <SectionTitle>{t("content.tabFooter")}</SectionTitle>
         <div>
-          <label className={labelCls}>Tagline footer</label>
+          <label className={labelCls}>{t("content.footerTagline")}</label>
           <textarea
             className={inputCls}
             rows={2}
@@ -806,7 +804,7 @@ async function sampleTopColor(url: string): Promise<string> {
       {/* Actions */}
       <div className="sticky bottom-0 flex items-center gap-3 border-t border-[var(--border)] bg-[var(--background)] py-3">
         <Button size="md" onClick={handleSave} loading={pending} disabled={pending}>
-          {pending ? "Menyimpan…" : "Simpan"}
+          {pending ? t("common.saving") : t("common.save")}
         </Button>
         <button
           type="button"
@@ -816,13 +814,13 @@ async function sampleTopColor(url: string): Promise<string> {
             setStatus(null);
           }}
         >
-          Reset ke bawaan
+          {t("content.resetDefaults")}
         </button>
         <Link href="/" target="_blank" className="ml-auto text-sm text-[var(--muted)] hover:text-foreground">
-          Lihat homepage ↗
+          {t("content.viewHomepage")}
         </Link>
         {status?.error && <span className="text-sm text-red-600">{status.error}</span>}
-        {status?.ok && <span className="text-sm text-green-600">Tersimpan.</span>}
+        {status?.ok && <span className="text-sm text-green-600">{t("common.saved")}</span>}
       </div>
     </div>
   );

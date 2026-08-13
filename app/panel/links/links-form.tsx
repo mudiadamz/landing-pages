@@ -148,9 +148,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
       </div>
 
       <p className="text-xs text-[var(--muted)]">
-        Hanya link <span className="font-mono">http://</span> atau{" "}
-        <span className="font-mono">https://</span> yang disimpan. Baris tanpa nama atau
-        tanpa URL diabaikan.
+        {t("panel.linksHint")}
       </p>
     </div>
   );

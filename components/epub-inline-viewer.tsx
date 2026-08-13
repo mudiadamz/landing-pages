@@ -20,6 +20,7 @@ import {
   readEpubMargin,
   type EpubAlign,
 } from "@/lib/epub-font";
+import { t } from "@/lib/i18n";
 
 const IMG_MIME: Record<string, string> = {
   jpg: "image/jpeg",
@@ -307,7 +308,7 @@ export default function EpubInlineViewer({
       // not happen. Fail visibly instead of silently falling back.
       if (!url) {
         if (!cancelled) {
-          setError("Gagal memuat teks.");
+          setError(t("reader.textFailed"));
           setLoading(false);
         }
         return;
@@ -332,7 +333,7 @@ export default function EpubInlineViewer({
         setLoading(false);
       } catch {
         if (!cancelled) {
-          setError("Gagal memuat EPUB.");
+          setError(t("reader.loadFailed"));
           setLoading(false);
         }
       }

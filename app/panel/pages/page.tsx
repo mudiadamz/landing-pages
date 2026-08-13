@@ -22,9 +22,7 @@ export default async function PagesIndex() {
       <PanelPageHeader backHref="/panel" title="Halaman" actions={<NewPageButton />} />
 
       <p className="text-sm text-[var(--muted)]">
-        Halaman bebas dengan editor teks — &ldquo;Tentang kami&rdquo;, &ldquo;Cara
-        kerja&rdquo;, apa pun. Yang sudah dipublikasikan muncul di footer dan bisa
-        dibuka di <span className="font-mono">/p/URL</span>.
+        {t("panel.pagesIntro")}
       </p>
 
       {pages.length === 0 ? (

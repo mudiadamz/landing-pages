@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * The steps this panel cannot do for you.
@@ -28,7 +29,7 @@ function Copy({ value }: { value: string }) {
       }}
       className="shrink-0 rounded-md border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-[11px] font-medium text-[var(--muted)] transition-colors hover:border-[var(--primary)] hover:text-foreground"
     >
-      {done ? "Tersalin" : "Copy"}
+      {done ? t("sites.copied") : t("sites.copy")}
     </button>
   );
 }
@@ -96,16 +97,16 @@ export function DomainSetupGuide({
       >
         <span className="min-w-0">
           <span className="block text-sm font-medium text-foreground">
-            Langkah di luar panel ini
+            {t("sites.guideHeading")}
           </span>
           <span className="block text-xs text-[var(--muted)]">
             {vercelAutomated
-              ? `Vercel sudah otomatis — tinggal cek ${host} bisa dibuka.`
-              : `Domain di Vercel — tanpa itu, ${host} tidak bisa dibuka.`}
+              ? t("sites.guideSubAuto", { host })
+              : t("sites.guideSubManual", { host })}
           </span>
         </span>
         <span className="shrink-0 text-xs font-medium text-[var(--primary)]">
-          {open ? "Tutup" : "Buka"}
+          {open ? t("common.close") : t("sites.open")}
         </span>
       </button>
 
@@ -115,8 +116,8 @@ export function DomainSetupGuide({
             n={1}
             title={
               vercelAutomated
-                ? "Arahkan domain ke aplikasi — sudah otomatis"
-                : "Arahkan domain ke aplikasi"
+                ? t("sites.step1TitleAuto")
+                : t("sites.step1Title")
             }
             where="Vercel"
           >
@@ -151,7 +152,7 @@ export function DomainSetupGuide({
             )}
           </Step>
 
-          <Step n={2} title="Login — tidak ada yang perlu didaftarkan" where="Otomatis">
+          <Step n={2} title={t("sites.step2Title")} where={t("sites.stepWhereAuto")}>
             <p>
               Dulu tiap domain harus ditambahkan ke Redirect URLs di Supabase, dan kalau lupa
               tidak ada error sama sekali: pengunjung yang menekan &ldquo;Masuk dengan
@@ -182,11 +183,11 @@ export function DomainSetupGuide({
             <Value>{`${supabaseProjectUrl}/auth/v1/callback`}</Value>
           </Step>
 
-          <Step n={3} title="Cek" where={host}>
-            <p>Buka domainnya dan pastikan tiga hal:</p>
+          <Step n={3} title={t("sites.step3Title")} where={host}>
+            <p>{t("sites.step3Intro")}</p>
             <ul className="list-disc space-y-0.5 pl-4">
-              <li>Homepage tampil dengan produk niche yang dipilih di atas.</li>
-              <li>Tombol Masuk dengan Google berhasil dan tetap di domain ini.</li>
+              <li>{t("sites.step3CheckHome")}</li>
+              <li>{t("sites.step3CheckLogin")}</li>
               <li>
                 <span className="font-mono">/panel/purchases</span> bisa dibuka di domain ini —
                 pembeli wajib bisa lihat pembeliannya di tempat dia beli. Layar admin

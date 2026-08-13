@@ -11,6 +11,7 @@ import { LinkRow } from "./link-row";
 import { Pager } from "./pager";
 import { listingHref, toggleCategoryHref } from "./listing-url";
 import type { TemplateProps } from "../registry";
+import { t } from "@/lib/i18n";
 
 /** Signed-in goes to the panel; everyone else to the login screen. */
 function AccountIcon({ className }: { className?: string }) {
@@ -96,8 +97,8 @@ export function LinkbioHome({
         <SearchToggle />
         <Link
           href={user ? "/panel" : "/login"}
-          aria-label={user ? "Buka panel" : "Masuk"}
-          title={user ? "Buka panel" : "Masuk"}
+          aria-label={user ? t("nav.panel") : t("nav.signIn")}
+          title={user ? t("nav.panel") : t("nav.signIn")}
           className="rounded-lg p-2 text-[var(--muted)] transition-all duration-150 hover:bg-[var(--accent-subtle)] hover:text-foreground active:scale-[0.95]"
         >
           <AccountIcon className="h-5 w-5" />
@@ -149,7 +150,7 @@ export function LinkbioHome({
             Links rather than buttons, so the filter is in the URL and survives a
             reload, a share and the back button. */}
         {parents.length > 1 && (
-          <nav className="mt-7 flex flex-wrap justify-center gap-x-3 gap-y-3" aria-label="Filter kategori">
+          <nav className="mt-7 flex flex-wrap justify-center gap-x-3 gap-y-3" aria-label={t("home.filterLabel")}>
             {parents.map((c) => {
               const on = activeCategories.includes(c.slug);
               return (
@@ -199,7 +200,7 @@ export function LinkbioHome({
 
         {pages.length === 0 ? (
           <p className="mt-7 rounded-2xl bg-[var(--accent-subtle)] px-6 py-12 text-center text-sm text-[var(--muted)]">
-            {query ? "Coba kata lain." : "Belum ada tautan di sini."}
+            {query ? t("home.searchTryAgain") : t("home.empty")}
           </p>
         ) : (
           <ul className="mt-7 space-y-2.5">

@@ -3,6 +3,7 @@
 import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 import { PresetTextField } from "../preset-text-field";
 import { BUNDLE_NOTES } from "../bundle-notes";
+import { t } from "@/lib/i18n";
 
 type RelatedOption = { id: string; title: string; slug: string };
 import type { DeliverableType } from "../deliverable-type";
@@ -90,20 +91,20 @@ export function DeliveryTab({
   return (
         <section className={className}>
           <div>
-            <h2 className="text-base font-semibold text-foreground">Pengiriman</h2>
-            <p className="text-sm text-[var(--muted)]">File yang diterima pembeli setelah membeli.</p>
+            <h2 className="text-base font-semibold text-foreground">{t("product.tabDelivery")}</h2>
+            <p className="text-sm text-[var(--muted)]">{t("product.deliveryIntro")}</p>
           </div>
 
           {/* Deliverable — buyer receives one file, either ZIP or PDF. */}
           <div className="space-y-3">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">File yang diberikan ke pembeli</h3>
-              <p className="text-xs text-[var(--muted)]">File akan tersedia setelah pembayaran berhasil.</p>
+              <h3 className="text-sm font-semibold text-foreground">{t("product.deliveryFileHeading")}</h3>
+              <p className="text-xs text-[var(--muted)]">{t("product.deliveryFileHint")}</p>
             </div>
 
             <div className="space-y-1.5">
               <label htmlFor="deliverable-type" className="block text-sm font-medium text-foreground">
-                Tipe file
+                {t("product.deliveryType")}
               </label>
               <select
                 id="deliverable-type"
@@ -111,22 +112,22 @@ export function DeliveryTab({
                 onChange={(e) => setDeliverableType(e.target.value as DeliverableType)}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
               >
-                <option value="zip">ZIP — file untuk di-download pembeli</option>
-                <option value="pdf">PDF — dibaca pembeli di daftar pembelian</option>
-                <option value="epub">EPUB — dibaca pembeli di daftar pembelian</option>
+                <option value="zip">{t("product.deliveryZip")}</option>
+                <option value="pdf">{t("product.deliveryPdf")}</option>
+                <option value="epub">{t("product.deliveryEpub")}</option>
               </select>
               <p className="text-xs text-[var(--muted)]">
                 {deliverableType === "zip"
-                  ? "Pembeli mengunduh file ZIP setelah pembayaran berhasil."
+                  ? t("product.deliveryZipHint")
                   : deliverableType === "epub"
-                    ? "Pembeli membaca file EPUB langsung dari daftar pembelian (bisa ganti tema)."
-                    : "Pembeli membaca file PDF langsung dari daftar pembelian."}
+                    ? t("product.deliveryEpubHint")
+                    : t("product.deliveryPdfHint")}
               </p>
             </div>
 
             {deliverableType === "zip" ? (
               <FileUploadCard
-                label="File ZIP (untuk download setelah pembayaran)"
+                label={t("product.deliveryZipLabel")}
                 accept=".zip,application/zip,application/x-zip-compressed"
                 badge="ZIP"
                 badgeClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -134,13 +135,13 @@ export function DeliveryTab({
                 meta={zipMeta}
                 uploading={zipUploading}
                 error={zipError}
-                statusText="ZIP terpasang"
+                statusText={t("product.deliveryZipReady")}
                 onUpload={handleZipUpload}
                 onRemove={removeZip}
               />
             ) : deliverableType === "epub" ? (
               <FileUploadCard
-                label="File EPUB (dibaca pembeli setelah pembayaran)"
+                label={t("product.deliveryEpubLabel")}
                 accept=".epub,application/epub+zip"
                 badge="EPUB"
                 badgeClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
@@ -148,19 +149,20 @@ export function DeliveryTab({
                 meta={storyEpubMeta}
                 uploading={storyEpubUploading}
                 error={storyEpubError}
-                statusText="EPUB terpasang"
+                statusText={t("product.deliveryEpubReady")}
                 onUpload={handleStoryEpubUpload}
                 onRemove={removeStoryEpub}
               />
             ) : (
               <div className="space-y-3">
                 <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
-                  Bisa upload dua versi: <strong className="text-foreground">terang</strong> &amp;{" "}
-                  <strong className="text-foreground">gelap</strong>. Pembaca yang memakai mode gelap
-                  akan melihat versi gelap. Kalau versi gelap kosong, versi terang dipakai untuk semua.
+                  {t("product.deliveryTwoVersionsBefore")}{" "}
+                  <strong className="text-foreground">{t("product.light")}</strong> &amp;{" "}
+                  <strong className="text-foreground">{t("product.dark")}</strong>.{" "}
+                  {t("product.deliveryTwoVersionsAfter")}
                 </p>
                 <FileUploadCard
-                  label="File PDF versi terang (light) — wajib"
+                  label={t("product.deliveryPdfLight")}
                   accept=".pdf,application/pdf"
                   badge="PDF"
                   badgeClass="bg-red-500/10 text-red-600 dark:text-red-400"
@@ -168,12 +170,12 @@ export function DeliveryTab({
                   meta={storyMeta}
                   uploading={storyUploading}
                   error={storyError}
-                  statusText="PDF (terang) terpasang"
+                  statusText={t("product.deliveryPdfLightReady")}
                   onUpload={handleStoryUpload}
                   onRemove={removeStory}
                 />
                 <FileUploadCard
-                  label="File PDF versi gelap (dark) — opsional"
+                  label={t("product.deliveryPdfDark")}
                   accept=".pdf,application/pdf"
                   badge="PDF"
                   badgeClass="bg-slate-500/10 text-slate-600 dark:text-slate-300"
@@ -181,7 +183,7 @@ export function DeliveryTab({
                   meta={storyMetaDark}
                   uploading={storyUploadingDark}
                   error={storyErrorDark}
-                  statusText="PDF (gelap) terpasang"
+                  statusText={t("product.deliveryPdfDarkReady")}
                   onUpload={handleStoryUploadDark}
                   onRemove={removeStoryDark}
                 />
@@ -193,17 +195,15 @@ export function DeliveryTab({
           {/* Bundle — buying this product grants everything listed here. */}
           <div className="space-y-3">
             <div>
-              <h2 className="text-base font-semibold text-foreground">Bundle</h2>
+              <h2 className="text-base font-semibold text-foreground">{t("product.bundleHeading")}</h2>
               <p className="text-sm text-[var(--muted)]">
-                Jadikan produk ini sebuah paket. Saat pembeli membelinya, semua produk yang
-                dipilih di bawah otomatis masuk ke akun mereka — bisa langsung dibuka &amp;
-                diunduh dari halaman &ldquo;Pembelian saya&rdquo;. Kosongkan kalau ini bukan bundle.
+                {t("product.bundleIntro")}
               </p>
             </div>
 
             {relatedOptions.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-4 text-center text-xs text-[var(--muted)]">
-                Belum ada produk lain untuk dimasukkan ke bundle.
+                {t("product.bundleEmpty")}
               </p>
             ) : (
               <>
@@ -212,10 +212,10 @@ export function DeliveryTab({
                     type="search"
                     value={bundleSearch}
                     onChange={(e) => setBundleSearch(e.target.value)}
-                    placeholder="Cari produk…"
+                    placeholder={t("product.relatedSearch")}
                     className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                   />
-                  <span className="shrink-0 text-xs text-[var(--muted)]">{bundleIds.length} dipilih</span>
+                  <span className="shrink-0 text-xs text-[var(--muted)]">{t("product.relatedSelected", { count: bundleIds.length })}</span>
                 </div>
                 <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-[var(--border)] p-2">
                   {relatedOptions
@@ -245,13 +245,13 @@ export function DeliveryTab({
 
                 <PresetTextField
                   id="bundle-note"
-                  label="Teks bundle"
+                  label={t("product.bundleNoteLabel")}
                   value={bundleNote}
                   onChange={setBundleNote}
                   options={BUNDLE_NOTES}
-                  placeholder="Tanpa teks tambahan"
+                  placeholder={t("product.bundleNotePlaceholder")}
                   maxLength={120}
-                  hint="Muncul di halaman checkout, di atas daftar isi bundle."
+                  hint={t("product.bundleNoteHint")}
                 />
               </>
             )}

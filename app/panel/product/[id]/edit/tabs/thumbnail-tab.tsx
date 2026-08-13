@@ -2,6 +2,7 @@
 
 import { fileNameFromUrl, formatBytes, type FileMeta } from "@/components/file-upload-card";
 import { ImageIcon, TrashIcon } from "../icons";
+import { t } from "@/lib/i18n";
 
 /**
  * The three image slots: the portrait thumbnail every product needs, an
@@ -71,20 +72,20 @@ export function ThumbnailTab({
   return (
   <section className={className}>
     <div>
-      <h2 className="text-base font-semibold text-foreground">Thumbnail &amp; gambar</h2>
+      <h2 className="text-base font-semibold text-foreground">{t("product.thumbHeading")}</h2>
       <p className="text-sm text-[var(--muted)]">
-        Gambar produk di homepage, daftar kategori, dan halaman checkout.
+        {t("product.thumbIntro")}
       </p>
     </div>
 
     {/* Main thumbnail — the only mandatory image. */}
     <div className="space-y-1.5">
       <span className="block text-sm font-medium text-foreground">
-        Thumbnail utama <span className="text-red-500">*</span>{" "}
-        <span className="text-[var(--muted)]">(wajib — dipakai di semua daftar produk)</span>
+        {t("product.thumbMain")} <span className="text-red-500">*</span>{" "}
+        <span className="text-[var(--muted)]">{t("product.thumbMainWhere")}</span>
       </span>
       <p className="text-xs text-[var(--muted)]">
-        Tanpa ini, produk tampil sebagai kartu kosong di homepage.
+        {t("product.thumbMainHint")}
       </p>
       <input
         ref={thumbInputRef}
@@ -123,14 +124,14 @@ export function ThumbnailTab({
               disabled={thumbUploading}
               className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
             >
-              {thumbUploading ? "Mengupload…" : "Ganti gambar"}
+              {thumbUploading ? t("product.uploading") : t("product.replaceImage")}
             </button>
           </div>
           <button
             type="button"
             onClick={removeThumb}
-            title="Hapus thumbnail"
-            aria-label="Hapus thumbnail"
+            title={t("product.removeThumb")}
+            aria-label={t("product.removeThumb")}
             className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
           >
             <TrashIcon className="h-4 w-4" />
@@ -159,9 +160,9 @@ export function ThumbnailTab({
         >
           <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
             <ImageIcon className="h-4 w-4" />
-            {thumbUploading ? "Mengupload…" : "Pilih gambar"}
+            {thumbUploading ? t("product.uploading") : t("product.pickImage")}
           </span>
-          <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop gambar di sini</span>
+          <span className="text-xs text-[var(--muted)]">{t("product.dropImage")}</span>
         </button>
       )}
       {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
@@ -170,13 +171,11 @@ export function ThumbnailTab({
     {/* Landscape thumbnail — used by the 16:9 cards in listings. */}
     <div className="space-y-1.5">
       <span className="block text-sm font-medium text-foreground">
-        Thumbnail landscape{" "}
-        <span className="text-[var(--muted)]">(opsional — untuk kartu di daftar produk)</span>
+        {t("product.thumbWide")}{" "}
+        <span className="text-[var(--muted)]">{t("product.thumbWideWhere")}</span>
       </span>
       <p className="text-xs text-[var(--muted)]">
-        Kartu di homepage &amp; kategori berbentuk lebar (16:9). Kalau thumbnail utamamu
-        portrait, upload versi lebar di sini biar tidak terpotong. Dikosongkan = pakai
-        thumbnail utama.
+        {t("product.thumbWideHint")}
       </p>
       <input
         ref={thumbWideInputRef}
@@ -215,14 +214,14 @@ export function ThumbnailTab({
               disabled={thumbWideUploading}
               className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
             >
-              {thumbWideUploading ? "Mengupload…" : "Ganti gambar"}
+              {thumbWideUploading ? t("product.uploading") : t("product.replaceImage")}
             </button>
           </div>
           <button
             type="button"
             onClick={removeThumbWide}
-            title="Hapus thumbnail landscape"
-            aria-label="Hapus thumbnail landscape"
+            title={t("product.removeThumbWide")}
+            aria-label={t("product.removeThumbWide")}
             className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
           >
             <TrashIcon className="h-4 w-4" />
@@ -251,9 +250,9 @@ export function ThumbnailTab({
         >
           <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
             <ImageIcon className="h-4 w-4" />
-            {thumbWideUploading ? "Mengupload…" : "Pilih gambar landscape"}
+            {thumbWideUploading ? t("product.uploading") : t("product.pickImageWide")}
           </span>
-          <span className="text-xs text-[var(--muted)]">Rasio 16:9 paling pas</span>
+          <span className="text-xs text-[var(--muted)]">{t("product.thumbWideRatio")}</span>
         </button>
       )}
       {thumbWideError && <p className="text-xs text-red-500">{thumbWideError}</p>}
@@ -262,11 +261,11 @@ export function ThumbnailTab({
     {/* Extra images — become swipeable slides on the checkout page. */}
     <div className="space-y-1.5">
       <span className="block text-sm font-medium text-foreground">
-        Gambar tambahan{" "}
-        <span className="text-[var(--muted)]">(opsional — maks. 2, tampil sebagai slide)</span>
+        {t("product.thumbExtra")}{" "}
+        <span className="text-[var(--muted)]">{t("product.thumbExtraWhere")}</span>
       </span>
       <p className="text-xs text-[var(--muted)]">
-        Di halaman checkout, gambar ini bisa digeser bersama thumbnail utama (maks. 3 slide).
+        {t("product.thumbExtraHint")}
       </p>
       <input
         ref={extraInputRef}
@@ -302,8 +301,8 @@ export function ThumbnailTab({
               <button
                 type="button"
                 onClick={() => removeExtra(u)}
-                title="Hapus gambar"
-                aria-label="Hapus gambar"
+                title={t("product.removeImage")}
+                aria-label={t("product.removeImage")}
                 className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
               >
                 <TrashIcon className="h-4 w-4" />
@@ -321,10 +320,10 @@ export function ThumbnailTab({
         >
           <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
             <ImageIcon className="h-4 w-4" />
-            {extraUploading ? "Mengupload…" : "Tambah gambar"}
+            {extraUploading ? t("product.uploading") : t("product.addImage")}
           </span>
           <span className="text-xs text-[var(--muted)]">
-            {2 - extraUrls.length} slot tersisa
+            {t("product.slotsLeft", { count: 2 - extraUrls.length })}
           </span>
         </button>
       )}

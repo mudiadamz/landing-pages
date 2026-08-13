@@ -7,6 +7,7 @@ import { Editor } from "../editor";
 import { CutPercentField } from "../cut-percent-field";
 import { PdfPreviewSlot } from "../pdf-preview-slot";
 import { PREVIEW_OPTIONS } from "../preview-options";
+import { t } from "@/lib/i18n";
 import { PresetTextField } from "../preset-text-field";
 import {
   DEFAULT_PREVIEW_LABEL,
@@ -108,13 +109,13 @@ export function PreviewTab({
   return (
   <section className={className}>
     <div>
-      <h2 className="text-base font-semibold text-foreground">Preview / demo</h2>
-      <p className="text-sm text-[var(--muted)]">Sumber preview yang dilihat pengunjung sebelum membeli.</p>
+      <h2 className="text-base font-semibold text-foreground">{t("product.previewHeading")}</h2>
+      <p className="text-sm text-[var(--muted)]">{t("product.previewIntro")}</p>
     </div>
 
     {/* Preview source */}
     <div className="space-y-2">
-      <span className="block text-sm font-medium text-foreground">Sumber preview</span>
+      <span className="block text-sm font-medium text-foreground">{t("product.previewSource")}</span>
       <div className="inline-flex flex-wrap gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--background)] p-1">
         {PREVIEW_OPTIONS.map((opt) => (
           <button
@@ -140,19 +141,19 @@ export function PreviewTab({
     {previewType === "pdf" && (
       <div className="space-y-4">
         <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
-          Upload versi <strong className="text-foreground">terang</strong> &amp;{" "}
-          <strong className="text-foreground">gelap</strong> agar preview mengikuti tema pembaca.
-          Kalau hanya satu yang diupload, versi itu yang selalu tampil.
+          {t("product.previewPdfBefore")} <strong className="text-foreground">{t("product.light")}</strong> &amp;{" "}
+          <strong className="text-foreground">{t("product.dark")}</strong>{" "}
+          {t("product.previewPdfAfter")}
         </p>
         <PdfPreviewSlot
-          label="PDF versi terang (light)"
+          label={t("product.previewPdfLight")}
           pageId={pageId}
           url={previewUrl}
           meta={pdfMeta}
           onUploaded={(url, meta) => {
             setPreviewUrl(url);
             setPdfMeta(meta);
-            setMessage({ type: "ok", text: "PDF terupload. Klik Simpan perubahan untuk menerapkan." });
+            setMessage({ type: "ok", text: t("product.pdfUploaded") });
           }}
           onClear={() => {
             setPreviewUrl("");
@@ -161,15 +162,15 @@ export function PreviewTab({
           onError={(text) => setMessage({ type: "err", text })}
         />
         <PdfPreviewSlot
-          label="PDF versi gelap (dark)"
-          hint="Opsional — tampil saat pembaca memakai mode gelap."
+          label={t("product.previewPdfDark")}
+          hint={t("product.previewPdfDarkHint")}
           pageId={pageId}
           url={previewUrlDark}
           meta={pdfMetaDark}
           onUploaded={(url, meta) => {
             setPreviewUrlDark(url);
             setPdfMetaDark(meta);
-            setMessage({ type: "ok", text: "PDF (gelap) terupload. Klik Simpan perubahan untuk menerapkan." });
+            setMessage({ type: "ok", text: t("product.pdfDarkUploaded") });
           }}
           onClear={() => {
             setPreviewUrlDark("");
@@ -184,11 +185,12 @@ export function PreviewTab({
     {previewType === "epub" && (
       <div className="space-y-2">
         <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
-          Cukup satu file EPUB — pembaca bisa ganti <strong className="text-foreground">terang</strong> /{" "}
-          <strong className="text-foreground">gelap</strong> langsung di reader (tema diterapkan otomatis).
+          {t("product.previewEpubBefore")} <strong className="text-foreground">{t("product.light")}</strong> /{" "}
+          <strong className="text-foreground">{t("product.dark")}</strong>{" "}
+          {t("product.previewEpubAfter")}
         </p>
         <FileUploadCard
-          label="File EPUB untuk preview"
+          label={t("product.previewEpubLabel")}
           accept=".epub,application/epub+zip"
           badge="EPUB"
           badgeClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
@@ -196,7 +198,7 @@ export function PreviewTab({
           meta={epubMeta}
           uploading={epubUploading}
           error={epubError}
-          statusText="EPUB terpasang"
+          statusText={t("product.deliveryEpubReady")}
           onUpload={handlePreviewEpubUpload}
           onRemove={removePreviewEpub}
         />
@@ -207,10 +209,9 @@ export function PreviewTab({
         cover and asset endpoints are all cached hard at the edge. */}
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground">Cache preview</p>
+        <p className="text-sm font-medium text-foreground">{t("product.cacheHeading")}</p>
         <p className="mt-0.5 text-xs text-[var(--muted)]">
-          Ganti file atau ubah potongan sudah otomatis menyegarkan. Pakai ini kalau pengunjung
-          masih melihat versi lama.
+          {t("product.cacheHint")}
         </p>
       </div>
       <button
@@ -219,7 +220,7 @@ export function PreviewTab({
         disabled={purging}
         className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-[var(--primary)] disabled:opacity-60"
       >
-        {purging ? "Membuang…" : "Buang cache"}
+        {purging ? t("product.purging") : t("product.purge")}
       </button>
       {purged && (
         <p className="w-full text-xs text-[var(--muted)]">{purged}</p>
@@ -232,44 +233,41 @@ export function PreviewTab({
     {(previewType === "deliverable" || previewType === "excerpt") && (
       <div className="space-y-3 rounded-xl border border-[var(--border)] p-4">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">File pembeli</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("product.buyerFile")}</h3>
           <p className="text-xs text-[var(--muted)]">
             {previewType === "excerpt" ? (
               <>
-                Preview memakai <strong className="text-foreground">file yang sama</strong> dengan yang
-                diterima pembeli — tidak ada file preview terpisah, jadi cukup edit satu buku. Bab yang
-                belum kebagian tidak dikirim ke browser, bukan sekadar disembunyikan.
+                {t("product.excerptExplainBefore")}{" "}
+                <strong className="text-foreground">{t("product.excerptSameFile")}</strong>{" "}
+                {t("product.excerptExplainAfter")}
               </>
             ) : (
-              <>
-                Preview menampilkan file pembeli secara utuh — seluruh isi bisa dibaca gratis.
-                Cocok untuk produk gratis atau sampel penuh.
-              </>
+              <>{t("product.deliverableExplain")}</>
             )}{" "}
-            Kartu ini sama dengan yang ada di tab <strong className="text-foreground">Pengiriman</strong>.
+            {t("product.sameCardAs")}{" "}
+            <strong className="text-foreground">{t("product.tabDelivery")}</strong>.
           </p>
         </div>
 
         {previewType === "excerpt" && deliverableType !== "epub" ? (
           <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
             <p className="text-xs text-amber-700 dark:text-amber-400">
-              File pembeli saat ini bertipe{" "}
-              <strong>{deliverableType === "zip" ? "ZIP" : "PDF"}</strong>. Potongan preview hanya
-              bisa diambil dari <strong>EPUB</strong>.
+              {t("product.buyerFileIsNow")}{" "}
+              <strong>{deliverableType === "zip" ? "ZIP" : "PDF"}</strong>.{" "}
+              {t("product.excerptNeedsEpub")}
             </p>
             <button
               type="button"
               onClick={() => setDeliverableType("epub")}
               className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)]"
             >
-              Ganti ke EPUB
+              {t("product.switchToEpub")}
             </button>
           </div>
         ) : previewType === "deliverable" && deliverableType === "zip" ? (
           <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
             <p className="text-xs text-amber-700 dark:text-amber-400">
-              File pembeli saat ini bertipe <strong>ZIP</strong>, yang tidak bisa ditampilkan
-              sebagai preview. Pilih EPUB atau PDF.
+              {t("product.buyerFileIsNow")} <strong>ZIP</strong>, {t("product.zipNotPreviewable")}
             </p>
             <div className="flex gap-2">
               <button
@@ -277,20 +275,20 @@ export function PreviewTab({
                 onClick={() => setDeliverableType("epub")}
                 className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)]"
               >
-                Ganti ke EPUB
+                {t("product.switchToEpub")}
               </button>
               <button
                 type="button"
                 onClick={() => setDeliverableType("pdf")}
                 className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)]"
               >
-                Ganti ke PDF
+                {t("product.switchToPdf")}
               </button>
             </div>
           </div>
         ) : deliverableType === "epub" ? (
           <FileUploadCard
-            label="File EPUB (dibaca pembeli setelah pembayaran)"
+            label={t("product.deliveryEpubLabel")}
             accept=".epub,application/epub+zip"
             badge="EPUB"
             badgeClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
@@ -298,13 +296,13 @@ export function PreviewTab({
             meta={storyEpubMeta}
             uploading={storyEpubUploading}
             error={storyEpubError}
-            statusText="EPUB terpasang"
+            statusText={t("product.deliveryEpubReady")}
             onUpload={handleStoryEpubUpload}
             onRemove={removeStoryEpub}
           />
         ) : (
           <FileUploadCard
-            label="File PDF (dibaca pembeli setelah pembayaran)"
+            label={t("product.buyerPdfLabel")}
             accept=".pdf,application/pdf"
             badge="PDF"
             badgeClass="bg-red-500/10 text-red-600 dark:text-red-400"
@@ -312,7 +310,7 @@ export function PreviewTab({
             meta={storyMeta}
             uploading={storyUploading}
             error={storyError}
-            statusText="PDF (terang) terpasang"
+            statusText={t("product.deliveryPdfLightReady")}
             onUpload={handleStoryUpload}
             onRemove={removeStory}
           />
@@ -328,7 +326,7 @@ export function PreviewTab({
     {previewType === "link" && (
       <div className="space-y-1.5">
         <label htmlFor="preview-link" className="block text-sm font-medium text-foreground">
-          URL link
+          {t("product.previewUrlLabel")}
         </label>
         <input
           id="preview-link"
@@ -336,7 +334,7 @@ export function PreviewTab({
           value={previewUrl}
           onChange={(e) => setPreviewUrl(e.target.value)}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-          placeholder="https://contoh.com/halaman"
+          placeholder={t("product.previewUrlPlaceholder")}
         />
       </div>
     )}
@@ -345,13 +343,13 @@ export function PreviewTab({
     <div className="sm:max-w-xs">
       <PresetTextField
         id="preview-label"
-        label="Teks tombol preview"
+        label={t("product.previewLabelField")}
         value={previewLabel}
         onChange={setPreviewLabel}
         options={PREVIEW_LABEL_PRESETS}
         placeholder={DEFAULT_PREVIEW_LABEL}
         maxLength={PREVIEW_LABEL_MAX}
-        hint="Teks tombol yang membuka halaman preview dari halaman checkout."
+        hint={t("product.previewLabelHint")}
       />
     </div>
 
