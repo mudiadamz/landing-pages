@@ -47,6 +47,15 @@ import { ToggleCard } from "@/components/toggle-card";
 import { ScheduleTab } from "./tabs/schedule-tab";
 import { RelatedTab } from "./tabs/related-tab";
 import { DeliveryTab } from "./tabs/delivery-tab";
+import { DetailTab } from "./tabs/detail-tab";
+import { PriceTab } from "./tabs/price-tab";
+import { ThumbnailTab } from "./tabs/thumbnail-tab";
+import { PREVIEW_OPTIONS } from "./preview-options";
+import { PdfPreviewSlot } from "./pdf-preview-slot";
+import { CutPercentField } from "./cut-percent-field";
+import { PreviewTab } from "./tabs/preview-tab";
+import type { DeliverableType } from "./deliverable-type";
+import { ExternalIcon, FileTextIcon, ImageIcon, TrashIcon } from "./icons";
 import { t } from "@/lib/i18n";
 
 /* -------------------------------------------------------------------------- */
@@ -56,27 +65,9 @@ import { t } from "@/lib/i18n";
 
 
 
-const PREVIEW_OPTIONS: { value: PreviewType; label: string; hint: string }[] = [
-  { value: "html", label: "HTML", hint: "Pakai konten HTML/CSS/JS dari editor di bawah." },
-  { value: "pdf", label: "PDF", hint: "Upload file PDF untuk di-embed di halaman preview." },
-  { value: "epub", label: "EPUB", hint: "Upload file EPUB — pembaca bisa ganti tema terang/gelap langsung di reader." },
-  { value: "link", label: "Link", hint: "Embed URL eksternal di halaman preview." },
-  {
-    value: "deliverable",
-    label: "Sama dgn deliverable",
-    hint: "Preview memakai file pembeli (PDF/EPUB) yang sama — tak perlu upload lagi. Seluruh isi bisa dibaca gratis di preview.",
-  },
-  {
-    value: "excerpt",
-    label: "Sebagian deliverable",
-    hint: "Satu file saja: preview menampilkan sebagian awal EPUB pembeli. Tidak ada file preview terpisah yang harus ikut diedit.",
-  },
-];
 
 /** Quick picks for the excerpt cut, so the common values are one tap away. */
-const CUT_PRESETS = [30, 40, 50, 60, 70, 80];
 
-type DeliverableType = "zip" | "pdf" | "epub";
 
 type TabKey =
   | "detail"
@@ -161,132 +152,6 @@ function isoToLocalInput(iso: string | null | undefined): string {
  * it's replacing (passes its current url to uploadPreviewPdf). Local state only —
  * the parent persists the url on "Simpan perubahan".
  */
-function PdfPreviewSlot({
-  label,
-  hint,
-  pageId,
-  url,
-  meta,
-  onUploaded,
-  onClear,
-  onError,
-}: {
-  label: string;
-  hint?: string;
-  pageId: string;
-  url: string;
-  meta: FileMeta | null;
-  onUploaded: (url: string, meta: FileMeta) => void;
-  onClear: () => void;
-  onError: (text: string) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [dragging, setDragging] = useState(false);
-
-  const upload = useCallback(
-    async (file: File) => {
-      if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-        onError("File harus berformat PDF.");
-        return;
-      }
-      setUploading(true);
-      try {
-        // Pass the current PDF so it's deleted once the new one is stored.
-        const result = await uploadPreviewPdfClient(pageId, file, url || null);
-        if ("error" in result) {
-          onError(result.error);
-        } else {
-          onUploaded(result.url, { name: file.name, size: file.size });
-        }
-      } finally {
-        setUploading(false);
-      }
-    },
-    [pageId, url, onUploaded, onError],
-  );
-
-  return (
-    <div className="space-y-2">
-      <div>
-        <span className="block text-sm font-medium text-foreground">{label}</span>
-        {hint && <span className="text-xs text-[var(--muted)]">{hint}</span>}
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf,.pdf"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) upload(f);
-          e.target.value = "";
-        }}
-      />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          const f = e.dataTransfer.files?.[0];
-          if (f) upload(f);
-        }}
-        className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
-          dragging
-            ? "border-[var(--primary)] bg-[var(--primary)]/5"
-            : "border-[var(--border)] hover:border-[var(--primary)]/60"
-        }`}
-      >
-        <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
-          <FileTextIcon className="h-4 w-4" />
-          {uploading ? "Mengupload…" : url ? "Ganti file PDF" : "Pilih file PDF"}
-        </span>
-        <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop file PDF di sini</span>
-      </button>
-
-      {url && (
-        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-xs font-bold text-red-600 dark:text-red-400">
-            PDF
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">
-              {meta?.name ?? fileNameFromUrl(url)}
-            </p>
-            {formatBytes(meta?.size) && (
-              <p className="text-xs text-[var(--muted)]">{formatBytes(meta?.size)}</p>
-            )}
-          </div>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Buka PDF"
-            aria-label="Buka PDF"
-            className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground"
-          >
-            <ExternalIcon className="h-4 w-4" />
-          </a>
-          <button
-            type="button"
-            onClick={onClear}
-            title="Hapus PDF"
-            aria-label="Hapus PDF"
-            className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-          >
-            <TrashIcon className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /**
  * Single stateful form for the product edit page: page info (title + preview
@@ -1019,847 +884,129 @@ export function ProductEditForm({
       </div>
 
       {/* ========================= Tab: Detail ========================= */}
-      <section className={tab === "detail" ? PANEL_CLASS : "hidden"}>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Detail produk</h2>
-          <p className="text-sm text-[var(--muted)]">Judul, kategori, dan deskripsi produk.</p>
-        </div>
-
-        {/* Title */}
-        <div className="space-y-1.5">
-          <label htmlFor="page-title" className="block text-sm font-medium text-foreground">
-            Judul (Title)
-          </label>
-          <input
-            id="page-title"
-            type="text"
-            value={title}
-            maxLength={100}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-            placeholder="Judul landing page"
-          />
-          <p className="text-right text-xs text-[var(--muted)]">{title.length}/100</p>
-        </div>
-
-        {/* Long description — rich text (WYSIWYG). Stored as HTML, sanitized on save. */}
-        <div className="space-y-1.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm font-medium text-foreground">
-              Deskripsi panjang <span className="text-[var(--muted)]">(tampil di kartu &amp; checkout)</span>
-            </span>
-            <span className="hidden text-xs text-[var(--muted)] sm:block">
-              Bantu pembeli memahami isi produk Anda.
-            </span>
-          </div>
-          <RichTextEditor
-            initialHtml={initial.long_description ?? ""}
-            onChange={setLongDescription}
-            placeholder="Penjelasan produk, fitur, atau manfaat…"
-          />
-          <p className="text-right text-xs text-[var(--muted)]">
-            {richTextToPlain(longDescription).length} karakter
-          </p>
-        </div>
-
-        {/* Category + display info */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="category" className="block text-sm font-medium text-foreground">
-              Kategori
-            </label>
-            <select
-              id="category"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-            >
-              <option value="">— Pilih kategori —</option>
-              {categories
-                .filter((c) => !c.parent_id)
-                .map((parent) => {
-                  const children = categories.filter((c) => c.parent_id === parent.id);
-                  if (children.length === 0) {
-                    return (
-                      <option key={parent.id} value={parent.id}>
-                        {parent.name}
-                      </option>
-                    );
-                  }
-                  return (
-                    <optgroup key={parent.id} label={parent.name}>
-                      <option value={parent.id}>{parent.name} — semua</option>
-                      {children.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  );
-                })}
-            </select>
-            <p className="text-xs text-[var(--muted)]">
-              Pilih kategori yang paling sesuai dengan produk Anda.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4">
-            <p className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-              <StoreIcon className="h-4 w-4 text-[var(--primary)]" />
-              Bagaimana produk ini akan ditampilkan?
-            </p>
-            <ul className="space-y-1.5 text-xs text-[var(--muted)]">
-              <CheckItem>Judul &amp; deskripsi tampil di kartu produk</CheckItem>
-              <CheckItem>Harga diskon akan ditampilkan (jika ada)</CheckItem>
-              <CheckItem>Thumbnail tampil di homepage</CheckItem>
-            </ul>
-          </div>
-        </div>
-
-      </section>
+      <DetailTab
+        className={tab === "detail" ? PANEL_CLASS : "hidden"}
+        title={title}
+        setTitle={setTitle}
+        categories={categories}
+        categoryId={categoryId}
+        setCategoryId={setCategoryId}
+        initialLongDescription={initial.long_description ?? ""}
+        longDescription={longDescription}
+        setLongDescription={setLongDescription}
+      />
 
       {/* ========================= Tab: Thumbnail ========================= */}
       {/* Ordered the way a seller fills them in: the mandatory square first, then
           the optional wide variant, then the extra checkout slides. */}
-      <section className={tab === "thumbnail" ? PANEL_CLASS : "hidden"}>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Thumbnail &amp; gambar</h2>
-          <p className="text-sm text-[var(--muted)]">
-            Gambar produk di homepage, daftar kategori, dan halaman checkout.
-          </p>
-        </div>
-
-        {/* Main thumbnail — the only mandatory image. */}
-        <div className="space-y-1.5">
-          <span className="block text-sm font-medium text-foreground">
-            Thumbnail utama <span className="text-red-500">*</span>{" "}
-            <span className="text-[var(--muted)]">(wajib — dipakai di semua daftar produk)</span>
-          </span>
-          <p className="text-xs text-[var(--muted)]">
-            Tanpa ini, produk tampil sebagai kartu kosong di homepage.
-          </p>
-          <input
-            ref={thumbInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) uploadThumbFile(f);
-              e.target.value = "";
-            }}
-          />
-          {thumbnailUrl.trim() ? (
-            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={thumbnailUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
-                  }}
-                />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {thumbMeta?.name ?? fileNameFromUrl(thumbnailUrl)}
-                </p>
-                {formatBytes(thumbMeta?.size) && (
-                  <p className="text-xs text-[var(--muted)]">{formatBytes(thumbMeta?.size)}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => thumbInputRef.current?.click()}
-                  disabled={thumbUploading}
-                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
-                >
-                  {thumbUploading ? "Mengupload…" : "Ganti gambar"}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={removeThumb}
-                title="Hapus thumbnail"
-                aria-label="Hapus thumbnail"
-                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => thumbInputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setThumbDragging(true);
-              }}
-              onDragLeave={() => setThumbDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setThumbDragging(false);
-                const f = e.dataTransfer.files?.[0];
-                if (f) uploadThumbFile(f);
-              }}
-              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
-                thumbDragging
-                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
-              }`}
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
-                <ImageIcon className="h-4 w-4" />
-                {thumbUploading ? "Mengupload…" : "Pilih gambar"}
-              </span>
-              <span className="text-xs text-[var(--muted)]">Klik atau drag &amp; drop gambar di sini</span>
-            </button>
-          )}
-          {thumbError && <p className="text-xs text-red-500">{thumbError}</p>}
-        </div>
-
-        {/* Landscape thumbnail — used by the 16:9 cards in listings. */}
-        <div className="space-y-1.5">
-          <span className="block text-sm font-medium text-foreground">
-            Thumbnail landscape{" "}
-            <span className="text-[var(--muted)]">(opsional — untuk kartu di daftar produk)</span>
-          </span>
-          <p className="text-xs text-[var(--muted)]">
-            Kartu di homepage &amp; kategori berbentuk lebar (16:9). Kalau thumbnail utamamu
-            portrait, upload versi lebar di sini biar tidak terpotong. Dikosongkan = pakai
-            thumbnail utama.
-          </p>
-          <input
-            ref={thumbWideInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) uploadThumbWideFile(f);
-              e.target.value = "";
-            }}
-          />
-          {thumbWideUrl.trim() ? (
-            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
-              <span className="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={thumbWideUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
-                  }}
-                />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {thumbWideMeta?.name ?? fileNameFromUrl(thumbWideUrl)}
-                </p>
-                {formatBytes(thumbWideMeta?.size) && (
-                  <p className="text-xs text-[var(--muted)]">{formatBytes(thumbWideMeta?.size)}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => thumbWideInputRef.current?.click()}
-                  disabled={thumbWideUploading}
-                  className="text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
-                >
-                  {thumbWideUploading ? "Mengupload…" : "Ganti gambar"}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={removeThumbWide}
-                title="Hapus thumbnail landscape"
-                aria-label="Hapus thumbnail landscape"
-                className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => thumbWideInputRef.current?.click()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setThumbWideDragging(true);
-              }}
-              onDragLeave={() => setThumbWideDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setThumbWideDragging(false);
-                const f = e.dataTransfer.files?.[0];
-                if (f) uploadThumbWideFile(f);
-              }}
-              className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
-                thumbWideDragging
-                  ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                  : "border-[var(--border)] hover:border-[var(--primary)]/60"
-              }`}
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
-                <ImageIcon className="h-4 w-4" />
-                {thumbWideUploading ? "Mengupload…" : "Pilih gambar landscape"}
-              </span>
-              <span className="text-xs text-[var(--muted)]">Rasio 16:9 paling pas</span>
-            </button>
-          )}
-          {thumbWideError && <p className="text-xs text-red-500">{thumbWideError}</p>}
-        </div>
-
-        {/* Extra images — become swipeable slides on the checkout page. */}
-        <div className="space-y-1.5">
-          <span className="block text-sm font-medium text-foreground">
-            Gambar tambahan{" "}
-            <span className="text-[var(--muted)]">(opsional — maks. 2, tampil sebagai slide)</span>
-          </span>
-          <p className="text-xs text-[var(--muted)]">
-            Di halaman checkout, gambar ini bisa digeser bersama thumbnail utama (maks. 3 slide).
-          </p>
-          <input
-            ref={extraInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) uploadExtraFile(f);
-              e.target.value = "";
-            }}
-          />
-          {extraUrls.length > 0 && (
-            <ul className="space-y-2">
-              {extraUrls.map((u, i) => (
-                <li
-                  key={u}
-                  className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5"
-                >
-                  <span className="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={u} alt="" className="h-full w-full object-cover" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {fileNameFromUrl(u)}
-                    </p>
-                    <p className="text-xs text-[var(--muted)]">
-                      Slide {i + 2}
-                      {formatBytes(extraSizes[u]) ? ` · ${formatBytes(extraSizes[u])}` : ""}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeExtra(u)}
-                    title="Hapus gambar"
-                    aria-label="Hapus gambar"
-                    className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {extraUrls.length < 2 && (
-            <button
-              type="button"
-              onClick={() => extraInputRef.current?.click()}
-              disabled={extraUploading}
-              className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--border)] px-4 py-6 text-center transition-colors hover:border-[var(--primary)]/60 disabled:opacity-60"
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-[var(--primary)]">
-                <ImageIcon className="h-4 w-4" />
-                {extraUploading ? "Mengupload…" : "Tambah gambar"}
-              </span>
-              <span className="text-xs text-[var(--muted)]">
-                {2 - extraUrls.length} slot tersisa
-              </span>
-            </button>
-          )}
-          {extraError && <p className="text-xs text-red-500">{extraError}</p>}
-        </div>
-
-      </section>
+      <ThumbnailTab
+        className={tab === "thumbnail" ? PANEL_CLASS : "hidden"}
+        title={title}
+        thumbnailUrl={thumbnailUrl}
+        thumbMeta={thumbMeta}
+        thumbUploading={thumbUploading}
+        thumbError={thumbError}
+        thumbDragging={thumbDragging}
+        setThumbDragging={setThumbDragging}
+        thumbInputRef={thumbInputRef}
+        uploadThumbFile={uploadThumbFile}
+        removeThumb={removeThumb}
+        thumbWideUrl={thumbWideUrl}
+        thumbWideMeta={thumbWideMeta}
+        thumbWideUploading={thumbWideUploading}
+        thumbWideError={thumbWideError}
+        thumbWideDragging={thumbWideDragging}
+        setThumbWideDragging={setThumbWideDragging}
+        thumbWideInputRef={thumbWideInputRef}
+        uploadThumbWideFile={uploadThumbWideFile}
+        removeThumbWide={removeThumbWide}
+        extraUrls={extraUrls}
+        extraSizes={extraSizes}
+        extraUploading={extraUploading}
+        extraError={extraError}
+        extraInputRef={extraInputRef}
+        uploadExtraFile={uploadExtraFile}
+        removeExtra={removeExtra}
+      />
 
       {/* ========================= Tab: Preview ========================= */}
-      <section className={tab === "preview" ? PANEL_CLASS : "hidden"}>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Preview / demo</h2>
-          <p className="text-sm text-[var(--muted)]">Sumber preview yang dilihat pengunjung sebelum membeli.</p>
-        </div>
-
-        {/* Preview source */}
-        <div className="space-y-2">
-          <span className="block text-sm font-medium text-foreground">Sumber preview</span>
-          <div className="inline-flex flex-wrap gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--background)] p-1">
-            {PREVIEW_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => pickPreviewType(opt.value)}
-                className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  previewType === opt.value
-                    ? "bg-[var(--card)] text-foreground shadow-sm ring-1 ring-[var(--border)]"
-                    : "text-[var(--muted)] hover:text-foreground"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-[var(--muted)]">
-            {PREVIEW_OPTIONS.find((o) => o.value === previewType)?.hint}
-          </p>
-        </div>
-
-        {/* PDF upload — light + optional dark variant. */}
-        {previewType === "pdf" && (
-          <div className="space-y-4">
-            <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
-              Upload versi <strong className="text-foreground">terang</strong> &amp;{" "}
-              <strong className="text-foreground">gelap</strong> agar preview mengikuti tema pembaca.
-              Kalau hanya satu yang diupload, versi itu yang selalu tampil.
-            </p>
-            <PdfPreviewSlot
-              label="PDF versi terang (light)"
-              pageId={pageId}
-              url={previewUrl}
-              meta={pdfMeta}
-              onUploaded={(url, meta) => {
-                setPreviewUrl(url);
-                setPdfMeta(meta);
-                setMessage({ type: "ok", text: "PDF terupload. Klik Simpan perubahan untuk menerapkan." });
-              }}
-              onClear={() => {
-                setPreviewUrl("");
-                setPdfMeta(null);
-              }}
-              onError={(text) => setMessage({ type: "err", text })}
-            />
-            <PdfPreviewSlot
-              label="PDF versi gelap (dark)"
-              hint="Opsional — tampil saat pembaca memakai mode gelap."
-              pageId={pageId}
-              url={previewUrlDark}
-              meta={pdfMetaDark}
-              onUploaded={(url, meta) => {
-                setPreviewUrlDark(url);
-                setPdfMetaDark(meta);
-                setMessage({ type: "ok", text: "PDF (gelap) terupload. Klik Simpan perubahan untuk menerapkan." });
-              }}
-              onClear={() => {
-                setPreviewUrlDark("");
-                setPdfMetaDark(null);
-              }}
-              onError={(text) => setMessage({ type: "err", text })}
-            />
-          </div>
-        )}
-
-        {/* EPUB preview — single file, themed in-reader. */}
-        {previewType === "epub" && (
-          <div className="space-y-2">
-            <p className="rounded-lg bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
-              Cukup satu file EPUB — pembaca bisa ganti <strong className="text-foreground">terang</strong> /{" "}
-              <strong className="text-foreground">gelap</strong> langsung di reader (tema diterapkan otomatis).
-            </p>
-            <FileUploadCard
-              label="File EPUB untuk preview"
-              accept=".epub,application/epub+zip"
-              badge="EPUB"
-              badgeClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-              url={previewUrl}
-              meta={epubMeta}
-              uploading={epubUploading}
-              error={epubError}
-              statusText="EPUB terpasang"
-              onUpload={handlePreviewEpubUpload}
-              onRemove={removePreviewEpub}
-            />
-          </div>
-        )}
-
-        {/* Cache purge — every preview type, not just excerpts. The chapter,
-            cover and asset endpoints are all cached hard at the edge. */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground">Cache preview</p>
-            <p className="mt-0.5 text-xs text-[var(--muted)]">
-              Ganti file atau ubah potongan sudah otomatis menyegarkan. Pakai ini kalau pengunjung
-              masih melihat versi lama.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={runPurge}
-            disabled={purging}
-            className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-[var(--primary)] disabled:opacity-60"
-          >
-            {purging ? "Membuang…" : "Buang cache"}
-          </button>
-          {purged && (
-            <p className="w-full text-xs text-[var(--muted)]">{purged}</p>
-          )}
-        </div>
-
-        {/* Preview reads the buyer's own file. The upload card lives HERE, not
-            behind a "go to the Pengiriman tab" instruction — it's the same state,
-            so editing it in either tab is the same edit. */}
-        {(previewType === "deliverable" || previewType === "excerpt") && (
-          <div className="space-y-3 rounded-xl border border-[var(--border)] p-4">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">File pembeli</h3>
-              <p className="text-xs text-[var(--muted)]">
-                {previewType === "excerpt" ? (
-                  <>
-                    Preview memakai <strong className="text-foreground">file yang sama</strong> dengan yang
-                    diterima pembeli — tidak ada file preview terpisah, jadi cukup edit satu buku. Bab yang
-                    belum kebagian tidak dikirim ke browser, bukan sekadar disembunyikan.
-                  </>
-                ) : (
-                  <>
-                    Preview menampilkan file pembeli secara utuh — seluruh isi bisa dibaca gratis.
-                    Cocok untuk produk gratis atau sampel penuh.
-                  </>
-                )}{" "}
-                Kartu ini sama dengan yang ada di tab <strong className="text-foreground">Pengiriman</strong>.
-              </p>
-            </div>
-
-            {previewType === "excerpt" && deliverableType !== "epub" ? (
-              <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  File pembeli saat ini bertipe{" "}
-                  <strong>{deliverableType === "zip" ? "ZIP" : "PDF"}</strong>. Potongan preview hanya
-                  bisa diambil dari <strong>EPUB</strong>.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDeliverableType("epub")}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)]"
-                >
-                  Ganti ke EPUB
-                </button>
-              </div>
-            ) : previewType === "deliverable" && deliverableType === "zip" ? (
-              <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  File pembeli saat ini bertipe <strong>ZIP</strong>, yang tidak bisa ditampilkan
-                  sebagai preview. Pilih EPUB atau PDF.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDeliverableType("epub")}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)]"
-                  >
-                    Ganti ke EPUB
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeliverableType("pdf")}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)]"
-                  >
-                    Ganti ke PDF
-                  </button>
-                </div>
-              </div>
-            ) : deliverableType === "epub" ? (
-              <FileUploadCard
-                label="File EPUB (dibaca pembeli setelah pembayaran)"
-                accept=".epub,application/epub+zip"
-                badge="EPUB"
-                badgeClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                url={storyEpubUrl}
-                meta={storyEpubMeta}
-                uploading={storyEpubUploading}
-                error={storyEpubError}
-                statusText="EPUB terpasang"
-                onUpload={handleStoryEpubUpload}
-                onRemove={removeStoryEpub}
-              />
-            ) : (
-              <FileUploadCard
-                label="File PDF (dibaca pembeli setelah pembayaran)"
-                accept=".pdf,application/pdf"
-                badge="PDF"
-                badgeClass="bg-red-500/10 text-red-600 dark:text-red-400"
-                url={storyUrl}
-                meta={storyMeta}
-                uploading={storyUploading}
-                error={storyError}
-                statusText="PDF (terang) terpasang"
-                onUpload={handleStoryUpload}
-                onRemove={removeStory}
-              />
-            )}
-
-            {previewType === "excerpt" && deliverableType === "epub" && storyEpubUrl.trim() && (
-              <CutPercentField value={cutPercent} onChange={setCutPercent} />
-            )}
-          </div>
-        )}
-
-        {/* External link */}
-        {previewType === "link" && (
-          <div className="space-y-1.5">
-            <label htmlFor="preview-link" className="block text-sm font-medium text-foreground">
-              URL link
-            </label>
-            <input
-              id="preview-link"
-              type="url"
-              value={previewUrl}
-              onChange={(e) => setPreviewUrl(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-              placeholder="https://contoh.com/halaman"
-            />
-          </div>
-        )}
-
-        {/* Label of the "Preview" button shown on the checkout page. */}
-        <div className="sm:max-w-xs">
-          <PresetTextField
-            id="preview-label"
-            label="Teks tombol preview"
-            value={previewLabel}
-            onChange={setPreviewLabel}
-            options={PREVIEW_LABEL_PRESETS}
-            placeholder={DEFAULT_PREVIEW_LABEL}
-            maxLength={PREVIEW_LABEL_MAX}
-            hint="Teks tombol yang membuka halaman preview dari halaman checkout."
-          />
-        </div>
-
-        {/* Monaco editor — only for the HTML preview source. Keeps its own save. */}
-        {previewType === "html" && (
-          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] p-3 sm:p-4">
-            <Editor id={pageId} initialHtml={initialHtml} />
-          </div>
-        )}
-      </section>
+      <PreviewTab
+        className={tab === "preview" ? PANEL_CLASS : "hidden"}
+        pageId={pageId}
+        initialHtml={initialHtml}
+        previewType={previewType}
+        pickPreviewType={pickPreviewType}
+        previewUrl={previewUrl}
+        setPreviewUrl={setPreviewUrl}
+        previewUrlDark={previewUrlDark}
+        setPreviewUrlDark={setPreviewUrlDark}
+        pdfMeta={pdfMeta}
+        setPdfMeta={setPdfMeta}
+        pdfMetaDark={pdfMetaDark}
+        setPdfMetaDark={setPdfMetaDark}
+        epubMeta={epubMeta}
+        epubUploading={epubUploading}
+        epubError={epubError}
+        handlePreviewEpubUpload={handlePreviewEpubUpload}
+        removePreviewEpub={removePreviewEpub}
+        deliverableType={deliverableType}
+        setDeliverableType={setDeliverableType}
+        storyUrl={storyUrl}
+        storyMeta={storyMeta}
+        storyUploading={storyUploading}
+        storyError={storyError}
+        handleStoryUpload={handleStoryUpload}
+        removeStory={removeStory}
+        storyEpubUrl={storyEpubUrl}
+        storyEpubMeta={storyEpubMeta}
+        storyEpubUploading={storyEpubUploading}
+        storyEpubError={storyEpubError}
+        handleStoryEpubUpload={handleStoryEpubUpload}
+        removeStoryEpub={removeStoryEpub}
+        cutPercent={cutPercent}
+        setCutPercent={setCutPercent}
+        purging={purging}
+        purged={purged}
+        runPurge={runPurge}
+        previewLabel={previewLabel}
+        setPreviewLabel={setPreviewLabel}
+        setMessage={setMessage}
+      />
 
       {/* ========================= Tab: Harga ========================= */}
-      <section className={tab === "harga" ? PANEL_CLASS : "hidden"}>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Harga &amp; penjualan</h2>
-          <p className="text-sm text-[var(--muted)]">Harga, status, dan tombol beli.</p>
-        </div>
-
-        <ToggleCard
-          checked={isFree}
-          onChange={setIsFree}
-          title="Gratis (Free)"
-          description="Produk ini dapat diakses secara gratis"
-        />
-
-        {/* Prices */}
-        {!isFree && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-foreground">Normal price (IDR)</label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center border-r border-[var(--border)] px-3 text-sm text-[var(--muted)]">
-                  Rp
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="300.000"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-foreground">Discount price (IDR)</label>
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center border-r border-[var(--border)] px-3 text-sm text-[var(--muted)]">
-                  Rp
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={priceDiscount}
-                  onChange={(e) => setPriceDiscount(e.target.value)}
-                  placeholder="50.000"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-20 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-                {discountPct != null && (
-                  <span className="absolute inset-y-0 right-2 my-auto flex h-6 items-center rounded-md bg-[var(--primary)]/10 px-2 text-xs font-semibold text-[var(--primary)]">
-                    {discountPct}% OFF
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Preview buy-now card: text overrides + action */}
-        <div className="space-y-3 rounded-xl border border-[var(--border)] p-4">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">Tombol beli</h3>
-            <p className="text-xs text-[var(--muted)]">
-              Atur teks &amp; tujuan tombol beli — berlaku di kartu &ldquo;beli sekarang&rdquo;
-              pada halaman preview <strong className="text-foreground">dan</strong> di halaman
-              checkout. Kosongkan teks untuk memakai bawaan.
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="cta-action" className="block text-sm font-medium text-foreground">
-              Aksi tombol
-            </label>
-            <select
-              id="cta-action"
-              value={actionType}
-              onChange={(e) => setActionType(e.target.value as "checkout" | "link" | "calendar")}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
-            >
-              <option value="checkout">Checkout di situs ini (default)</option>
-              <option value="link">Link eksternal</option>
-              <option value="calendar">Tambahkan ke kalender</option>
-            </select>
-            <p className="text-xs text-[var(--muted)]">
-              {actionType === "link"
-                ? "Tombol mengarah ke URL yang Anda isi (membuka tab baru), melewati checkout bawaan."
-                : actionType === "calendar"
-                  ? "Tombol menambahkan acara ke kalender pengunjung (file .ics — jalan di iOS, Android & desktop)."
-                  : "Tombol mengarah ke halaman checkout produk ini."}
-            </p>
-          </div>
-
-          {actionType === "link" && (
-            <div className="space-y-1.5">
-              <label htmlFor="cta-link" className="block text-sm font-medium text-foreground">
-                URL tujuan
-              </label>
-              <input
-                id="cta-link"
-                type="url"
-                value={purchaseLink}
-                onChange={(e) => setPurchaseLink(e.target.value)}
-                placeholder="https://contoh.com/beli"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-              />
-            </div>
-          )}
-
-          {actionType === "calendar" && (
-            <div className="space-y-4 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
-              <p className="text-xs text-[var(--muted)]">
-                Detail acara yang ditambahkan ke kalender pengunjung. Waktu memakai zona waktu
-                lokal perangkat pengunjung.
-              </p>
-              <div className="space-y-1.5">
-                <label htmlFor="event-title" className="block text-sm font-medium text-foreground">
-                  Judul acara
-                </label>
-                <input
-                  id="event-title"
-                  type="text"
-                  value={eventTitle}
-                  maxLength={200}
-                  onChange={(e) => setEventTitle(e.target.value)}
-                  placeholder={title || "Judul acara"}
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-                <p className="text-xs text-[var(--muted)]">Kosongkan untuk memakai judul produk.</p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label htmlFor="event-start" className="block text-sm font-medium text-foreground">
-                    Mulai <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="event-start"
-                    type="datetime-local"
-                    value={eventStart}
-                    onChange={(e) => setEventStart(e.target.value)}
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="event-end" className="block text-sm font-medium text-foreground">
-                    Selesai
-                  </label>
-                  <input
-                    id="event-end"
-                    type="datetime-local"
-                    value={eventEnd}
-                    onChange={(e) => setEventEnd(e.target.value)}
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                  />
-                  <p className="text-xs text-[var(--muted)]">Kosong = 1 jam setelah mulai.</p>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="event-location" className="block text-sm font-medium text-foreground">
-                  Lokasi
-                </label>
-                <input
-                  id="event-location"
-                  type="text"
-                  value={eventLocation}
-                  maxLength={300}
-                  onChange={(e) => setEventLocation(e.target.value)}
-                  placeholder="Alamat, atau link Zoom/Google Meet"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="event-desc" className="block text-sm font-medium text-foreground">
-                  Deskripsi
-                </label>
-                <textarea
-                  id="event-desc"
-                  value={eventDescription}
-                  maxLength={1000}
-                  rows={3}
-                  onChange={(e) => setEventDescription(e.target.value)}
-                  placeholder="Catatan acara yang tampil di kalender…"
-                  className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <PresetTextField
-              id="cta-label"
-              label="Teks tombol"
-              value={ctaLabel}
-              onChange={setCtaLabel}
-              options={labelPresets}
-              placeholder={defaultCtaLabel}
-              maxLength={40}
-            />
-            <PresetTextField
-              id="cta-note"
-              label="Teks keterangan"
-              value={ctaNote}
-              onChange={setCtaNote}
-              options={notePresets}
-              placeholder={defaultCtaNote}
-              maxLength={80}
-            />
-          </div>
-
-          <p className="text-xs text-[var(--muted)]">
-            Tombol beli tampil di akhir halaman preview, setelah pembaca selesai —
-            tidak lagi mengapung di atas bacaan.
-          </p>
-
-        </div>
-
-      </section>
+      <PriceTab
+        className={tab === "harga" ? PANEL_CLASS : "hidden"}
+        isFree={isFree}
+        setIsFree={setIsFree}
+        price={price}
+        setPrice={setPrice}
+        priceDiscount={priceDiscount}
+        setPriceDiscount={setPriceDiscount}
+        discountPct={discountPct}
+        actionType={actionType}
+        setActionType={setActionType}
+        purchaseLink={purchaseLink}
+        setPurchaseLink={setPurchaseLink}
+        eventTitle={eventTitle}
+        setEventTitle={setEventTitle}
+        eventStart={eventStart}
+        setEventStart={setEventStart}
+        eventEnd={eventEnd}
+        setEventEnd={setEventEnd}
+        eventLocation={eventLocation}
+        setEventLocation={setEventLocation}
+        eventDescription={eventDescription}
+        setEventDescription={setEventDescription}
+        title={title}
+        ctaLabel={ctaLabel}
+        setCtaLabel={setCtaLabel}
+        ctaNote={ctaNote}
+        setCtaNote={setCtaNote}
+        defaultCtaLabel={defaultCtaLabel}
+        defaultCtaNote={defaultCtaNote}
+        labelPresets={labelPresets}
+        notePresets={notePresets}
+      />
 
       {/* ========================= Tab: Jadwal ========================= */}
       <ScheduleTab
@@ -2004,174 +1151,3 @@ export function ProductEditForm({
  * moment the "4" lands. So the draft is only committed once it reads as an
  * in-range number, and on blur.
  */
-function CutPercentField({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (n: number) => void;
-}) {
-  const [draft, setDraft] = useState(String(value));
-
-  useEffect(() => {
-    setDraft(String(value));
-  }, [value]);
-
-  function handleDraft(raw: string) {
-    setDraft(raw);
-    const n = Number(raw.trim());
-    if (
-      raw.trim() !== "" &&
-      Number.isInteger(n) &&
-      n >= MIN_CUT_PERCENT &&
-      n <= MAX_CUT_PERCENT
-    ) {
-      onChange(n);
-    }
-  }
-
-  function commitDraft() {
-    const n = Number(draft.trim());
-    // An empty or nonsense box reverts rather than snapping to the minimum.
-    if (draft.trim() === "" || !Number.isFinite(n)) setDraft(String(value));
-    else onChange(clampCutPercent(n));
-  }
-
-  const step = (delta: number) => onChange(clampCutPercent(value + delta));
-
-  return (
-    <div className="space-y-2">
-      <div>
-        <span className="block text-sm font-medium text-foreground">Bagian yang disembunyikan</span>
-        <span className="text-xs text-[var(--muted)]">
-          Pembaca dapat <strong className="text-foreground">{100 - value}%</strong> awal buku.
-        </span>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex flex-wrap gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--background)] p-1">
-          {CUT_PRESETS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onChange(p)}
-              aria-pressed={value === p}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium tabular-nums transition-colors ${
-                value === p
-                  ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                  : "text-[var(--muted)] hover:text-foreground"
-              }`}
-            >
-              {p}%
-            </button>
-          ))}
-        </div>
-
-        <div className="inline-flex items-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)]">
-          <button
-            type="button"
-            onClick={() => step(-5)}
-            disabled={value <= MIN_CUT_PERCENT}
-            aria-label="Kurangi 5%"
-            className="px-3 py-2 text-sm font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground disabled:opacity-40"
-          >
-            −
-          </button>
-          <input
-            id="cut-percent"
-            type="number"
-            inputMode="numeric"
-            min={MIN_CUT_PERCENT}
-            max={MAX_CUT_PERCENT}
-            value={draft}
-            onChange={(e) => handleDraft(e.target.value)}
-            onBlur={commitDraft}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                commitDraft();
-              }
-            }}
-            aria-label="Persen yang disembunyikan"
-            className="w-14 border-x border-[var(--border)] bg-transparent py-2 text-center text-base sm:text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--primary)]/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-          />
-          <button
-            type="button"
-            onClick={() => step(5)}
-            disabled={value >= MAX_CUT_PERCENT}
-            aria-label="Tambah 5%"
-            className="px-3 py-2 text-sm font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--card)] hover:text-foreground disabled:opacity-40"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <p className="text-xs text-[var(--muted)]">
-        Dihitung dari panjang teks, lalu dibulatkan ke batas bab terdekat — preview tidak pernah
-        berhenti di tengah kalimat. Bab terakhir selalu ditahan. Rentang {MIN_CUT_PERCENT}–
-        {MAX_CUT_PERCENT}%.
-      </p>
-    </div>
-  );
-}
-
-function CheckItem({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-2">
-      <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--primary)]" />
-      <span>{children}</span>
-    </li>
-  );
-}
-
-/* --------------------------------- Icons ---------------------------------- */
-
-function FileTextIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 4H7a2 2 0 01-2-2V6a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" />
-    </svg>
-  );
-}
-
-function ExternalIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-    </svg>
-  );
-}
-
-function TrashIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-    </svg>
-  );
-}
-
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
-function ImageIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  );
-}
-
-function StoreIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l1-5h16l1 5M4 9v10a1 1 0 001 1h14a1 1 0 001-1V9M4 9h16M9 20v-6h6v6" />
-    </svg>
-  );
-}

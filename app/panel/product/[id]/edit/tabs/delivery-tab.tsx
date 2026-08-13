@@ -5,7 +5,7 @@ import { PresetTextField } from "../preset-text-field";
 import { BUNDLE_NOTES } from "../bundle-notes";
 
 type RelatedOption = { id: string; title: string; slug: string };
-type DeliverableType = "zip" | "pdf" | "epub";
+import type { DeliverableType } from "../deliverable-type";
 
 /**
  * The Pengiriman tab: the file a buyer actually receives, and the bundle it can
