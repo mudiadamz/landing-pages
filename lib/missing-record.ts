@@ -102,5 +102,24 @@ export async function isMissingRecord(pathname: string, host: string): Promise<b
     return !exists;
   }
 
+  const checkout = /^\/checkout\/([^/]+)\/?$/.exec(pathname);
+  if (checkout) {
+    const slug = decodeURIComponent(checkout[1]).toLowerCase();
+    if (!SLUG.test(slug)) return true;
+
+    // Existence ONLY — never publish state. An unpublished product is still
+    // reachable by its owner (see getLandingPageForCheckout), so a guard that
+    // 404'd drafts would lock a seller out of previewing their own page.
+    // Products are global by slug, so no site lookup is needed here.
+    const exists = await ask(
+      `${REST}/lp_landing_pages?select=id&slug=eq.${encodeURIComponent(slug)}&limit=1`,
+      `product:${slug}`,
+    );
+    return !exists;
+  }
+
+  // /preview/[slug] is deliberately absent. It is the surface an ad clicks into,
+  // so it carries the strictest load budget in the app, and a lookup here would
+  // be paid by every visitor to buy one 404 for the few who mistype a URL.
   return false;
 }
