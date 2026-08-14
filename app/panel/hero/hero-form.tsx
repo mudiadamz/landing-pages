@@ -119,7 +119,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
         </div>
         <div>
           <label className={labelCls}>{t("panel.heroCta2Link")}</label>
-          <input className={inputCls} value={hero.secondaryHref} onChange={(e) => set("secondaryHref", e.target.value)} placeholder="#templates atau https://…" />
+          <input className={inputCls} value={hero.secondaryHref} onChange={(e) => set("secondaryHref", e.target.value)} placeholder={t("panel.heroLinkPlaceholder")} />
         </div>
       </div>
 

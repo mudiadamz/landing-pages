@@ -23,6 +23,7 @@ import { useT } from "@/lib/i18n/client";
  * the state is still legible without opening anything.
  */
 export function ExcludedIps({ initial, myIp }: { initial: ExcludedIp[]; myIp: string | null }) {
+  const t = useT();
   const [rows, setRows] = useState<ExcludedIp[]>(initial);
   const [open, setOpen] = useState(false);
 
@@ -43,7 +44,7 @@ export function ExcludedIps({ initial, myIp }: { initial: ExcludedIp[]; myIp: st
             d="M18.364 5.636a9 9 0 010 12.728m0 0L5.636 5.636m12.728 12.728A9 9 0 015.636 5.636"
           />
         </svg>
-        IP dikecualikan
+        {t("analytics.excludedIps")}
         <span className="rounded bg-[var(--background)] px-1.5 py-0.5 tabular-nums">
           {rows.length}
         </span>
@@ -150,12 +151,12 @@ function ExcludedIpsDialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="IP dikecualikan"
+        aria-label={t("analytics.excludedIps")}
         className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
           <div>
-            <h2 className="text-base font-semibold text-foreground">IP dikecualikan</h2>
+            <h2 className="text-base font-semibold text-foreground">{t("analytics.excludedIps")}</h2>
             <p className="mt-0.5 text-xs text-[var(--muted)]">
               Kunjungan dari alamat ini tidak dihitung — berguna saat kamu membuka situs
               sendiri <strong className="text-foreground">tanpa login</strong>. Menambahkan IP
@@ -165,7 +166,7 @@ function ExcludedIpsDialog({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label={t("common.close")}
             className="-mr-1.5 -mt-1.5 rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

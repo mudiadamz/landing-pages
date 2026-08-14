@@ -182,10 +182,10 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
 
       {tab === "overview" && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <Card label="Sesi" value={String(overview.sessions)} />
+          <Card label={t("analytics.sessions")} value={String(overview.sessions)} />
           <Card label={t("analytics.uniqueVisitors")} value={String(overview.visitors)} />
-          <Card label="Login" value={String(overview.loggedIn)} sub={`${overview.anon} anonim`} />
-          <Card label="Pageview" value={String(overview.pageviews)} />
+          <Card label={t("analytics.logins")} value={String(overview.loggedIn)} sub={`${overview.anon} anonim`} />
+          <Card label={t("analytics.pageviews")} value={String(overview.pageviews)} />
           <Card label={t("analytics.avgDuration")} value={fmtDuration(overview.avgDurationMs)} />
           <Card
             label={t("analytics.pageviewsPerSession")}
@@ -412,14 +412,14 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)]">
-                    <SortTh label="Waktu" col="time" sort={sort} onSort={sortBy} />
+                    <SortTh label={t("analytics.time")} col="time" sort={sort} onSort={sortBy} />
                     <Th>{t("analytics.visitor")}</Th>
-                    <SortTh right label="Durasi" col="duration" sort={sort} onSort={sortBy} />
+                    <SortTh right label={t("analytics.duration")} col="duration" sort={sort} onSort={sortBy} />
                     <Th>Lokasi</Th>
                     <Th>Sumber</Th>
                     <Th>{t("analytics.enteredVia")}</Th>
                     <Th>Perangkat</Th>
-                    <SortTh right label="Hal." col="pageviews" sort={sort} onSort={sortBy} />
+                    <SortTh right label={t("analytics.pagesShort")} col="pageviews" sort={sort} onSort={sortBy} />
                   </tr>
                 </thead>
                 <tbody>

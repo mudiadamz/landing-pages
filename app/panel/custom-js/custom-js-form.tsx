@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { updateCustomJs } from "@/lib/actions/site-settings";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -22,6 +23,7 @@ function SubmitButton() {
 }
 
 export function CustomJsForm({ initialScript, siteId }: { initialScript: string; siteId: string }) {
+  const t = useT();
   const [state, formAction] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, formData: FormData) => {
       const script = (formData.get("script") as string) ?? "";
@@ -41,7 +43,7 @@ export function CustomJsForm({ initialScript, siteId }: { initialScript: string;
         name="script"
         value={script}
         onChange={(e) => setScript(e.target.value)}
-        placeholder="// Contoh: console.log('hello');"
+        placeholder={t("panel.customJsPlaceholder")}
         rows={12}
         className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-base sm:text-sm font-mono text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         spellCheck={false}

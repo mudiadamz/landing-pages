@@ -165,7 +165,7 @@ function Dialog({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label={t("common.close")}
             className="-mr-1.5 -mt-1.5 rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

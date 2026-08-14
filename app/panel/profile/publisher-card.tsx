@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { PublisherStatus, Role } from "@/lib/profile-utils";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Publisher status at a glance, on the profile page.
@@ -44,7 +46,7 @@ function fmt(d: string | null): string {
   }
 }
 
-export function PublisherCard({
+export async function PublisherCard({
   role,
   status,
   info,
@@ -53,6 +55,7 @@ export function PublisherCard({
   status: PublisherStatus;
   info: PublisherInfo;
 }) {
+  const t = translator(await requestLocale());
   const isPublisher = role === "publisher" || role === "admin";
   const applied = status !== "none" || isPublisher;
   const active = stepIndex(status, role);
@@ -79,7 +82,7 @@ export function PublisherCard({
 
       {/* Stepper — three states, so a bar communicates more than a sentence. */}
       {applied && (
-        <ol className="flex items-center gap-1.5" aria-label="Status pengajuan">
+        <ol className="flex items-center gap-1.5" aria-label={t("panel.applicationStatus")}>
           {STEPS.map((s, i) => {
             const done = i <= active;
             const failed = rejected && i === 1;
@@ -114,23 +117,23 @@ export function PublisherCard({
       {applied ? (
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
           <Item
-            label="Nama toko"
+            label={t("panel.shopName")}
             value={info.displayName}
             note="Nama ini yang dilihat pembeli."
           />
           <Item
-            label="Nama sesuai KTP"
+            label={t("panel.legalName")}
             value={info.realName}
             note="Tidak pernah ditampilkan ke pembeli."
           />
           <Item
-            label="Alamat tempat tinggal"
+            label={t("panel.address")}
             value={info.address}
             note="Hanya dilihat admin."
             multiline
           />
           <Item
-            label="Rekening pencairan"
+            label={t("panel.payoutAccount")}
             value={
               info.bankName || info.bankAccount
                 ? `${info.bankName ?? "—"} · ${info.bankAccount ?? "—"}`
@@ -139,7 +142,7 @@ export function PublisherCard({
             note={info.bankHolder ? `a.n. ${info.bankHolder}` : undefined}
           />
           <Item
-            label="Ketentuan publisher"
+            label={t("content.publisherTerms")}
             value={info.termsAcceptedAt ? `Disetujui ${fmt(info.termsAcceptedAt)}` : null}
             note={info.termsAcceptedAt ? undefined : "Pengajuan lama, sebelum ketentuan ada."}
           />

@@ -427,7 +427,7 @@ function FileRow({ file: f, depth, ctx }: { file: StorageFile; depth: number; ct
           type="button"
           onClick={() => ctx.setConfirm(key)}
           title={t("panel.deleteFile")}
-          aria-label="Hapus file"
+          aria-label={t("panel.deleteFile")}
           className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
         >
           <TrashIcon className="h-4 w-4" />

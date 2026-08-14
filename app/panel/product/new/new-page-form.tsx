@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createLandingPage, type LandingPageCategory } from "@/lib/actions/landing-pages";
 import { slugFromTitle, isValidSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 const DEFAULT_HTML = `<!DOCTYPE html>
 <html lang="id">
@@ -20,6 +21,7 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 </html>`;
 
 export function NewPageForm({ categories }: { categories: LandingPageCategory[] }) {
+  const t = useT();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -80,7 +82,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
           id="title"
           name="title"
           type="text"
-          placeholder="Judul produk"
+          placeholder={t("panel.productTitle")}
           required
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
@@ -115,7 +117,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
       </div>
       <div>
         <label htmlFor="category" className="block text-sm font-medium text-foreground mb-1.5">
-          Kategori <span className="text-[var(--muted)] font-normal">(opsional)</span>
+          Kategori <span className="text-[var(--muted)] font-normal">{t("panel.optional")}</span>
         </label>
         <select
           id="category"
@@ -123,7 +125,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
           onChange={(e) => setCategoryId(e.target.value)}
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         >
-          <option value="">— Pilih kategori —</option>
+          <option value="">{t("product.categoryEmpty")}</option>
           {categories
             .filter((c) => !c.parent_id)
             .map((parent) => {

@@ -341,7 +341,7 @@ function NavContent({
 
   return (
     <>
-      <nav aria-label="Menu panel" className="flex flex-col gap-5 py-3">
+      <nav aria-label={t("panel.menu")} className="flex flex-col gap-5 py-3">
         {navGroups.map((group) => {
           const visibleItems = group.items.filter(isVisible);
           if (visibleItems.length === 0) return null;

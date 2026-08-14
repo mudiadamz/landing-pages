@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { createLandingPage } from "@/lib/actions/landing-pages";
 import { slugFromTitle, isValidSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 export function UploadForm() {
+  const t = useT();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,7 +83,7 @@ export function UploadForm() {
           id="title"
           name="title"
           type="text"
-          placeholder="My landing page"
+          placeholder={t("panel.productTitle")}
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
       </div>

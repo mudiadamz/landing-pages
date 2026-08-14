@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { applyAsPublisher } from "@/lib/actions/profiles";
 import { LivePhotoCapture } from "@/components/live-photo-capture";
 import type { PublisherStatus, Role } from "@/lib/profile-utils";
+import { useT } from "@/lib/i18n/client";
 
 const EMPTY = {
   realName: "",
@@ -90,6 +91,7 @@ export function PublisherApplyForm({
   termsHeading: string;
   terms: string[];
 }) {
+  const t = useT();
   const [status, setStatus] = useState<PublisherStatus>(initialStatus);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -181,14 +183,14 @@ export function PublisherApplyForm({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <LivePhotoCapture
-                  label="Foto KTP"
+                  label={t("panel.idPhoto")}
                   hint="Pastikan seluruh kartu terlihat, teks terbaca, tidak silau."
                   facing="environment"
                   value={ktp}
                   onChange={setKtp}
                 />
                 <LivePhotoCapture
-                  label="Foto selfie"
+                  label={t("panel.selfiePhoto")}
                   hint="Wajah terlihat jelas, sambil memegang KTP kalau bisa."
                   facing="user"
                   value={selfie}
@@ -198,23 +200,23 @@ export function PublisherApplyForm({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field
-                  label="Nama lengkap sesuai KTP"
+                  label={t("panel.legalName")}
                   hint="Harus sama persis dengan KTP. Tidak ditampilkan ke pembeli."
                   value={fields.realName}
                   onChange={set("realName")}
-                  placeholder="Nama seperti tertulis di KTP"
+                  placeholder={t("panel.legalNamePlaceholder")}
                 />
                 <Field
-                  label="Nama toko (publisher)"
+                  label={t("panel.shopName")}
                   hint="Nama inilah yang dilihat pembeli. Boleh berbeda dari nama asli."
                   value={fields.displayName}
                   onChange={set("displayName")}
-                  placeholder="Contoh: Studio Senja"
+                  placeholder={t("panel.shopNamePlaceholder")}
                 />
               </div>
 
               <AreaField
-                label="Alamat tempat tinggal saat ini"
+                label={t("panel.address")}
                 hint="Alamat Anda sekarang — boleh berbeda dari alamat di KTP. Hanya dilihat admin."
                 value={fields.address}
                 onChange={set("address")}
@@ -227,9 +229,9 @@ export function PublisherApplyForm({
                   Harus atas nama Anda sendiri. Hanya dilihat admin untuk pembayaran.
                 </p>
                 <div className="mt-2 grid gap-3 sm:grid-cols-3">
-                  <Field label="Nama bank" value={fields.bankName} onChange={set("bankName")} placeholder="BCA, Mandiri, …" />
-                  <Field label="Nama pemilik" value={fields.bankHolder} onChange={set("bankHolder")} placeholder="Sesuai buku rekening" />
-                  <Field label="Nomor rekening" value={fields.bankAccount} onChange={set("bankAccount")} placeholder="1234567890" />
+                  <Field label={t("panel.bankName")} value={fields.bankName} onChange={set("bankName")} placeholder={t("panel.bankNamePlaceholder")} />
+                  <Field label={t("panel.accountHolder")} value={fields.bankHolder} onChange={set("bankHolder")} placeholder={t("panel.accountHolderPlaceholder")} />
+                  <Field label={t("panel.accountNumber")} value={fields.bankAccount} onChange={set("bankAccount")} placeholder="1234567890" />
                 </div>
               </div>
 

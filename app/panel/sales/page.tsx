@@ -5,6 +5,8 @@ import { getCustomers, type CustomerRow } from "@/lib/actions/admin";
 import { CustomerPurchasesButton } from "./customer-purchases";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export const metadata = { title: "Penjualan" };
 
@@ -41,6 +43,7 @@ function formatDate(s: string | null) {
 }
 
 export default async function SalesPage() {
+  const t = translator(await requestLocale());
   const [data, scope] = await Promise.all([getSalesOverview(), panelScope()]);
   if (!data) redirect("/panel");
 
@@ -78,16 +81,17 @@ export default async function SalesPage() {
   );
 }
 
-function Summary({ data }: { data: SalesOverview }) {
+async function Summary({ data }: { data: SalesOverview }) {
+  const t = translator(await requestLocale());
   return (
     <section className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
       <Card
-        label="Pendapatan"
+        label={t("panel.dashRevenue")}
         value={idr(data.revenueTotal)}
         sub={`${idr(data.revenue30)} · 30 hari terakhir`}
       />
       <Card
-        label="Terjual"
+        label={t("panel.dashSold")}
         value={
           <>
             {nf(data.salesTotal)}
@@ -103,14 +107,14 @@ function Summary({ data }: { data: SalesOverview }) {
         }
         sub={`${nf(data.sales30)} · 30 hari terakhir`}
       />
-      <Card label="Produk" value={nf(data.productCount)} />
+      <Card label={t("analytics.product")} value={nf(data.productCount)} />
       {data.scope === "global" ? (
-        <Card label="Pembeli" value={nf(data.buyerCount)} />
+        <Card label={t("panel.dashBuyers")} value={nf(data.buyerCount)} />
       ) : (
         <Card
-          label="Akses aktif"
+          label={t("panel.dashActiveAccess")}
           value={nf(data.salesTotal - data.salesRevoked)}
-          sub="terjual dikurangi yang dicabut"
+          sub={t("panel.soldMinusRevoked")}
         />
       )}
     </section>

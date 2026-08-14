@@ -26,10 +26,13 @@ export default async function HeroSettingsPage() {
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
         <p className="text-sm text-[var(--muted)] mb-6">
-          Atur konten bagian hero di homepage. Gunakan{" "}
-          <code className="px-1 rounded bg-[var(--accent-subtle)] text-foreground">*teks*</code> untuk sorotan hijau dan{" "}
-          <code className="px-1 rounded bg-[var(--accent-subtle)] text-foreground">~teks~</code> untuk aksen tulisan tangan.
-          Tulis <code className="px-1 rounded bg-[var(--accent-subtle)] text-foreground">{"{count}"}</code> pada badge untuk menampilkan jumlah produk otomatis.
+          {t("panel.heroIntro")}{" "}
+          <code className="px-1 rounded bg-[var(--accent-subtle)] text-foreground">{t("panel.heroMarkHighlight")}</code>{" "}
+          {t("panel.heroMarkHighlightWhat")}{" "}
+          <code className="px-1 rounded bg-[var(--accent-subtle)] text-foreground">{t("panel.heroMarkScript")}</code>{" "}
+          {t("panel.heroMarkScriptWhat")}{" "}
+          <code className="px-1 rounded bg-[var(--accent-subtle)] text-foreground">{"{count}"}</code>{" "}
+          {t("panel.heroMarkCount")}
         </p>
         {/* keyed on the site so switching resets the form to that site's values
             instead of keeping the previous one's in state */}

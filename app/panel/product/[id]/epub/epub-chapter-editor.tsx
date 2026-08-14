@@ -12,6 +12,7 @@ import {
 import type { EpubChapterInfo, ChapterAsset } from "@/lib/epub-edit";
 import { Button } from "@/components/ui/button";
 import { RichChapterEditor, type RichEditorHandle } from "./rich-chapter-editor";
+import { useT } from "@/lib/i18n/client";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -90,6 +91,7 @@ export function EpubChapterEditor({
   hasPreview: boolean;
   hasDeliverable: boolean;
 }) {
+  const t = useT();
   const dark = useIsDark();
   const [target, setTarget] = useState<EpubTarget>(
     hasDeliverable ? "deliverable" : "preview",
@@ -258,8 +260,8 @@ export function EpubChapterEditor({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <Link
           href={`/panel/product/${pageId}/edit`}
-          title="Kembali ke produk"
-          aria-label="Kembali ke produk"
+          title={t("panel.backToProduct")}
+          aria-label={t("panel.backToProduct")}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
@@ -290,7 +292,7 @@ export function EpubChapterEditor({
         {/* Chapter list */}
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-2">
           {loadingList ? (
-            <p className="p-3 text-sm text-[var(--muted)]">Membaca file EPUB…</p>
+            <p className="p-3 text-sm text-[var(--muted)]">{t("panel.readingEpub")}</p>
           ) : listError ? (
             <p className="p-3 text-sm text-red-600 dark:text-red-400">{listError}</p>
           ) : (
@@ -341,7 +343,7 @@ export function EpubChapterEditor({
             </div>
           ) : loadingSource || !loaded ? (
             <div className="flex h-[60vh] min-h-[280px] items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--background)]">
-              <p className="text-sm text-[var(--muted)]">Membuka bab…</p>
+              <p className="text-sm text-[var(--muted)]">{t("panel.openingChapter")}</p>
             </div>
           ) : (
             <>

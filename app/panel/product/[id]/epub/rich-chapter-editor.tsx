@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChapterAsset } from "@/lib/epub-edit";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * WYSIWYG editor for one EPUB chapter.
@@ -78,6 +79,7 @@ export function RichChapterEditor({
   /** Lets the parent pull the current markup at save time. */
   handleRef: React.RefObject<RichEditorHandle | null>;
 }) {
+  const t = useT();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -219,33 +221,33 @@ export function RichChapterEditor({
   return (
     <div className="overflow-hidden rounded-lg border border-[var(--border)]">
       <div className="flex flex-wrap items-center gap-1 border-b border-[var(--border)] bg-[var(--card)] p-1.5">
-        <ToolButton onClick={() => exec("bold")} title="Tebal (Ctrl+B)">
+        <ToolButton onClick={() => exec("bold")} title={t("editor.boldKey")}>
           <span className="font-bold">B</span>
         </ToolButton>
-        <ToolButton onClick={() => exec("italic")} title="Miring (Ctrl+I)">
+        <ToolButton onClick={() => exec("italic")} title={t("editor.italicKey")}>
           <span className="font-serif italic">I</span>
         </ToolButton>
         <Divider />
-        <ToolButton onClick={() => block("p")} title="Paragraf">
+        <ToolButton onClick={() => block("p")} title={t("content.paragraphs")}>
           ¶
         </ToolButton>
-        <ToolButton onClick={() => block("h1")} title="Judul 1">
+        <ToolButton onClick={() => block("h1")} title={t("editor.heading1")}>
           H1
         </ToolButton>
-        <ToolButton onClick={() => block("h2")} title="Judul 2">
+        <ToolButton onClick={() => block("h2")} title={t("editor.heading2")}>
           H2
         </ToolButton>
-        <ToolButton onClick={() => block("blockquote")} title="Kutipan">
+        <ToolButton onClick={() => block("blockquote")} title={t("editor.quote")}>
           ❝
         </ToolButton>
         <Divider />
-        <ToolButton onClick={() => exec("insertUnorderedList")} title="Daftar titik">
+        <ToolButton onClick={() => exec("insertUnorderedList")} title={t("editor.bulletList")}>
           •—
         </ToolButton>
-        <ToolButton onClick={() => exec("insertOrderedList")} title="Daftar angka">
+        <ToolButton onClick={() => exec("insertOrderedList")} title={t("editor.numberedList")}>
           1.
         </ToolButton>
-        <ToolButton onClick={() => exec("insertHorizontalRule")} title="Garis pemisah">
+        <ToolButton onClick={() => exec("insertHorizontalRule")} title={t("editor.divider")}>
           —
         </ToolButton>
         <Divider />
@@ -254,21 +256,21 @@ export function RichChapterEditor({
             const url = window.prompt("URL tautan:");
             if (url) exec("createLink", url);
           }}
-          title="Tautan"
+          title={t("panel.link")}
         >
           🔗
         </ToolButton>
-        <ToolButton onClick={() => exec("unlink")} title="Hapus tautan">
+        <ToolButton onClick={() => exec("unlink")} title={t("editor.unlink")}>
           ⛓
         </ToolButton>
-        <ToolButton onClick={() => exec("removeFormat")} title="Bersihkan format">
+        <ToolButton onClick={() => exec("removeFormat")} title={t("editor.clearFormat")}>
           ⌫
         </ToolButton>
         <Divider />
-        <ToolButton onClick={() => exec("undo")} title="Undo (Ctrl+Z)">
+        <ToolButton onClick={() => exec("undo")} title={t("editor.undo")}>
           ↶
         </ToolButton>
-        <ToolButton onClick={() => exec("redo")} title="Redo">
+        <ToolButton onClick={() => exec("redo")} title={t("editor.redo")}>
           ↷
         </ToolButton>
       </div>
@@ -276,12 +278,12 @@ export function RichChapterEditor({
       <div className="relative bg-white dark:bg-[#17171a]">
         <iframe
           ref={frameRef}
-          title="Editor bab"
+          title={t("editor.chapterEditor")}
           className="block h-[60vh] min-h-[280px] w-full border-0"
         />
         {!ready && (
           <div className="absolute inset-0 flex items-center justify-center bg-[var(--background)]">
-            <p className="text-sm text-[var(--muted)]">Menyiapkan editor…</p>
+            <p className="text-sm text-[var(--muted)]">{t("editor.preparing")}</p>
           </div>
         )}
       </div>

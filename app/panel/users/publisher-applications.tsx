@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { approvePublisher, rejectPublisher, type PublisherApplication } from "@/lib/actions/admin";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Admin review queue for publisher applications.
@@ -17,6 +18,7 @@ import { approvePublisher, rejectPublisher, type PublisherApplication } from "@/
  * someone down without saying why just produces the same application again.
  */
 export function PublisherApplications({ initial }: { initial: PublisherApplication[] }) {
+  const t = useT();
   const [apps, setApps] = useState<PublisherApplication[]>(initial);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,18 +77,18 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                 </p>
                 <p className="truncate text-sm text-[var(--muted)]">{a.email || "—"}</p>
                 <dl className="mt-2 grid gap-x-4 gap-y-0.5 text-xs sm:grid-cols-2">
-                  <Row label="Nama toko" value={a.display_name} />
+                  <Row label={t("panel.shopName")} value={a.display_name} />
                   <Row
-                    label="Rekening"
+                    label={t("panel.payoutAccount")}
                     value={
                       a.bank_name || a.bank_account
                         ? `${a.bank_name ?? "—"} · ${a.bank_account ?? "—"}`
                         : null
                     }
                   />
-                  <Row label="Nama sesuai KTP" value={a.real_name} />
-                  <Row label="Alamat" value={a.address} />
-                  <Row label="Pemilik rekening" value={a.bank_holder} />
+                  <Row label={t("panel.legalName")} value={a.real_name} />
+                  <Row label={t("panel.address")} value={a.address} />
+                  <Row label={t("panel.accountHolder")} value={a.bank_holder} />
                 </dl>
                 <p className="mt-1.5 text-[11px]">
                   {a.terms_accepted_at ? (
@@ -125,8 +127,8 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
 
             {/* Identity photos — the reason this queue exists. */}
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <KycPhoto label="KTP" url={a.ktp_url} />
-              <KycPhoto label="Selfie" url={a.selfie_url} />
+              <KycPhoto label={t("panel.idPhoto")} url={a.ktp_url} />
+              <KycPhoto label={t("panel.selfiePhoto")} url={a.selfie_url} />
             </div>
 
             {rejecting === a.id && (
@@ -143,7 +145,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                   onChange={(e) => setNote(e.target.value)}
                   rows={2}
                   maxLength={500}
-                  placeholder="mis. Foto KTP buram / nama tidak sesuai / selfie tidak jelas."
+                  placeholder={t("panel.rejectReasonPlaceholder")}
                   className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                 />
                 <div className="flex flex-wrap items-center gap-2">

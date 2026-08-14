@@ -4,6 +4,7 @@ import { useState } from "react";
 import { submitReview } from "@/lib/actions/reviews";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   landingPageId: string;
@@ -18,6 +19,7 @@ export function ReviewForm({
   existingText,
   onDone,
 }: Props) {
+  const t = useT();
   const router = useRouter();
   const [rating, setRating] = useState(existingRating || 0);
   const [hovered, setHovered] = useState(0);
@@ -77,7 +79,7 @@ export function ReviewForm({
 
       <div>
         <label htmlFor="review-text" className="block text-sm font-medium text-foreground mb-1.5">
-          Review <span className="text-[var(--muted)] font-normal">(opsional)</span>
+          Review <span className="text-[var(--muted)] font-normal">{t("panel.optional")}</span>
         </label>
         <textarea
           id="review-text"
@@ -85,7 +87,7 @@ export function ReviewForm({
           onChange={(e) => setText(e.target.value)}
           rows={3}
           maxLength={500}
-          placeholder="Ceritakan pengalamanmu menggunakan landing page ini..."
+          placeholder={t("panel.reviewPlaceholder")}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 resize-none"
         />
         <p className="mt-1 text-xs text-[var(--muted)] text-right">{text.length}/500</p>

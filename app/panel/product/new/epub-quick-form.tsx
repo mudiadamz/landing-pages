@@ -7,6 +7,7 @@ import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 import { uploadNewEpubClient } from "@/lib/upload-client";
 import { createProductFromEpub } from "@/lib/actions/epub-product";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The short way in, for a book.
@@ -20,6 +21,7 @@ import type { LandingPageCategory } from "@/lib/actions/landing-pages";
  * that. Only the resulting path is submitted.
  */
 export function EpubQuickForm({ categories }: { categories: LandingPageCategory[] }) {
+  const t = useT();
   const router = useRouter();
 
   const [epubPath, setEpubPath] = useState("");
@@ -81,7 +83,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <FileUploadCard
-        label="File EPUB"
+        label={t("panel.epubFile")}
         hint="Judul, sampul, deskripsi dan preview diambil otomatis dari file ini. Maks 10 MB."
         accept="application/epub+zip,.epub"
         badge="EPUB"
@@ -109,7 +111,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
           onChange={(e) => setCategoryId(e.target.value)}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
         >
-          <option value="">— Tanpa kategori —</option>
+          <option value="">{t("panel.noCategory")}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -153,7 +155,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
         Otomatis dari EPUB: <strong className="text-foreground">judul</strong>,{" "}
         <strong className="text-foreground">sampul</strong>,{" "}
         <strong className="text-foreground">deskripsi</strong>, dan{" "}
-        <strong className="text-foreground">preview 30% isi buku</strong>. Semuanya masih
+        <strong className="text-foreground">{t("panel.epubQuickPreview")}</strong>. Semuanya masih
         bisa diubah di form lengkap setelah ini.
       </div>
 

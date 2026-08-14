@@ -4,6 +4,8 @@ import { getSiteContent } from "@/lib/actions/site-settings";
 import { normalizeRole, normalizePublisherStatus } from "@/lib/profile-utils";
 import { PublisherApplyForm } from "./apply-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export const metadata = { title: "Jadi publisher" };
 
@@ -17,6 +19,7 @@ export const metadata = { title: "Jadi publisher" };
  * in.
  */
 export default async function PublisherPage() {
+  const t = translator(await requestLocale());
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,7 +43,7 @@ export default async function PublisherPage() {
       <PanelPageHeader
         backHref="/panel/profile"
         backLabel="Kembali ke profil"
-        title="Jadi publisher"
+        title={t("panel.becomePublisher")}
       />
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">

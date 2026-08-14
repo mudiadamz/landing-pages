@@ -3,6 +3,8 @@ import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById } from "@/lib/actions/landing-pages";
 import { EpubChapterEditor } from "./epub-chapter-editor";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export const metadata = { title: "Edit isi EPUB" };
 
@@ -11,6 +13,7 @@ export default async function EpubChaptersPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = translator(await requestLocale());
   if (!(await canSellProducts())) redirect("/panel");
 
   const { id } = await params;
@@ -39,7 +42,7 @@ export default async function EpubChaptersPage({
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <BackButton id={id} />
+          <BackButton id={id} label={t("panel.backToProduct")} />
           <h1 className="text-lg font-semibold tracking-tight">Edit isi EPUB</h1>
         </div>
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
@@ -69,12 +72,12 @@ export default async function EpubChaptersPage({
   );
 }
 
-function BackButton({ id }: { id: string }) {
+function BackButton({ id, label }: { id: string; label: string }) {
   return (
     <Link
       href={`/panel/product/${id}/edit`}
-      title="Kembali ke produk"
-      aria-label="Kembali ke produk"
+      title={label}
+      aria-label={label}
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
     >
       <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>

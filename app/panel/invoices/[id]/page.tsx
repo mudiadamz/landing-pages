@@ -4,6 +4,7 @@ import { getProfile } from "@/lib/actions/profiles";
 import { getInvoiceById } from "@/lib/actions/purchases";
 import { PrintButton } from "./print-button";
 import { translator } from "@/lib/i18n";
+import { SUPPORT_CONTACT } from "@/lib/constants";
 import { requestLocale } from "@/lib/i18n/request";
 
 type Props = { params: Promise<{ id: string }> };
@@ -60,7 +61,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
           <div className="text-sm sm:text-right">
             <p className="font-semibold text-foreground">ADM.UIUX</p>
             <p className="text-[var(--muted)]">Landing Page & Digital Assets</p>
-            <p className="text-[var(--muted)]">admin@admuiux.com</p>
+            <p className="text-[var(--muted)]">{SUPPORT_CONTACT.email}</p>
           </div>
         </div>
 

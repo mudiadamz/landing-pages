@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * A small rich-text editor: toolbar plus a contentEditable surface.
@@ -25,6 +26,7 @@ export function RichEditor({
   onDirty?: () => void;
   editorRef: React.RefObject<RichEditorHandle | null>;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("https://");
@@ -99,21 +101,21 @@ export function RichEditor({
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)]">
       <div className="flex flex-wrap items-center gap-0.5 border-b border-[var(--border)] p-1.5">
-        <Btn label="B" title="Tebal" onClick={() => cmd("bold")} />
-        <Btn label="I" title="Miring" onClick={() => cmd("italic")} />
-        <Btn label="U" title="Garis bawah" onClick={() => cmd("underline")} />
+        <Btn label="B" title={t("editor.bold")} onClick={() => cmd("bold")} />
+        <Btn label="I" title={t("editor.italic")} onClick={() => cmd("italic")} />
+        <Btn label="U" title={t("editor.underline")} onClick={() => cmd("underline")} />
         <span className="mx-1 h-5 w-px bg-[var(--border)]" />
-        <Btn label="H2" title="Judul" wide onClick={() => cmd("formatBlock", "<h2>")} />
-        <Btn label="H3" title="Sub-judul" wide onClick={() => cmd("formatBlock", "<h3>")} />
-        <Btn label="¶" title="Paragraf" onClick={() => cmd("formatBlock", "<p>")} />
+        <Btn label="H2" title={t("panel.title")} wide onClick={() => cmd("formatBlock", "<h2>")} />
+        <Btn label="H3" title={t("editor.subheading")} wide onClick={() => cmd("formatBlock", "<h3>")} />
+        <Btn label="¶" title={t("content.paragraphs")} onClick={() => cmd("formatBlock", "<p>")} />
         <span className="mx-1 h-5 w-px bg-[var(--border)]" />
-        <Btn label="•" title="Daftar" onClick={() => cmd("insertUnorderedList")} />
-        <Btn label="1." title="Daftar bernomor" wide onClick={() => cmd("insertOrderedList")} />
-        <Btn label="❝" title="Kutipan" onClick={() => cmd("formatBlock", "<blockquote>")} />
+        <Btn label="•" title={t("editor.bulletList")} onClick={() => cmd("insertUnorderedList")} />
+        <Btn label="1." title={t("editor.numberedList")} wide onClick={() => cmd("insertOrderedList")} />
+        <Btn label="❝" title={t("editor.quote")} onClick={() => cmd("formatBlock", "<blockquote>")} />
         <span className="mx-1 h-5 w-px bg-[var(--border)]" />
-        <Btn label="🔗" title="Tautan" onClick={openLink} />
-        <Btn label="⛓" title="Hapus tautan" onClick={() => cmd("unlink")} />
-        <Btn label="⌫" title="Hapus format" wide onClick={() => cmd("removeFormat")} />
+        <Btn label="🔗" title={t("panel.link")} onClick={openLink} />
+        <Btn label="⛓" title={t("editor.unlink")} onClick={() => cmd("unlink")} />
+        <Btn label="⌫" title={t("editor.clearFormat")} wide onClick={() => cmd("removeFormat")} />
       </div>
 
       {linkOpen && (
@@ -153,7 +155,7 @@ export function RichEditor({
         onInput={onDirty}
         role="textbox"
         aria-multiline="true"
-        aria-label="Isi halaman"
+        aria-label={t("editor.pageBody")}
         className="page-editor min-h-[22rem] w-full px-4 py-3 text-base leading-relaxed text-foreground outline-none"
       />
     </div>

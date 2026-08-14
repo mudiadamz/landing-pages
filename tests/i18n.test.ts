@@ -67,7 +67,6 @@ describe("dictionary integrity", () => {
   const NOT_YET_CONVERTED = [
     "analytics.entryPage",
     "analytics.noUtm",
-    "analytics.sessions",
     "checkout.buyNow",
     "checkout.getFree",
     "common.all",
