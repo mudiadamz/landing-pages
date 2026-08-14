@@ -29,7 +29,7 @@ import {
   EPUB_MARGIN_MAX,
 } from "@/lib/epub-font";
 import { useChromeHidden } from "@/lib/immersive";
-import { t } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translator, type Locale } from "@/lib/i18n";
 
 /** Minimal shape of the (non-standard but widely supported) install prompt event. */
 type BeforeInstallPromptEvent = Event & {
@@ -63,6 +63,8 @@ type Props = {
   pageId?: string;
   liked?: boolean;
   likeCount?: number;
+  /** Storefront language. A client component cannot resolve the site itself. */
+  locale?: Locale;
   /** When true (EPUB preview), the menu shows an EPUB font-size control. */
   epub?: boolean;
 };
@@ -78,7 +80,6 @@ export function ProductActionsMenu({
   viewCount,
   variant = "inline",
   backHref,
-  backLabel = "Kembali",
   slug,
   page = "checkout",
   isLoggedIn,
@@ -87,7 +88,11 @@ export function ProductActionsMenu({
   liked: likedInitial = false,
   likeCount: likeCountInitial = 0,
   epub = false,
+  locale = DEFAULT_LOCALE,
+  backLabel,
 }: Props) {
+  const t = translator(locale);
+  const back = backLabel ?? t("common.back");
   const router = useRouter();
   const { dark, toggle } = useTheme();
 
@@ -615,8 +620,8 @@ export function ProductActionsMenu({
           <button
             type="button"
             onClick={() => router.push(backHref)}
-            aria-label={backLabel}
-            title={backLabel}
+            aria-label={back}
+            title={back}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-[var(--card)]/40 text-foreground shadow-lg ring-1 ring-black/5 backdrop-blur-md transition-all hover:bg-white/10 active:scale-95"
           >
             <ArrowLeftIcon className="h-4 w-4" />

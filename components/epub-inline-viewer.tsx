@@ -20,7 +20,7 @@ import {
   readEpubMargin,
   type EpubAlign,
 } from "@/lib/epub-font";
-import { t } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translator, type Locale } from "@/lib/i18n";
 
 const IMG_MIME: Record<string, string> = {
   jpg: "image/jpeg",
@@ -235,6 +235,7 @@ export default function EpubInlineViewer({
   textEndpoint,
   version,
   storageKey,
+  locale = DEFAULT_LOCALE,
 }: {
   url: string;
   /** When set, fetch pre-unzipped chapters from the server (much faster). */
@@ -246,7 +247,10 @@ export default function EpubInlineViewer({
   title?: string;
   /** Reserved for future scroll-position memory. */
   storageKey?: string;
+  /** Storefront language, for the two load-failure messages. */
+  locale?: Locale;
 }) {
+  const t = translator(locale);
   const contentRef = useRef<HTMLDivElement>(null);
   const blobsRef = useRef<string[]>([]);
   const [fontPct, setFontPct] = useState<number>(readEpubFont);

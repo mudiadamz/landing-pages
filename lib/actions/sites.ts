@@ -12,6 +12,7 @@ import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { paletteFromKey } from "@/lib/palette";
+import { normalizeLocale } from "@/lib/i18n";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brandMaxBytes, iconShapeError, readPngSize, sniffBrandImage } from "@/lib/site-brand";
 import { readWebpHeader } from "@/lib/webp";
@@ -54,6 +55,8 @@ export type SiteProfileInput = {
   categoryIds: string[];
   template: string;
   palette: string;
+  /** UI language for this storefront. Anything unknown falls back to Indonesian. */
+  locale: string;
   /** Public URLs from uploadSiteBrandImage. Empty string clears back to the default. */
   logoUrl: string;
   iconUrl: string;
@@ -368,8 +371,8 @@ export async function updateSiteDomain(
 }
 
 /**
- * The content half: name, tagline, search snippet, logo, icon, template, palette and
- * which slice of the catalog this storefront shows.
+ * The content half: name, tagline, search snippet, logo, icon, template, palette,
+ * language and which slice of the catalog this storefront shows.
  *
  * Never touches `host` or `active`, so saving the copy cannot take a domain down.
  */
@@ -390,6 +393,7 @@ export async function updateSiteProfile(
       category_ids: input.categoryIds,
       template: resolveTemplate(input.template).key,
       palette: paletteFromKey(input.palette).preset,
+      locale: normalizeLocale(input.locale),
       logo_url: input.logoUrl?.trim() || null,
       icon_url: input.iconUrl?.trim() || null,
       updated_at: new Date().toISOString(),

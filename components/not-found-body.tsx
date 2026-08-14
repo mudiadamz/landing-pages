@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { t } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translator, type Locale } from "@/lib/i18n";
 
 /**
  * The 404 body. One component, two mounts: app/not-found.tsx (for whatever Next
  * routes there) and /not-found-page, which the proxy rewrites to when it knows a
  * record is missing — that rewrite is what carries a real 404 status.
  */
-export function NotFoundBody() {
+export function NotFoundBody({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
+  const t = translator(locale);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-16 text-center text-foreground">
       <p className="font-mono text-sm tracking-[0.3em] text-[var(--muted)]">{t("notFound.code")}</p>

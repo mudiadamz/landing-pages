@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listingHref } from "./listing-url";
-import { t } from "@/lib/i18n";
+import { translator, type Locale } from "@/lib/i18n";
 
 /**
  * Prev / next for the stack, with the page count between them.
@@ -20,13 +20,16 @@ export function Pager({
   query,
   sort,
   categories,
+  locale,
 }: {
   page: number;
   pageCount: number;
   query?: string;
   sort?: string;
   categories: string[];
+  locale: Locale;
 }) {
+  const t = translator(locale);
   if (pageCount <= 1) return null;
 
   const href = (p: number) => listingHref({ categories, query, sort, page: p });

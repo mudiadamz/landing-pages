@@ -21,6 +21,7 @@ import { ReaderScrollHint } from "@/components/reader-scroll-hint";
 import { ReaderPageIndicator } from "@/components/reader-page-indicator";
 import { BootSplashDismiss } from "@/components/boot-splash-dismiss";
 import { ProductActionsMenu } from "@/components/product-actions";
+import { currentSite } from "@/lib/site-resolve";
 import { getMyLike } from "@/lib/actions/likes";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { ViewTracker } from "@/components/view-tracker";
@@ -100,7 +101,7 @@ export default async function LandingPageView({ params }: Props) {
 }
 
 async function PreviewContent({ slug }: { slug: string }) {
-  const page = await getPageBySlug(slug);
+  const [page, site] = await Promise.all([getPageBySlug(slug), currentSite()]);
   if (!page) notFound();
 
   // Preview source: an uploaded PDF or external link is embedded directly;
@@ -310,6 +311,7 @@ async function PreviewContent({ slug }: { slug: string }) {
         // scroll, taps, focus mode and the iOS address bar are all native.
         <div className="w-full">
           <EpubReader
+            locale={site.locale}
             // Empty for an excerpt: there is no archive the browser may fetch.
             url={epubUrl ?? ""}
             slug={slug}
@@ -360,6 +362,7 @@ async function PreviewContent({ slug }: { slug: string }) {
       {popup && <PopupBanner config={popup} slug={slug} />}
       <ProductActionsMenu
         variant="floating"
+        locale={site.locale}
         title={page.title}
         viewCount={viewCount}
         backHref={`/checkout/${slug}`}

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { Locale } from "@/lib/i18n";
 
 // Inline EPUB renderer (no iframe): unzips + injects the book into the page DOM
 // so scroll, taps and styling are all native. Client-only (fflate + DOMParser).
@@ -18,6 +19,7 @@ export function EpubReader({
   textEndpoint,
   version,
   storageKey,
+  locale,
 }: {
   url: string;
   /** Product slug — enables the fast server-unzipped chapter fetch. */
@@ -28,6 +30,7 @@ export function EpubReader({
   /** Content version — busts the edge cache when the book is edited. */
   version?: string;
   storageKey?: string;
+  locale?: Locale;
 }) {
   // Re-key on the source so switching files cleanly reloads the reader. Falls
   // back to the slug because an excerpt has no archive URL at all, and `key=""`
@@ -41,6 +44,7 @@ export function EpubReader({
       textEndpoint={textEndpoint}
       version={version}
       storageKey={storageKey}
+      locale={locale}
     />
   );
 }

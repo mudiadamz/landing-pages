@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { t } from "@/lib/i18n";
+import { translator, type Locale } from "@/lib/i18n";
 
 /**
  * Search for the link-in-bio homepage: an icon in the top row and a field below
@@ -19,7 +19,7 @@ import { t } from "@/lib/i18n";
  * passes them through, so the homepage stays a server component.
  */
 
-type SearchCtx = { open: boolean; setOpen: (v: boolean) => void; query: string };
+type SearchCtx = { open: boolean; setOpen: (v: boolean) => void; query: string; locale: Locale };
 
 const Ctx = createContext<SearchCtx | null>(null);
 
@@ -31,21 +31,24 @@ function useSearch(): SearchCtx {
 
 export function SearchProvider({
   query,
+  locale,
   children,
 }: {
   query: string;
+  locale: Locale;
   children: React.ReactNode;
 }) {
   // Open when a search is active: arriving on /?q=novel with the field collapsed
   // would show filtered results and no visible reason why.
   const [open, setOpen] = useState(!!query);
-  const value = useMemo(() => ({ open, setOpen, query }), [open, query]);
+  const value = useMemo(() => ({ open, setOpen, query, locale }), [open, query, locale]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 /** The icon, for the top row beside the account and theme controls. */
 export function SearchToggle() {
-  const { open, setOpen } = useSearch();
+  const { open, setOpen, locale } = useSearch();
+  const t = translator(locale);
   return (
     <button
       type="button"
@@ -74,7 +77,8 @@ export function SearchField({
   categories?: string[];
   sort?: string;
 }) {
-  const { open, setOpen, query } = useSearch();
+  const { open, setOpen, query, locale } = useSearch();
+  const t = translator(locale);
   const inputRef = useRef<HTMLInputElement>(null);
   // Focus on open, but never steal the caret on a page that loaded WITH a query
   // — at that point the visitor is reading results, not typing.

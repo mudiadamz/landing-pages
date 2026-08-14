@@ -15,6 +15,7 @@ import { JsonLd } from "@/components/json-ld";
 import { SITE_URL, buildMetaDescription } from "@/lib/seo";
 import { RichText } from "@/components/rich-text";
 import { currentSite } from "@/lib/site-resolve";
+import { t } from "@/lib/i18n";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { CheckoutForm } from "./checkout-form";
 import { CheckoutCtaBar, CHECKOUT_CTA_ID } from "./checkout-cta-bar";
@@ -257,7 +258,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 title={page.title}
                 viewCount={page.view_count ?? 0}
                 backHref="/"
-                backLabel="Ke beranda"
+                backLabel={t("common.toHome", undefined, site.locale)}
+                locale={site.locale}
                 slug={page.slug}
                 page="checkout"
                 isLoggedIn={!!user}

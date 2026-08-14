@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
+import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
 
 /**
  * Which storefront is this request for?
@@ -40,10 +41,12 @@ export type Site = {
   icon_url: string | null;
   is_canonical: boolean;
   active: boolean;
+  /** UI language. Must be a Locale in lib/i18n; the DB CHECK keeps them in step. */
+  locale: Locale;
 };
 
 const SITE_COLUMNS =
-  "id, host, name, tagline, description, category_ids, template, palette, logo_url, icon_url, is_canonical, active";
+  "id, host, name, tagline, description, category_ids, template, palette, logo_url, icon_url, is_canonical, active, locale";
 
 /**
  * Used when lp_sites is empty or unreachable — a fresh database, or the migration
@@ -65,6 +68,7 @@ const FALLBACK_SITE: Site = {
   icon_url: null,
   is_canonical: true,
   active: true,
+  locale: DEFAULT_LOCALE,
 };
 
 function anonClient() {
@@ -99,7 +103,7 @@ const readSiteByHost = unstable_cache(
       .eq("host", host)
       .maybeSingle();
     if (error) throw new Error(`lp_sites lookup failed for ${host}: ${error.message}`);
-    return (data as Site) ?? null;
+    return data ? { ...(data as Site), locale: normalizeLocale((data as Site).locale) } : null;
   },
   ["site-by-host"],
   // 60s, not 300: this is the value that decides which storefront a visitor sees,
@@ -116,7 +120,7 @@ const readCanonicalSite = unstable_cache(
       .eq("is_canonical", true)
       .maybeSingle();
     if (error) throw new Error(`canonical lp_sites lookup failed: ${error.message}`);
-    return (data as Site) ?? null;
+    return data ? { ...(data as Site), locale: normalizeLocale((data as Site).locale) } : null;
   },
   ["site-canonical"],
   { revalidate: 60, tags: ["sites"] },

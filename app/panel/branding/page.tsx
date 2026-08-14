@@ -5,6 +5,7 @@ import { getCategories } from "@/lib/actions/landing-pages";
 import { editingSite, listSites, isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
 import { paletteOptions } from "@/lib/palette";
+import { LOCALE_OPTIONS } from "@/lib/i18n/locales";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { SiteProfileForm } from "./site-profile-form";
 
@@ -62,6 +63,7 @@ export default async function BrandingPage() {
           categoryIds: site.category_ids ?? [],
           template: site.template || "default",
           palette: site.palette || "forest",
+          locale: site.locale,
           logoUrl: site.logo_url ?? "",
           iconUrl: site.icon_url ?? "",
         }}
@@ -70,6 +72,7 @@ export default async function BrandingPage() {
         // the server/client boundary as props.
         templates={templatePickerOptions()}
         palettes={paletteOptions()}
+        locales={LOCALE_OPTIONS}
       />
     </div>
   );

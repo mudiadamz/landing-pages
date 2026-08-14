@@ -3,7 +3,7 @@ import { currentSite } from "@/lib/site-resolve";
 import { getPublishedPages } from "@/lib/actions/pages";
 import { SiteLogo } from "@/components/site-logo";
 import type { ChromeProps } from "../registry";
-import { t } from "@/lib/i18n";
+import { translator } from "@/lib/i18n";
 
 /**
  * Chrome for the link-in-bio theme — deliberately almost nothing.
@@ -15,6 +15,7 @@ import { t } from "@/lib/i18n";
  * theme exists to avoid.
  */
 export function LinkbioHeader({ user, brand }: ChromeProps) {
+  const t = translator(brand.locale);
   return (
     <header className="bg-[var(--accent-subtle)]/40">
       <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-5 py-3.5">
@@ -43,6 +44,7 @@ export function LinkbioHeader({ user, brand }: ChromeProps) {
 /** One line. A link-in-bio page has a colophon, not a sitemap. */
 export async function LinkbioFooter() {
   const [site, pages] = await Promise.all([currentSite(), getPublishedPages()]);
+  const t = translator(site.locale);
   return (
     <footer className="mt-10 shrink-0 bg-[var(--accent-subtle)]/40">
       <div className="mx-auto flex max-w-xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-5 py-7 text-xs text-[var(--muted)]">

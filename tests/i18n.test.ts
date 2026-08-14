@@ -73,7 +73,6 @@ describe("dictionary integrity", () => {
     "checkout.getFree",
     "common.add",
     "common.all",
-    "common.back",
     "common.edit",
     "common.free",
     "common.price",
@@ -130,6 +129,10 @@ describe("dictionary integrity", () => {
     // One is a placeholder ("Judul halaman"), the other a field label. Same
     // words today, different jobs — and placeholders often shorten first.
     "Judul halaman": ["panel.pageTitlePlaceholder", "content.pageTitle"],
+    // The checkout's back link and the 404's home link say the same thing in
+    // Indonesian. In English one is "Go to homepage" in both places too — but
+    // they sit in different sentences, so they stay separately translatable.
+    "Ke beranda": ["notFound.home", "common.toHome"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

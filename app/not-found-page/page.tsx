@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { NotFoundBody } from "@/components/not-found-body";
+import { currentSite } from "@/lib/site-resolve";
+import { t } from "@/lib/i18n";
 
 /**
  * The body the proxy rewrites to when it knows a record is missing.
@@ -11,11 +13,15 @@ import { NotFoundBody } from "@/components/not-found-body";
  * noindex, because this URL is an implementation detail — the address the
  * visitor typed is the one that should be reported missing.
  */
-export const metadata: Metadata = {
-  title: "404 — Halaman tidak ditemukan",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await currentSite();
+  return {
+    title: `404 — ${t("notFound.title", undefined, site.locale)}`,
+    robots: { index: false, follow: false },
+  };
+}
 
-export default function NotFoundPageRoute() {
-  return <NotFoundBody />;
+export default async function NotFoundPageRoute() {
+  const site = await currentSite();
+  return <NotFoundBody locale={site.locale} />;
 }

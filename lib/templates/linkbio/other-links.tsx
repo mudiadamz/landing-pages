@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { OtherLink } from "@/lib/actions/site-settings";
-import { t } from "@/lib/i18n";
+import { translator, type Locale } from "@/lib/i18n";
 
 /**
  * A link icon after the social row, opening a sheet of the owner's other sites.
@@ -16,7 +16,8 @@ import { t } from "@/lib/i18n";
  * Renders nothing at all when the list is empty, so a storefront that never adds
  * one never grows a button that opens an empty box.
  */
-export function OtherLinksButton({ links }: { links: OtherLink[] }) {
+export function OtherLinksButton({ links, locale }: { links: OtherLink[]; locale: Locale }) {
+  const t = translator(locale);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {

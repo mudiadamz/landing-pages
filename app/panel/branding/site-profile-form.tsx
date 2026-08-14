@@ -12,6 +12,7 @@ import {
 } from "@/lib/site-brand";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import type { SiteProfileInput } from "@/lib/actions/sites";
+import type { LocaleOption } from "@/lib/i18n/locales";
 
 /**
  * Everything about a storefront that isn't its hostname.
@@ -47,6 +48,7 @@ export function SiteProfileForm({
   rootCategories,
   templates,
   palettes,
+  locales,
 }: {
   siteId: string;
   host: string;
@@ -54,6 +56,7 @@ export function SiteProfileForm({
   rootCategories: LandingPageCategory[];
   templates: TemplateOption[];
   palettes: PaletteOption[];
+  locales: LocaleOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -289,6 +292,40 @@ export function SiteProfileForm({
             Mengubah warna aksi, tint, dan aksen. Latar, teks, dan border tetap — di
             situlah kontrasnya, jadi tidak bisa diatur sampai rusak.
           </p>
+        </div>
+      </section>
+
+      {/* Language. Sits with the palette rather than in its own screen: both are
+          "how this storefront presents itself", and both are one click to change
+          and instantly visible. */}
+      <section className={CARD}>
+        <header>
+          <h2 className="text-sm font-semibold text-foreground">Bahasa</h2>
+          <p className="mt-0.5 text-xs text-[var(--muted)]">
+            Bahasa antarmuka untuk domain ini — tombol, label, dan teks bawaan. Isi yang
+            Anda tulis sendiri (judul produk, deskripsi, halaman) tidak ikut diterjemahkan.
+          </p>
+        </header>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {locales.map((l) => {
+            const active = draft.locale === l.key;
+            return (
+              <button
+                key={l.key}
+                type="button"
+                onClick={() => set("locale", l.key)}
+                aria-pressed={active}
+                className={`rounded-xl border p-3 text-left transition-colors ${
+                  active
+                    ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
+                    : "border-[var(--border)] hover:bg-[var(--background)]"
+                }`}
+              >
+                <span className="block text-sm font-medium text-foreground">{l.native}</span>
+                <span className="mt-0.5 block text-xs text-[var(--muted)]">{l.note}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 

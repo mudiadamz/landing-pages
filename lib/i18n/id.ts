@@ -21,6 +21,7 @@ export const id = {
   "common.add": "Tambah",
   "common.edit": "Edit",
   "common.back": "Kembali",
+  "common.toHome": "Ke beranda",
   "common.close": "Tutup",
   "common.search": "Cari",
   "common.loading": "Memuat…",

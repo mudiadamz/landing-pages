@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { isUpcoming } from "@/lib/product-status";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
-import { t } from "@/lib/i18n";
+import { translator, type Locale } from "@/lib/i18n";
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -23,7 +23,16 @@ function formatPrice(value: number): string {
  * comfortable thumb target on a phone, which is where every link-in-bio visit
  * comes from.
  */
-export function LinkRow({ page, priority }: { page: LandingPagePublic; priority: boolean }) {
+export function LinkRow({
+  page,
+  priority,
+  locale,
+}: {
+  page: LandingPagePublic;
+  priority: boolean;
+  locale: Locale;
+}) {
+  const t = translator(locale);
   const upcoming = isUpcoming(page.available_at, false);
   const price = page.price ?? 0;
   const discount = page.price_discount ?? 0;

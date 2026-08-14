@@ -1,4 +1,4 @@
-import { t } from "@/lib/i18n";
+import { DEFAULT_LOCALE, t, type Locale } from "@/lib/i18n";
 
 /**
  * The blue rosette-and-tick that follows a name.
@@ -13,9 +13,11 @@ import { t } from "@/lib/i18n";
  */
 export function VerifiedBadge({
   className = "h-5 w-5",
-  label = t("home.verified"),
+  locale = DEFAULT_LOCALE,
+  label = t("home.verified", undefined, locale),
 }: {
   className?: string;
+  locale?: Locale;
   label?: string;
 }) {
   return (

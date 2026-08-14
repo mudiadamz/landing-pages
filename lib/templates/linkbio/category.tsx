@@ -40,7 +40,7 @@ export function LinkbioCategory({ site, category, pages, categories, user }: Cat
         ) : (
           <ul className="mt-6 space-y-2.5">
             {pages.map((page, i) => (
-              <LinkRow key={page.id} page={page} priority={i < 3} />
+              <LinkRow key={page.id} page={page} priority={i < 3} locale={site.locale} />
             ))}
           </ul>
         )}

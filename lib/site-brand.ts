@@ -1,4 +1,5 @@
 import type { Site } from "@/lib/site-resolve";
+import type { Locale } from "@/lib/i18n";
 
 /**
  * A storefront's visual identity: its name, its wordmark, its square icon.
@@ -20,6 +21,14 @@ export type SiteBrand = {
   name: string;
   logoUrl: string | null;
   iconUrl: string | null;
+  /**
+   * The storefront's language, carried with its name and marks because it is
+   * the same kind of fact and travels to the same places: shared chrome is a
+   * client component that cannot resolve the site itself, so anything it needs
+   * about the storefront has to arrive as a prop, and a second parallel prop
+   * would be one more thing to forget on a new surface.
+   */
+  locale: Locale;
 };
 
 /** Shipped in public/. Also what an unconfigured deployment serves. */
@@ -34,6 +43,7 @@ export function siteBrand(site: Site): SiteBrand {
     name: site.name?.trim() || DEFAULT_BRAND_NAME,
     logoUrl: site.logo_url?.trim() || null,
     iconUrl: site.icon_url?.trim() || null,
+    locale: site.locale,
   };
 }
 

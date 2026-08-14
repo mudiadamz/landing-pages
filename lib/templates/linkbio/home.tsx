@@ -11,7 +11,7 @@ import { LinkRow } from "./link-row";
 import { Pager } from "./pager";
 import { listingHref, toggleCategoryHref } from "./listing-url";
 import type { TemplateProps } from "../registry";
-import { t } from "@/lib/i18n";
+import { translator } from "@/lib/i18n";
 
 /** Signed-in goes to the panel; everyone else to the login screen. */
 function AccountIcon({ className }: { className?: string }) {
@@ -50,6 +50,7 @@ export function LinkbioHome({
   otherLinks,
   socialUrls,
 }: TemplateProps) {
+  const t = translator(site.locale);
   // Everything the three controls have to preserve about each other.
   const state = { categories: activeCategories, query, sort };
   const parents = categories.filter((c) => !c.parent_id);
@@ -60,7 +61,7 @@ export function LinkbioHome({
   const cover = showFounder ? founder.coverUrl.trim() : "";
 
   return (
-    <SearchProvider query={query}>
+    <SearchProvider query={query} locale={site.locale}>
     <div
       data-template="linkbio"
       className="relative flex min-h-screen flex-col bg-background text-foreground"
@@ -128,7 +129,7 @@ export function LinkbioHome({
           )}
           <h1 className="mt-4 flex items-center justify-center gap-1.5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             <span className="min-w-0 truncate">{showFounder ? founder.name : site.name}</span>
-            {showFounder && founder.verified && <VerifiedBadge className="h-5 w-5 sm:h-6 sm:w-6" />}
+            {showFounder && founder.verified && <VerifiedBadge className="h-5 w-5 sm:h-6 sm:w-6" locale={site.locale} />}
           </h1>
           {(showFounder ? founder.role : site.tagline) && (
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
@@ -140,7 +141,7 @@ export function LinkbioHome({
               joins the same row and renders nothing when the list is empty. */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <SocialLinksCompact urls={socialUrls} />
-            <OtherLinksButton links={otherLinks} />
+            <OtherLinksButton links={otherLinks} locale={site.locale} />
           </div>
         </div>
 
@@ -207,7 +208,12 @@ export function LinkbioHome({
             {pages.map((page, i) => (
               /* priority only on the first page: on page two the top rows are
                  different products and the hint would preload the wrong images. */
-              <LinkRow key={page.id} page={page} priority={listing.page === 1 && i < 3} />
+              <LinkRow
+                key={page.id}
+                page={page}
+                priority={listing.page === 1 && i < 3}
+                locale={site.locale}
+              />
             ))}
           </ul>
         )}
@@ -218,6 +224,7 @@ export function LinkbioHome({
           query={query}
           sort={sort}
           categories={activeCategories}
+          locale={site.locale}
         />
       </main>
 
