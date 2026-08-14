@@ -13,7 +13,7 @@ import type { SiteBrand } from "@/lib/site-brand";
 import type { FeatureKey } from "@/lib/features";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useT } from "@/lib/i18n/client";
-import type { Locale } from "@/lib/i18n";
+import type { Locale, MessageKey } from "@/lib/i18n";
 
 type Role = "admin" | "customer" | "publisher";
 type Props = {
@@ -40,7 +40,7 @@ type Props = {
 
 type NavItem = {
   href: string;
-  label: string;
+  labelKey: MessageKey;
   icon: typeof LayoutIcon;
   feature?: FeatureKey;
   external?: boolean;
@@ -66,64 +66,64 @@ type NavItem = {
  * loop, and /panel itself finally appears: it was reachable only by clicking the
  * logo, which is not a thing most people try.
  */
-const navGroups: { label: string; items: NavItem[] }[] = [
+const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
   {
-    label: "Utama",
+    labelKey: "panel.navGroupMain",
     items: [
-      { href: "/panel", label: "Dashboard", icon: HomeIcon, everyone: true, exact: true },
-      { href: "/panel/purchases", label: "Pembelian saya", icon: ReceiptIcon, everyone: true },
-      { href: "/panel/favorites", label: "Favorit", icon: HeartIcon, everyone: true },
+      { href: "/panel", labelKey: "panel.navDashboard", icon: HomeIcon, everyone: true, exact: true },
+      { href: "/panel/purchases", labelKey: "panel.navPurchases", icon: ReceiptIcon, everyone: true },
+      { href: "/panel/favorites", labelKey: "panel.navFavorites", icon: HeartIcon, everyone: true },
     ],
   },
   {
     // Everything you touch to sell something, in the order you touch it.
-    label: "Jualan",
+    labelKey: "panel.navGroupSelling",
     items: [
-      { href: "/panel/products", label: "Produk digital", icon: LayoutIcon, sellerOnly: true },
-      { href: "#assets", label: "Assets", icon: ImageIcon, sellerOnly: true, action: "assets" },
-      { href: "/panel/sales", label: "Penjualan", icon: ChartIcon, feature: "stats", publisherToo: true },
+      { href: "/panel/products", labelKey: "panel.navProducts", icon: LayoutIcon, sellerOnly: true },
+      { href: "#assets", labelKey: "panel.navAssets", icon: ImageIcon, sellerOnly: true, action: "assets" },
+      { href: "/panel/sales", labelKey: "panel.navSales", icon: ChartIcon, feature: "stats", publisherToo: true },
     ],
   },
   {
-    label: "Pengguna",
+    labelKey: "panel.navGroupUsers",
     items: [
-      { href: "/panel/users", label: "Users", icon: UsersIcon, feature: "users" },
-      { href: "/panel/roles", label: "Roles", icon: ShieldIcon, adminOnly: true },
+      { href: "/panel/users", labelKey: "panel.navUsers", icon: UsersIcon, feature: "users" },
+      { href: "/panel/roles", labelKey: "panel.navRoles", icon: ShieldIcon, adminOnly: true },
     ],
   },
   {
-    label: "Pesan",
+    labelKey: "panel.navGroupMessages",
     items: [
-      { href: "/panel/contacts", label: "Kontak", icon: MailIcon, feature: "contacts" },
-      { href: "/panel/inbox", label: "Email masuk", icon: InboxIcon, feature: "inbox" },
+      { href: "/panel/contacts", labelKey: "panel.navContacts", icon: MailIcon, feature: "contacts" },
+      { href: "/panel/inbox", labelKey: "panel.navInbox", icon: InboxIcon, feature: "inbox" },
     ],
   },
   {
-    label: "Situs",
+    labelKey: "panel.navGroupSite",
     items: [
-      { href: "/panel/sites", label: "Domain", icon: GlobeIcon, adminOnly: true },
+      { href: "/panel/sites", labelKey: "panel.navDomains", icon: GlobeIcon, adminOnly: true },
       // Directly after Domain: same object, opposite half. Domain is the plumbing
       // (hostname, Vercel, on/off), this is the content (name, logo, template, niche).
-      { href: "/panel/branding", label: "Identitas situs", icon: BadgeIcon, adminOnly: true },
-      { href: "/panel/categories", label: "Kategori", icon: TagIcon, feature: "categories" },
-      { href: "/panel/hero", label: "Hero", icon: HeroIcon, feature: "hero" },
-      { href: "/panel/content", label: "Konten situs", icon: DocIcon, feature: "content" },
+      { href: "/panel/branding", labelKey: "panel.navBranding", icon: BadgeIcon, adminOnly: true },
+      { href: "/panel/categories", labelKey: "panel.navCategories", icon: TagIcon, feature: "categories" },
+      { href: "/panel/hero", labelKey: "panel.navHero", icon: HeroIcon, feature: "hero" },
+      { href: "/panel/content", labelKey: "panel.navContent", icon: DocIcon, feature: "content" },
       // Other places the owner exists, not other storefronts this app serves —
       // those are "Domain" above.
-      { href: "/panel/pages", label: "Halaman", icon: PageIcon, adminOnly: true },
-      { href: "/panel/links", label: "Link & sosial", icon: ChainIcon, adminOnly: true },
+      { href: "/panel/pages", labelKey: "panel.navPages", icon: PageIcon, adminOnly: true },
+      { href: "/panel/links", labelKey: "panel.navLinks", icon: ChainIcon, adminOnly: true },
     ],
   },
   {
     // Measurement and plumbing — rarely opened, so it sits last.
-    label: "Sistem",
+    labelKey: "panel.navGroupSystem",
     items: [
-      { href: "/panel/appearance", label: "Tampilan", icon: PaletteIcon, adminOnly: true },
-      { href: "/panel/analytics", label: "Analytics", icon: PulseIcon, adminOnly: true },
-      { href: "/panel/tracking", label: "Tracking", icon: TargetIcon, adminOnly: true },
-      { href: "/panel/custom-js", label: "Custom JS", icon: CodeIcon, feature: "custom-js" },
-      { href: "/panel/popup", label: "Popup banner", icon: PopupIcon, adminOnly: true },
-      { href: "/panel/storage", label: "Storage", icon: DatabaseIcon, adminOnly: true },
+      { href: "/panel/appearance", labelKey: "panel.navAppearance", icon: PaletteIcon, adminOnly: true },
+      { href: "/panel/analytics", labelKey: "panel.navAnalytics", icon: PulseIcon, adminOnly: true },
+      { href: "/panel/tracking", labelKey: "panel.navTracking", icon: TargetIcon, adminOnly: true },
+      { href: "/panel/custom-js", labelKey: "panel.navCustomJs", icon: CodeIcon, feature: "custom-js" },
+      { href: "/panel/popup", labelKey: "panel.navPopup", icon: PopupIcon, adminOnly: true },
+      { href: "/panel/storage", labelKey: "panel.navStorage", icon: DatabaseIcon, adminOnly: true },
     ],
   },
 ];
@@ -328,6 +328,7 @@ function NavContent({
   onItemClick?: () => void;
   onOpenAssets?: () => void;
 }) {
+  const t = useT();
   const pathname = usePathname();
 
   const isVisible = (item: NavItem) => {
@@ -346,9 +347,9 @@ function NavContent({
           if (visibleItems.length === 0) return null;
 
           return (
-            <div key={group.label}>
+            <div key={group.labelKey}>
               <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]/70">
-                {group.label}
+                {t(group.labelKey)}
               </p>
               <div className="flex flex-col gap-0.5">
                 {visibleItems.map((item) => {
@@ -372,7 +373,7 @@ function NavContent({
                   const content = (
                     <>
                       <Icon className="h-5 w-5 shrink-0" />
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate">{t(item.labelKey)}</span>
                       {badgeCount > 0 && (
                         <span
                           className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white"
@@ -492,7 +493,7 @@ export function PanelSidebar({
       <div className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--card)] px-3 md:hidden">
         <button
           type="button"
-          aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
+          aria-label={mobileOpen ? t("panel.closeMenu") : t("panel.openMenu")}
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen(!mobileOpen)}
           className="relative rounded-lg p-2.5 text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
@@ -535,14 +536,10 @@ export function PanelSidebar({
           <Link href="/panel" className="flex items-center text-base font-semibold text-foreground" onClick={close}>
             <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[150px]" markClassName="h-6 w-6" />
           </Link>
-          <div className="hidden items-center gap-2 md:flex">
-            <LanguageSwitcher current={locale} label={t("nav.language")} />
-            <ThemeSwitch />
-          </div>
           <button
             type="button"
             onClick={close}
-            aria-label="Tutup menu"
+            aria-label={t("panel.closeMenu")}
             className="rounded-lg p-2 text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground md:hidden"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -551,36 +548,51 @@ export function PanelSidebar({
           </button>
         </div>
 
-        {/* The whole card is the profile link — the old "View Profile" was a
-            12px text link, which on a phone is a target you aim at. */}
-        {displayName && (
-          <Link
-            href="/panel/profile"
-            onClick={close}
-            className="mx-3 mt-3 flex shrink-0 items-center gap-3 rounded-lg border border-[var(--border)] px-3 py-2.5 transition-colors hover:bg-[var(--background)]"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-subtle)] text-sm font-semibold uppercase text-[var(--primary)]">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                displayName.trim().charAt(0) || "?"
-              )}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-foreground">{displayName}</span>
-              <span className="block text-xs text-[var(--muted)]">
-                {role === "admin" ? "Admin" : role === "publisher" ? "Publisher" : "Pembeli"} · Lihat profil
-              </span>
-            </span>
-          </Link>
-        )}
+        {/* Identity and the two preference controls on ONE row.
+            They were three stacked blocks — a bordered profile card, a language
+            row, a theme toggle in the header — which on a short screen pushed
+            the nav itself below the fold. None of them is the reason anyone
+            opens this sidebar, so none of them gets its own line.
 
-        {/* Language, on the surface where the mobile header has no room for it.
-            Same cookie as the storefront's footer control, so switching in one
-            place switches both. */}
-        <div className="mx-3 mt-3 md:hidden">
-          <LanguageSwitcher current={locale} label={t("nav.language")} className="w-full justify-center" />
+            The avatar and name stay a single large tap target to /panel/profile;
+            the role moved under the name where the redundant "Lihat profil"
+            used to sit. */}
+        <div className="mx-3 mt-3 flex shrink-0 items-center gap-2">
+          {/* The row renders even without a display name: the theme and
+              language controls live here now, and a profile that has not been
+              filled in must not take them off the screen. */}
+          {displayName ? (
+            <Link
+              href="/panel/profile"
+              onClick={close}
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 transition-colors hover:opacity-80"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-subtle)] text-xs font-semibold uppercase text-[var(--primary)]">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  displayName.trim().charAt(0) || "?"
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium leading-tight text-foreground">
+                  {displayName}
+                </span>
+                <span className="block truncate text-[11px] leading-tight text-[var(--muted)]">
+                  {role === "admin"
+                    ? t("panel.roleAdmin")
+                    : role === "publisher"
+                      ? t("panel.rolePublisher")
+                      : t("panel.roleCustomer")}
+                </span>
+              </span>
+            </Link>
+          ) : (
+            <span className="flex-1" />
+          )}
+          <LanguageSwitcher current={locale} label={t("nav.language")} />
+          <ThemeSwitch />
         </div>
 
         {/* The one site switcher. Directly under the profile card so it reads as

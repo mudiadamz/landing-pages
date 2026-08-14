@@ -147,6 +147,17 @@ describe("panel language binding", () => {
     expect(unbound).toEqual([]);
   });
 
+  it("keeps the sidebar nav in the dictionary", () => {
+    // The sidebar is on every panel screen, so hardcoded labels here read as
+    // "the switcher does nothing" even when every other surface obeys it. That
+    // is exactly what happened: the nav was a module-scope array of Indonesian
+    // strings that no pass had touched.
+    const src = readFileSync("components/panel-sidebar.tsx", "utf8");
+    const navBlock = src.slice(src.indexOf("const navGroups"), src.indexOf("] as const") + 1 || undefined);
+    expect(navBlock).not.toMatch(/\blabel:\s*"/);
+    expect(navBlock).toMatch(/labelKey:\s*"panel\./);
+  });
+
   it("wraps the panel in a LocaleProvider", () => {
     // Without it useT() falls back to the default locale everywhere at once,
     // which looks exactly like "the switcher is broken".

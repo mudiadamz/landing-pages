@@ -127,24 +127,32 @@ describe("dictionary integrity", () => {
    * to diverge. So identical values are allowed only when someone has said so
    * here; a NEW duplicate fails, which is the case actually worth catching.
    */
+  /**
+   * Same words, different jobs — each pair is allowed to diverge in another
+   * language, so they stay separate keys rather than being merged.
+   *
+   * The recurring shape is a NAV LABEL beside a FIELD LABEL: "Kategori" names a
+   * sidebar destination, a public nav link and a form field, and a translator
+   * shortening the sidebar has no business shortening the form.
+   */
   const INTENTIONAL_DUPLICATES: Record<string, string[]> = {
     Harga: ["common.price", "product.tabPrice"],
-    Kategori: ["common.category", "nav.categories"],
+    Kategori: ["common.category", "nav.categories", "panel.navCategories"],
     "Cari produk…": ["home.searchPlaceholder", "product.relatedSearch"],
     "Cari produk": ["home.searchLabel", "home.searchOpen"],
     "Link lainnya": ["home.otherLinks", "panel.tabOther"],
     Preview: ["checkout.preview", "product.tabPreview"],
     "Nama situs": ["panel.linkName", "sites.siteName"],
-    // The public footer link vs the panel tab that edits it. A translator may
-    // well want the visitor-facing word and the editor's word to differ.
-    Ketentuan: ["nav.terms", "content.tabLegal"],
-    // One is a placeholder ("Judul halaman"), the other a field label. Same
-    // words today, different jobs — and placeholders often shorten first.
-    "Judul halaman": ["panel.pageTitlePlaceholder", "content.pageTitle"],
-    // The checkout's back link and the 404's home link say the same thing in
-    // Indonesian. In English one is "Go to homepage" in both places too — but
-    // they sit in different sentences, so they stay separately translatable.
-    "Ke beranda": ["notFound.home", "common.toHome"],
+    Ketentuan: ["content.tabLegal", "nav.terms"],
+    "Judul halaman": ["content.pageTitle", "panel.pageTitlePlaceholder"],
+    "Ke beranda": ["common.toHome", "notFound.home"],
+    // Panel sidebar destinations vs the screens they lead to.
+    Kontak: ["nav.contact", "panel.navContacts"],
+    "Pembelian saya": ["nav.myPurchases", "panel.navPurchases"],
+    Assets: ["assets.heading", "panel.navAssets"],
+    Domain: ["panel.navDomains", "sites.domain"],
+    "Identitas situs": ["panel.navBranding", "sites.identity"],
+    Halaman: ["content.tabPages", "panel.navPages"],
   };
 
   it("has no UNDECLARED duplicate values", () => {
