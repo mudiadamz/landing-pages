@@ -9,6 +9,7 @@ import {
 } from "@/lib/actions/categories";
 import { CategoryIcon, CATEGORY_ICONS, ICON_KEYS } from "@/lib/category-icons";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 type Props = { initialCategories: CategoryRow[] };
 
@@ -30,6 +31,7 @@ function orderRows(categories: CategoryRow[]): { cat: CategoryRow; depth: number
 }
 
 export function CategoriesTable({ initialCategories }: Props) {
+  const t = useT();
   const [categories, setCategories] = useState(initialCategories);
   const [editing, setEditing] = useState<CategoryRow | null>(null);
   const [creating, setCreating] = useState(false);
@@ -77,7 +79,7 @@ export function CategoriesTable({ initialCategories }: Props) {
           leftIcon={<PlusIcon className="w-4 h-4" />}
           className="text-white hover:opacity-90"
         >
-          Tambah
+          {t("common.add")}
         </Button>
       </div>
 
@@ -167,7 +169,7 @@ export function CategoriesTable({ initialCategories }: Props) {
                   onClick={() => startEdit(cat)}
                   className="text-sm font-medium text-[var(--primary)] hover:underline"
                 >
-                  Edit
+                  {t("common.edit")}
                 </button>
                 <DeleteButton
                   id={cat.id}
@@ -297,7 +299,7 @@ export function CategoriesTable({ initialCategories }: Props) {
               {categories.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
-                    Belum ada kategori.
+                    {t("panel.noCategories")}
                   </td>
                 </tr>
               )}
@@ -332,6 +334,7 @@ type FormProps = {
 };
 
 function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, onCancel, error }: FormProps) {
+  const t = useT();
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? defaultSortOrder ?? 0);
@@ -372,7 +375,7 @@ function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, on
           type="text"
           value={name}
           onChange={(e) => handleNameChange(e.target.value)}
-          placeholder="Nama kategori"
+          placeholder={t("panel.categoryName")}
           className={inputClass}
           required
           autoFocus
@@ -387,7 +390,7 @@ function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, on
             setAutoSlug(false);
             setSlug(e.target.value);
           }}
-          placeholder="slug-kategori"
+          placeholder={t("panel.categorySlug")}
           className={inputClass}
           required
         />
@@ -399,7 +402,7 @@ function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, on
           onChange={(e) => setParentId(e.target.value)}
           className={inputClass}
         >
-          <option value="">— Kategori utama —</option>
+          <option value="">{t("panel.categoryRoot")}</option>
           {parents.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -474,7 +477,7 @@ function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, on
           onClick={onCancel}
           className="text-[var(--muted)] hover:text-foreground"
         >
-          Batal
+          {t("common.cancel")}
         </Button>
       </div>
       {error && <p className="w-full text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -501,6 +504,7 @@ function DeleteButton({
   deleting: string | null;
   onDelete: () => void;
 }) {
+  const t = useT();
   const [confirm, setConfirm] = useState(false);
 
   if (confirm) {
@@ -519,7 +523,7 @@ function DeleteButton({
           onClick={() => setConfirm(false)}
           className="text-xs text-[var(--muted)] hover:underline"
         >
-          Batal
+          {t("common.cancel")}
         </button>
       </span>
     );
@@ -531,7 +535,7 @@ function DeleteButton({
       onClick={() => setConfirm(true)}
       className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"
     >
-      Hapus
+      {t("common.delete")}
     </button>
   );
 }

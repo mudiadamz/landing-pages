@@ -8,6 +8,7 @@ import {
   purgeExcludedIp,
   type ExcludedIp,
 } from "@/lib/actions/excluded-ips";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Manage which addresses are kept out of the analytics. The per-user flag only
@@ -76,6 +77,7 @@ function ExcludedIpsDialog({
   myIp: string | null;
   onClose: () => void;
 }) {
+  const t = useT();
   const [ip, setIp] = useState("");
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -193,13 +195,13 @@ function ExcludedIpsDialog({
             <input
               value={ip}
               onChange={(e) => setIp(e.target.value)}
-              placeholder="mis. 103.12.34.56"
+              placeholder={t("analytics.ipPlaceholder")}
               className="min-w-[10rem] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 font-mono text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Catatan (opsional)"
+              placeholder={t("analytics.noteOptional")}
               className="min-w-[8rem] flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
             <button
@@ -228,7 +230,7 @@ function ExcludedIpsDialog({
                       onClick={() => purge(r.ip)}
                       disabled={pending}
                       className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/25 disabled:opacity-50 dark:text-amber-400"
-                      title="Sesi lama masih ada — klik untuk hapus"
+                      title={t("analytics.staleSession")}
                     >
                       {r.sessions} sesi lama · hapus
                     </button>

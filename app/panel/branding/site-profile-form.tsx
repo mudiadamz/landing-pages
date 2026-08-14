@@ -13,6 +13,7 @@ import {
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import type { SiteProfileInput } from "@/lib/actions/sites";
 import type { LocaleOption } from "@/lib/i18n/locales";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Everything about a storefront that isn't its hostname.
@@ -58,6 +59,7 @@ export function SiteProfileForm({
   palettes: PaletteOption[];
   locales: LocaleOption[];
 }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [draft, setDraft] = useState<SiteProfileInput>(initial);
@@ -119,7 +121,7 @@ export function SiteProfileForm({
             type="text"
             value={draft.name}
             onChange={(e) => set("name", e.target.value)}
-            placeholder="Resepku"
+            placeholder={t("sites.namePlaceholder")}
             className={INPUT}
           />
         </div>
@@ -130,7 +132,7 @@ export function SiteProfileForm({
             type="text"
             value={draft.tagline}
             onChange={(e) => set("tagline", e.target.value)}
-            placeholder="Resep rumahan yang beneran jadi"
+            placeholder={t("panel.taglinePlaceholder")}
             maxLength={120}
             className={INPUT}
           />
@@ -141,17 +143,17 @@ export function SiteProfileForm({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Deskripsi (SEO)</label>
+          <label className="block text-sm font-medium text-foreground">{t("panel.seoDescription")}</label>
           <textarea
             value={draft.description}
             onChange={(e) => set("description", e.target.value)}
             rows={3}
             maxLength={200}
-            placeholder="Kalimat yang tampil di hasil pencarian Google…"
+            placeholder={t("panel.seoPlaceholder")}
             className={`${INPUT} resize-y`}
           />
           <p className="text-xs text-[var(--muted)]">
-            Ini snippet di Google — beda pekerjaan dari tagline, jadi tulis 120–160 karakter.
+            {t("panel.seoHint")}
             Sekarang {draft.description.trim().length}. Kosong = pakai teks bawaan.
           </p>
         </div>
@@ -159,18 +161,18 @@ export function SiteProfileForm({
         {/* Two uploads, because they are different shapes with different jobs —
             see lib/site-brand.ts. */}
         <div className="space-y-2">
-          <span className="block text-sm font-medium text-foreground">Logo &amp; ikon</span>
+          <span className="block text-sm font-medium text-foreground">{t("panel.logoAndIcon")}</span>
           <div className="grid gap-3 sm:grid-cols-2">
             <BrandUpload
               kind="logo"
-              label="Logo (header)"
+              label={t("panel.logoHeader")}
               hint="Lebar/wordmark, PNG · WebP · JPEG · SVG, maks 300 KB. Menggantikan tulisan nama di header."
               url={draft.logoUrl}
               onChange={(url) => set("logoUrl", url)}
             />
             <BrandUpload
               kind="icon"
-              label="Ikon (favicon & PWA)"
+              label={t("panel.iconFavicon")}
               hint="Persegi, minimal 192×192, PNG · WebP · SVG, maks 200 KB. Dipakai di tab browser, install ke home screen, dan avatar Link in bio."
               url={draft.iconUrl}
               onChange={(url) => set("iconUrl", url)}
@@ -255,7 +257,7 @@ export function SiteProfileForm({
             preset keys are storable — the presets had their contrast measured, free-text
             hex fields per domain would not. */}
         <div className="space-y-2">
-          <span className="block text-sm font-medium text-foreground">Palet warna</span>
+          <span className="block text-sm font-medium text-foreground">{t("panel.colourPalette")}</span>
           <div className="grid gap-2 sm:grid-cols-2">
             {palettes.map((p) => {
               const active = draft.palette === p.key;
@@ -300,7 +302,7 @@ export function SiteProfileForm({
           and instantly visible. */}
       <section className={CARD}>
         <header>
-          <h2 className="text-sm font-semibold text-foreground">Bahasa</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t("nav.language")}</h2>
           <p className="mt-0.5 text-xs text-[var(--muted)]">
             Bahasa antarmuka untuk domain ini — tombol, label, dan teks bawaan. Isi yang
             Anda tulis sendiri (judul produk, deskripsi, halaman) tidak ikut diterjemahkan.
@@ -332,7 +334,7 @@ export function SiteProfileForm({
       {/* 3 — Catalog */}
       <section className={CARD}>
         <header>
-          <h2 className="text-sm font-semibold text-foreground">Katalog (niche)</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t("panel.catalogNiche")}</h2>
           <p className="mt-0.5 text-xs text-[var(--muted)]">
             Domain memilih kategori, bukan produk — jadi tidak ada produk yang
             diduplikasi, dan satu produk bisa tampil di beberapa storefront.
@@ -341,7 +343,7 @@ export function SiteProfileForm({
 
         {rootCategories.length === 0 ? (
           <p className="rounded-lg border border-dashed border-[var(--border)] px-3 py-3 text-xs text-[var(--muted)]">
-            Belum ada kategori induk. Buat dulu di Kategori.
+            {t("panel.noRootCategories")}
           </p>
         ) : (
           <div className="space-y-1 rounded-xl border border-[var(--border)] p-2">
@@ -369,7 +371,7 @@ export function SiteProfileForm({
 
       <div className="flex justify-end gap-2">
         <Button onClick={save} loading={pending} disabled={pending}>
-          Simpan perubahan
+          {t("product.saveChanges")}
         </Button>
       </div>
     </div>

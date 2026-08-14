@@ -3,10 +3,13 @@ import { requireAdmin } from "@/lib/actions/profiles";
 import { listAllStorageFiles } from "@/lib/actions/storage-admin";
 import { StorageManager } from "./storage-manager";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export const metadata = { title: "Storage" };
 
 export default async function StoragePage() {
+  const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
 
   const { files, buckets, truncated, error } = await listAllStorageFiles();
@@ -15,7 +18,7 @@ export default async function StoragePage() {
     <div className="space-y-6">
       <PanelPageHeader
         backHref="/panel"
-        title="Storage"
+        title={t("panel.navStorage")}
         description="Semua file di Supabase Storage."
       />
 

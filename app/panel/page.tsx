@@ -5,6 +5,8 @@ import { getPurchasesForUser } from "@/lib/actions/purchases";
 import { getMyFavorites } from "@/lib/actions/likes";
 import { getMyProductStats, getStats } from "@/lib/actions/admin";
 import { canSell } from "@/lib/profile-utils";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * The panel's front door.
@@ -30,6 +32,7 @@ function formatIDR(n: number) {
 const nf = (n: number) => n.toLocaleString("id-ID");
 
 export default async function PanelPage() {
+  const t = translator(await requestLocale());
   const profile = await getProfile();
   const seller = !!profile && canSell(profile.role);
 
@@ -52,10 +55,10 @@ export default async function PanelPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">
-          {firstName ? `Halo, ${firstName}` : "Dashboard"}
+          {firstName ? t("panel.greeting", { name: firstName }) : t("panel.navDashboard")}
         </h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Ringkasan akun Anda dan jalan pintas ke yang sering dibuka.
+          {t("panel.dashIntro")}
         </p>
       </div>
 
@@ -63,7 +66,7 @@ export default async function PanelPage() {
       <section className="grid gap-4 sm:grid-cols-2">
         <ShortcutCard
           href="/panel/purchases"
-          label="Ebook saya"
+          label={t("panel.dashMyEbooks")}
           detail={purchases.length > 0 ? `${nf(purchases.length)} judul` : "Belum ada pembelian"}
           icon={
             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
@@ -73,7 +76,7 @@ export default async function PanelPage() {
         />
         <ShortcutCard
           href="/panel/favorites"
-          label="Favorit"
+          label={t("panel.navFavorites")}
           detail={favorites.length > 0 ? `${nf(favorites.length)} produk` : "Belum ada favorit"}
           icon={
             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
@@ -85,7 +88,7 @@ export default async function PanelPage() {
 
       {purchases.length > 0 && (
         <section className="space-y-3">
-          <SectionHead title="Lanjut baca" href="/panel/purchases" more="Semua ebook" />
+          <SectionHead title={t("panel.dashKeepReading")} href="/panel/purchases" more={t("panel.dashAllEbooks")} />
           <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {purchases.slice(0, MAX_SHORTCUTS).map((p) => (
               <li key={p.id}>
@@ -120,7 +123,7 @@ export default async function PanelPage() {
 
       {favorites.length > 0 && (
         <section className="space-y-3">
-          <SectionHead title="Favorit terbaru" href="/panel/favorites" more="Semua favorit" />
+          <SectionHead title={t("panel.dashRecentFavorites")} href="/panel/favorites" more={t("panel.dashAllFavorites")} />
           <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
             {favorites.slice(0, MAX_SHORTCUTS).map((f) => {
               const price = f.price_discount || f.price || 0;
@@ -147,11 +150,11 @@ export default async function PanelPage() {
       {/* ---- Seller ---- */}
       {sellerStats && (
         <section className="space-y-3">
-          <SectionHead title="Jualan saya" href="/panel/sales" more="Detail penjualan" />
+          <SectionHead title={t("panel.dashMySales")} href="/panel/sales" more={t("panel.dashSalesDetail")} />
           <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Produk" value={nf(sellerStats.totalProducts)} />
+            <StatCard label={t("analytics.product")} value={nf(sellerStats.totalProducts)} />
             <StatCard
-              label="Terjual"
+              label={t("panel.dashSold")}
               value={
                 <>
                   {nf(sellerStats.totalSales)}{" "}
@@ -163,7 +166,7 @@ export default async function PanelPage() {
                 </>
               }
             />
-            <StatCard label="Pendapatan" value={formatIDR(sellerStats.totalRevenue)} />
+            <StatCard label={t("panel.dashRevenue")} value={formatIDR(sellerStats.totalRevenue)} />
           </div>
           {sellerStats.products.length > 0 && (
             <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
@@ -194,11 +197,11 @@ export default async function PanelPage() {
       {/* ---- Admin ---- */}
       {globalStats && (
         <section className="space-y-3">
-          <SectionHead title="Situs" href="/panel/sales" more="Statistik lengkap" />
+          <SectionHead title={t("panel.navGroupSite")} href="/panel/sales" more={t("panel.dashFullStats")} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Produk" value={nf(globalStats.totalLandingPages)} />
+            <StatCard label={t("analytics.product")} value={nf(globalStats.totalLandingPages)} />
             <StatCard
-              label="Pembelian"
+              label={t("panel.dashPurchases")}
               value={
                 <>
                   {nf(globalStats.totalPurchases)}{" "}
@@ -211,10 +214,10 @@ export default async function PanelPage() {
               }
             />
             <StatCard
-              label="Akses aktif"
+              label={t("panel.dashActiveAccess")}
               value={nf(globalStats.totalPurchases - globalStats.totalRevoked)}
             />
-            <StatCard label="Pembeli" value={nf(globalStats.totalCustomers)} />
+            <StatCard label={t("panel.dashBuyers")} value={nf(globalStats.totalCustomers)} />
           </div>
         </section>
       )}
@@ -224,14 +227,14 @@ export default async function PanelPage() {
       {nothingYet && (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center shadow-sm sm:p-12">
           <p className="text-sm text-[var(--muted)]">
-            Akun Anda masih kosong. Mulai dari katalog — ada judul yang bisa dibaca gratis.
+            {t("panel.dashEmpty")}
           </p>
           <div className="mt-4 flex justify-center">
             <Link
               href="/"
               className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] transition-transform active:scale-95"
             >
-              Jelajahi produk
+              {t("panel.dashBrowse")}
             </Link>
           </div>
         </div>

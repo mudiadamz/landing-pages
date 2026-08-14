@@ -4,6 +4,8 @@ import { canSellProducts } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { NewProductModeTabs } from "./mode-tabs";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 const STEPS = [
   { n: 1, title: "Buat produk", desc: "Judul, URL & kategori" },
@@ -11,6 +13,7 @@ const STEPS = [
 ];
 
 export default async function NewPagePage() {
+  const t = translator(await requestLocale());
   const canSell = await canSellProducts();
   if (!canSell) redirect("/panel");
 
@@ -20,7 +23,7 @@ export default async function NewPagePage() {
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader backHref="/panel/products" title="Produk digital baru" />
+      <PanelPageHeader backHref="/panel/products" title={t("panel.titleNewProduct")} />
 
       {/* Step indicator: step 1 (this page) → step 2 (the edit page) */}
       <ol className="flex items-center gap-3 sm:gap-4">

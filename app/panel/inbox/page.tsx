@@ -4,10 +4,14 @@ import { requireFeature } from "@/lib/actions/profiles";
 import { getReceivedEmailsForAdmin, getReceivedEmailById } from "@/lib/actions/received-emails";
 import { DeleteEmailButton } from "./delete-email-button";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { SUPPORT_CONTACT } from "@/lib/constants";
+import { requestLocale } from "@/lib/i18n/request";
 
 type Props = { searchParams: Promise<{ id?: string }> };
 
 export default async function InboxPage({ searchParams }: Props) {
+  const t = translator(await requestLocale());
   const ok = await requireFeature("inbox");
   if (!ok) redirect("/panel");
 
@@ -34,12 +38,14 @@ export default async function InboxPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader backHref="/panel" title="Email masuk (admin@admuiux.com)" />
+      <PanelPageHeader backHref="/panel" title={t("panel.titleInbox", { address: SUPPORT_CONTACT.email })} />
 
       {emails.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
           <p className="text-sm text-[var(--muted)]">Belum ada email masuk.</p>
-          <p className="mt-1 text-xs text-[var(--muted)]">Email yang dikirim ke admin@admuiux.com akan muncul di sini.</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            {t("panel.inboxEmpty", { address: SUPPORT_CONTACT.email })}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

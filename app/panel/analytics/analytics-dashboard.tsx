@@ -183,12 +183,12 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
       {tab === "overview" && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Card label="Sesi" value={String(overview.sessions)} />
-          <Card label="Pengunjung unik" value={String(overview.visitors)} />
+          <Card label={t("analytics.uniqueVisitors")} value={String(overview.visitors)} />
           <Card label="Login" value={String(overview.loggedIn)} sub={`${overview.anon} anonim`} />
           <Card label="Pageview" value={String(overview.pageviews)} />
-          <Card label="Durasi rata²" value={fmtDuration(overview.avgDurationMs)} />
+          <Card label={t("analytics.avgDuration")} value={fmtDuration(overview.avgDurationMs)} />
           <Card
-            label="Pageview / sesi"
+            label={t("analytics.pageviewsPerSession")}
             value={overview.sessions ? (overview.pageviews / overview.sessions).toFixed(1) : "0"}
           />
         </div>
@@ -237,7 +237,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
       {tab === "acquisition" && (
         <div className="space-y-5">
           <div>
-            <h2 className="mb-2 text-sm font-semibold">Kampanye (UTM)</h2>
+            <h2 className="mb-2 text-sm font-semibold">{t("analytics.utmHeading")}</h2>
             {campaigns.length === 0 ? (
               <Empty>Belum ada trafik ber-UTM. Tambahkan <code>?utm_source=…&amp;utm_campaign=…</code> ke link iklan.</Empty>
             ) : (
@@ -372,7 +372,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
       {tab === "geography" && (
         <div>
           {geography.length === 0 ? (
-            <Empty>Belum ada data geografi (IP lokal / privat dilewati).</Empty>
+            <Empty>{t("analytics.noGeo")}</Empty>
           ) : (
             <TableShell>
               <thead>

@@ -5,10 +5,13 @@ import { editingSite, listSites } from "@/lib/site-resolve";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { PopupForm } from "./popup-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export const metadata = { title: "Popup banner" };
 
 export default async function PopupPage() {
+  const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
 
   const [site, sites] = await Promise.all([editingSite(), listSites()]);
@@ -16,7 +19,7 @@ export default async function PopupPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PanelPageHeader backHref="/panel" title="Popup banner" />
+      <PanelPageHeader backHref="/panel" title={t("panel.navPopup")} />
 
       <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 

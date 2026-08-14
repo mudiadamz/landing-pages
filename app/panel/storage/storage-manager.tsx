@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { deleteStorageFile, type StorageFile } from "@/lib/actions/storage-admin";
+import { useT } from "@/lib/i18n/client";
 
 function formatBytes(n: number | null): string {
   if (n == null) return "—";
@@ -133,6 +134,7 @@ export function StorageManager({
   buckets: string[];
   truncated: boolean;
 }) {
+  const t = useT();
   const [files, setFiles] = useState(initialFiles);
   const [bucket, setBucket] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("recent");
@@ -202,7 +204,7 @@ export function StorageManager({
     <div className="space-y-4">
       {truncated && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-400">
-          Daftar dipangkas pada batas maksimum. Pakai pencarian untuk mempersempit.
+          {t("panel.storageTruncated")}
         </div>
       )}
 
@@ -210,7 +212,7 @@ export function StorageManager({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           <label className="sr-only" htmlFor="storage-bucket">
-            Bucket
+            {t("panel.storageBucket")}
           </label>
           <select
             id="storage-bucket"
@@ -227,7 +229,7 @@ export function StorageManager({
           </select>
 
           <label className="sr-only" htmlFor="storage-sort">
-            Urutkan
+            {t("panel.sortBy")}
           </label>
           <select
             id="storage-sort"
@@ -247,7 +249,7 @@ export function StorageManager({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari path file…"
+          placeholder={t("panel.storageSearch")}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
         />
       </div>
@@ -265,21 +267,21 @@ export function StorageManager({
             onClick={() => setCollapsed(new Set())}
             className="font-medium text-[var(--primary)] hover:underline"
           >
-            Buka semua
+            {t("panel.expandAll")}
           </button>
           <button
             type="button"
             onClick={() => setCollapsed(new Set(allKeys(tree)))}
             className="font-medium text-[var(--primary)] hover:underline"
           >
-            Tutup semua
+            {t("panel.collapseAll")}
           </button>
         </div>
       </div>
 
       {tree.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-10 text-center text-sm text-[var(--muted)]">
-          Tidak ada file.
+          {t("panel.noFiles")}
         </div>
       ) : (
         <ul className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
@@ -361,6 +363,7 @@ function TreeFolder({
 }
 
 function FileRow({ file: f, depth, ctx }: { file: StorageFile; depth: number; ctx: RowCtx }) {
+  const t = useT();
   const key = `${f.bucket}\n${f.path}`;
   const confirming = ctx.confirm === key;
   const deleting = ctx.busy === key;
@@ -394,7 +397,7 @@ function FileRow({ file: f, depth, ctx }: { file: StorageFile; depth: number; ct
               rel="noopener noreferrer"
               className="text-[var(--primary)] hover:underline"
             >
-              Buka
+              {t("panel.open")}
             </a>
           )}
         </p>
@@ -416,14 +419,14 @@ function FileRow({ file: f, depth, ctx }: { file: StorageFile; depth: number; ct
             disabled={deleting}
             className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
           >
-            Batal
+            {t("common.cancel")}
           </button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => ctx.setConfirm(key)}
-          title="Hapus file"
+          title={t("panel.deleteFile")}
           aria-label="Hapus file"
           className="shrink-0 rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
         >

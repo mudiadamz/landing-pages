@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { getSessionJourney, type JourneyStep, type SessionListRow } from "@/lib/actions/analytics";
+import { useT } from "@/lib/i18n/client";
 
 const ENGAGEMENT_LABEL: Record<string, { label: string; cls: string }> = {
   read: { label: "Baca", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
@@ -37,6 +38,7 @@ export function SessionRow({
   s: SessionListRow;
   fmtDuration: (ms: number) => string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [steps, setSteps] = useState<JourneyStep[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -99,7 +101,7 @@ export function SessionRow({
                 {s.campaign && ` · utm_campaign=${s.campaign}`}
               </p>
             )}
-            {loading && <p className="text-xs text-[var(--muted)]">Memuat perjalanan…</p>}
+            {loading && <p className="text-xs text-[var(--muted)]">{t("analytics.loadingJourney")}</p>}
             {steps && steps.length === 0 && (
               <p className="text-xs text-[var(--muted)]">Tidak ada langkah tercatat.</p>
             )}

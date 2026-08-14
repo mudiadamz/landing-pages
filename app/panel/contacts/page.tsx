@@ -4,8 +4,11 @@ import { getContactsForAdmin } from "@/lib/actions/contacts";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export default async function ContactsPage() {
+  const t = translator(await requestLocale());
   const ok = await requireFeature("contacts");
   if (!ok) redirect("/panel");
 
@@ -23,7 +26,7 @@ export default async function ContactsPage() {
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader backHref="/panel" title="Pesan kontak" />
+      <PanelPageHeader backHref="/panel" title={t("panel.titleContacts")} />
 
       <SiteScopeCoverage
         host={scope.site.host}
@@ -35,7 +38,7 @@ export default async function ContactsPage() {
 
       {contacts.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-          <p className="text-sm text-[var(--muted)]">Belum ada pesan kontak.</p>
+          {t("panel.noContacts")}
         </div>
       ) : (
         <>

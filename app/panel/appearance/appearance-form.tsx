@@ -11,6 +11,7 @@ import {
   type PaletteTokens,
 } from "@/lib/palette";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Palette picker with a live preview.
@@ -35,6 +36,7 @@ const FIELDS: { key: keyof PaletteTokens; label: string }[] = [
 ];
 
 export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
+  const t = useT();
   const router = useRouter();
   const [preset, setPreset] = useState(initial.preset);
   const [tokens, setTokens] = useState<PaletteTokens>(initial.tokens);
@@ -132,34 +134,33 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
           ))}
         </div>
         <p className="mt-3 text-xs text-[var(--muted)]">
-          Latar, teks dan garis sengaja tidak bisa diubah — di situlah kontras panel
-          bergantung. Nilai non-hex diabaikan saat disimpan.
+          {t("panel.appearanceHint")}
         </p>
       </details>
 
       {/* Real components, not swatches. */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Pratinjau
+          {t("panel.preview")}
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <Button size="md">Tombol utama</Button>
+          <Button size="md">{t("panel.primaryButton")}</Button>
           <Button variant="secondary" size="md">
-            Sekunder
+            {t("panel.secondary")}
           </Button>
           <span className="rounded-lg bg-[var(--accent-subtle)] px-3 py-1.5 text-sm font-medium text-[var(--primary)]">
-            Menu aktif
+            {t("panel.activeMenu")}
           </span>
           <span
             className="rounded px-2 py-0.5 text-xs font-semibold"
             style={{ background: "var(--accent)", color: "#1d1d1f" }}
           >
-            Aksen
+            {t("panel.accent")}
           </span>
           <a href="#preview" className="text-sm font-medium text-[var(--primary)] hover:underline">
-            Tautan
+            {t("panel.link")}
           </a>
-          <span className="text-sm text-[var(--muted)]">Teks sekunder</span>
+          <span className="text-sm text-[var(--muted)]">{t("panel.secondaryText")}</span>
         </div>
       </div>
 

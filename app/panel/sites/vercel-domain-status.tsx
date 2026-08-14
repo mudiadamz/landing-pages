@@ -8,6 +8,7 @@ import {
   detachDomainFromVercel,
   type VercelStatus,
 } from "@/lib/actions/sites";
+import { useT } from "@/lib/i18n/client";
 
 const BOX =
   "space-y-2 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5";
@@ -65,6 +66,7 @@ function CopyValue({ value }: { value: string }) {
  * so the written instructions stay the single source of truth in that case.
  */
 export function VercelDomainStatus({ host }: { host: string }) {
+  const t = useT();
   const [status, setStatus] = useState<VercelStatus | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -81,7 +83,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
   if (!status) {
     return (
       <div className={BOX}>
-        <p className="text-xs text-[var(--muted)]">Memeriksa status di Vercel…</p>
+        <p className="text-xs text-[var(--muted)]">{t("sites.checkingVercel")}</p>
       </div>
     );
   }
@@ -199,7 +201,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
 
           {isApex && state.dns!.ipv4.length > 0 && (
             <Record
-              label="Domain utama (apex) — pakai A record"
+              label={t("sites.apexHint")}
               rows={[
                 ["Type", "A"],
                 ["Host / Name", "@"],
@@ -210,7 +212,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
 
           {!isApex && state.dns!.cname && (
             <Record
-              label="Subdomain — pakai CNAME"
+              label={t("sites.subdomainHint")}
               rows={[
                 ["Type", "CNAME"],
                 ["Host / Name", host.split(".")[0]],

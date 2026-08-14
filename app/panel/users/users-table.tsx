@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 type Role = "admin" | "customer" | "publisher";
 type RoleFilter = "all" | Role;
@@ -22,6 +23,7 @@ type UserRow = {
 };
 
 export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
+  const t = useT();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
-        <p className="text-sm text-[var(--muted)]">Memuat data user…</p>
+        <p className="text-sm text-[var(--muted)]">{t("panel.loadingUsers")}</p>
       </div>
     );
   }
@@ -143,7 +145,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari nama atau email…"
+            placeholder={t("panel.searchUsers")}
             className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-base sm:text-sm placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           />
         </div>
@@ -151,9 +153,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
           className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
-          aria-label="Filter role"
+          aria-label={t("panel.filterRole")}
         >
-          <option value="all">Semua role</option>
+          <option value="all">{t("panel.allRoles")}</option>
           <option value="admin">Admin</option>
           <option value="publisher">Publisher</option>
           <option value="customer">Customer</option>
@@ -162,11 +164,11 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
           value={verifyFilter}
           onChange={(e) => setVerifyFilter(e.target.value as VerifyFilter)}
           className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
-          aria-label="Filter verifikasi email"
+          aria-label={t("panel.filterVerified")}
         >
-          <option value="all">Semua email</option>
-          <option value="unverified">Belum verifikasi</option>
-          <option value="verified">Sudah verifikasi</option>
+          <option value="all">{t("panel.allEmails")}</option>
+          <option value="unverified">{t("panel.notVerified")}</option>
+          <option value="verified">{t("panel.verified")}</option>
         </select>
         <span className="text-xs text-[var(--muted)]">
           {filtered.length} user
@@ -207,7 +209,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
         ))}
         {filtered.length === 0 && (
           <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted)]">
-            Tidak ada user ditemukan.
+            {t("panel.noUsers")}
           </p>
         )}
       </div>
@@ -225,9 +227,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Status</th>
                 <th
                   className="text-center px-4 py-3 font-medium text-[var(--muted)]"
-                  title="Kunjungan user ini tidak dihitung di Analytics"
+                  title={t("panel.excludeStatsHint")}
                 >
-                  Hitung statistik
+                  {t("panel.countStats")}
                 </th>
                 <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Aksi</th>
               </tr>
@@ -278,7 +280,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
-                    Tidak ada user ditemukan.
+                    {t("panel.noUsers")}
                   </td>
                 </tr>
               )}
@@ -301,6 +303,7 @@ function RoleControl({
   disabled: boolean;
   onChange: (user: UserRow, role: Role) => void;
 }) {
+  const t = useT();
   if (!canEdit) return <RoleBadge role={user.role} />;
   return (
     <select
@@ -308,7 +311,7 @@ function RoleControl({
       disabled={disabled}
       onChange={(e) => onChange(user, e.target.value as Role)}
       className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
-      aria-label="Ubah role"
+      aria-label={t("panel.changeRole")}
     >
       <option value="customer">customer</option>
       <option value="publisher">publisher</option>

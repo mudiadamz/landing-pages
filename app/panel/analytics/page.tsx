@@ -9,6 +9,8 @@ import { listExcludedIps, getMyIp } from "@/lib/actions/excluded-ips";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export const metadata = { title: "Analytics" };
 
@@ -19,6 +21,7 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
+  const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
 
   const sp = await searchParams;
@@ -37,7 +40,7 @@ export default async function AnalyticsPage({
     <div className="space-y-6">
       <PanelPageHeader
         backHref="/panel"
-        title="Analytics"
+        title={t("panel.navAnalytics")}
         description="Sesi & perjalanan pengunjung."
         actions={
           <>

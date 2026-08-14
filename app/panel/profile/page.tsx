@@ -15,6 +15,8 @@ import { AvatarForm } from "./avatar-form";
 import { PublisherCard } from "./publisher-card";
 import { VerifyEmailRow } from "./verify-email-row";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Account page: who you are, what state the account is in, and the two things
@@ -50,6 +52,7 @@ const PUBLISHER_BADGE: Record<PublisherStatus, { text: string; className: string
 };
 
 export default async function ProfilePage() {
+  const t = translator(await requestLocale());
   const supabase = await createClient();
   const {
     data: { user },
@@ -88,7 +91,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-5">
-      <PanelPageHeader backHref="/panel" title="Profil" />
+      <PanelPageHeader backHref="/panel" title={t("nav.profile")} />
 
       {/* Identity header */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">

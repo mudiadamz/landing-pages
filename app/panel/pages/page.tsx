@@ -21,7 +21,7 @@ export default async function PagesIndex() {
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader backHref="/panel" title="Halaman" actions={<NewPageButton />} />
+      <PanelPageHeader backHref="/panel" title={t("panel.navPages")} actions={<NewPageButton />} />
 
       <p className="text-sm text-[var(--muted)]">
         {t("panel.pagesIntro")}

@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { getProfile } from "@/lib/actions/profiles";
 import { getInvoiceById } from "@/lib/actions/purchases";
 import { PrintButton } from "./print-button";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -25,6 +27,7 @@ function formatDate(iso: string): string {
 }
 
 export default async function InvoiceDetailPage({ params }: Props) {
+  const t = translator(await requestLocale());
   const { id } = await params;
   const profile = await getProfile();
   if (!profile) redirect("/login");
@@ -39,7 +42,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
           href="/panel"
           className="text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
-          ← Kembali
+          ← {t("common.back")}
         </Link>
         <PrintButton />
       </div>
@@ -110,8 +113,8 @@ export default async function InvoiceDetailPage({ params }: Props) {
 
         {/* Footer note */}
         <div className="text-center text-xs text-[var(--muted)] print:text-gray-500">
-          <p>Terima kasih atas pembelian Anda.</p>
-          <p className="mt-1">Invoice ini dibuat secara otomatis oleh sistem ADM.UIUX.</p>
+          <p>{t("panel.invoiceThanks")}</p>
+          <p className="mt-1">{t("panel.invoiceAuto")}</p>
         </div>
       </div>
     </div>

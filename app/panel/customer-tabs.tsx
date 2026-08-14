@@ -6,6 +6,7 @@ import Image from "next/image";
 import type { PurchaseWithPage, InvoiceRow } from "@/lib/actions/purchases";
 import type { UserReview } from "@/lib/actions/reviews";
 import { ReviewForm } from "./review-form";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   purchases: PurchaseWithPage[];
@@ -38,6 +39,7 @@ function formatPrice(value: number): string {
 }
 
 export function CustomerTabs({ purchases, invoices, reviews }: Props) {
+  const t = useT();
   const [tab, setTab] = useState<"purchases" | "invoices">("purchases");
 
   const reviewMap = new Map<string, UserReview>();
@@ -57,7 +59,7 @@ export function CustomerTabs({ purchases, invoices, reviews }: Props) {
               : "text-[var(--muted)] hover:text-foreground"
           }`}
         >
-          Landing Page
+          {t("panel.tabProducts")}
         </button>
         <button
           type="button"
@@ -68,7 +70,7 @@ export function CustomerTabs({ purchases, invoices, reviews }: Props) {
               : "text-[var(--muted)] hover:text-foreground"
           }`}
         >
-          Riwayat & Invoice
+          {t("panel.tabHistory")}
         </button>
       </div>
 
@@ -105,17 +107,18 @@ function PurchasesTab({
   purchases: PurchaseWithPage[];
   reviewMap: Map<string, UserReview>;
 }) {
+  const t = useT();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (purchases.length === 0) {
     return (
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-        <p className="text-[var(--muted)]">Belum ada pembelian landing page.</p>
+        <p className="text-[var(--muted)]">{t("panel.noPurchases")}</p>
         <Link
           href="/"
           className="mt-4 inline-block text-sm font-medium text-[var(--primary)] hover:underline"
         >
-          Jelajahi landing page
+          {t("panel.dashBrowse")}
         </Link>
       </div>
     );
@@ -178,7 +181,7 @@ function PurchasesTab({
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        Download
+                        {t("panel.download")}
                       </Link>
                     )}
                     {/* Opens the same reader as the public preview (back button,
@@ -236,21 +239,23 @@ function PurchasesTab({
  * question we'd rather answer here.
  */
 function RevokedTag() {
+  const t = useT();
   return (
     <span
-      title="Akses ke produk ini dicabut oleh admin"
+      title={t("panel.accessRevokedHint")}
       className="ml-2 inline-block rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
     >
-      Akses dicabut
+      {t("panel.accessRevoked")}
     </span>
   );
 }
 
 function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
+  const t = useT();
   if (invoices.length === 0) {
     return (
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-        <p className="text-[var(--muted)]">Belum ada riwayat pembelian.</p>
+        <p className="text-[var(--muted)]">{t("panel.noHistory")}</p>
       </div>
     );
   }
@@ -263,11 +268,11 @@ function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--background)]/50">
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Invoice</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Produk</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Tanggal</th>
-                <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Amount</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Metode</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("panel.invoice")}</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("analytics.product")}</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("panel.date")}</th>
+                <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">{t("panel.amount")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.method")}</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -295,7 +300,7 @@ function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
                       href={`/panel/invoices/${inv.id}`}
                       className="text-xs font-medium text-[var(--primary)] hover:underline"
                     >
-                      Lihat
+                      {t("panel.view")}
                     </Link>
                   </td>
                 </tr>
@@ -326,7 +331,7 @@ function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
               <span className="text-xs text-[var(--muted)]">
                 {inv.invoice_number ?? "—"} · {formatDate(inv.purchased_at)}
               </span>
-              <span className="text-xs text-[var(--primary)]">Lihat →</span>
+              <span className="text-xs text-[var(--primary)]">{t("panel.view")} →</span>
             </div>
           </Link>
         ))}

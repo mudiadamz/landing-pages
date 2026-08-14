@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteReceivedEmail } from "@/lib/actions/received-emails";
+import { useT } from "@/lib/i18n/client";
 
 export function DeleteEmailButton({ emailId }: { emailId: string }) {
+  const t = useT();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -25,7 +27,7 @@ export function DeleteEmailButton({ emailId }: { emailId: string }) {
   if (confirming) {
     return (
       <span className="inline-flex items-center gap-2">
-        <span className="text-xs text-[var(--muted)]">Hapus?</span>
+        <span className="text-xs text-[var(--muted)]">{t("panel.deleteQ")}</span>
         <button
           type="button"
           onClick={handleDelete}

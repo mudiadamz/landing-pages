@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { uploadProfileAvatar, removeProfileAvatar } from "@/lib/actions/profiles";
 import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The avatar, and the popup for changing it — one component, because the
@@ -26,6 +27,7 @@ export function AvatarForm({
   /** Letter shown while there is no picture — matches the sidebar's fallback. */
   initial: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const [url, setUrl] = useState(initialUrl);
   const [meta, setMeta] = useState<FileMeta | null>(null);
@@ -130,12 +132,12 @@ export function AvatarForm({
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="Foto profil"
+              aria-label={t("panel.profilePhoto")}
               className="relative w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-xl sm:p-6"
             >
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-foreground">Foto profil</h2>
+                  <h2 className="text-base font-semibold text-foreground">{t("panel.profilePhoto")}</h2>
                   <p className="mt-0.5 text-sm text-[var(--muted)]">
                     Muncul di sidebar panel dan di halaman ini.
                   </p>
@@ -158,7 +160,7 @@ export function AvatarForm({
               </div>
 
               <FileUploadCard
-                label="Foto profil"
+                label={t("panel.profilePhoto")}
                 accept="image/png,image/webp,image/jpeg"
                 badge="Gambar"
                 badgeClass="bg-[var(--accent-subtle)] text-[var(--primary)]"

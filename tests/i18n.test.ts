@@ -67,13 +67,10 @@ describe("dictionary integrity", () => {
   const NOT_YET_CONVERTED = [
     "analytics.entryPage",
     "analytics.noUtm",
-    "analytics.product",
     "analytics.sessions",
     "checkout.buyNow",
     "checkout.getFree",
-    "common.add",
     "common.all",
-    "common.edit",
     "common.free",
     "common.price",
     "common.required",
@@ -81,7 +78,6 @@ describe("dictionary integrity", () => {
     "home.themeToggle",
     "nav.categories",
     "nav.home",
-    "nav.profile",
     "panel.socialHint",
     "reader.signInGoogle",
     "sites.domain",
@@ -153,6 +149,11 @@ describe("dictionary integrity", () => {
     Domain: ["panel.navDomains", "sites.domain"],
     "Identitas situs": ["panel.navBranding", "sites.identity"],
     Halaman: ["content.tabPages", "panel.navPages"],
+    // A dashboard stat ("how many buyers") beside a role name ("this user is a
+    // buyer"). English already splits them: "Buyers" and "Buyer".
+    Pembeli: ["panel.dashBuyers", "panel.roleCustomer"],
+    // Storage's "open this file" vs the setup guide's "open this section".
+    Buka: ["panel.open", "sites.open"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

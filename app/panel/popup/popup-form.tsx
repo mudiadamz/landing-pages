@@ -5,11 +5,13 @@ import { updatePopupBanner, uploadPopupImage } from "@/lib/actions/site-settings
 import { type PopupBanner } from "@/lib/popup-config";
 import { POPUP_MAX_BYTES } from "@/lib/webp";
 import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
+import { useT } from "@/lib/i18n/client";
 
 const input =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
 
 export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: string }) {
+  const t = useT();
   const [cfg, setCfg] = useState<PopupBanner>(initial);
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -70,15 +72,15 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
           className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
         />
         <span className="text-sm">
-          <span className="font-medium text-foreground">Aktifkan popup banner</span>
+          <span className="font-medium text-foreground">{t("panel.popupEnable")}</span>
           <span className="mt-0.5 block text-xs text-[var(--muted)]">
-            Tampil di halaman preview produk. Tanpa gambar, popup tidak pernah muncul.
+            {t("panel.popupEnableHint")}
           </span>
         </span>
       </label>
 
       <FileUploadCard
-        label="Gambar header (WebP, opsional)"
+        label={t("panel.popupImage")}
         hint={`Opsional — tanpa gambar, popup memakai ilustrasi hujan + bunga bawaan (nol request). Kalau diisi: wajib WebP asli, maksimal ${Math.round(POPUP_MAX_BYTES / 1024)} KB.`}
         accept="image/webp"
         badge="WEBP"
@@ -108,7 +110,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-xs font-medium text-foreground">Link tujuan</span>
+          <span className="text-xs font-medium text-foreground">{t("panel.popupHref")}</span>
           <span className="mt-0.5 block text-xs text-[var(--muted)]">
             Kosongkan agar gambar tidak bisa diklik. Awali &quot;/&quot; untuk halaman sendiri.
           </span>
@@ -116,29 +118,28 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
             className={`mt-1 ${input}`}
             value={cfg.href}
             onChange={(e) => set("href", e.target.value)}
-            placeholder="/preview/nama-produk atau https://…"
+            placeholder={t("panel.popupHrefPlaceholder")}
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-foreground">Teks alternatif</span>
+          <span className="text-xs font-medium text-foreground">{t("panel.popupAlt")}</span>
           <span className="mt-0.5 block text-xs text-[var(--muted)]">
-            Dibaca screen reader dan tampil jika gambar gagal dimuat.
+            {t("panel.popupAltHint")}
           </span>
           <input
             className={`mt-1 ${input}`}
             value={cfg.alt}
             onChange={(e) => set("alt", e.target.value)}
-            placeholder="Diskon 30% sampai 12.12"
+            placeholder={t("panel.popupAltPlaceholder")}
           />
         </label>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-xs font-medium text-foreground">Muncul setelah (detik)</span>
+          <span className="text-xs font-medium text-foreground">{t("panel.popupDelay")}</span>
           <span className="mt-0.5 block text-xs text-[var(--muted)]">
-            Dihitung sejak halaman selesai dimuat. 8 detik adalah titik terakhir yang masih
-            menjangkau seluruh pengunjung yang benar-benar membaca.
+            {t("panel.popupDelayHint")}
           </span>
           <input
             type="number"
@@ -157,16 +158,16 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
             className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
           />
           <span className="text-sm">
-            <span className="font-medium text-foreground">Tampilkan saat mau keluar</span>
+            <span className="font-medium text-foreground">{t("panel.popupExit")}</span>
             <span className="mt-0.5 block text-xs text-[var(--muted)]">
-              Muncul lebih awal jika kursor keluar dari atas layar. Hanya di desktop.
+              {t("panel.popupExitHint")}
             </span>
           </span>
         </label>
       </div>
 
       <div className="space-y-3 rounded-xl border border-[var(--border)] p-3">
-        <p className="text-xs font-medium text-foreground">Isi popup</p>
+        <p className="text-xs font-medium text-foreground">{t("panel.popupBody")}</p>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
@@ -192,7 +193,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
             onChange={(e) => set("emailCapture", e.target.checked)}
             className="mt-0.5 h-4 w-4 accent-[var(--primary)]" />
           <span className="text-sm">
-            <span className="font-medium text-foreground">Minta email</span>
+            <span className="font-medium text-foreground">{t("panel.popupAskEmail")}</span>
             <span className="mt-0.5 block text-xs text-[var(--muted)]">
               Alamat disimpan di <code>lp_promo_subscribers</code>. Kalau dimatikan, tombol
               memakai &quot;Link tujuan&quot; di atas.
@@ -202,32 +203,32 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="text-xs text-[var(--muted)]">Label tombol</span>
+            <span className="text-xs text-[var(--muted)]">{t("panel.popupButtonLabel")}</span>
             <input className={`mt-1 ${input}`} value={cfg.ctaLabel}
               onChange={(e) => set("ctaLabel", e.target.value)} />
           </label>
           <label className="block">
-            <span className="text-xs text-[var(--muted)]">Label &quot;nanti aja&quot;</span>
+            <span className="text-xs text-[var(--muted)]">{t("panel.popupDismissLabel")}</span>
             <input className={`mt-1 ${input}`} value={cfg.dismissLabel}
               onChange={(e) => set("dismissLabel", e.target.value)} />
           </label>
           <label className="block">
-            <span className="text-xs text-[var(--muted)]">Instagram URL (kosong = sembunyi)</span>
+            <span className="text-xs text-[var(--muted)]">{t("panel.popupInstagramUrl")}</span>
             <input className={`mt-1 ${input}`} value={cfg.instagramUrl}
               onChange={(e) => set("instagramUrl", e.target.value)} />
           </label>
           <label className="block">
-            <span className="text-xs text-[var(--muted)]">Label Instagram</span>
+            <span className="text-xs text-[var(--muted)]">{t("panel.popupInstagramLabel")}</span>
             <input className={`mt-1 ${input}`} value={cfg.instagramLabel}
               onChange={(e) => set("instagramLabel", e.target.value)} />
           </label>
           <label className="block">
-            <span className="text-xs text-[var(--muted)]">Judul setelah kirim</span>
+            <span className="text-xs text-[var(--muted)]">{t("panel.popupThanksTitle")}</span>
             <input className={`mt-1 ${input}`} value={cfg.doneTitle}
               onChange={(e) => set("doneTitle", e.target.value)} />
           </label>
           <label className="block">
-            <span className="text-xs text-[var(--muted)]">Teks setelah kirim</span>
+            <span className="text-xs text-[var(--muted)]">{t("panel.popupThanksBody")}</span>
             <input className={`mt-1 ${input}`} value={cfg.doneBody}
               onChange={(e) => set("doneBody", e.target.value)} />
           </label>

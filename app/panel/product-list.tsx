@@ -6,6 +6,7 @@ import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import { PinButton } from "./pin-button";
 import { DeleteButton } from "./delete-button";
 import { VisibilityToggle } from "./visibility-toggle";
+import { useT } from "@/lib/i18n/client";
 
 // 50, not 8. The list is a working surface — you come here to find a product
 // and open it — and paging every 8 rows meant a 16-product catalog was already
@@ -104,27 +105,29 @@ function SortTh({
 }
 
 function HiddenBadge() {
+  const t = useT();
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)] ring-1 ring-[var(--border)]">
-      Disembunyikan
+      {t("panel.hidden")}
     </span>
   );
 }
 
 function RowActions({ p, size = "sm" }: { p: ProductRow; size?: "sm" | "lg" }) {
+  const t = useT();
   const linkClass = size === "lg" ? ACTION_LINK_LG : ACTION_LINK_SM;
   const iconClass = size === "lg" ? "w-5 h-5" : "w-4 h-4";
   return (
     <>
       <VisibilityToggle id={p.id} published={p.published !== false} size={size} />
       <PinButton id={p.id} featured={!!p.featured} size={size} />
-      <Link href={`/panel/product/${p.id}/stats`} className={linkClass} title="Statistik" aria-label="Statistik">
+      <Link href={`/panel/product/${p.id}/stats`} className={linkClass} title={t("panel.stats")} aria-label={t("panel.stats")}>
         <ChartIcon className={iconClass} />
       </Link>
-      <Link href={`/panel/product/${p.id}/edit`} className={linkClass} title="Edit" aria-label="Edit">
+      <Link href={`/panel/product/${p.id}/edit`} className={linkClass} title={t("common.edit")} aria-label={t("common.edit")}>
         <EditIcon className={iconClass} />
       </Link>
-      <Link href={`/preview/${p.slug}`} target="_blank" rel="noopener noreferrer" className={linkClass} title="Lihat preview" aria-label="Lihat preview">
+      <Link href={`/preview/${p.slug}`} target="_blank" rel="noopener noreferrer" className={linkClass} title={t("panel.viewPreview")} aria-label={t("panel.viewPreview")}>
         <ExternalIcon className={iconClass} />
       </Link>
       <DeleteButton id={p.id} size={size} />
@@ -139,6 +142,7 @@ export function ProductList({
   pages: ProductRow[];
   categories: LandingPageCategory[];
 }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
@@ -206,7 +210,7 @@ export function ProductList({
               setQuery(e.target.value);
               setPage(1);
             }}
-            placeholder="Cari judul atau slug…"
+            placeholder={t("panel.searchProducts")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
         </div>
@@ -218,7 +222,7 @@ export function ProductList({
               setCategory(e.target.value);
               setPage(1);
             }}
-            aria-label="Filter kategori"
+            aria-label={t("home.filterLabel")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:w-56"
           >
             <option value="">Semua kategori</option>
@@ -263,8 +267,8 @@ export function ProductList({
           <option value="updated:asc">Terlama diperbarui</option>
           <option value="views:desc">Kunjungan terbanyak</option>
           <option value="views:asc">Kunjungan tersedikit</option>
-          <option value="title:asc">Judul A–Z</option>
-          <option value="title:desc">Judul Z–A</option>
+          <option value="title:asc">{t("panel.sortTitleAsc")}</option>
+          <option value="title:desc">{t("panel.sortTitleDesc")}</option>
         </select>
       </div>
 

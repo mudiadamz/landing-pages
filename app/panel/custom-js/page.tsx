@@ -5,8 +5,11 @@ import { editingSite, listSites } from "@/lib/site-resolve";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { CustomJsForm } from "./custom-js-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export default async function CustomJsPage() {
+  const t = translator(await requestLocale());
   const ok = await requireFeature("custom-js");
   if (!ok) redirect("/panel");
 
@@ -15,7 +18,7 @@ export default async function CustomJsPage() {
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader backHref="/panel" title="Custom JavaScript" />
+      <PanelPageHeader backHref="/panel" title={t("panel.titleCustomJs")} />
 
       <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 

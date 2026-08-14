@@ -8,6 +8,7 @@ import {
   setPurchaseRevoked,
   type CustomerPurchase,
 } from "@/lib/actions/purchase-access";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Per-customer access control, opened from the customer list.
@@ -69,6 +70,7 @@ function Dialog({
   name: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [rows, setRows] = useState<CustomerPurchase[] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -183,7 +185,7 @@ function Dialog({
           {msg && <p className="mb-3 text-xs text-[var(--primary)]">{msg}</p>}
 
           {rows === null ? (
-            <p className="text-sm text-[var(--muted)]">Memuat…</p>
+            <p className="text-sm text-[var(--muted)]">{t("common.loading")}</p>
           ) : rows.length === 0 ? (
             <p className="text-sm text-[var(--muted)]">Belum ada pembelian.</p>
           ) : (

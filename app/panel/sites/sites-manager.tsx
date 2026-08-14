@@ -161,32 +161,30 @@ export function SitesManager({
           the domain reach it and Supabase lets people sign in on it — both easy to
           forget, and both fail in ways that look like a bug in this screen. */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm">
-        <p className="font-medium text-foreground">Menambah domain butuh tiga tempat</p>
+        <p className="font-medium text-foreground">{t("sites.threePlaces")}</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-[var(--muted)]">
           <li>
-            <strong className="text-foreground">Di sini</strong> — hostname-nya, plus
-            aktif/nonaktif.
+            <strong className="text-foreground">{t("sites.placeHere")}</strong>{" "}
+            {t("sites.placeHereWhat")}
           </li>
           <li>
-            <strong className="text-foreground">Vercel</strong> — supaya domainnya sampai ke
-            aplikasi ini.{" "}
+            <strong className="text-foreground">Vercel</strong> {t("sites.placeVercelWhat")}{" "}
             {vercelAutomated ? (
               <span className="text-green-700 dark:text-green-400">
-                Otomatis — panel ini yang menambahkannya.
+                {t("sites.vercelAuto")}
               </span>
             ) : (
-              <span>Manual, lihat panduan per domain.</span>
+              <span>{t("sites.vercelManual")}</span>
             )}
           </li>
           <li>
-            <strong className="text-foreground">Supabase</strong> — supaya pengunjung bisa login
-            di domain itu.
+            <strong className="text-foreground">Supabase</strong> {t("sites.placeSupabaseWhat")}
           </li>
         </ol>
         <p className="mt-2 text-xs text-[var(--muted)]">
-          Nama situs, tagline, deskripsi SEO, logo, ikon, template, palet, dan niche
-          diatur di <strong className="text-foreground">{t("sites.identity")}</strong> — bukan di
-          sini. Referensi lengkap:{" "}
+          {t("sites.identityLivesIn")}{" "}
+          <strong className="text-foreground">{t("sites.identity")}</strong>{" "}
+          {t("sites.identityNotHere")}{" "}
           <span className="font-mono text-foreground">docs/multi-domain.md</span>.
         </p>
       </div>
@@ -269,7 +267,7 @@ export function SitesManager({
                       onClick={() => remove(site)}
                       disabled={pending}
                     >
-                      Hapus
+                      {t("common.delete")}
                     </Button>
                   )}
                 </div>
@@ -296,8 +294,7 @@ export function SitesManager({
         <div className={CARD}>
           <h2 className="mb-1 text-sm font-semibold text-foreground">{t("sites.newDomain")}</h2>
           <p className="mb-3 text-xs text-[var(--muted)]">
-            Hostname dan nama dulu. Setelah tersimpan Anda langsung dibawa ke Identitas
-            situs untuk logo, template, palet, dan niche.
+            {t("sites.newDomainIntro")}
           </p>
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -309,11 +306,11 @@ export function SitesManager({
                   type="text"
                   value={newDraft.host}
                   onChange={(e) => setNewDraft((d) => ({ ...d, host: e.target.value }))}
-                  placeholder="resepku.com"
+                  placeholder={t("sites.hostPlaceholder")}
                   className={`${INPUT} font-mono`}
                 />
                 <p className="text-xs text-[var(--muted)]">
-                  Tanpa https:// dan tanpa garis miring. Boleh subdomain.
+                  {t("sites.hostHint")}
                 </p>
               </div>
               <div className="space-y-1.5">
@@ -324,7 +321,7 @@ export function SitesManager({
                   type="text"
                   value={newDraft.name}
                   onChange={(e) => setNewDraft((d) => ({ ...d, name: e.target.value }))}
-                  placeholder="Resepku"
+                  placeholder={t("sites.namePlaceholder")}
                   className={INPUT}
                 />
                 <p className="text-xs text-[var(--muted)]">{t("sites.changeableLater")}</p>
@@ -332,7 +329,7 @@ export function SitesManager({
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setEditing(null)} disabled={pending}>
-                Batal
+                {t("common.cancel")}
               </Button>
               <Button onClick={create} loading={pending} disabled={pending}>
                 {t("sites.saveAndNext")}
@@ -376,7 +373,7 @@ function DomainForm({
           type="text"
           value={draft.host}
           onChange={(e) => setDraft((d) => ({ ...d, host: e.target.value }))}
-          placeholder="resepku.com"
+          placeholder={t("sites.hostPlaceholder")}
           disabled={lockHost}
           className={`${INPUT} font-mono disabled:opacity-60`}
         />
@@ -397,17 +394,17 @@ function DomainForm({
         <span>
           <span className="block text-sm font-medium text-foreground">{t("sites.active")}</span>
           <span className="block text-xs text-[var(--muted)]">
-            Kalau dimatikan, domain ini menampilkan situs utama — bukan halaman error.
+            {t("sites.inactiveHint")}
           </span>
         </span>
       </label>
 
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onCancel} disabled={pending}>
-          Batal
+          {t("common.cancel")}
         </Button>
         <Button onClick={onSave} loading={pending} disabled={pending}>
-          Simpan
+          {t("common.save")}
         </Button>
       </div>
     </div>

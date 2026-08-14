@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { uploadLibraryAsset, listLibraryAssets } from "@/lib/actions/assets";
+import { useT } from "@/lib/i18n/client";
 
 type Asset = { name: string; url: string };
 
@@ -12,6 +13,7 @@ function isImage(url: string) {
 }
 
 export function AssetsBrowser({ initialAssets }: { initialAssets: Asset[] }) {
+  const t = useT();
   const [assets, setAssets] = useState<Asset[]>(initialAssets);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -95,7 +97,7 @@ export function AssetsBrowser({ initialAssets }: { initialAssets: Asset[] }) {
               setQuery(e.target.value);
               setPage(1);
             }}
-            placeholder="Cari nama file…"
+            placeholder={t("panel.searchFiles")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
         </div>

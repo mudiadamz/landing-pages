@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getMyFavorites } from "@/lib/actions/likes";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -11,26 +13,27 @@ function formatPrice(value: number): string {
 }
 
 export default async function FavoritesPage() {
+  const t = translator(await requestLocale());
   const favorites = await getMyFavorites();
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Favorit</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">Produk yang Anda sukai.</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">{t("panel.favoritesIntro")}</p>
       </div>
 
       {favorites.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
           <p className="text-sm text-[var(--muted)]">
-            Belum ada favorit. Ketuk ikon ❤ di halaman produk untuk menyimpannya di sini.
+            {t("panel.noFavorites")}
           </p>
           <div className="mt-4 flex justify-center">
             <Link
               href="/"
               className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] transition-transform active:scale-95"
             >
-              Jelajahi produk
+              {t("panel.dashBrowse")}
             </Link>
           </div>
         </div>

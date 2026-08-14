@@ -5,8 +5,11 @@ import { editingSite, listSites } from "@/lib/site-resolve";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { HeroForm } from "./hero-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export default async function HeroSettingsPage() {
+  const t = translator(await requestLocale());
   const ok = await requireFeature("hero");
   if (!ok) redirect("/panel");
 
@@ -17,7 +20,7 @@ export default async function HeroSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader backHref="/panel" title="Hero halaman utama" />
+      <PanelPageHeader backHref="/panel" title={t("panel.titleHero")} />
 
       <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 

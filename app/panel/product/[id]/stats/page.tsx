@@ -7,6 +7,8 @@ import { getProductSummary, type Range } from "@/lib/actions/product-insights";
 import { ProductStatsView } from "@/components/product-stats-view";
 import { ProductSummaryCard } from "@/components/product-summary-card";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -16,6 +18,7 @@ type Props = {
 const RANGES = [7, 30, 90];
 
 export default async function ProductStatsPage({ params, searchParams }: Props) {
+  const t = translator(await requestLocale());
   const canSell = await canSellProducts();
   if (!canSell) redirect("/panel");
 
@@ -32,7 +35,7 @@ export default async function ProductStatsPage({ params, searchParams }: Props) 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PanelPageHeader backHref="/panel/products" title="Statistik — {page.title}" />
+        <PanelPageHeader backHref="/panel/products" title={t("panel.titleStats", { title: page.title })} />
         {/* Range selector (full server navigation so the initial data is correct). */}
         <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--background)] p-1">
           {RANGES.map((r) => (
