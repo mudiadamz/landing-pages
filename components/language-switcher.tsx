@@ -18,11 +18,18 @@ function remember(locale: Locale) {
 }
 
 /**
- * The language control: a flag and a three-letter code per language.
+ * The language control: a dropdown showing a flag and a three-letter code.
  *
- * Both, not either. A flag alone is ambiguous — 🇬🇧 is a country, and plenty of
- * languages are spoken in several — while a bare code is unreadable at a glance.
- * Together they are recognisable at footer size without a dropdown to open.
+ * Both marks, not either. A flag alone is ambiguous — plenty of languages are
+ * spoken in several countries — and a bare code is unreadable at a glance.
+ * Windows renders regional-indicator pairs as letters rather than a flag, which
+ * is a second reason the code sits beside it rather than behind a tooltip.
+ *
+ * A native <select>, not a custom menu: one tap on a phone, the platform's own
+ * picker, keyboard and screen-reader support for free, and no way to leave it
+ * hanging open across a route change. The collapsed control shows only the
+ * current language, which is the point of a dropdown in a footer and a sidebar —
+ * a row of buttons grows with every language added.
  *
  * Picking a language writes a cookie and calls `router.refresh()`, which re-runs
  * the server render with the new cookie. The strings are chosen on the server,
@@ -45,49 +52,51 @@ export function LanguageSwitcher({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const shown = LOCALE_OPTIONS.find((o) => o.key === current) ?? LOCALE_OPTIONS[0];
 
-  function pick(next: Locale) {
+  function pick(next: string) {
     if (next === current) return;
-    remember(next);
+    remember(next as Locale);
     startTransition(() => router.refresh());
   }
 
   return (
-    <div
-      role="group"
-      aria-label={label}
-      className={`inline-flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5 ${className}`}
+    <span
+      className={`relative inline-flex items-center rounded-lg border border-[var(--border)] text-[11px] font-semibold leading-none tracking-wide transition-colors focus-within:ring-2 focus-within:ring-[var(--ring)] hover:bg-[var(--accent-subtle)] ${className}`}
     >
-      {LOCALE_OPTIONS.map((o) => {
-        const active = o.key === current;
-        return (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => pick(o.key)}
-            disabled={pending}
-            aria-pressed={active}
-            // The full language name in its own script: someone who cannot read
-            // the current language still needs to identify their own.
-            title={o.native}
-            className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold leading-none tracking-wide transition-colors disabled:opacity-50 ${
-              active
-                ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                : "text-[var(--muted)] hover:bg-[var(--accent-subtle)] hover:text-foreground"
-            }`}
-          >
-            {/* Emoji, so it inherits the text colour of neither state and needs
-                no asset. Windows renders these as letter pairs rather than a
-                flag, which is why the code is beside it rather than behind a
-                tooltip. */}
-            <span aria-hidden className="text-[13px] leading-none">
-              {o.flag}
-            </span>
-            {o.code}
-            <span className="sr-only"> — {o.native}</span>
-          </button>
-        );
-      })}
-    </div>
+      {/* Transparent and stretched over the whole control. The native select
+          draws its own arrow, padding and font on every platform; the visible
+          face below is ours, and this stays the REAL control rather than a
+          decoration with a click handler bolted onto it. */}
+      <select
+        value={current}
+        onChange={(e) => pick(e.target.value)}
+        disabled={pending}
+        aria-label={label}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-default"
+      >
+        {LOCALE_OPTIONS.map((o) => (
+          // The native name, in its own language: someone who cannot read the
+          // current language still has to identify their own in the list.
+          <option key={o.key} value={o.key}>
+            {o.flag} {o.code} — {o.native}
+          </option>
+        ))}
+      </select>
+
+      <span aria-hidden className={`flex items-center gap-1.5 px-2 py-1 ${pending ? "opacity-50" : ""}`}>
+        <span className="text-[13px] leading-none">{shown.flag}</span>
+        {shown.code}
+        <ChevronIcon className="h-3 w-3 opacity-60" />
+      </span>
+    </span>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
