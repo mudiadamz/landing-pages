@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MAX_CUT_PERCENT, MIN_CUT_PERCENT, clampCutPercent } from "@/lib/epub-cut";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 const CUT_PRESETS = [30, 40, 50, 60, 70, 80];
 
@@ -22,6 +22,7 @@ export function CutPercentField({
   value: number;
   onChange: (n: number) => void;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState(String(value));
 
   useEffect(() => {

@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createPage } from "@/lib/actions/pages";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /** Asks for the one thing a new page cannot be given automatically: its title. */
 export function NewPageButton() {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");

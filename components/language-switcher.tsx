@@ -6,19 +6,32 @@ import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, LOCALE_OPTIONS } from "@/lib/i18n
 import type { Locale } from "@/lib/i18n";
 
 /**
- * The language control in the footer.
+ * Outside the component on purpose: writing document.cookie is a mutation of
+ * something React does not own, and the compiler's immutability rule rejects it
+ * in component scope. It is also simply not component logic.
  *
- * Writes a cookie and refreshes rather than navigating: the choice has to
- * survive every route, and putting it in the URL would fork every link, every
- * canonical tag and every share of the site into two addresses for one page.
+ * Lax, not Strict: arriving from an external link — which is how a link-in-bio
+ * page is reached — must not reset the visitor's language.
+ */
+function remember(locale: Locale) {
+  document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(locale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; samesite=lax`;
+}
+
+/**
+ * The language control: a flag and a three-letter code per language.
  *
- * `router.refresh()` re-runs the server render with the new cookie in place,
- * which is what actually swaps the language — the strings are chosen on the
- * server, so there is nothing on the client to re-translate.
+ * Both, not either. A flag alone is ambiguous — 🇬🇧 is a country, and plenty of
+ * languages are spoken in several — while a bare code is unreadable at a glance.
+ * Together they are recognisable at footer size without a dropdown to open.
  *
- * Native <select> on purpose. It is one tap on a phone, it is reachable by
- * keyboard without any work, and a footer is the last place to spend a custom
- * dropdown.
+ * Picking a language writes a cookie and calls `router.refresh()`, which re-runs
+ * the server render with the new cookie. The strings are chosen on the server,
+ * so there is nothing on the client to re-translate. The same cookie drives the
+ * storefront and the panel, which is why switching in one changes the other.
+ *
+ * Cookie rather than a URL segment: the choice has to survive every route, and
+ * putting it in the path would fork every link, canonical tag and share of the
+ * site into two addresses for one page.
  */
 export function LanguageSwitcher({
   current,
@@ -26,49 +39,55 @@ export function LanguageSwitcher({
   className = "",
 }: {
   current: Locale;
-  /** Accessible name, translated by the caller — the footer knows the locale. */
+  /** Accessible name, translated by the caller — the caller knows the locale. */
   label: string;
   className?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  function pick(next: string) {
+  function pick(next: Locale) {
     if (next === current) return;
-    // Lax, not Strict: arriving from an external link — which is how a
-    // link-in-bio page is reached — must not reset the visitor's language.
-    document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; samesite=lax`;
+    remember(next);
     startTransition(() => router.refresh());
   }
 
   return (
-    <label className={`inline-flex items-center gap-1.5 ${className}`}>
-      <span className="sr-only">{label}</span>
-      <GlobeIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
-      <select
-        value={current}
-        onChange={(e) => pick(e.target.value)}
-        disabled={pending}
-        aria-label={label}
-        className="cursor-pointer rounded-md border-0 bg-transparent py-0.5 pr-4 text-xs text-inherit transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-50"
-      >
-        {LOCALE_OPTIONS.map((o) => (
-          // The option list is NOT translated: a visitor who cannot read the
-          // current language needs to find their own in it.
-          <option key={o.key} value={o.key} className="bg-[var(--background)] text-foreground">
-            {o.native}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function GlobeIcon({ className, ...rest }: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" {...rest}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" strokeLinecap="round" />
-    </svg>
+    <div
+      role="group"
+      aria-label={label}
+      className={`inline-flex items-center gap-0.5 rounded-lg border border-[var(--border)] p-0.5 ${className}`}
+    >
+      {LOCALE_OPTIONS.map((o) => {
+        const active = o.key === current;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => pick(o.key)}
+            disabled={pending}
+            aria-pressed={active}
+            // The full language name in its own script: someone who cannot read
+            // the current language still needs to identify their own.
+            title={o.native}
+            className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold leading-none tracking-wide transition-colors disabled:opacity-50 ${
+              active
+                ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                : "text-[var(--muted)] hover:bg-[var(--accent-subtle)] hover:text-foreground"
+            }`}
+          >
+            {/* Emoji, so it inherits the text colour of neither state and needs
+                no asset. Windows renders these as letter pairs rather than a
+                flag, which is why the code is beside it rather than behind a
+                tooltip. */}
+            <span aria-hidden className="text-[13px] leading-none">
+              {o.flag}
+            </span>
+            {o.code}
+            <span className="sr-only"> — {o.native}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { fileNameFromUrl, formatBytes, type FileMeta } from "@/components/file-upload-card";
 import { ImageIcon, TrashIcon } from "../icons";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The three image slots: the portrait thumbnail every product needs, an
@@ -69,6 +69,7 @@ export function ThumbnailTab({
   uploadExtraFile: (file: File) => Promise<void>;
   removeExtra: (url: string) => void;
 }) {
+  const t = useT();
   return (
   <section className={className}>
     <div>

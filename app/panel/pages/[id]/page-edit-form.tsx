@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { savePage, deletePage } from "@/lib/actions/pages";
 import { RichEditor, type RichEditorHandle } from "../rich-editor";
 import type { EditorialPage } from "@/lib/page-types";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 export function PageEditForm({ page }: { page: EditorialPage }) {
+  const t = useT();
   const router = useRouter();
   const editor = useRef<RichEditorHandle | null>(null);
 

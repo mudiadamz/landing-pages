@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { uploadAsset, listAssets, uploadSiteZip } from "@/lib/actions/assets";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 export function AssetUpload({
   pageId,
@@ -12,6 +12,7 @@ export function AssetUpload({
   pageId: string;
   onSiteUploaded?: (html: string) => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [assets, setAssets] = useState<{ name: string; url: string }[]>([]);
   const [loading, setLoading] = useState(false);

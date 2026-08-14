@@ -1,7 +1,7 @@
 "use client";
 
 import { ToggleCard } from "@/components/toggle-card";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The Jadwal tab, lifted out of product-edit-form.
@@ -23,6 +23,7 @@ export function ScheduleTab({
   availableAt: string;
   onAvailableAtChange: (v: string) => void;
 }) {
+  const t = useT();
   return (
     <section className={className}>
       <div>

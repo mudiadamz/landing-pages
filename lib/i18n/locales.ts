@@ -8,11 +8,33 @@ import { DEFAULT_LOCALE, type Locale } from "./index";
  * reads Indonesian, which is the wrong assumption for the control that chooses
  * whether they have to.
  */
-export type LocaleOption = { key: Locale; native: string; note: string };
+export type LocaleOption = {
+  key: Locale;
+  native: string;
+  note: string;
+  /** Regional-indicator pair. Rendered as text, so it needs no asset and no fallback image. */
+  flag: string;
+  /** ISO 639-2/T. Three letters read as a language everywhere; two ("id") reads as a word in English. */
+  code: string;
+};
 
 export const LOCALE_OPTIONS: LocaleOption[] = [
-  { key: "id", native: "Bahasa Indonesia", note: "Bawaan · default" },
-  { key: "en", native: "English", note: "Storefront copy, buttons, and the reader" },
+  {
+    key: "id",
+    native: "Bahasa Indonesia",
+    note: "Bawaan · default",
+    flag: "🇮🇩",
+    code: "IND",
+  },
+  {
+    key: "en",
+    native: "English",
+    note: "Storefront copy, buttons, and the reader",
+    // The Union Jack, not the Stars and Stripes: this storefront's English is
+    // written in British spelling, and a flag is a claim about which one.
+    flag: "🇬🇧",
+    code: "ENG",
+  },
 ];
 
 export const FALLBACK_LOCALE_OPTION: LocaleOption =

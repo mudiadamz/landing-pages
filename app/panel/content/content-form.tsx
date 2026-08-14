@@ -13,7 +13,7 @@ import {
   type FaqItem,
   type FounderCard,
 } from "@/lib/content-config";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 const labelCls = "block text-xs font-medium text-[var(--muted)] mb-1.5";
 const inputCls =
@@ -38,6 +38,7 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
 }
 
 function RemoveButton({ onClick }: { onClick: () => void }) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -53,6 +54,7 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
 }
 
 export function ContentForm({ initialContent, siteId }: { initialContent: SiteContent; siteId: string }) {
+  const t = useT();
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);

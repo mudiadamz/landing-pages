@@ -10,6 +10,8 @@ import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
 import { PanelSidebar } from "@/components/panel-sidebar";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
+import { LocaleProvider } from "@/lib/i18n/client";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Panel routes a CUSTOMER needs, so they work on every storefront.
@@ -101,7 +103,10 @@ export default async function PanelLayout({
     is_canonical: s.is_canonical,
   }));
 
+  const locale = await requestLocale();
+
   return (
+    <LocaleProvider locale={locale}>
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
       {/* Panel palette (/panel/appearance). Rendered here so it exists only on
           panel routes, but the selectors are :root / html.dark — dialogs portal
@@ -122,7 +127,8 @@ export default async function PanelLayout({
         features={features}
         sites={siteOptions}
         editingSiteId={scopedSite?.id ?? ""}
-        brand={siteBrand(await currentSite())}
+        brand={siteBrand(await currentSite(), locale)}
+        locale={locale}
       />
       <div className="flex flex-1 flex-col min-w-0">
         <EmailVerifyNotice />
@@ -132,5 +138,6 @@ export default async function PanelLayout({
         </main>
       </div>
     </div>
+    </LocaleProvider>
   );
 }

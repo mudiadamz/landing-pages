@@ -6,13 +6,15 @@ import { ProductEditForm } from "./product-edit-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { Button } from "@/components/ui/button";
 import type { PreviewType } from "@/lib/actions/landing-pages";
-import { t } from "@/lib/i18n";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export default async function EditPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = translator(await requestLocale());
   const canSell = await canSellProducts();
   if (!canSell) redirect("/panel");
 

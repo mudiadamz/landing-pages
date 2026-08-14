@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { updateOtherLinks, type OtherLink } from "@/lib/actions/site-settings";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 const EMPTY: OtherLink = { label: "", url: "", note: "" };
 
@@ -16,6 +16,7 @@ const EMPTY: OtherLink = { label: "", url: "", note: "" };
  * scroll this panel spent a session getting rid of.
  */
 export function LinksForm({ initial }: { initial: OtherLink[] }) {
+  const t = useT();
   const [rows, setRows] = useState<OtherLink[]>(initial.length ? initial : [EMPTY]);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);

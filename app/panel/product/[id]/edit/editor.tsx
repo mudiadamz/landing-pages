@@ -7,7 +7,7 @@ import { updateLandingPageHtml } from "@/lib/actions/landing-pages";
 import { parseHtmlContent, mergeHtmlContent } from "@/lib/editor-utils";
 import { AssetUpload } from "./asset-upload";
 import { Button } from "@/components/ui/button";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -27,6 +27,7 @@ export function Editor({
   id: string;
   initialHtml: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const parsed = parseHtmlContent(initialHtml);
   const [html, setHtml] = useState(parsed.html);

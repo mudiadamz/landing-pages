@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { fileNameFromUrl, formatBytes, type FileMeta } from "@/components/file-upload-card";
 import { uploadPreviewPdfClient } from "@/lib/upload-client";
 import { ExternalIcon, FileTextIcon, TrashIcon } from "./icons";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * One PDF slot — drop zone when empty, file row when filled.
@@ -33,6 +33,7 @@ export function PdfPreviewSlot({
   onClear: () => void;
   onError: (text: string) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);

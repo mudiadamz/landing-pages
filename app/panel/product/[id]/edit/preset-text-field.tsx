@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 const CUSTOM = "__custom__";
 
@@ -31,6 +31,7 @@ export function PresetTextField({
   maxLength?: number;
   hint?: string;
 }) {
+  const t = useT();
   // Set only by picking "Lainnya…" — it keeps the box open while it's still
   // empty, which is the one case the value alone can't tell us about.
   const [chose, setChose] = useState(false);

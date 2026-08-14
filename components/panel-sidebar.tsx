@@ -11,6 +11,9 @@ import { PanelSiteSwitcher } from "@/components/panel-site-switcher";
 import type { PanelSiteOption } from "@/lib/panel-site";
 import type { SiteBrand } from "@/lib/site-brand";
 import type { FeatureKey } from "@/lib/features";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useT } from "@/lib/i18n/client";
+import type { Locale } from "@/lib/i18n";
 
 type Role = "admin" | "customer" | "publisher";
 type Props = {
@@ -31,6 +34,8 @@ type Props = {
    * It said ADM.UIUX everywhere, which on a niche storefront is a stranger's brand.
    */
   brand: SiteBrand;
+  /** Panel language, resolved per request; shared with the storefront. */
+  locale: Locale;
 };
 
 type NavItem = {
@@ -457,7 +462,9 @@ export function PanelSidebar({
   sites = [],
   editingSiteId = "",
   brand,
+  locale,
 }: Props) {
+  const t = useT();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
   const close = () => setMobileOpen(false);
@@ -528,7 +535,8 @@ export function PanelSidebar({
           <Link href="/panel" className="flex items-center text-base font-semibold text-foreground" onClick={close}>
             <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[150px]" markClassName="h-6 w-6" />
           </Link>
-          <div className="hidden md:block">
+          <div className="hidden items-center gap-2 md:flex">
+            <LanguageSwitcher current={locale} label={t("nav.language")} />
             <ThemeSwitch />
           </div>
           <button
@@ -567,6 +575,13 @@ export function PanelSidebar({
             </span>
           </Link>
         )}
+
+        {/* Language, on the surface where the mobile header has no room for it.
+            Same cookie as the storefront's footer control, so switching in one
+            place switches both. */}
+        <div className="mx-3 mt-3 md:hidden">
+          <LanguageSwitcher current={locale} label={t("nav.language")} className="w-full justify-center" />
+        </div>
 
         {/* The one site switcher. Directly under the profile card so it reads as
             "who I am / what I'm working on", above the nav it changes the meaning of. */}

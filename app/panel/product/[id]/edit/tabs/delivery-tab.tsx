@@ -3,7 +3,7 @@
 import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 import { PresetTextField } from "../preset-text-field";
 import { BUNDLE_NOTES } from "../bundle-notes";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 type RelatedOption = { id: string; title: string; slug: string };
 import type { DeliverableType } from "../deliverable-type";
@@ -88,6 +88,7 @@ export function DeliveryTab({
   bundleNote: string;
   setBundleNote: (v: string) => void;
 }) {
+  const t = useT();
   return (
         <section className={className}>
           <div>

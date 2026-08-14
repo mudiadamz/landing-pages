@@ -5,7 +5,7 @@ import { SocialForm } from "./social-form";
 import { LinksForm } from "./links-form";
 import type { OtherLink } from "@/lib/actions/site-settings";
 import type { SocialUrls } from "@/lib/social";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Two lists that both answer "where else can I find you", so they share a screen
@@ -20,6 +20,7 @@ export function LinksTabs({
   socialUrls: SocialUrls;
   otherLinks: OtherLink[];
 }) {
+  const t = useT();
   const [tab, setTab] = useState<"social" | "other">("social");
 
   const button = (key: "social" | "other", label: string, sub: string) => {

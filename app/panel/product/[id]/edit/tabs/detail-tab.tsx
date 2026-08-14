@@ -2,7 +2,7 @@
 
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { richTextToPlain } from "@/lib/html-sanitize";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 import { CheckItem, StoreIcon } from "../icons";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 
@@ -32,6 +32,7 @@ export function DetailTab({
   longDescription: string;
   setLongDescription: (v: string) => void;
 }) {
+  const t = useT();
   return (
   <section className={className}>
     <div>

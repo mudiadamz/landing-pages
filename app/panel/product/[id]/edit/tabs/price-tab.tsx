@@ -2,7 +2,7 @@
 
 import { ToggleCard } from "@/components/toggle-card";
 import { PresetTextField } from "../preset-text-field";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Harga, dan what the button does.
@@ -81,6 +81,7 @@ export function PriceTab({
   labelPresets: string[];
   notePresets: string[];
 }) {
+  const t = useT();
   return (
   <section className={className}>
     <div>

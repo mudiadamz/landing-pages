@@ -7,7 +7,7 @@ import { Editor } from "../editor";
 import { CutPercentField } from "../cut-percent-field";
 import { PdfPreviewSlot } from "../pdf-preview-slot";
 import { PREVIEW_OPTIONS } from "../preview-options";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 import { PresetTextField } from "../preset-text-field";
 import {
   DEFAULT_PREVIEW_LABEL,
@@ -106,6 +106,7 @@ export function PreviewTab({
   setPreviewLabel: (v: string) => void;
   setMessage: (m: { type: "ok" | "err"; text: string } | null) => void;
 }) {
+  const t = useT();
   return (
   <section className={className}>
     <div>

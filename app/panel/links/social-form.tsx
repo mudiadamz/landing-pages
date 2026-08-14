@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SOCIAL_LINKS } from "@/components/social-links";
 import { updateSocialUrls } from "@/lib/actions/site-settings";
 import type { SocialUrls } from "@/lib/social";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The address per network. Only the address.
@@ -19,6 +19,7 @@ import { t } from "@/lib/i18n";
  * storefront without a TikTok stops showing one.
  */
 export function SocialForm({ initial }: { initial: SocialUrls }) {
+  const t = useT();
   const [urls, setUrls] = useState<SocialUrls>(initial);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);

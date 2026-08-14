@@ -1,6 +1,6 @@
 "use client";
 
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 type RelatedOption = { id: string; title: string; slug: string };
 
@@ -37,6 +37,7 @@ export function RelatedTab({
   selectedNext: RelatedOption | null;
   onNextProductIdChange: (v: string) => void;
 }) {
+  const t = useT();
   return (
         <section className={className}>
           <div>

@@ -8,7 +8,7 @@ import { createSite, updateSiteDomain, deleteSite, selectPanelSite } from "@/lib
 import type { Site } from "@/lib/site-resolve";
 import { DomainSetupGuide } from "./domain-setup-guide";
 import { VercelDomainStatus } from "./vercel-domain-status";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The PLUMBING half of a storefront: which hostname it answers on, whether it is
@@ -45,6 +45,7 @@ export function SitesManager({
   templateLabels: Record<string, string>;
   paletteLabels: Record<string, string>;
 }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   // null = nothing open, "new" = the add form, otherwise the site id being edited.
@@ -364,6 +365,7 @@ function DomainForm({
   pending: boolean;
   lockHost: boolean;
 }) {
+  const t = useT();
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">

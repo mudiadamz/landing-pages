@@ -95,8 +95,20 @@ describe("dictionary integrity", () => {
     // exists and nothing renders it.
     const used = new Set<string>();
     for (const file of files) {
-      if (file.endsWith(join("lib", "i18n", "id.ts"))) continue;
-      for (const [, key] of readFileSync(file, "utf8").matchAll(CALL)) used.add(key);
+      // Every dictionary lists every key as a literal. The `t("…")` scan below
+      // is immune to that, but the literal scan is not: including en.ts marked
+      // all 409 keys used and the assertion passed while proving nothing.
+      if (file.includes(join("lib", "i18n"))) continue;
+      const src = readFileSync(file, "utf8");
+      for (const [, key] of src.matchAll(CALL)) used.add(key);
+      // Keys also travel as data — the product editor's tab list holds
+      // `labelKey: "product.tabDetail"` and translates at render, because a
+      // label resolved in a module-scope array would freeze the language that
+      // happened to load first. Those are uses; counting only `t("…")` calls
+      // reported six of them as dead.
+      for (const [, key] of src.matchAll(/(?<!t\()"([a-z]+\.[A-Za-z]+)"/g)) {
+        if (key in id) used.add(key);
+      }
     }
     const unused = Object.keys(id).filter((k) => !used.has(k));
     expect(unused.sort()).toEqual([...NOT_YET_CONVERTED].sort());

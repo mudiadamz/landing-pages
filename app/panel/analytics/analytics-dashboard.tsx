@@ -5,7 +5,7 @@ import type { Analytics, SessionListRow } from "@/lib/actions/analytics";
 import type { ProductSummary } from "@/lib/actions/product-insights";
 import { ProductSummaryCard } from "@/components/product-summary-card";
 import { SessionRow } from "./session-row";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 type Tab = "overview" | "products" | "acquisition" | "geography" | "entry" | "engagement" | "sessions";
 
@@ -120,6 +120,7 @@ function EngagementBar({ read, curious, left }: { read: number; curious: number;
 }
 
 export function AnalyticsDashboard({ data, products }: { data: Analytics; products: ProductSummary[] }) {
+  const t = useT();
   const [tab, setTab] = useState<Tab>("overview");
   const [q, setQ] = useState("");
   const [productFilter, setProductFilter] = useState<ProductFilter>("all");

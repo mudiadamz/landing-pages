@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The steps this panel cannot do for you.
@@ -14,6 +14,7 @@ import { t } from "@/lib/i18n";
  */
 
 function Copy({ value }: { value: string }) {
+  const t = useT();
   const [done, setDone] = useState(false);
   return (
     <button
@@ -84,6 +85,7 @@ export function DomainSetupGuide({
   /** A token is configured, so the panel adds the domain to Vercel itself. */
   vercelAutomated: boolean;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const isSubdomain = host.endsWith(`.${canonicalHost}`);
 

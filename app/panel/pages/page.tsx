@@ -4,7 +4,8 @@ import { requireAdmin } from "@/lib/actions/profiles";
 import { listPages } from "@/lib/actions/pages";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { NewPageButton } from "./new-page-button";
-import { t } from "@/lib/i18n";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Editorial pages for this storefront.
@@ -14,6 +15,7 @@ import { t } from "@/lib/i18n";
  * invents: they get a URL, a title, and no code knows their names.
  */
 export default async function PagesIndex() {
+  const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
   const pages = await listPages();
 

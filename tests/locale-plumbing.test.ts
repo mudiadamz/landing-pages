@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { DEFAULT_LOCALE, normalizeLocale, translator } from "@/lib/i18n";
 import { LOCALE_COOKIE, LOCALE_OPTIONS, pickLocale } from "@/lib/i18n/locales";
 import { siteBrand } from "@/lib/site-brand";
@@ -109,5 +110,48 @@ describe("locale picker", () => {
     if (!check) throw new Error(`CHECK constraint not found in ${MIGRATION}`);
     const allowed = [...check[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
     expect(allowed.sort()).toEqual(LOCALE_OPTIONS.map((o) => o.key).sort());
+  });
+});
+
+describe("panel language binding", () => {
+  /**
+   * Every client component that renders text must bind `t` to the request.
+   *
+   * The failure this catches is silent: `import { t } from "@/lib/i18n"` in a
+   * client component compiles, renders, and always produces Indonesian — the
+   * switcher appears to do nothing on that screen while working everywhere
+   * else. There is no type error and no runtime error to notice.
+   */
+  function clientComponentsUnderPanel(): string[] {
+    const out: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) walk(full);
+        else if (full.endsWith(".tsx")) out.push(full);
+      }
+    };
+    walk("app/panel");
+    out.push("components/panel-sidebar.tsx");
+    return out.filter((f) => {
+      const src = readFileSync(f, "utf8");
+      return src.trimStart().startsWith('"use client"') && /(?<![A-Za-z0-9_$.])t\(/.test(src);
+    });
+  }
+
+  it("binds t() through the context in every panel client component", () => {
+    const unbound = clientComponentsUnderPanel().filter((f) => {
+      const src = readFileSync(f, "utf8");
+      return src.includes('import { t } from "@/lib/i18n"') || !src.includes("useT()");
+    });
+    expect(unbound).toEqual([]);
+  });
+
+  it("wraps the panel in a LocaleProvider", () => {
+    // Without it useT() falls back to the default locale everywhere at once,
+    // which looks exactly like "the switcher is broken".
+    const layout = readFileSync("app/panel/layout.tsx", "utf8");
+    expect(layout).toContain("LocaleProvider");
+    expect(layout).toContain("requestLocale()");
   });
 });

@@ -56,7 +56,8 @@ import { CutPercentField } from "./cut-percent-field";
 import { PreviewTab } from "./tabs/preview-tab";
 import type { DeliverableType } from "./deliverable-type";
 import { ExternalIcon, FileTextIcon, ImageIcon, TrashIcon } from "./icons";
-import { t } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
@@ -77,14 +78,21 @@ type TabKey =
   | "jadwal"
   | "pengiriman"
   | "terkait";
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "detail", label: t("product.tabDetail") },
-  { key: "thumbnail", label: t("product.tabThumbnail") },
-  { key: "preview", label: t("product.tabPreview") },
-  { key: "harga", label: t("product.tabPrice") },
-  { key: "jadwal", label: t("product.tabSchedule") },
-  { key: "pengiriman", label: t("product.tabDelivery") },
-  { key: "terkait", label: t("product.tabRelated") },
+/**
+ * Tab order, with the message key rather than the translated label.
+ *
+ * This list is module scope, evaluated once when the file is imported — so a
+ * label resolved here would freeze whichever language happened to load first
+ * and never change again. The lookup belongs where `t` is bound to the request.
+ */
+const TABS: { key: TabKey; labelKey: MessageKey }[] = [
+  { key: "detail", labelKey: "product.tabDetail" },
+  { key: "thumbnail", labelKey: "product.tabThumbnail" },
+  { key: "preview", labelKey: "product.tabPreview" },
+  { key: "harga", labelKey: "product.tabPrice" },
+  { key: "jadwal", labelKey: "product.tabSchedule" },
+  { key: "pengiriman", labelKey: "product.tabDelivery" },
+  { key: "terkait", labelKey: "product.tabRelated" },
 ];
 const PANEL_CLASS =
   "rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-5 sm:p-6 shadow-sm space-y-6";
@@ -210,6 +218,7 @@ export function ProductEditForm({
   published,
   initial,
 }: Props) {
+  const t = useT();
   const router = useRouter();
 
   // --- Page info ---
@@ -867,18 +876,18 @@ export function ProductEditForm({
     <div className="space-y-5 pb-4">
       {/* Tabs */}
       <div className="sticky top-0 z-20 -mx-3 flex gap-1 overflow-x-auto border-b border-[var(--border)] bg-[var(--card)]/95 px-3 py-1.5 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-1 sm:shadow-sm">
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t.key}
+            key={item.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => setTab(item.key)}
             className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-              tab === t.key
+              tab === item.key
                 ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
                 : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
             }`}
           >
-            {t.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
