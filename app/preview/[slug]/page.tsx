@@ -27,6 +27,7 @@ import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
 import { ImmersiveController } from "@/components/immersive-controller";
+import { requestLocale } from "@/lib/i18n/request";
 
 const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 const getCheckoutData = cache((slug: string) => getLandingPageForCheckout(slug));
@@ -101,7 +102,7 @@ export default async function LandingPageView({ params }: Props) {
 }
 
 async function PreviewContent({ slug }: { slug: string }) {
-  const [page, site] = await Promise.all([getPageBySlug(slug), currentSite()]);
+  const [page, locale] = await Promise.all([getPageBySlug(slug), requestLocale()]);
   if (!page) notFound();
 
   // Preview source: an uploaded PDF or external link is embedded directly;
@@ -311,7 +312,7 @@ async function PreviewContent({ slug }: { slug: string }) {
         // scroll, taps, focus mode and the iOS address bar are all native.
         <div className="w-full">
           <EpubReader
-            locale={site.locale}
+            locale={locale}
             // Empty for an excerpt: there is no archive the browser may fetch.
             url={epubUrl ?? ""}
             slug={slug}
@@ -362,7 +363,7 @@ async function PreviewContent({ slug }: { slug: string }) {
       {popup && <PopupBanner config={popup} slug={slug} />}
       <ProductActionsMenu
         variant="floating"
-        locale={site.locale}
+        locale={locale}
         title={page.title}
         viewCount={viewCount}
         backHref={`/checkout/${slug}`}

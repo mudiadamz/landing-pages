@@ -6,6 +6,7 @@ import { getHero } from "@/lib/actions/site-settings";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateHomeView } from "@/lib/templates/chrome";
 import { getSiteContent, getOtherLinks, getSocialUrls } from "@/lib/actions/site-settings";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * viewport-fit=cover so the top cover can reach past the notch into the status
@@ -55,7 +56,8 @@ export default async function Home({ searchParams }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [site, listing, categories, reviews, reviewCounts, hero, content, otherLinks, socialUrls] = await Promise.all([
+  const [site, listing, categories, reviews, reviewCounts, hero, content, otherLinks, socialUrls, locale] =
+    await Promise.all([
     currentSite(),
     getHomepageListing({ sort, q, page, categorySlugs }),
     getCategories(),
@@ -65,11 +67,13 @@ export default async function Home({ searchParams }: Props) {
     getSiteContent(),
     getOtherLinks(),
     getSocialUrls(),
+    requestLocale(),
   ]);
 
   return (
     <TemplateHomeView
       site={site}
+      locale={locale}
       pages={listing.items}
       listing={listing}
       query={q}

@@ -21,6 +21,7 @@ import { PustakaCategories } from "./pustaka/categories";
 import { LinkbioHome } from "./linkbio/home";
 import { LinkbioHeader, LinkbioFooter } from "./linkbio/chrome";
 import { LinkbioCategory, LinkbioCategories } from "./linkbio/category";
+import type { Locale } from "@/lib/i18n";
 
 /**
  * Frontend templates, so storefronts in different niches don't all look like a
@@ -39,6 +40,13 @@ import { LinkbioCategory, LinkbioCategories } from "./linkbio/category";
 
 export type TemplateProps = {
   site: Site;
+  /**
+   * The language THIS request renders in — the visitor's footer choice if they
+   * made one, otherwise site.locale. Separate from site.locale on purpose: that
+   * field is the stored default, and a template that reached for it would
+   * ignore the switcher.
+   */
+  locale: Locale;
   pages: LandingPagePublic[];
   categories: LandingPageCategory[];
   reviews: PublicReview[];
@@ -97,6 +105,7 @@ export type CategoriesTemplateProps = {
   site: Site;
   categories: LandingPageCategory[];
   user: { id: string } | null;
+  locale: Locale;
 };
 
 export type TemplateDef = {

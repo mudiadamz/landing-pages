@@ -5,6 +5,7 @@ import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateCategoryView } from "@/lib/templates/chrome";
+import { requestLocale } from "@/lib/i18n/request";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -35,12 +36,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [site, pages, categories, reviews, reviewCounts] = await Promise.all([
+  const [site, pages, categories, reviews, reviewCounts, locale] = await Promise.all([
     currentSite(),
     getLandingPagesForHomepage(slug, sort),
     getCategories(),
     getPublicReviews(),
     getReviewCounts(),
+    requestLocale(),
   ]);
 
   const category = categories.find((c) => c.slug === slug);
@@ -49,6 +51,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   return (
     <TemplateCategoryView
       site={site}
+      locale={locale}
       category={category}
       pages={pages}
       categories={categories}

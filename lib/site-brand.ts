@@ -38,12 +38,12 @@ export const DEFAULT_ICON_192 = "/icon-192.png";
 export const DEFAULT_ICON_512 = "/icon-512.png";
 export const DEFAULT_APPLE_ICON = "/apple-touch-icon.png";
 
-export function siteBrand(site: Site): SiteBrand {
+export function siteBrand(site: Site, locale: Locale = site.locale): SiteBrand {
   return {
     name: site.name?.trim() || DEFAULT_BRAND_NAME,
     logoUrl: site.logo_url?.trim() || null,
     iconUrl: site.icon_url?.trim() || null,
-    locale: site.locale,
+    locale,
   };
 }
 

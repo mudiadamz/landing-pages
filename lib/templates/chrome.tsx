@@ -10,6 +10,7 @@ import {
   type CategoryTemplateProps,
   type CategoriesTemplateProps,
 } from "./registry";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Dispatchers: pick the component for whichever template this domain runs, and
@@ -37,9 +38,9 @@ import {
  * home/category views) pass their own, so no page fetches the site twice.
  */
 export async function TemplateHeader(props: Omit<ChromeProps, "brand">) {
-  const site = await currentSite();
+  const [site, locale] = await Promise.all([currentSite(), requestLocale()]);
   const { Header } = resolveTemplate(site.template);
-  return <Header {...props} brand={siteBrand(site)} />;
+  return <Header {...props} brand={siteBrand(site, locale)} />;
 }
 
 export async function TemplateFooter() {

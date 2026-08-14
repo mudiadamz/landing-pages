@@ -43,6 +43,7 @@ export const id = {
   "nav.signIn": "Masuk",
   "nav.profile": "Profil",
   "nav.panel": "Buka panel",
+  "nav.language": "Bahasa",
   "nav.myPurchases": "Pembelian saya",
 
   /* ---- homepage (link-in-bio) ---- */

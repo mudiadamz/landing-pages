@@ -54,6 +54,7 @@ export const en: Record<keyof typeof id, string> = {
   "nav.signIn": "Sign in",
   "nav.profile": "Profile",
   "nav.panel": "Open panel",
+  "nav.language": "Language",
   "nav.myPurchases": "My purchases",
 
   /* ---- homepage (link-in-bio) ---- */

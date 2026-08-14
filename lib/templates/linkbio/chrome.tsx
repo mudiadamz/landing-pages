@@ -4,6 +4,8 @@ import { getPublishedPages } from "@/lib/actions/pages";
 import { SiteLogo } from "@/components/site-logo";
 import type { ChromeProps } from "../registry";
 import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 /**
  * Chrome for the link-in-bio theme — deliberately almost nothing.
@@ -43,8 +45,12 @@ export function LinkbioHeader({ user, brand }: ChromeProps) {
 
 /** One line. A link-in-bio page has a colophon, not a sitemap. */
 export async function LinkbioFooter() {
-  const [site, pages] = await Promise.all([currentSite(), getPublishedPages()]);
-  const t = translator(site.locale);
+  const [site, pages, locale] = await Promise.all([
+    currentSite(),
+    getPublishedPages(),
+    requestLocale(),
+  ]);
+  const t = translator(locale);
   return (
     <footer className="mt-10 shrink-0 bg-[var(--accent-subtle)]/40">
       <div className="mx-auto flex max-w-xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-5 py-7 text-xs text-[var(--muted)]">
@@ -76,6 +82,7 @@ export async function LinkbioFooter() {
         <Link href="/refund" className="transition-colors hover:text-foreground">
           {t("nav.refund")}
         </Link>
+        <LanguageSwitcher current={locale} label={t("nav.language")} />
       </div>
     </footer>
   );

@@ -49,8 +49,9 @@ export function LinkbioHome({
   activeCategories,
   otherLinks,
   socialUrls,
+  locale,
 }: TemplateProps) {
-  const t = translator(site.locale);
+  const t = translator(locale);
   // Everything the three controls have to preserve about each other.
   const state = { categories: activeCategories, query, sort };
   const parents = categories.filter((c) => !c.parent_id);
@@ -61,7 +62,7 @@ export function LinkbioHome({
   const cover = showFounder ? founder.coverUrl.trim() : "";
 
   return (
-    <SearchProvider query={query} locale={site.locale}>
+    <SearchProvider query={query} locale={locale}>
     <div
       data-template="linkbio"
       className="relative flex min-h-screen flex-col bg-background text-foreground"
@@ -125,11 +126,11 @@ export function LinkbioHome({
               className="h-24 w-24 rounded-full object-cover"
             />
           ) : (
-            <BrandAvatar brand={siteBrand(site)} />
+            <BrandAvatar brand={siteBrand(site, locale)} />
           )}
           <h1 className="mt-4 flex items-center justify-center gap-1.5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             <span className="min-w-0 truncate">{showFounder ? founder.name : site.name}</span>
-            {showFounder && founder.verified && <VerifiedBadge className="h-5 w-5 sm:h-6 sm:w-6" locale={site.locale} />}
+            {showFounder && founder.verified && <VerifiedBadge className="h-5 w-5 sm:h-6 sm:w-6" locale={locale} />}
           </h1>
           {(showFounder ? founder.role : site.tagline) && (
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
@@ -141,7 +142,7 @@ export function LinkbioHome({
               joins the same row and renders nothing when the list is empty. */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <SocialLinksCompact urls={socialUrls} />
-            <OtherLinksButton links={otherLinks} locale={site.locale} />
+            <OtherLinksButton links={otherLinks} locale={locale} />
           </div>
         </div>
 
@@ -212,7 +213,7 @@ export function LinkbioHome({
                 key={page.id}
                 page={page}
                 priority={listing.page === 1 && i < 3}
-                locale={site.locale}
+                locale={locale}
               />
             ))}
           </ul>
@@ -224,7 +225,7 @@ export function LinkbioHome({
           query={query}
           sort={sort}
           categories={activeCategories}
-          locale={site.locale}
+          locale={locale}
         />
       </main>
 

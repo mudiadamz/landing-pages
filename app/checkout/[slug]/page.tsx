@@ -28,6 +28,7 @@ import { getMyLike } from "@/lib/actions/likes";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
+import { requestLocale } from "@/lib/i18n/request";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -95,13 +96,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CheckoutPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const [supabase, page, sp, site] = await Promise.all([
+  const [supabase, page, sp, site, locale] = await Promise.all([
     createClient(),
     getCheckoutPage(slug),
     searchParams,
     // Which chrome this storefront draws — the floating CTA has to clear a
     // bottom nav on the templates that fix one to the edge.
     currentSite(),
+    requestLocale(),
   ]);
   if (!page) notFound();
   const adHeadline = sanitizeAdHeadline(sp.h);
@@ -258,8 +260,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 title={page.title}
                 viewCount={page.view_count ?? 0}
                 backHref="/"
-                backLabel={t("common.toHome", undefined, site.locale)}
-                locale={site.locale}
+                backLabel={t("common.toHome", undefined, locale)}
+                locale={locale}
                 slug={page.slug}
                 page="checkout"
                 isLoggedIn={!!user}

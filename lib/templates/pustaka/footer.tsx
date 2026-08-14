@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { createClient } from "@/lib/supabase/server";
 import { currentSite } from "@/lib/site-resolve";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { requestLocale } from "@/lib/i18n/request";
+import { t } from "@/lib/i18n";
 
 /**
  * A colophon, not a sitemap.
@@ -15,7 +18,11 @@ import { currentSite } from "@/lib/site-resolve";
  * on every domain.
  */
 export async function PustakaFooter() {
-  const [site, supabase] = await Promise.all([currentSite(), createClient()]);
+  const [site, supabase, locale] = await Promise.all([
+    currentSite(),
+    createClient(),
+    requestLocale(),
+  ]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -53,9 +60,12 @@ export async function PustakaFooter() {
             ))}
           </nav>
 
-          <p className="mt-8 border-t border-[var(--border)] pt-5 text-xs text-[var(--muted)]">
-            © {new Date().getFullYear()} {site.name} · Pembayaran via QRIS &amp; e-wallet
-          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-5 text-xs text-[var(--muted)]">
+            <p>
+              © {new Date().getFullYear()} {site.name} · Pembayaran via QRIS &amp; e-wallet
+            </p>
+            <LanguageSwitcher current={locale} label={t("nav.language", undefined, locale)} />
+          </div>
         </div>
       </footer>
       {/* Kept: the bottom nav is how phone visitors reach their purchases, and that

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { DEFAULT_LOCALE, normalizeLocale, translator } from "@/lib/i18n";
-import { LOCALE_OPTIONS } from "@/lib/i18n/locales";
+import { LOCALE_COOKIE, LOCALE_OPTIONS, pickLocale } from "@/lib/i18n/locales";
 import { siteBrand } from "@/lib/site-brand";
 import type { Site } from "@/lib/site-resolve";
 
@@ -57,6 +57,38 @@ describe("siteBrand", () => {
     // themselves; if the brand loses the locale they silently render the
     // default language on someone else's domain.
     expect(siteBrand(SITE).locale).toBe("en");
+  });
+});
+
+describe("pickLocale", () => {
+  it("uses the storefront's setting when the visitor has not chosen", () => {
+    expect(pickLocale(undefined, "en")).toBe("en");
+    expect(pickLocale(null, "id")).toBe("id");
+    expect(pickLocale("", "en")).toBe("en");
+  });
+
+  it("lets the visitor's choice win", () => {
+    expect(pickLocale("id", "en")).toBe("id");
+    expect(pickLocale("en", "id")).toBe("en");
+  });
+
+  it("ignores a cookie naming a locale we do not ship", () => {
+    // The failure this prevents is specific: falling back to DEFAULT_LOCALE on
+    // junk would drag an English storefront back to Indonesian for anyone
+    // carrying a stale or hand-edited cookie.
+    for (const junk of ["fr", "EN", "id-ID", "../id", "true"]) {
+      expect(pickLocale(junk, "en")).toBe("en");
+    }
+  });
+
+  it("names the cookie the switcher actually writes", () => {
+    // The switcher runs in the browser and cannot import the server resolver,
+    // so both read this constant. If it ever splits in two again, the control
+    // silently stops working: the cookie is set and nothing reads it.
+    expect(LOCALE_COOKIE).toBe("lp_locale");
+    const switcher = readFileSync("components/language-switcher.tsx", "utf8");
+    expect(switcher).toContain("LOCALE_COOKIE");
+    expect(switcher).not.toMatch(/["'`]lp_locale=/);
   });
 });
 

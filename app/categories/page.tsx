@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateCategoriesView } from "@/lib/templates/chrome";
+import { requestLocale } from "@/lib/i18n/request";
 
 export const metadata: Metadata = {
   // No brand suffix: app/layout.tsx appends "| {site.name}" per domain, so a
@@ -21,5 +22,12 @@ export default async function CategoriesPage() {
     getCategories(),
   ]);
 
-  return <TemplateCategoriesView site={site} categories={categories} user={user} />;
+  return (
+    <TemplateCategoriesView
+      site={site}
+      categories={categories}
+      user={user}
+      locale={await requestLocale()}
+    />
+  );
 }

@@ -9,6 +9,7 @@ import { ProductActionsMenu } from "@/components/product-actions";
 import { currentSite } from "@/lib/site-resolve";
 import { ImmersiveController } from "@/components/immersive-controller";
 import { epubVersionToken } from "@/lib/epub-version";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Reader for a product the visitor already owns, opened from "Pembelian saya".
@@ -53,12 +54,12 @@ export default async function ReadPage({ params }: Props) {
   const pdfDark = pdfLight && page.story_pdf_url_dark ? await getSignedDownloadUrl(page.story_pdf_url_dark) : null;
   if (!hasEpub && !pdfLight) redirect("/panel/purchases");
 
-  const site = await currentSite();
+  const locale = await requestLocale();
 
   const chrome = (
     <ProductActionsMenu
       variant="floating"
-      locale={site.locale}
+      locale={locale}
       title={page.title}
       backHref="/panel/purchases"
       slug={slug}
@@ -82,7 +83,7 @@ export default async function ReadPage({ params }: Props) {
         />
         <div className="w-full">
           <EpubReader
-            locale={site.locale}
+            locale={locale}
             url=""
             slug={slug}
             title={page.title}

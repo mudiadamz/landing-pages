@@ -5,6 +5,9 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { currentSite } from "@/lib/site-resolve";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { requestLocale } from "@/lib/i18n/request";
+import { t } from "@/lib/i18n";
 
 /**
  * Bottom of the public shell: the footer itself plus the mobile bottom nav.
@@ -16,11 +19,12 @@ import { currentSite } from "@/lib/site-resolve";
  * there is no client boundary forcing the brand through props.
  */
 export async function SiteFooter() {
-  const [content, supabase, site, socialUrls] = await Promise.all([
+  const [content, supabase, site, socialUrls, locale] = await Promise.all([
     getSiteContent(),
     createClient(),
     currentSite(),
     getSocialUrls(),
+    requestLocale(),
   ]);
   const {
     data: { user },
@@ -69,8 +73,11 @@ export async function SiteFooter() {
             </Link>
           </nav>
         </div>
-        <div className="mt-8 pt-6 border-t border-[var(--border)] text-center text-sm text-[var(--muted)]">
-          © {new Date().getFullYear()} {site.name || "ADM.UIUX"}
+        <div className="mt-8 flex flex-col items-center gap-3 border-t border-[var(--border)] pt-6 text-sm text-[var(--muted)] sm:flex-row sm:justify-between">
+          <span>
+            © {new Date().getFullYear()} {site.name || "ADM.UIUX"}
+          </span>
+          <LanguageSwitcher current={locale} label={t("nav.language", undefined, locale)} />
         </div>
       </div>
     </footer>

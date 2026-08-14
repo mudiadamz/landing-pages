@@ -14,13 +14,20 @@ import type { CategoryTemplateProps, CategoriesTemplateProps } from "../registry
  *
  * Same LinkRow as the homepage: one shape, scanned downward.
  */
-export function LinkbioCategory({ site, category, pages, categories, user }: CategoryTemplateProps) {
+export function LinkbioCategory({
+  site,
+  category,
+  pages,
+  categories,
+  user,
+  locale,
+}: CategoryTemplateProps) {
   return (
     <div
       data-template="linkbio"
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
-      <LinkbioHeader user={user} brand={siteBrand(site)} categories={categories} currentCategorySlug={category.slug} />
+      <LinkbioHeader user={user} brand={siteBrand(site, locale)} categories={categories} currentCategorySlug={category.slug} />
 
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-8">
         <div className="text-center">
@@ -40,7 +47,7 @@ export function LinkbioCategory({ site, category, pages, categories, user }: Cat
         ) : (
           <ul className="mt-6 space-y-2.5">
             {pages.map((page, i) => (
-              <LinkRow key={page.id} page={page} priority={i < 3} locale={site.locale} />
+              <LinkRow key={page.id} page={page} priority={i < 3} locale={locale} />
             ))}
           </ul>
         )}
@@ -51,7 +58,7 @@ export function LinkbioCategory({ site, category, pages, categories, user }: Cat
   );
 }
 
-export function LinkbioCategories({ site, categories, user }: CategoriesTemplateProps) {
+export function LinkbioCategories({ site, categories, user, locale }: CategoriesTemplateProps) {
   const parents = categories.filter((c) => !c.parent_id);
   const childrenOf = (id: string) => categories.filter((c) => c.parent_id === id);
 
@@ -60,7 +67,7 @@ export function LinkbioCategories({ site, categories, user }: CategoriesTemplate
       data-template="linkbio"
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
-      <LinkbioHeader user={user} brand={siteBrand(site)} categories={categories} />
+      <LinkbioHeader user={user} brand={siteBrand(site, locale)} categories={categories} />
 
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-6 pt-8">
         <h1 className="text-center text-lg font-semibold tracking-tight text-foreground">
