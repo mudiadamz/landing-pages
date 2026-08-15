@@ -1,3 +1,6 @@
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
+
 /**
  * "This screen is editing <host>." A statement, not a control.
  *
@@ -9,7 +12,7 @@
  * Renders nothing when there is only one site: with nothing to confuse it with, naming
  * the site is noise on six screens.
  */
-export function SiteScopeNotice({
+export async function SiteScopeNotice({
   host,
   name,
   siteCount,
@@ -20,15 +23,18 @@ export function SiteScopeNotice({
 }) {
   if (siteCount < 2) return null;
 
+  const t = translator(await requestLocale());
+
   return (
     <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted)]">
       <span>
-        Mengatur <strong className="font-medium text-foreground">{name}</strong>{" "}
+        {t("scope.managing")} <strong className="font-medium text-foreground">{name}</strong>{" "}
         <span className="font-mono text-foreground">{host}</span>
       </span>
       <span className="text-[var(--muted)]">
-        · ganti di <strong className="font-medium text-foreground">Kelola situs</strong> pada
-        sidebar
+        {t("scope.changeIn")}{" "}
+        <strong className="font-medium text-foreground">{t("scope.manageSite")}</strong>{" "}
+        {t("scope.inSidebar")}
       </span>
     </p>
   );

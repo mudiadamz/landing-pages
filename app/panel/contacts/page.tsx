@@ -33,7 +33,7 @@ export default async function ContactsPage() {
         name={scope.site.name}
         siteCount={scope.siteCount}
         includesUnattributed={scope.includesUnattributed}
-        what="pesan"
+        what="messages"
       />
 
       {contacts.length === 0 ? (

@@ -756,6 +756,23 @@ export const id = {
   "content.footerTagline": "Tagline footer",
   "content.resetDefaults": "Reset ke bawaan",
   "content.viewHomepage": "Lihat homepage ↗",
+
+  /* ---- panel: cakupan per-situs (switcher + catatan di tiap layar) ---- */
+  "scope.manageSite": "Kelola situs",
+  "scope.appliesTo": "Layar per-domain berlaku untuk {host}",
+  "scope.primarySuffix": " (utama)",
+  "scope.managing": "Mengatur",
+  "scope.changeIn": "· ganti di",
+  "scope.inSidebar": "pada sidebar",
+  "scope.onlyFrom": "Hanya {what} dari",
+  "scope.whatSales": "penjualan",
+  "scope.whatProducts": "produk",
+  "scope.whatVisits": "kunjungan",
+  "scope.whatMessages": "pesan",
+  "scope.legacyIncluded":
+    "Data lama (sebelum tiap domain dicatat) ikut dihitung di sini, karena dulu memang cuma ada domain ini.",
+  "scope.startsAtZero":
+    "Angkanya mulai dari nol: {what} sebelum pencatatan per-domain tidak bisa diatribusikan ke belakang, jadi yang tampil hanya yang tercatat sejak fitur ini aktif.",
 } as const;
 
 export type MessageKey = keyof typeof id;

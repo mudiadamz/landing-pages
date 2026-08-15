@@ -44,7 +44,7 @@ async function SellerPanel() {
         name={scope.site.name}
         siteCount={scope.siteCount}
         includesUnattributed={scope.includesUnattributed}
-        what="produk"
+        what="products"
       />
 
       {pages.length === 0 ? (

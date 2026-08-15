@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { selectPanelSite } from "@/lib/actions/sites";
 import type { PanelSiteOption } from "@/lib/panel-site";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The panel's site scope, in one place.
@@ -32,6 +33,8 @@ export function PanelSiteSwitcher({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Before the early return below: hooks cannot sit behind a condition.
+  const t = useT();
 
   if (sites.length < 2) return null;
 
@@ -68,7 +71,7 @@ export function PanelSiteSwitcher({
         htmlFor="panel-site-scope"
         className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-[var(--muted)]"
       >
-        Kelola situs
+        {t("scope.manageSite")}
       </label>
       <select
         id="panel-site-scope"
@@ -76,14 +79,14 @@ export function PanelSiteSwitcher({
         disabled={pending}
         // On hover, the host — which the option text omits when a site's name and its
         // domain are not the same string.
-        title={current ? `Layar per-domain berlaku untuk ${current.host}` : undefined}
+        title={current ? t("scope.appliesTo", { host: current.host }) : undefined}
         onChange={(e) => pick(e.target.value)}
         className="w-full truncate rounded-lg border border-[var(--border)] bg-[var(--background)] px-2.5 py-2 text-base sm:text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 disabled:opacity-50"
       >
         {sites.map((s) => (
           <option key={s.id} value={s.id}>
             {s.name}
-            {s.is_canonical ? " (utama)" : ""}
+            {s.is_canonical ? t("scope.primarySuffix") : ""}
           </option>
         ))}
       </select>

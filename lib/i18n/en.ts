@@ -766,4 +766,21 @@ export const en: Record<keyof typeof id, string> = {
   "content.footerTagline": "Footer tagline",
   "content.resetDefaults": "Reset to defaults",
   "content.viewHomepage": "View homepage ↗",
+
+  /* ---- panel: per-site scope (switcher + the note on each screen) ---- */
+  "scope.manageSite": "Manage site",
+  "scope.appliesTo": "Per-domain screens apply to {host}",
+  "scope.primarySuffix": " (primary)",
+  "scope.managing": "Editing",
+  "scope.changeIn": "· switch it in",
+  "scope.inSidebar": "in the sidebar",
+  "scope.onlyFrom": "Only {what} from",
+  "scope.whatSales": "sales",
+  "scope.whatProducts": "products",
+  "scope.whatVisits": "visits",
+  "scope.whatMessages": "messages",
+  "scope.legacyIncluded":
+    "Older data (from before each domain was recorded) is counted here, because back then this was the only domain.",
+  "scope.startsAtZero":
+    "The count starts at zero: {what} from before per-domain recording cannot be attributed after the fact, so only what has been recorded since that went live shows up here.",
 };

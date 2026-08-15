@@ -1,3 +1,6 @@
+import { translator, type MessageKey } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
+
 /**
  * Says out loud what the numbers on this screen cover.
  *
@@ -14,7 +17,24 @@
  * demonstrably has traffic looks exactly like a broken query, and a silent one would send
  * someone hunting a bug that is really a start date.
  */
-export function SiteScopeCoverage({
+
+/**
+ * What the screen counts, as a thing rather than a word.
+ *
+ * Callers used to pass the Indonesian noun ("penjualan") straight in, which made the
+ * sentence untranslatable from four different files. The word now lives in the
+ * dictionary, and the screen only has to say which of them it is.
+ */
+export type ScopeWhat = "sales" | "products" | "visits" | "messages";
+
+const WHAT_KEY: Record<ScopeWhat, MessageKey> = {
+  sales: "scope.whatSales",
+  products: "scope.whatProducts",
+  visits: "scope.whatVisits",
+  messages: "scope.whatMessages",
+};
+
+export async function SiteScopeCoverage({
   host,
   name,
   siteCount,
@@ -26,30 +46,23 @@ export function SiteScopeCoverage({
   siteCount: number;
   /** True on the canonical site, where pre-attribution rows are counted in. */
   includesUnattributed: boolean;
-  /** What is being counted, lowercase: "penjualan", "kunjungan", "pesan". */
-  what: string;
+  what: ScopeWhat;
 }) {
   if (siteCount < 2) return null;
 
+  const t = translator(await requestLocale());
+  const noun = t(WHAT_KEY[what]);
+
   return (
     <p className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs leading-relaxed text-[var(--muted)]">
-      Hanya {what} dari <strong className="font-medium text-foreground">{name}</strong>{" "}
-      <span className="font-mono text-foreground">{host}</span> · ganti di{" "}
-      <strong className="font-medium text-foreground">Kelola situs</strong> pada sidebar.
-      {includesUnattributed ? (
-        <>
-          {" "}
-          Data lama (sebelum tiap domain dicatat) ikut dihitung di sini, karena dulu memang
-          cuma ada domain ini.
-        </>
-      ) : (
-        <>
-          {" "}
-          Angkanya mulai dari nol: {what} sebelum pencatatan per-domain tidak bisa
-          diatribusikan ke belakang, jadi yang tampil hanya yang tercatat sejak fitur ini
-          aktif.
-        </>
-      )}
+      {t("scope.onlyFrom", { what: noun })}{" "}
+      <strong className="font-medium text-foreground">{name}</strong>{" "}
+      <span className="font-mono text-foreground">{host}</span> {t("scope.changeIn")}{" "}
+      <strong className="font-medium text-foreground">{t("scope.manageSite")}</strong>{" "}
+      {t("scope.inSidebar")}.{" "}
+      {includesUnattributed
+        ? t("scope.legacyIncluded")
+        : t("scope.startsAtZero", { what: noun })}
     </p>
   );
 }

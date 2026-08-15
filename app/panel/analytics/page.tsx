@@ -71,7 +71,7 @@ export default async function AnalyticsPage({
         name={scope.site.name}
         siteCount={scope.siteCount}
         includesUnattributed={scope.includesUnattributed}
-        what="kunjungan"
+        what="visits"
       />
 
       <AnalyticsDashboard data={data} products={products} />

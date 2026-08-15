@@ -67,7 +67,7 @@ export default async function SalesPage() {
         name={scope.site.name}
         siteCount={scope.siteCount}
         includesUnattributed={scope.includesUnattributed}
-        what="penjualan"
+        what="sales"
       />
 
       <Summary data={data} />
