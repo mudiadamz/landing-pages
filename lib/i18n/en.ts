@@ -980,6 +980,67 @@ export const en: Record<keyof typeof id, string> = {
   "product.ctaNoteSaveDate": "Save the date so it is not missed.",
   "product.ctaNoteRemind": "We will remind you before the event.",
 
+  "sites.checkFailed": "Check failed",
+  "sites.notOnVercel": "Not on Vercel yet",
+  "sites.awaitingOwnership": "Awaiting ownership verification",
+  "sites.dnsNotPointed": "DNS not pointed here",
+  "sites.liveOnVercel": "Live on Vercel",
+  "sites.adding": "Adding…",
+  "sites.addToVercel": "Add to Vercel",
+  "sites.checking": "Checking…",
+  "sites.recheckDns": "Check DNS again",
+  "sites.recheckVerification": "Check verification",
+  "sites.tryAgain": "Try again",
+  "sites.detach": "Detach from Vercel",
+  "sites.detachConfirm":
+    "Detach {host} from the Vercel project?\n\nIt stops serving this site immediately. The domain settings in the panel are NOT deleted — you can attach it again at any time with “Add to Vercel”.",
+  "sites.servedByVercel":
+    "Vercel is serving this domain, SSL and all. Only the Supabase step below is left.",
+  "sites.dnsIntro": "The domain is registered on Vercel but",
+  "sites.dnsNotHere": "its DNS does not point here yet",
+  "sites.dnsWrong": "its DNS is not right yet",
+  "sites.dnsAddRecordAt": ". Add the record",
+  "sites.dnsWhereNameservers": "wherever this domain's nameservers point",
+  "sites.dnsNotRegistrar": "— not always at the registrar. Check the nameservers first if you are unsure.",
+  "sites.nameserverAlt": "Alternative: point the nameservers at Vercel",
+  "sites.nameserverAltBody":
+    "Switch the domain's nameservers to Vercel at your registrar — Vercel then runs the DNS, so no A record is needed. The nameserver values are in Vercel → Settings → Domains → this domain. Note: every other DNS record (email and so on) has to move to Vercel too.",
+  "sites.afterRecordBefore": "Once the record is in place, click",
+  "sites.afterRecordAfter": ". DNS propagation takes anywhere from minutes to hours.",
+  "sites.challengeIntro":
+    "Add one of these records at the domain registrar, then click “Check verification”:",
+  "sites.challengeUnknown":
+    "Vercel cannot verify it yet. Check the Domains panel in Vercel for the record it wants.",
+
+  "sites.vercelAutoBody":
+    "This panel adds it through the Vercel API when the domain is created — the status & buttons are on the domain card above. If it fails, the reason shows there along with a retry button.",
+  "sites.vercelManualProject": "Project",
+  "sites.vercelManualPath": "→ Settings → Domains →",
+  "sites.vercelManualThenEnter": ", then enter:",
+  "sites.subdomainOfBefore": "This is a subdomain of",
+  "sites.subdomainOfAfter":
+    "whose DNS is already on Vercel — it works the moment it is added. SSL is automatic, and no new domain has to be bought.",
+  "sites.separateDomainBody":
+    "A separate domain: Vercel will show the DNS records to add (nameservers or A/CNAME) at your registrar. Follow what Vercel shows — do not use values from old notes, they change. SSL is automatic once verified.",
+  "sites.authLegacy":
+    "Every domain used to need adding to Redirect URLs in Supabase, and forgetting produced no error at all: a visitor pressing “Sign in with Google” on {host} landed on {canonical} along with their session cookie, and on {host} still looked signed out.",
+  "sites.authNowBefore":
+    "Sign-in on {host} now goes back through the {canonical} callback — the only one registered — and that callback hands it back to {host} to finish there. So a new domain",
+  "sites.authNoExtraWork": "adds no work",
+  "sites.authNowAfter": "in Supabase or in the Google Cloud Console.",
+  "sites.sessionBefore": "Sign-in sessions are",
+  "sites.sessionNot": "not",
+  "sites.sessionAfter":
+    "shared across domains — visitors sign in on each domain separately, and that is deliberate.",
+  "sites.redirectUrlNote":
+    "The one line that must stay in Supabase (Authentication → URL Configuration → Redirect URLs) covers every domain at once, and is already there. If it disappears, sign-in breaks on every domain:",
+  "sites.googleUrisBefore": "Same for the",
+  "sites.googleUrisAfter": "in Google, which points at Supabase rather than at our domain:",
+  "sites.step3Purchases":
+    "opens on this domain — a buyer must be able to see their purchases where they bought them. Admin screens (products, domains, users) bounce to",
+  "sites.paymentBefore": "Payments need no setup at all: the Duitku callback always goes to",
+  "sites.paymentAfter": ", while the buyer is returned to the domain they shopped on.",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

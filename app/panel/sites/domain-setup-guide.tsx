@@ -124,63 +124,47 @@ export function DomainSetupGuide({
             where="Vercel"
           >
             {vercelAutomated ? (
-              <p>
-                Panel ini menambahkannya sendiri lewat API Vercel saat domain dibuat — status &amp;
-                tombolnya ada di kartu domain di atas. Kalau gagal, alasannya tampil di sana
-                beserta tombol coba lagi.
-              </p>
+              <p>{t("sites.vercelAutoBody")}</p>
             ) : (
               <>
                 <p>
-                  Project <strong className="text-foreground">landing_pages</strong> → Settings →
-                  Domains → <strong className="text-foreground">Add</strong>, lalu masukkan:
+                  {t("sites.vercelManualProject")}{" "}
+                  <strong className="text-foreground">landing_pages</strong>{" "}
+                  {t("sites.vercelManualPath")}{" "}
+                  <strong className="text-foreground">Add</strong>
+                  {t("sites.vercelManualThenEnter")}
                 </p>
                 <Value>{host}</Value>
               </>
             )}
             {isSubdomain ? (
               <p>
-                Ini subdomain <span className="font-mono">{canonicalHost}</span> yang DNS-nya
-                sudah di Vercel — begitu ditambahkan, langsung jalan. SSL otomatis, tak perlu
-                beli domain baru.
+                {t("sites.subdomainOfBefore")}{" "}
+                <span className="font-mono">{canonicalHost}</span>{" "}
+                {t("sites.subdomainOfAfter")}
               </p>
             ) : (
-              <p>
-                Domain terpisah: Vercel akan menampilkan record DNS yang harus dipasang
-                (nameserver atau A/CNAME) di registrar Anda. Ikuti yang Vercel tampilkan —
-                jangan pakai nilai dari catatan lama, bisa berubah. SSL otomatis setelah
-                terverifikasi.
-              </p>
+              <p>{t("sites.separateDomainBody")}</p>
             )}
           </Step>
 
           <Step n={2} title={t("sites.step2Title")} where={t("sites.stepWhereAuto")}>
+            <p>{t("sites.authLegacy", { host, canonical: canonicalHost })}</p>
             <p>
-              Dulu tiap domain harus ditambahkan ke Redirect URLs di Supabase, dan kalau lupa
-              tidak ada error sama sekali: pengunjung yang menekan &ldquo;Masuk dengan
-              Google&rdquo; di {host} malah mendarat di {canonicalHost} berikut cookie sesinya,
-              lalu di {host} tetap terlihat belum masuk.
+              {t("sites.authNowBefore", { host, canonical: canonicalHost })}{" "}
+              <strong className="text-foreground">{t("sites.authNoExtraWork")}</strong>{" "}
+              {t("sites.authNowAfter")}
             </p>
             <p>
-              Sekarang login di {host} kembali lewat callback {canonicalHost} — satu-satunya
-              yang terdaftar — dan callback itu melemparnya balik ke {host} untuk diselesaikan
-              di sana. Jadi domain baru{" "}
-              <strong className="text-foreground">tidak menambah pekerjaan</strong> di Supabase
-              maupun di Google Cloud Console.
+              {t("sites.sessionBefore")}{" "}
+              <strong className="text-foreground">{t("sites.sessionNot")}</strong>{" "}
+              {t("sites.sessionAfter")}
             </p>
-            <p>
-              Sesi login <strong className="text-foreground">tidak</strong> lintas domain —
-              pengunjung login sendiri di tiap domain, dan itu memang disengaja.
-            </p>
-            <p>
-              Satu-satunya baris yang harus tetap ada di Supabase (Authentication → URL
-              Configuration → Redirect URLs) berlaku untuk semua domain sekaligus, dan sudah
-              terpasang. Kalau baris ini hilang, login patah di semua domain:
-            </p>
+            <p>{t("sites.redirectUrlNote")}</p>
             <Value>{`https://${canonicalHost}/auth/callback`}</Value>
             <p>
-              Begitu juga <em>Authorized redirect URIs</em> di Google, yang menunjuk ke Supabase
-              dan bukan ke domain kita:
+              {t("sites.googleUrisBefore")} <em>Authorized redirect URIs</em>{" "}
+              {t("sites.googleUrisAfter")}
             </p>
             <Value>{`${supabaseProjectUrl}/auth/v1/callback`}</Value>
           </Step>
@@ -191,16 +175,15 @@ export function DomainSetupGuide({
               <li>{t("sites.step3CheckHome")}</li>
               <li>{t("sites.step3CheckLogin")}</li>
               <li>
-                <span className="font-mono">/panel/purchases</span> bisa dibuka di domain ini —
-                pembeli wajib bisa lihat pembeliannya di tempat dia beli. Layar admin
-                (produk, domain, users) memantul ke{" "}
+                <span className="font-mono">/panel/purchases</span>{" "}
+                {t("sites.step3Purchases")}{" "}
                 <span className="font-mono">{canonicalHost}</span>.
               </li>
             </ul>
             <p>
-              Pembayaran tidak perlu disetel apa pun: callback Duitku selalu ke{" "}
-              <span className="font-mono">{canonicalHost}</span>, sedangkan pembeli dikembalikan
-              ke domain tempat dia belanja.
+              {t("sites.paymentBefore")}{" "}
+              <span className="font-mono">{canonicalHost}</span>
+              {t("sites.paymentAfter")}
             </p>
           </Step>
         </ol>

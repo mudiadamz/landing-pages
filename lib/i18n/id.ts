@@ -970,6 +970,67 @@ export const id = {
   "product.ctaNoteSaveDate": "Simpan tanggalnya biar tidak terlewat.",
   "product.ctaNoteRemind": "Kami ingatkan menjelang acara.",
 
+  "sites.checkFailed": "Gagal diperiksa",
+  "sites.notOnVercel": "Belum di Vercel",
+  "sites.awaitingOwnership": "Menunggu verifikasi kepemilikan",
+  "sites.dnsNotPointed": "DNS belum diarahkan",
+  "sites.liveOnVercel": "Aktif di Vercel",
+  "sites.adding": "Menambahkan…",
+  "sites.addToVercel": "Tambah ke Vercel",
+  "sites.checking": "Memeriksa…",
+  "sites.recheckDns": "Cek DNS lagi",
+  "sites.recheckVerification": "Cek verifikasi",
+  "sites.tryAgain": "Coba lagi",
+  "sites.detach": "Lepas dari Vercel",
+  "sites.detachConfirm":
+    "Lepas {host} dari project Vercel?\n\nDomainnya langsung berhenti melayani situs ini. Pengaturan domain di panel TIDAK dihapus — bisa dipasang lagi kapan saja dengan “Tambah ke Vercel”.",
+  "sites.servedByVercel":
+    "Vercel sudah melayani domain ini, SSL otomatis. Tinggal langkah Supabase di bawah.",
+  "sites.dnsIntro": "Domain sudah terdaftar di Vercel tapi",
+  "sites.dnsNotHere": "DNS-nya belum mengarah ke sini",
+  "sites.dnsWrong": "DNS-nya belum benar",
+  "sites.dnsAddRecordAt": ". Tambahkan record di",
+  "sites.dnsWhereNameservers": "tempat nameserver domain ini menunjuk",
+  "sites.dnsNotRegistrar": "— bukan selalu di registrar. Cek dulu nameserver-nya kalau tidak yakin.",
+  "sites.nameserverAlt": "Alternatif: arahkan nameserver ke Vercel",
+  "sites.nameserverAltBody":
+    "Ganti nameserver domain ke Vercel di registrar — Vercel yang mengurus DNS, jadi tidak perlu A record. Nilai nameserver-nya ada di Vercel → Settings → Domains → domain ini. Catatan: semua DNS record lain (email, dll) harus dipindah ke Vercel juga.",
+  "sites.afterRecordBefore": "Setelah record dipasang, klik",
+  "sites.afterRecordAfter": ". Propagasi DNS bisa beberapa menit sampai beberapa jam.",
+  "sites.challengeIntro":
+    "Pasang salah satu record ini di registrar domain, lalu klik “Cek verifikasi”:",
+  "sites.challengeUnknown":
+    "Vercel belum bisa memverifikasi. Cek panel Domains di Vercel untuk record yang diminta.",
+
+  "sites.vercelAutoBody":
+    "Panel ini menambahkannya sendiri lewat API Vercel saat domain dibuat — status & tombolnya ada di kartu domain di atas. Kalau gagal, alasannya tampil di sana beserta tombol coba lagi.",
+  "sites.vercelManualProject": "Project",
+  "sites.vercelManualPath": "→ Settings → Domains →",
+  "sites.vercelManualThenEnter": ", lalu masukkan:",
+  "sites.subdomainOfBefore": "Ini subdomain",
+  "sites.subdomainOfAfter":
+    "yang DNS-nya sudah di Vercel — begitu ditambahkan, langsung jalan. SSL otomatis, tak perlu beli domain baru.",
+  "sites.separateDomainBody":
+    "Domain terpisah: Vercel akan menampilkan record DNS yang harus dipasang (nameserver atau A/CNAME) di registrar Anda. Ikuti yang Vercel tampilkan — jangan pakai nilai dari catatan lama, bisa berubah. SSL otomatis setelah terverifikasi.",
+  "sites.authLegacy":
+    "Dulu tiap domain harus ditambahkan ke Redirect URLs di Supabase, dan kalau lupa tidak ada error sama sekali: pengunjung yang menekan “Masuk dengan Google” di {host} malah mendarat di {canonical} berikut cookie sesinya, lalu di {host} tetap terlihat belum masuk.",
+  "sites.authNowBefore":
+    "Sekarang login di {host} kembali lewat callback {canonical} — satu-satunya yang terdaftar — dan callback itu melemparnya balik ke {host} untuk diselesaikan di sana. Jadi domain baru",
+  "sites.authNoExtraWork": "tidak menambah pekerjaan",
+  "sites.authNowAfter": "di Supabase maupun di Google Cloud Console.",
+  "sites.sessionBefore": "Sesi login",
+  "sites.sessionNot": "tidak",
+  "sites.sessionAfter":
+    "lintas domain — pengunjung login sendiri di tiap domain, dan itu memang disengaja.",
+  "sites.redirectUrlNote":
+    "Satu-satunya baris yang harus tetap ada di Supabase (Authentication → URL Configuration → Redirect URLs) berlaku untuk semua domain sekaligus, dan sudah terpasang. Kalau baris ini hilang, login patah di semua domain:",
+  "sites.googleUrisBefore": "Begitu juga",
+  "sites.googleUrisAfter": "di Google, yang menunjuk ke Supabase dan bukan ke domain kita:",
+  "sites.step3Purchases":
+    "bisa dibuka di domain ini — pembeli wajib bisa lihat pembeliannya di tempat dia beli. Layar admin (produk, domain, users) memantul ke",
+  "sites.paymentBefore": "Pembayaran tidak perlu disetel apa pun: callback Duitku selalu ke",
+  "sites.paymentAfter": ", sedangkan pembeli dikembalikan ke domain tempat dia belanja.",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

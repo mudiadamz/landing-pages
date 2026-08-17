@@ -101,14 +101,17 @@ export function VercelDomainStatus({ host }: { host: string }) {
   // (nobody else's Vercel account holds it) and still answer nothing, because its
   // DNS never pointed here. Only both together earn the green badge.
   const badge = !state
-    ? { text: "Gagal diperiksa", cls: "bg-red-500/10 text-red-600 dark:text-red-400" }
+    ? { text: t("sites.checkFailed"), cls: "bg-red-500/10 text-red-600 dark:text-red-400" }
     : !state.added
-      ? { text: "Belum di Vercel", cls: AMBER }
+      ? { text: t("sites.notOnVercel"), cls: AMBER }
       : !state.verified
-        ? { text: "Menunggu verifikasi kepemilikan", cls: AMBER }
+        ? { text: t("sites.awaitingOwnership"), cls: AMBER }
         : state.dns?.misconfigured
-          ? { text: "DNS belum diarahkan", cls: AMBER }
-          : { text: "Aktif di Vercel", cls: "bg-green-500/10 text-green-700 dark:text-green-400" };
+          ? { text: t("sites.dnsNotPointed"), cls: AMBER }
+          : {
+              text: t("sites.liveOnVercel"),
+              cls: "bg-green-500/10 text-green-700 dark:text-green-400",
+            };
 
   const needsDns = !!state?.added && !!state.verified && !!state.dns?.misconfigured;
   // Apex vs subdomain decides A-record or CNAME. Two labels = apex; good enough here,
@@ -128,7 +131,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
             disabled={pending}
             className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)] disabled:opacity-60"
           >
-            {pending ? "Menambahkan…" : "Tambah ke Vercel"}
+            {pending ? t("sites.adding") : t("sites.addToVercel")}
           </button>
         )}
         {state?.added && (!state.verified || state.dns?.misconfigured) && (
@@ -142,7 +145,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
             disabled={pending}
             className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)] disabled:opacity-60"
           >
-            {pending ? "Memeriksa…" : state.verified ? "Cek DNS lagi" : "Cek verifikasi"}
+            {pending ? t("sites.checking") : state.verified ? t("sites.recheckDns") : t("sites.recheckVerification")}
           </button>
         )}
         {status.kind === "error" && (
@@ -152,7 +155,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
             disabled={pending}
             className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-[var(--primary)] disabled:opacity-60"
           >
-            Coba lagi
+            {t("sites.tryAgain")}
           </button>
         )}
         {state?.added && (
@@ -160,9 +163,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
             type="button"
             onClick={() => {
               if (
-                !confirm(
-                  `Lepas ${host} dari project Vercel?\n\nDomainnya langsung berhenti melayani situs ini. Pengaturan domain di panel TIDAK dihapus — bisa dipasang lagi kapan saja dengan "Tambah ke Vercel".`,
-                )
+                !confirm(t("sites.detachConfirm", { host }))
               )
                 return;
               act(() => detachDomainFromVercel(host));
@@ -170,7 +171,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
             disabled={pending}
             className="ml-auto rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:text-red-600 disabled:opacity-60 dark:hover:text-red-400"
           >
-            Lepas dari Vercel
+            {t("sites.detach")}
           </button>
         )}
       </div>
@@ -179,7 +180,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
 
       {state?.verified && !state.dns?.misconfigured && (
         <p className="text-xs text-[var(--muted)]">
-          Vercel sudah melayani domain ini, SSL otomatis. Tinggal langkah Supabase di bawah.
+          {t("sites.servedByVercel")}
         </p>
       )}
 
@@ -188,15 +189,14 @@ export function VercelDomainStatus({ host }: { host: string }) {
       {needsDns && (
         <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5">
           <p className="text-xs text-amber-700 dark:text-amber-400">
-            Domain sudah terdaftar di Vercel tapi{" "}
+            {t("sites.dnsIntro")}{" "}
             <strong>
               {state.dns?.configuredBy === null
-                ? "DNS-nya belum mengarah ke sini"
-                : "DNS-nya belum benar"}
+                ? t("sites.dnsNotHere")
+                : t("sites.dnsWrong")}
             </strong>
-            . Tambahkan record di{" "}
-            <strong>tempat nameserver domain ini menunjuk</strong> — bukan selalu di
-            registrar. Cek dulu nameserver-nya kalau tidak yakin.
+            {t("sites.dnsAddRecordAt")}{" "}
+            <strong>{t("sites.dnsWhereNameservers")}</strong> {t("sites.dnsNotRegistrar")}
           </p>
 
           {isApex && state.dns!.ipv4.length > 0 && (
@@ -226,20 +226,18 @@ export function VercelDomainStatus({ host }: { host: string }) {
           {isApex && state.dns!.cname && (
             <details className="text-xs">
               <summary className="cursor-pointer text-[var(--muted)]">
-                Alternatif: arahkan nameserver ke Vercel
+                {t("sites.nameserverAlt")}
               </summary>
               <p className="mt-1.5 text-[var(--muted)]">
-                Ganti nameserver domain ke Vercel di registrar — Vercel yang mengurus DNS,
-                jadi tidak perlu A record. Nilai nameserver-nya ada di Vercel → Settings →
-                Domains → domain ini. Catatan: semua DNS record lain (email, dll) harus
-                dipindah ke Vercel juga.
+                {t("sites.nameserverAltBody")}
               </p>
             </details>
           )}
 
           <p className="text-xs text-[var(--muted)]">
-            Setelah record dipasang, klik <strong className="text-foreground">Cek DNS lagi</strong>.
-            Propagasi DNS bisa beberapa menit sampai beberapa jam.
+            {t("sites.afterRecordBefore")}{" "}
+            <strong className="text-foreground">{t("sites.recheckDns")}</strong>
+            {t("sites.afterRecordAfter")}
           </p>
         </div>
       )}
@@ -251,8 +249,8 @@ export function VercelDomainStatus({ host }: { host: string }) {
         <div className="space-y-1.5">
           <p className="text-xs text-[var(--muted)]">
             {state.challenges.length > 0
-              ? "Pasang salah satu record ini di registrar domain, lalu klik “Cek verifikasi”:"
-              : "Vercel belum bisa memverifikasi. Cek panel Domains di Vercel untuk record yang diminta."}
+              ? t("sites.challengeIntro")
+              : t("sites.challengeUnknown")}
           </p>
           {state.challenges.map((c, i) => (
             <div
