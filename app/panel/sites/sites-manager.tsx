@@ -71,7 +71,7 @@ export function SitesManager({
     startTransition(async () => {
       const res = await selectPanelSite(siteId);
       if (!res.ok) {
-        setMessage({ type: "err", text: res.error ?? "Gagal mengganti situs." });
+        setMessage({ type: "err", text: res.error ?? t("sites.switchFailed") });
         return;
       }
       router.push("/panel/branding");
@@ -82,10 +82,10 @@ export function SitesManager({
     startTransition(async () => {
       const res = await updateSiteDomain(id, draft);
       if (!res.ok) {
-        setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
+        setMessage({ type: "err", text: res.error ?? t("common.failed") });
         return;
       }
-      setMessage({ type: "ok", text: "Pengaturan domain tersimpan." });
+      setMessage({ type: "ok", text: t("sites.domainSaved") });
       setEditing(null);
       router.refresh();
     });
@@ -95,22 +95,22 @@ export function SitesManager({
     startTransition(async () => {
       const res = await createSite(newDraft);
       if (!res.ok) {
-        setMessage({ type: "err", text: res.error ?? "Gagal menyimpan." });
+        setMessage({ type: "err", text: res.error ?? t("common.failed") });
         return;
       }
       // The row exists either way; what to say depends on how far Vercel got.
       const v = res.vercel;
       const vercelNote =
         !v || v.kind === "not-configured"
-          ? "Jangan lupa tambahkan juga di Vercel."
+          ? t("sites.vercelRemember")
           : v.kind === "error"
-            ? `Gagal ditambahkan ke Vercel: ${v.error}`
+            ? t("sites.vercelFailed", { error: v.error })
             : v.state.verified
-              ? "Aktif di Vercel."
-              : "Ditambahkan ke Vercel — menunggu DNS.";
+              ? t("sites.vercelLive")
+              : t("sites.vercelPending");
       setMessage({
         type: v?.kind === "error" ? "err" : "ok",
-        text: `Domain ${newDraft.host} ditambahkan. ${vercelNote} Lanjut atur identitas & tampilannya.`,
+        text: t("sites.domainAdded", { host: newDraft.host, note: vercelNote }),
       });
       setEditing(null);
       router.refresh();
@@ -127,17 +127,15 @@ export function SitesManager({
 
   function remove(site: Site) {
     if (
-      !confirm(
-        `Hapus domain ${site.host}?\n\nPengaturan khusus domain ini (hero, popup, tracking, custom JS) ikut terhapus. Produk tidak terpengaruh.\n\nDomainnya TETAP terdaftar di Vercel — lepas sendiri di sana kalau memang mau dilepas.`,
-      )
+      !confirm(t("sites.deleteConfirm", { host: site.host }))
     )
       return;
     startTransition(async () => {
       const res = await deleteSite(site.id);
       setMessage(
         res.ok
-          ? { type: "ok", text: `Domain ${site.host} dihapus.` }
-          : { type: "err", text: res.error ?? "Gagal menghapus." },
+          ? { type: "ok", text: t("sites.domainDeleted", { host: site.host }) }
+          : { type: "err", text: res.error ?? t("common.deleteFailed") },
       );
       if (res.ok) router.refresh();
     });
@@ -219,12 +217,12 @@ export function SitesManager({
                     </span>
                     {site.is_canonical && (
                       <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--primary)]">
-                        utama · panel &amp; pembayaran
+                        {t("sites.canonicalBadge")}
                       </span>
                     )}
                     {!site.active && (
                       <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                        nonaktif
+                        {t("sites.inactive")}
                       </span>
                     )}
                   </div>
@@ -379,8 +377,8 @@ function DomainForm({
         />
         <p className="text-xs text-[var(--muted)]">
           {lockHost
-            ? "Domain utama tidak bisa diubah — callback pembayaran & login terikat ke host ini."
-            : "Harus sama persis dengan header Host. Salah satu huruf dan domain ini akan menampilkan situs utama, bukan error."}
+            ? t("sites.canonicalHostLocked")
+            : t("sites.hostExactHint")}
         </p>
       </div>
 

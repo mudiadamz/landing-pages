@@ -853,6 +853,35 @@ export const id = {
   "panel.displayNameIntro": "Nama yang muncul di panel dan pada ulasan Anda.",
   "panel.signOut": "Keluar dari akun",
 
+  "panel.palettePrimaryLight": "Primary (terang)",
+  "panel.palettePrimaryDark": "Primary (gelap)",
+  "panel.paletteSubtleLight": "Latar aktif (terang)",
+  "panel.paletteSubtleDark": "Latar aktif (gelap)",
+  "panel.paletteAccentLight": "Aksen (terang)",
+  "panel.paletteAccentDark": "Aksen (gelap)",
+  "panel.paletteSecondaryLight": "Aksen kedua (terang)",
+  "panel.paletteSecondaryDark": "Aksen kedua (gelap)",
+  "panel.paletteSaved": "Palet tersimpan.",
+  "panel.customColors": "Warna sendiri",
+  "panel.activeSuffix": "· aktif",
+  "panel.savePalette": "Simpan palet",
+
+  "sites.switchFailed": "Gagal mengganti situs.",
+  "sites.domainSaved": "Pengaturan domain tersimpan.",
+  "sites.vercelRemember": "Jangan lupa tambahkan juga di Vercel.",
+  "sites.vercelFailed": "Gagal ditambahkan ke Vercel: {error}",
+  "sites.vercelLive": "Aktif di Vercel.",
+  "sites.vercelPending": "Ditambahkan ke Vercel — menunggu DNS.",
+  "sites.domainAdded": "Domain {host} ditambahkan. {note} Lanjut atur identitas & tampilannya.",
+  "sites.domainDeleted": "Domain {host} dihapus.",
+  "sites.deleteConfirm":
+    "Hapus domain {host}?\n\nPengaturan khusus domain ini (hero, popup, tracking, custom JS) ikut terhapus. Produk tidak terpengaruh.\n\nDomainnya TETAP terdaftar di Vercel — lepas sendiri di sana kalau memang mau dilepas.",
+  "sites.canonicalBadge": "utama · panel & pembayaran",
+  "sites.canonicalHostLocked":
+    "Domain utama tidak bisa diubah — callback pembayaran & login terikat ke host ini.",
+  "sites.hostExactHint":
+    "Harus sama persis dengan header Host. Salah satu huruf dan domain ini akan menampilkan situs utama, bukan error.",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

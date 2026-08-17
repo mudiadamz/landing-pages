@@ -863,6 +863,35 @@ export const en: Record<keyof typeof id, string> = {
   "panel.displayNameIntro": "The name shown in the panel and on your reviews.",
   "panel.signOut": "Sign out",
 
+  "panel.palettePrimaryLight": "Primary (light)",
+  "panel.palettePrimaryDark": "Primary (dark)",
+  "panel.paletteSubtleLight": "Active background (light)",
+  "panel.paletteSubtleDark": "Active background (dark)",
+  "panel.paletteAccentLight": "Accent (light)",
+  "panel.paletteAccentDark": "Accent (dark)",
+  "panel.paletteSecondaryLight": "Second accent (light)",
+  "panel.paletteSecondaryDark": "Second accent (dark)",
+  "panel.paletteSaved": "Palette saved.",
+  "panel.customColors": "Your own colours",
+  "panel.activeSuffix": "· active",
+  "panel.savePalette": "Save palette",
+
+  "sites.switchFailed": "Could not switch site.",
+  "sites.domainSaved": "Domain settings saved.",
+  "sites.vercelRemember": "Remember to add it in Vercel too.",
+  "sites.vercelFailed": "Could not add it to Vercel: {error}",
+  "sites.vercelLive": "Live on Vercel.",
+  "sites.vercelPending": "Added to Vercel — waiting for DNS.",
+  "sites.domainAdded": "Domain {host} added. {note} Next, set up its identity & appearance.",
+  "sites.domainDeleted": "Domain {host} deleted.",
+  "sites.deleteConfirm":
+    "Delete domain {host}?\n\nThis domain's own settings (hero, popup, tracking, custom JS) go with it. Products are not affected.\n\nThe domain STAYS registered in Vercel — remove it there yourself if that is what you want.",
+  "sites.canonicalBadge": "primary · panel & payments",
+  "sites.canonicalHostLocked":
+    "The primary domain cannot be changed — the payment callback and sign-in are tied to this host.",
+  "sites.hostExactHint":
+    "Must match the Host header exactly. One wrong letter and this domain shows the main site rather than an error.",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

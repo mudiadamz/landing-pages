@@ -76,7 +76,6 @@ describe("dictionary integrity", () => {
     "panel.socialHint",
     "reader.signInGoogle",
     "sites.domain",
-    "sites.inactive",
   ];
 
   it("has no unused keys beyond the declared backlog", () => {

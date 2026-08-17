@@ -12,6 +12,7 @@ import {
 } from "@/lib/palette";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 
 /**
  * Palette picker with a live preview.
@@ -24,15 +25,15 @@ import { useT } from "@/lib/i18n/client";
  * until Save.
  */
 
-const FIELDS: { key: keyof PaletteTokens; label: string }[] = [
-  { key: "primary", label: "Primary (terang)" },
-  { key: "primaryDark", label: "Primary (gelap)" },
-  { key: "subtle", label: "Latar aktif (terang)" },
-  { key: "subtleDark", label: "Latar aktif (gelap)" },
-  { key: "accent", label: "Aksen (terang)" },
-  { key: "accentDark", label: "Aksen (gelap)" },
-  { key: "secondary", label: "Aksen kedua (terang)" },
-  { key: "secondaryDark", label: "Aksen kedua (gelap)" },
+const FIELDS: { key: keyof PaletteTokens; labelKey: MessageKey }[] = [
+  { key: "primary", labelKey: "panel.palettePrimaryLight" },
+  { key: "primaryDark", labelKey: "panel.palettePrimaryDark" },
+  { key: "subtle", labelKey: "panel.paletteSubtleLight" },
+  { key: "subtleDark", labelKey: "panel.paletteSubtleDark" },
+  { key: "accent", labelKey: "panel.paletteAccentLight" },
+  { key: "accentDark", labelKey: "panel.paletteAccentDark" },
+  { key: "secondary", labelKey: "panel.paletteSecondaryLight" },
+  { key: "secondaryDark", labelKey: "panel.paletteSecondaryDark" },
 ];
 
 export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
@@ -62,8 +63,8 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
       const res = await updatePanelPalette({ preset, tokens: normalizeTokens(tokens) });
       setMsg(
         res.ok
-          ? { ok: true, text: "Palet tersimpan." }
-          : { ok: false, text: res.error ?? "Gagal menyimpan." },
+          ? { ok: true, text: t("panel.paletteSaved") }
+          : { ok: false, text: res.error ?? t("common.failed") },
       );
       if (res.ok) router.refresh();
     });
@@ -109,7 +110,7 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
 
       <details className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <summary className="cursor-pointer text-sm font-medium text-foreground">
-          Warna sendiri {preset === "custom" && "· aktif"}
+          {t("panel.customColors")} {preset === "custom" && t("panel.activeSuffix")}
         </summary>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {FIELDS.map((f) => (
@@ -118,11 +119,11 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
                 type="color"
                 value={tokens[f.key]}
                 onChange={(e) => editToken(f.key, e.target.value)}
-                aria-label={f.label}
+                aria-label={t(f.labelKey)}
                 className="h-9 w-12 shrink-0 cursor-pointer rounded border border-[var(--border)] bg-transparent"
               />
               <div className="min-w-0 flex-1">
-                <label className="block text-xs text-[var(--muted)]">{f.label}</label>
+                <label className="block text-xs text-[var(--muted)]">{t(f.labelKey)}</label>
                 <input
                   type="text"
                   value={tokens[f.key]}
@@ -166,7 +167,7 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button size="md" onClick={save} disabled={saving}>
-          {saving ? "Menyimpan…" : "Simpan palet"}
+          {saving ? t("common.saving") : t("panel.savePalette")}
         </Button>
         {msg && (
           <span
