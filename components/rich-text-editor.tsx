@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Lightweight rich-text (WYSIWYG) editor built on a contenteditable div with
@@ -20,6 +21,7 @@ export function RichTextEditor({
   onChange: (html: string) => void;
   placeholder?: string;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [empty, setEmpty] = useState(!initialHtml.trim());
 
@@ -45,7 +47,7 @@ export function RichTextEditor({
   }
 
   function createLink() {
-    const url = window.prompt("URL tautan (https://…)");
+    const url = window.prompt(t("editor.linkUrlFull"));
     if (!url) return;
     exec("createLink", url);
   }
@@ -59,30 +61,30 @@ export function RichTextEditor({
         <ToolbarButton label="Miring" onClick={() => exec("italic")}>
           <span className="italic">I</span>
         </ToolbarButton>
-        <ToolbarButton label="Garis bawah" onClick={() => exec("underline")}>
+        <ToolbarButton label={t("editor.underline")} onClick={() => exec("underline")}>
           <span className="underline">U</span>
         </ToolbarButton>
         <Divider />
-        <ToolbarButton label="Judul" onClick={() => exec("formatBlock", "H2")}>
+        <ToolbarButton label={t("panel.title")} onClick={() => exec("formatBlock", "H2")}>
           <span className="text-sm font-bold">H1</span>
         </ToolbarButton>
-        <ToolbarButton label="Sub-judul" onClick={() => exec("formatBlock", "H3")}>
+        <ToolbarButton label={t("editor.subheading")} onClick={() => exec("formatBlock", "H3")}>
           <span className="text-xs font-bold">H2</span>
         </ToolbarButton>
         <ToolbarButton label="Paragraf" onClick={() => exec("formatBlock", "P")}>
           <span className="text-xs">¶</span>
         </ToolbarButton>
         <Divider />
-        <ToolbarButton label="Daftar poin" onClick={() => exec("insertUnorderedList")}>
+        <ToolbarButton label={t("editor.bulletPoints")} onClick={() => exec("insertUnorderedList")}>
           <ListIcon />
         </ToolbarButton>
-        <ToolbarButton label="Daftar bernomor" onClick={() => exec("insertOrderedList")}>
+        <ToolbarButton label={t("editor.numberedList")} onClick={() => exec("insertOrderedList")}>
           <OrderedListIcon />
         </ToolbarButton>
         <ToolbarButton label="Tautan" onClick={createLink}>
           <LinkIcon />
         </ToolbarButton>
-        <ToolbarButton label="Hapus format" onClick={() => exec("removeFormat")}>
+        <ToolbarButton label={t("editor.clearFormat")} onClick={() => exec("removeFormat")}>
           <ClearIcon />
         </ToolbarButton>
       </div>

@@ -1346,6 +1346,23 @@ export const en: Record<keyof typeof id, string> = {
   "home.mockupLine2": "no coding.",
   "home.instantDownload": "Instant download",
 
+  "editor.linkUrlFull": "Link URL (https://…)",
+  "editor.bulletPoints": "Bullet list",
+  "assets.modalIntro": "Upload images or videos. Copy the URL and paste it into your HTML.",
+  "assets.latestOf": "{shown} most recent of {total}",
+  "assets.count": "{count} assets",
+  "panel.replaceFile": "Replace file",
+  "panel.chooseFile": "Choose file",
+  "panel.clickToUpload": "Click to upload",
+  "auth.emailVerified": "Your email is verified. Thank you.",
+  "auth.verifyExpired": "That verification link has expired. Click “Resend” for a new one.",
+  "auth.verifyInvalid": "That verification link is not valid. Click “Resend” for a new one.",
+  "auth.verifyFailed": "The verification could not be processed. Try again shortly.",
+  "product.galleryImageAlt": "{alt} — image {n}",
+  "product.prevImage": "Previous image",
+  "product.nextImage": "Next image",
+  "product.goToImage": "Go to image {n}",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useT } from "@/lib/i18n/client";
 import { useCallback, useRef, useState } from "react";
 
 /**
@@ -11,6 +12,7 @@ import { useCallback, useRef, useState } from "react";
  * A single image renders as a plain picture, with no controls to get in the way.
  */
 export function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
+  const t = useT();
   const trackRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
 
@@ -55,7 +57,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
           <div key={src} className="relative h-full w-full shrink-0 snap-center">
             <Image
               src={src}
-              alt={i === 0 ? alt : `${alt} — gambar ${i + 1}`}
+              alt={i === 0 ? alt : t("product.galleryImageAlt", { alt, n: i + 1 })}
               fill
               sizes="(max-width: 640px) 100vw, 576px"
               className="object-cover"
@@ -70,7 +72,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         type="button"
         onClick={() => scrollTo(Math.max(0, index - 1))}
         disabled={index === 0}
-        aria-label="Gambar sebelumnya"
+        aria-label={t("product.prevImage")}
         className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white backdrop-blur transition-opacity hover:bg-black/60 disabled:opacity-0 sm:block"
       >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden>
@@ -81,7 +83,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         type="button"
         onClick={() => scrollTo(Math.min(images.length - 1, index + 1))}
         disabled={index === images.length - 1}
-        aria-label="Gambar berikutnya"
+        aria-label={t("product.nextImage")}
         className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white backdrop-blur transition-opacity hover:bg-black/60 disabled:opacity-0 sm:block"
       >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden>
@@ -95,7 +97,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
             key={src}
             type="button"
             onClick={() => scrollTo(i)}
-            aria-label={`Ke gambar ${i + 1}`}
+            aria-label={t("product.goToImage", { n: i + 1 })}
             aria-current={i === index}
             className={`h-1.5 rounded-full transition-all ${
               i === index ? "w-5 bg-white" : "w-1.5 bg-white/60 hover:bg-white/80"

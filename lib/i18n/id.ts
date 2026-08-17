@@ -1336,6 +1336,23 @@ export const id = {
   "home.mockupLine2": "tanpa ngoding.",
   "home.instantDownload": "Download instan",
 
+  "editor.linkUrlFull": "URL tautan (https://…)",
+  "editor.bulletPoints": "Daftar poin",
+  "assets.modalIntro": "Upload gambar atau video. Salin URL-nya dan tempel ke HTML.",
+  "assets.latestOf": "{shown} terbaru dari {total}",
+  "assets.count": "{count} aset",
+  "panel.replaceFile": "Ganti file",
+  "panel.chooseFile": "Pilih file",
+  "panel.clickToUpload": "Klik untuk upload",
+  "auth.emailVerified": "Email Anda sudah terverifikasi. Terima kasih.",
+  "auth.verifyExpired": "Link verifikasi sudah kedaluwarsa. Klik “Kirim ulang” untuk link baru.",
+  "auth.verifyInvalid": "Link verifikasi tidak valid. Klik “Kirim ulang” untuk link baru.",
+  "auth.verifyFailed": "Verifikasi gagal diproses. Coba lagi sebentar lagi.",
+  "product.galleryImageAlt": "{alt} — gambar {n}",
+  "product.prevImage": "Gambar sebelumnya",
+  "product.nextImage": "Gambar berikutnya",
+  "product.goToImage": "Ke gambar {n}",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

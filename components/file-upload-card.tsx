@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * The upload control for this panel. Every file input in the panel uses it.
@@ -11,7 +12,7 @@ import { useRef } from "react";
  * now shared rather than re-implemented per screen.
  *
  * Two states: empty shows a dashed drop-target button; filled shows the file
- * name, size, a remove control and a "Ganti file" link. Errors render beneath
+ * name, size, a remove control and a t("panel.replaceFile") link. Errors render beneath
  * either state.
  */
 
@@ -66,6 +67,7 @@ export function FileUploadCard({
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: () => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="min-w-0 rounded-xl border border-[var(--border)] p-3">
@@ -100,8 +102,8 @@ export function FileUploadCard({
             <button
               type="button"
               onClick={onRemove}
-              title="Hapus file"
-              aria-label="Hapus file"
+              title={t("panel.deleteFile")}
+              aria-label={t("panel.deleteFile")}
               className="rounded-md p-1.5 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
             >
               <XIcon className="h-4 w-4" />
@@ -116,7 +118,7 @@ export function FileUploadCard({
               disabled={uploading}
               className="ml-auto text-xs font-medium text-[var(--primary)] hover:underline disabled:opacity-50"
             >
-              {uploading ? "Mengupload…" : "Ganti file"}
+              {uploading ? "Mengupload…" : t("panel.replaceFile")}
             </button>
           </div>
         </>
@@ -128,9 +130,9 @@ export function FileUploadCard({
           className="flex w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[var(--border)] px-3 py-5 text-center transition-colors hover:border-[var(--primary)]/60 disabled:opacity-50"
         >
           <span className="text-sm font-medium text-[var(--primary)]">
-            {uploading ? "Mengupload…" : "Pilih file"}
+            {uploading ? "Mengupload…" : t("panel.chooseFile")}
           </span>
-          <span className="text-xs text-[var(--muted)]">Klik untuk upload</span>
+          <span className="text-xs text-[var(--muted)]">{t("panel.clickToUpload")}</span>
         </button>
       )}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}

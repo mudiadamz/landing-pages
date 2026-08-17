@@ -1,6 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 import { useSearchParams } from "next/navigation";
 
 /**
@@ -13,20 +15,15 @@ import { useSearchParams } from "next/navigation";
  * didn't work.
  */
 
-const MESSAGES: Record<string, { ok: boolean; text: string }> = {
-  ok: { ok: true, text: "Email Anda sudah terverifikasi. Terima kasih." },
-  expired: {
-    ok: false,
-    text: "Link verifikasi sudah kedaluwarsa. Klik “Kirim ulang” untuk link baru.",
-  },
-  invalid: {
-    ok: false,
-    text: "Link verifikasi tidak valid. Klik “Kirim ulang” untuk link baru.",
-  },
-  error: { ok: false, text: "Verifikasi gagal diproses. Coba lagi sebentar lagi." },
+const MESSAGES: Record<string, { ok: boolean; textKey: MessageKey }> = {
+  ok: { ok: true, textKey: "auth.emailVerified" },
+  expired: { ok: false, textKey: "auth.verifyExpired" },
+  invalid: { ok: false, textKey: "auth.verifyInvalid" },
+  error: { ok: false, textKey: "auth.verifyFailed" },
 };
 
 function Notice() {
+  const t = useT();
   const status = useSearchParams().get("verify");
   const msg = status ? MESSAGES[status] : null;
   if (!msg) return null;
@@ -40,7 +37,7 @@ function Notice() {
       }`}
       role="status"
     >
-      {msg.text}
+      {t(msg.textKey)}
     </div>
   );
 }

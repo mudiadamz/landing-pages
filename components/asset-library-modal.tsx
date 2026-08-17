@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { uploadLibraryAsset, listLibraryAssets } from "@/lib/actions/assets";
@@ -21,6 +22,7 @@ export function AssetLibraryModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   const [mounted, setMounted] = useState(false);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -105,7 +107,7 @@ export function AssetLibraryModal({
           <div>
             <h2 className="text-base font-semibold text-foreground">Assets</h2>
             <p className="text-xs text-[var(--muted)] mt-0.5">
-              Upload images or videos. Copy the URL and paste into your HTML.
+              {t("assets.modalIntro")}
             </p>
           </div>
           <button
@@ -131,7 +133,7 @@ export function AssetLibraryModal({
               className="hidden"
             />
             <span className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-[var(--border)] rounded-lg text-sm font-medium text-[var(--muted)] hover:border-[var(--primary)] hover:text-[var(--primary)] cursor-pointer transition-colors">
-              {uploading ? "Uploading…" : "Choose file (image or video)"}
+              {uploading ? t("panel.uploading") : t("assets.pickFile")}
             </span>
           </label>
 
@@ -143,24 +145,24 @@ export function AssetLibraryModal({
             <div className="mt-4 flex items-center justify-between gap-3">
               <p className="text-xs text-[var(--muted)]">
                 {assets.length > PREVIEW_COUNT
-                  ? `${PREVIEW_COUNT} terbaru dari ${assets.length}`
-                  : `${assets.length} aset`}
+                  ? t("assets.latestOf", { shown: PREVIEW_COUNT, total: assets.length })
+                  : t("assets.count", { count: assets.length })}
               </p>
               <Link
                 href="/panel/assets"
                 onClick={onClose}
                 className="text-xs font-medium text-[var(--primary)] hover:underline"
               >
-                Lihat semua →
+                {t("panel.viewAll")}
               </Link>
             </div>
           )}
 
           <div className="mt-4 space-y-2">
             {loadingList ? (
-              <p className="text-xs text-[var(--muted)]">Loading…</p>
+              <p className="text-xs text-[var(--muted)]">{t("common.loading")}</p>
             ) : assets.length === 0 ? (
-              <p className="text-xs text-[var(--muted)]">No assets yet</p>
+              <p className="text-xs text-[var(--muted)]">{t("assets.none")}</p>
             ) : (
               assets.slice(0, PREVIEW_COUNT).map((a) => (
                 <div
@@ -188,7 +190,7 @@ export function AssetLibraryModal({
                       onClick={() => copyUrl(a.url)}
                       className="text-xs font-medium text-[var(--primary)] hover:underline"
                     >
-                      {copied === a.url ? "Copied!" : "Copy URL"}
+                      {copied === a.url ? t("sites.copied") : t("assets.copyUrl")}
                     </button>
                   </div>
                 </div>
