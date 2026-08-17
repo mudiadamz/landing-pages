@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getLegalContent, getHiringContent } from "@/lib/actions/site-settings";
 import { getCategories, getLandingPagesForHomepage } from "@/lib/actions/landing-pages";
 import { currentOrigin, currentSite } from "@/lib/site-resolve";
 
@@ -14,13 +15,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = await currentSite();
   const now = new Date();
 
+  const [legal, hiring] = await Promise.all([getLegalContent(), getHiringContent()]);
+  // The legal pages know when they were actually last edited now that their copy
+  // lives in the database, so they stop claiming to have changed on every crawl.
+  const legalChanged = legal.updatedAt ? new Date(legal.updatedAt) : now;
+
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${base}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${base}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${base}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${base}/privacy`, lastModified: legalChanged, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${base}/terms`, lastModified: legalChanged, changeFrequency: "yearly", priority: 0.3 },
+    // Linked from every checkout as the guarantee, so it belongs here with the
+    // other two rather than being the one legal page crawlers have to find.
+    { url: `${base}/refund`, lastModified: legalChanged, changeFrequency: "yearly", priority: 0.3 },
   ];
+
+  // Only while the vacancy is open — a closed one 404s.
+  if (hiring.enabled) {
+    staticRoutes.push({
+      url: `${base}/hiring`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.4,
+    });
+  }
 
   // Cached anon-client reads — safe to call at build/revalidate time.
   const [categories, pages] = await Promise.all([

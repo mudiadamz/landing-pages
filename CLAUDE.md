@@ -140,7 +140,17 @@ GET /api/download/[slug]
 
 ## Flow sekunder
 
-- **Hiring** (`/hiring`, `/hiring/test`): 10 soal situasional (`lib/hiring-questions.ts`) + upload CV PDF (≤5MB). `POST /api/hiring-test` upload CV ke bucket `hiring-cv` (admin client) lalu email hasil via Resend.
+- **Hiring** (`/hiring`, `/hiring/test`): iklan lowongan + soal situasional, keduanya
+  **data per-situs** di `lp_site_settings` key `hiring_content` (`lib/hiring-config.ts`),
+  diedit di `/panel/hiring`. `enabled: false` → kedua route 404 dan link footer hilang.
+  Upload CV PDF (≤5MB): `POST /api/hiring-test` upload ke bucket `hiring-cv` (admin
+  client), **menilai jawaban dari DB** (indeks jawaban benar tidak pernah dikirim ke
+  browser pelamar), lalu email hasil via Resend.
+- **Halaman legal** (`/privacy`, `/terms`, `/refund`): satu renderer
+  (`components/legal-page-view.tsx`) di atas `lp_site_settings` key `legal_content`
+  (`lib/legal-config.ts`), diedit di `/panel/legal`. Body HTML, disanitasi saat simpan
+  (`lib/page-html.ts`), dirender di `.page-prose`. URL-nya tetap — beda dari halaman
+  editorial `lp_pages` yang slug-nya dibuat orang.
 - **Inbound email** (`/api/webhooks/resend/inbound`): Resend kirim event `email.received` (verifikasi svix). Disimpan ke `lp_received_emails`, dibaca di panel Inbox. Butuh `RESEND_WEBHOOK_SECRET`.
 - **Contacts** (`components/contact-form.tsx` → `lp_contacts`), dibaca admin di `/panel/contacts`.
 - **Reviews** (`lp_reviews`), **categories** (`lp_landing_page_categories`, hierarki via `parent_id`), **site settings** (`lp_site_settings`).
