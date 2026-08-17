@@ -1648,6 +1648,12 @@ export const en: Record<keyof typeof id, string> = {
   "chat.inactiveHere": "Chat is switched off on this site.",
   "chat.prefs": "Preferences & memory",
 
+  "chat.account": "Account",
+  "chat.manageProfile": "Manage profile",
+  "chat.signOut": "Sign out",
+  "chat.appearance": "Appearance & language",
+  "chat.theme": "Theme",
+
   "chat.uploading": "Uploading attachments…",
   "chat.waitingHere":
     "Waiting on this chat's reply — open or start another chat if you want to ask something now.",

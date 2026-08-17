@@ -20,9 +20,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ThemeSwitch } from "@/components/theme-switch";
-import { LanguageSwitcher } from "@/components/language-switcher";
-import { useLocale, useT } from "@/lib/i18n/client";
+import { useT } from "@/lib/i18n/client";
 import { Composer } from "./composer";
 import { PrefsDialog } from "./prefs-dialog";
 import { SessionList } from "./session-list";
@@ -46,7 +44,6 @@ export function ChatApp({
   limits: { maxFiles: number; maxUpload: number };
 }) {
   const t = useT();
-  const locale = useLocale();
   const canChat = !!user && configured;
   const chat = useChat({ canChat });
 
@@ -187,12 +184,9 @@ export function ChatApp({
             {siteName}
           </Link>
           <div className="flex shrink-0 items-center gap-1">
-            {/* The homepage renders no footer — the composer owns the bottom edge —
-                and the footer is where every other template keeps this control. Without
-                it here, a visitor on a storefront set to another language would have no
-                way to switch. */}
-            <LanguageSwitcher current={locale} label={t("nav.language")} />
-            <ThemeSwitch />
+            {/* Language and theme are NOT here. They sit in the preferences dialog
+                with the account, so the top of the session list stays the session
+                list — see PrefsDialog. */}
             <button
               type="button"
               onClick={() => setDrawer(false)}
@@ -233,16 +227,18 @@ export function ChatApp({
           )}
         </div>
 
-        <div className="border-t border-[var(--border)] p-2.5">
-          {user ? (
-            <button
-              type="button"
-              onClick={() => setPrefsOpen(true)}
-              className="w-full rounded-xl px-3 py-2 text-left text-sm text-[var(--muted)] transition-colors hover:bg-[var(--accent-subtle)] hover:text-foreground"
-            >
-              ⚙ {t("chat.prefs")}
-            </button>
-          ) : (
+        <div className="space-y-1 border-t border-[var(--border)] p-2.5">
+          {/* Open to signed-out visitors too: this dialog is the only place the
+              theme and language controls exist, and those need no account. The
+              label says which half they will get. */}
+          <button
+            type="button"
+            onClick={() => setPrefsOpen(true)}
+            className="w-full rounded-xl px-3 py-2 text-left text-sm text-[var(--muted)] transition-colors hover:bg-[var(--accent-subtle)] hover:text-foreground"
+          >
+            ⚙ {user ? t("chat.prefs") : t("chat.appearance")}
+          </button>
+          {!user && (
             <Link
               href="/login"
               className="block w-full rounded-xl bg-[var(--primary)] px-3 py-2 text-center text-sm text-[var(--primary-foreground)]"
@@ -334,7 +330,7 @@ export function ChatApp({
         />
       </div>
 
-      <PrefsDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      <PrefsDialog open={prefsOpen} signedIn={!!user} onClose={() => setPrefsOpen(false)} />
     </div>
   );
 }

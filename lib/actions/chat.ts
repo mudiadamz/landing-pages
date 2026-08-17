@@ -200,6 +200,45 @@ export async function deleteChatSession(sessionId: string): Promise<{ error?: st
   return error ? { error: error.message } : {};
 }
 
+// -- account ----------------------------------------------------------------
+export type ChatProfile = {
+  fullName: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+};
+
+/**
+ * Who is signed in, for the account block in the preferences dialog.
+ *
+ * Its own reader rather than `getProfileWithUser()` + `getProfile()`: between
+ * them those two return the name twice, the role and the publisher status the
+ * chat has no use for, and still not the avatar and the email together. This is
+ * one query and the three fields the block draws.
+ *
+ * No row is not an error — a profile is created lazily elsewhere, so a brand-new
+ * account falls back to the address it signed up with.
+ */
+export async function getChatProfile(): Promise<ChatProfile | null> {
+  const { supabase, userId } = await requireUser();
+  if (!userId) return null;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data } = await supabase
+    .from("lp_profiles")
+    .select("full_name, avatar_url")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return {
+    fullName: data?.full_name ?? user?.user_metadata?.full_name ?? null,
+    email: user?.email ?? null,
+    avatarUrl: data?.avatar_url ?? null,
+  };
+}
+
 // -- preferences ------------------------------------------------------------
 export async function getChatPrefs(): Promise<{ responseInstructions: string }> {
   const { supabase, userId } = await requireUser();

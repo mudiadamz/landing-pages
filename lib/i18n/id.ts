@@ -1639,6 +1639,14 @@ export const id = {
   "chat.inactiveHere": "Chat belum aktif di situs ini.",
   "chat.prefs": "Preferensi & memori",
 
+  /* akun & tampilan, di dalam dialog yang sama — halaman depan tema ini tidak
+     punya header maupun footer untuk menaruhnya */
+  "chat.account": "Akun",
+  "chat.manageProfile": "Kelola profil",
+  "chat.signOut": "Keluar",
+  "chat.appearance": "Tampilan & bahasa",
+  "chat.theme": "Tema",
+
   /* status di bawah komposer — kosong saat idle, jadi tiap string di sini
      hanya muncul kalau memang ada kabar yang perlu disampaikan */
   "chat.uploading": "Mengunggah lampiran…",
