@@ -147,6 +147,9 @@ const CODE_ATTRS = new Set([
   "join", "replace", "test", "require", "import", "error", "warn", "log",
   "info", "debug", "trace", "notfound", "headers", "cookies", "has", "get",
   "set", "add", "remove", "contains", "settimeout", "assign",
+  // `t("panel.order")` is the fix, not a finding — and a key like "common.edit"
+  // contains "edit", so the Indonesian word list would otherwise keep it.
+  "t", "translator", "usetranslator",
 ]);
 
 const UI_ATTRS = new Set([
@@ -257,6 +260,9 @@ function walk(dir, out = []) {
 }
 
 function collect(dictionary) {
+  // Keys also travel as data — `labelKey: "product.tabDetail"` in a tab list —
+  // so a bare key string anywhere is a use of the dictionary, not a bypass.
+  const keys = new Set(dictionary.values());
   const hits = [];
   for (const dir of SCAN_DIRS) {
     for (const full of walk(join(ROOT, dir))) {
@@ -267,7 +273,7 @@ function collect(dictionary) {
 
       for (const s of strings) {
         const attr = attrOf(s.context);
-        const kind = classify(s.text, attr);
+        const kind = keys.has(s.text.trim()) ? null : classify(s.text, attr);
         if (kind) hits.push({ file, line: s.line, where: attr || "literal", kind, text: s.text.trim() });
       }
 

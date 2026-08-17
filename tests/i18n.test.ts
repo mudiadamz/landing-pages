@@ -70,7 +70,6 @@ describe("dictionary integrity", () => {
     "checkout.buyNow",
     "checkout.getFree",
     "common.all",
-    "common.free",
     "common.price",
     "common.required",
     "common.search",

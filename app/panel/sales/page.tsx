@@ -8,7 +8,11 @@ import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
-export const metadata = { title: "Penjualan" };
+// A function rather than a const, because the tab title is a translated string
+// and the locale is per-request. Nothing in /panel is prerendered.
+export async function generateMetadata() {
+  return { title: translator(await requestLocale())("panel.navSales") };
+}
 
 /**
  * Sales monitoring for admins and publishers.
@@ -54,11 +58,9 @@ export default async function SalesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Penjualan</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{t("panel.navSales")}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          {data.scope === "global"
-            ? "Seluruh transaksi di situs."
-            : "Transaksi dari produk Anda sendiri."}
+          {data.scope === "global" ? t("sales.scopeAll") : t("sales.scopeOwn")}
         </p>
       </div>
 
@@ -88,7 +90,7 @@ async function Summary({ data }: { data: SalesOverview }) {
       <Card
         label={t("panel.dashRevenue")}
         value={idr(data.revenueTotal)}
-        sub={`${idr(data.revenue30)} · 30 hari terakhir`}
+        sub={t("sales.last30", { value: idr(data.revenue30) })}
       />
       <Card
         label={t("panel.dashSold")}
@@ -97,7 +99,7 @@ async function Summary({ data }: { data: SalesOverview }) {
             {nf(data.salesTotal)}
             {data.salesRevoked > 0 && (
               <span
-                title={`${data.salesRevoked} pembelian aksesnya dicabut`}
+                title={t("sales.revokedTitle", { count: data.salesRevoked })}
                 className="text-red-600 dark:text-red-400"
               >
                 {" "}({nf(data.salesRevoked)})
@@ -105,7 +107,7 @@ async function Summary({ data }: { data: SalesOverview }) {
             )}
           </>
         }
-        sub={`${nf(data.sales30)} · 30 hari terakhir`}
+        sub={t("sales.last30", { value: nf(data.sales30) })}
       />
       <Card label={t("analytics.product")} value={nf(data.productCount)} />
       {data.scope === "global" ? (
@@ -140,15 +142,16 @@ function Card({
 }
 
 /** The page's reason to exist: what actually happened, most recent first. */
-function RecentSales({ rows }: { rows: RecentSale[] }) {
+async function RecentSales({ rows }: { rows: RecentSale[] }) {
+  const t = translator(await requestLocale());
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Transaksi terbaru
+        {t("sales.recent")}
       </h2>
 
       {rows.length === 0 ? (
-        <Empty>Belum ada transaksi.</Empty>
+        <Empty>{t("sales.noTransactions")}</Empty>
       ) : (
         <>
           <ul className="space-y-3 sm:hidden">
@@ -174,7 +177,13 @@ function RecentSales({ rows }: { rows: RecentSale[] }) {
           </ul>
 
           <Table
-            head={["Produk", "Pembeli", "Waktu", "Metode", "Jumlah"]}
+            head={[
+              t("analytics.product"),
+              t("panel.dashBuyers"),
+              t("analytics.time"),
+              t("panel.method"),
+              t("sales.amount"),
+            ]}
             align={["left", "left", "left", "left", "right"]}
           >
             {rows.map((r) => (
@@ -203,15 +212,16 @@ function RecentSales({ rows }: { rows: RecentSale[] }) {
   );
 }
 
-function PerProduct({ data }: { data: SalesOverview }) {
+async function PerProduct({ data }: { data: SalesOverview }) {
+  const t = translator(await requestLocale());
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Per produk
+        {t("sales.perProduct")}
       </h2>
 
       {data.products.length === 0 ? (
-        <Empty>Belum ada produk.</Empty>
+        <Empty>{t("sales.noProducts")}</Empty>
       ) : (
         <>
           <ul className="space-y-3 sm:hidden">
@@ -222,9 +232,12 @@ function PerProduct({ data }: { data: SalesOverview }) {
               >
                 <p className="font-medium text-foreground">{p.title}</p>
                 <p className="mt-1.5 text-xs text-[var(--muted)]">
-                  {nf(p.sold)} terjual
+                  {t("sales.soldCount", { count: nf(p.sold) })}
                   {p.revoked > 0 && (
-                    <span className="text-red-600 dark:text-red-400"> ({nf(p.revoked)} dicabut)</span>
+                    <span className="text-red-600 dark:text-red-400">
+                      {" "}
+                      ({t("sales.revokedCount", { count: nf(p.revoked) })})
+                    </span>
                   )}{" "}
                   · {idr(p.revenue)}
                 </p>
@@ -233,7 +246,12 @@ function PerProduct({ data }: { data: SalesOverview }) {
           </ul>
 
           <Table
-            head={["Produk", "Terjual", "Dicabut", "Pendapatan"]}
+            head={[
+              t("analytics.product"),
+              t("panel.dashSold"),
+              t("sales.revoked"),
+              t("panel.dashRevenue"),
+            ]}
             align={["left", "right", "right", "right"]}
           >
             {data.products.map((p) => (
@@ -266,15 +284,16 @@ function PerProduct({ data }: { data: SalesOverview }) {
   );
 }
 
-function Customers({ customers }: { customers: CustomerRow[] }) {
+async function Customers({ customers }: { customers: CustomerRow[] }) {
+  const t = translator(await requestLocale());
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-        Pelanggan
+        {t("sales.customers")}
       </h2>
 
       {customers.length === 0 ? (
-        <Empty>Belum ada pelanggan.</Empty>
+        <Empty>{t("sales.noCustomers")}</Empty>
       ) : (
         <>
           <ul className="space-y-3 sm:hidden">
@@ -286,10 +305,11 @@ function Customers({ customers }: { customers: CustomerRow[] }) {
                 <p className="font-medium text-foreground">{c.full_name || "—"}</p>
                 <p className="mt-0.5 break-all text-sm text-[var(--muted)]">{c.email || "—"}</p>
                 <p className="mt-1.5 text-xs text-[var(--muted)]">
-                  {nf(c.purchase_count)} pembelian
+                  {t("sales.purchaseCount", { count: nf(c.purchase_count) })}
                   {c.revoked_count > 0 && (
                     <span className="text-red-600 dark:text-red-400">
-                      {" "}({nf(c.revoked_count)} dicabut)
+                      {" "}
+                      ({t("sales.revokedCount", { count: nf(c.revoked_count) })})
                     </span>
                   )}{" "}
                   · {formatDate(c.last_purchase_at)}
@@ -297,7 +317,7 @@ function Customers({ customers }: { customers: CustomerRow[] }) {
                 <div className="mt-3">
                   <CustomerPurchasesButton
                     userId={c.id}
-                    name={c.full_name || c.email || "pelanggan"}
+                    name={c.full_name || c.email || t("sales.customerFallback")}
                     count={c.purchase_count}
                   />
                 </div>
@@ -306,7 +326,13 @@ function Customers({ customers }: { customers: CustomerRow[] }) {
           </ul>
 
           <Table
-            head={["Nama", "Email", "Pembelian", "Terakhir", "Akses"]}
+            head={[
+              t("content.name"),
+              t("sales.email"),
+              t("panel.dashPurchases"),
+              t("sales.last"),
+              t("sales.access"),
+            ]}
             align={["left", "left", "left", "left", "right"]}
           >
             {customers.map((c) => (
@@ -330,7 +356,7 @@ function Customers({ customers }: { customers: CustomerRow[] }) {
                 <td className="px-4 py-3 text-right">
                   <CustomerPurchasesButton
                     userId={c.id}
-                    name={c.full_name || c.email || "pelanggan"}
+                    name={c.full_name || c.email || t("sales.customerFallback")}
                     count={c.purchase_count}
                   />
                 </td>
@@ -377,10 +403,11 @@ function Table({
   );
 }
 
-function RevokedTag() {
+async function RevokedTag() {
+  const t = translator(await requestLocale());
   return (
     <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-      dicabut
+      {t("sales.revokedTag")}
     </span>
   );
 }

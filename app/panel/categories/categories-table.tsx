@@ -89,7 +89,7 @@ export function CategoriesTable({ initialCategories }: Props) {
           onSubmit={async (name, slug, sort_order, icon, parent_id) => {
             const res = await createCategory(name, slug, sort_order, icon, parent_id);
             if (!res.ok) {
-              setError(res.error ?? "Gagal.");
+              setError(res.error ?? t("common.failedShort"));
               return false;
             }
             setCategories((prev) =>
@@ -119,7 +119,7 @@ export function CategoriesTable({ initialCategories }: Props) {
               onSubmit={async (name, slug, sort_order, icon, parent_id) => {
                 const res = await updateCategory(cat.id, name, slug, sort_order, icon, parent_id);
                 if (!res.ok) {
-                  setError(res.error ?? "Gagal.");
+                  setError(res.error ?? t("common.failedShort"));
                   return false;
                 }
                 setCategories((prev) =>
@@ -154,8 +154,8 @@ export function CategoriesTable({ initialCategories }: Props) {
                     <p className="text-sm text-[var(--muted)] truncate">
                       /{cat.slug}
                       {cat.parent_id && nameById.get(cat.parent_id)
-                        ? ` · induk: ${nameById.get(cat.parent_id)}`
-                        : " · kategori utama"}
+                        ? ` ${t("panel.categoryParentOf", { name: nameById.get(cat.parent_id) ?? "" })}`
+                        : ` ${t("panel.categoryTopLevel")}`}
                     </p>
                   </div>
                 </div>
@@ -185,7 +185,7 @@ export function CategoriesTable({ initialCategories }: Props) {
                           .map((c) => (c.parent_id === cat.id ? { ...c, parent_id: null } : c)),
                       );
                     } else {
-                      setError(res.error ?? "Gagal menghapus.");
+                      setError(res.error ?? t("common.deleteFailed"));
                     }
                     setDeleting(null);
                   }}
@@ -202,12 +202,12 @@ export function CategoriesTable({ initialCategories }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--background)]/50">
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Nama</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Slug</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Induk</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Icon</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Urutan</th>
-                <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Aksi</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("content.name")}</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("panel.slug")}</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("panel.categoryParent")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.icon")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.order")}</th>
+                <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">{t("panel.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -222,7 +222,7 @@ export function CategoriesTable({ initialCategories }: Props) {
                         onSubmit={async (name, slug, sort_order, icon, parent_id) => {
                           const res = await updateCategory(cat.id, name, slug, sort_order, icon, parent_id);
                           if (!res.ok) {
-                            setError(res.error ?? "Gagal.");
+                            setError(res.error ?? t("common.failedShort"));
                             return false;
                           }
                           setCategories((prev) =>
@@ -257,7 +257,7 @@ export function CategoriesTable({ initialCategories }: Props) {
                       {cat.parent_id && nameById.get(cat.parent_id) ? (
                         nameById.get(cat.parent_id)
                       ) : (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--accent-subtle)]">utama</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--accent-subtle)]">{t("panel.categoryTopBadge")}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -271,7 +271,7 @@ export function CategoriesTable({ initialCategories }: Props) {
                           onClick={() => startEdit(cat)}
                           className="text-xs font-medium text-[var(--primary)] hover:underline"
                         >
-                          Edit
+                          {t("common.edit")}
                         </button>
                         <DeleteButton
                           id={cat.id}
@@ -286,7 +286,7 @@ export function CategoriesTable({ initialCategories }: Props) {
                                   .map((c) => (c.parent_id === cat.id ? { ...c, parent_id: null } : c)),
                               );
                             } else {
-                              setError(res.error ?? "Gagal menghapus.");
+                              setError(res.error ?? t("common.deleteFailed"));
                             }
                             setDeleting(null);
                           }}
@@ -370,7 +370,7 @@ function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, on
   const content = (
     <form onSubmit={handleSubmit} className={inline ? "flex flex-wrap items-end gap-3" : "space-y-3"}>
       <div className={inline ? "flex-1 min-w-[160px]" : ""}>
-        <label className="block text-xs font-medium text-[var(--muted)] mb-1">Nama</label>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("content.name")}</label>
         <input
           type="text"
           value={name}
@@ -411,7 +411,7 @@ function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, on
         </select>
       </div>
       <div className={inline ? "w-24" : ""}>
-        <label className="block text-xs font-medium text-[var(--muted)] mb-1">Urutan</label>
+        <label className="block text-xs font-medium text-[var(--muted)] mb-1">{t("panel.order")}</label>
         <input
           type="number"
           value={sortOrder}
@@ -468,7 +468,7 @@ function CategoryForm({ initial, parents, defaultSortOrder, inline, onSubmit, on
           disabled={isPending}
           className="text-white hover:opacity-90"
         >
-          {isPending ? "Menyimpan…" : initial ? "Simpan" : "Tambah"}
+          {isPending ? t("common.saving") : initial ? t("common.save") : t("common.add")}
         </Button>
         <Button
           variant="secondary"
@@ -516,7 +516,7 @@ function DeleteButton({
           disabled={deleting === id}
           className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
         >
-          {deleting === id ? "Menghapus…" : "Ya, hapus"}
+          {deleting === id ? t("common.deleting") : t("common.confirmDelete")}
         </button>
         <button
           type="button"

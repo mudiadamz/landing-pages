@@ -26,6 +26,7 @@ export function CustomerPurchasesButton({
   name: string;
   count: number;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -37,7 +38,7 @@ export function CustomerPurchasesButton({
         className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:text-foreground disabled:opacity-50"
         disabled={count === 0}
       >
-        Kelola akses
+        {t("panel.manageAccess")}
       </button>
       {open && <Dialog userId={userId} name={name} onClose={() => setOpen(false)} />}
     </>
@@ -100,20 +101,18 @@ function Dialog({
     const revoking = !row.revoked_at;
     if (
       revoking &&
-      !confirm(
-        `Cabut akses "${row.title}" dari ${name}?\n\nMereka langsung tidak bisa membaca atau mengunduhnya. Datanya tetap tersimpan — bisa dipulihkan kapan saja.`,
-      )
+      !confirm(t("sales.revokeConfirm", { title: row.title, name }))
     ) {
       return;
     }
-    const reason = revoking ? prompt("Alasan (opsional, hanya untuk catatan admin):") : undefined;
+    const reason = revoking ? prompt(t("sales.revokeReason")) : undefined;
 
     setBusy(row.id);
     start(async () => {
       const res = await setPurchaseRevoked(row.id, revoking, reason ?? undefined);
       setBusy(null);
       if (!res.ok) {
-        setMsg(res.error ?? "Gagal.");
+        setMsg(res.error ?? t("common.failedShort"));
         return;
       }
       setRows(
@@ -128,7 +127,11 @@ function Dialog({
               : r,
           ) ?? null,
       );
-      setMsg(revoking ? `Akses "${row.title}" dicabut.` : `Akses "${row.title}" dipulihkan.`);
+      setMsg(
+        revoking
+          ? t("sales.revokedMsg", { title: row.title })
+          : t("sales.restoredMsg", { title: row.title }),
+      );
       // The customer list behind this dialog carries the revoked tally, so it has
       // to catch up now rather than on some later navigation.
       router.refresh();
@@ -141,21 +144,21 @@ function Dialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Akses pembelian ${name}`}
+        aria-label={t("sales.accessDialogLabel", { name })}
         className="relative flex max-h-[85vh] w-full max-w-xl flex-col rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] p-5">
           <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold text-foreground">Akses pembelian</h2>
+            <h2 className="truncate text-base font-semibold text-foreground">{t("sales.accessTitle")}</h2>
             <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
               {name}
               {rows && (
                 <>
                   {" · "}
-                  {rows.length} pembelian
+                  {t("sales.purchaseCount", { count: rows.length })}
                   {revokedCount > 0 && (
                     <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                      {revokedCount} dicabut
+                      {t("sales.revokedCount", { count: revokedCount })}
                     </span>
                   )}
                 </>
@@ -176,10 +179,9 @@ function Dialog({
 
         <div className="overflow-y-auto p-5">
           <p className="mb-3 text-xs text-[var(--muted)]">
-            Mencabut akses membuat produk langsung tidak bisa dibaca atau diunduh. Riwayat
-            pembelian &amp; invoice tetap tersimpan — ini{" "}
-            <strong className="text-foreground">bukan</strong> refund, dan angka penjualan
-            tidak berubah.
+            {t("sales.revokeNoteBefore")}{" "}
+            <strong className="text-foreground">{t("sales.revokeNoteNot")}</strong>{" "}
+            {t("sales.revokeNoteAfter")}
           </p>
 
           {msg && <p className="mb-3 text-xs text-[var(--primary)]">{msg}</p>}
@@ -187,7 +189,7 @@ function Dialog({
           {rows === null ? (
             <p className="text-sm text-[var(--muted)]">{t("common.loading")}</p>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-[var(--muted)]">Belum ada pembelian.</p>
+            <p className="text-sm text-[var(--muted)]">{t("sales.noPurchases")}</p>
           ) : (
             <ul className="divide-y divide-[var(--border)]">
               {rows.map((r) => (
@@ -201,13 +203,13 @@ function Dialog({
                       {r.title}
                     </p>
                     <p className="mt-0.5 text-xs text-[var(--muted)]">
-                      {fmtDate(r.purchased_at)} · {r.amount > 0 ? fmtIDR(r.amount) : "Gratis"}
-                      {r.bundle_parent_id && " · dari bundle"}
+                      {fmtDate(r.purchased_at)} · {r.amount > 0 ? fmtIDR(r.amount) : t("common.free")}
+                      {r.bundle_parent_id && ` ${t("sales.fromBundle")}`}
                       {r.invoice_number && ` · ${r.invoice_number}`}
                     </p>
                     {r.revoked_at && (
                       <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
-                        Dicabut {fmtDate(r.revoked_at)}
+                        {t("sales.revokedOn", { date: fmtDate(r.revoked_at) })}
                         {r.revoke_reason && ` — ${r.revoke_reason}`}
                       </p>
                     )}
@@ -222,7 +224,7 @@ function Dialog({
                         : "border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400"
                     }`}
                   >
-                    {busy === r.id ? "…" : r.revoked_at ? "Pulihkan" : "Cabut akses"}
+                    {busy === r.id ? "…" : r.revoked_at ? t("sales.restore") : t("sales.revokeAccess")}
                   </button>
                 </li>
               ))}
