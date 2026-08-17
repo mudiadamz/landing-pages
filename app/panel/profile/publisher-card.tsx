@@ -28,7 +28,8 @@ export type PublisherInfo = {
   rejectNote: string | null;
 };
 
-const STEPS = ["Diajukan", "Ditinjau", "Disetujui"] as const;
+// Keys, resolved per render — see the note on PUBLISHER_BADGE in ../page.tsx.
+const STEPS = ["panel.stepApplied", "panel.stepReviewed", "panel.stepApproved"] as const;
 
 function stepIndex(status: PublisherStatus, role: Role): number {
   if (role === "publisher" || role === "admin" || status === "approved") return 2;
@@ -62,12 +63,12 @@ export async function PublisherCard({
   const rejected = status === "rejected";
 
   const tone = isPublisher
-    ? { chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300", label: role === "admin" ? "Admin" : "Publisher aktif" }
+    ? { chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300", label: role === "admin" ? t("panel.roleAdmin") : t("panel.publisherActive") }
     : status === "pending"
-      ? { chip: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300", label: "Menunggu ditinjau" }
+      ? { chip: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300", label: t("panel.publisherWaiting") }
       : rejected
-        ? { chip: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300", label: "Ditolak" }
-        : { chip: "bg-[var(--background)] text-[var(--muted)]", label: "Belum mengajukan" };
+        ? { chip: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300", label: t("panel.rejected") }
+        : { chip: "bg-[var(--background)] text-[var(--muted)]", label: t("panel.notApplied") };
 
   return (
     <div className="space-y-4">
@@ -76,7 +77,9 @@ export async function PublisherCard({
           {tone.label}
         </span>
         {info.appliedAt && (
-          <span className="text-xs text-[var(--muted)]">Diajukan {fmt(info.appliedAt)}</span>
+          <span className="text-xs text-[var(--muted)]">
+            {t("panel.appliedOn", { date: fmt(info.appliedAt) })}
+          </span>
         )}
       </div>
 
@@ -100,7 +103,7 @@ export async function PublisherCard({
                 <span
                   className={`text-[11px] ${done || failed ? "text-foreground" : "text-[var(--muted)]"}`}
                 >
-                  {failed ? "Ditolak" : s}
+                  {failed ? t("panel.rejected") : t(s)}
                 </span>
               </li>
             );
@@ -110,7 +113,7 @@ export async function PublisherCard({
 
       {rejected && info.rejectNote && (
         <p className="rounded-lg border border-red-300/60 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800/50 dark:bg-red-900/15 dark:text-red-300">
-          Catatan admin: {info.rejectNote}
+          {t("panel.adminNote")} {info.rejectNote}
         </p>
       )}
 
@@ -119,17 +122,17 @@ export async function PublisherCard({
           <Item
             label={t("panel.shopName")}
             value={info.displayName}
-            note="Nama ini yang dilihat pembeli."
+            note={t("panel.shopNameNote")}
           />
           <Item
             label={t("panel.legalName")}
             value={info.realName}
-            note="Tidak pernah ditampilkan ke pembeli."
+            note={t("panel.legalNameNote")}
           />
           <Item
             label={t("panel.address")}
             value={info.address}
-            note="Hanya dilihat admin."
+            note={t("panel.adminOnlyNote")}
             multiline
           />
           <Item
@@ -143,14 +146,17 @@ export async function PublisherCard({
           />
           <Item
             label={t("content.publisherTerms")}
-            value={info.termsAcceptedAt ? `Disetujui ${fmt(info.termsAcceptedAt)}` : null}
-            note={info.termsAcceptedAt ? undefined : "Pengajuan lama, sebelum ketentuan ada."}
+            value={
+              info.termsAcceptedAt
+                ? t("panel.approvedOn", { date: fmt(info.termsAcceptedAt) })
+                : null
+            }
+            note={info.termsAcceptedAt ? undefined : t("panel.legacyApplication")}
           />
         </dl>
       ) : (
         <p className="text-sm text-[var(--muted)]">
-          Ingin menjual produk digital Anda sendiri di sini? Ajukan menjadi publisher —
-          perlu foto KTP, selfie, nama toko, alamat tempat tinggal, dan rekening pencairan.
+          {t("panel.publisherPitch")}
         </p>
       )}
 
@@ -160,21 +166,21 @@ export async function PublisherCard({
             href="/panel/products"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
-            Kelola produk saya
+            {t("panel.manageMyProducts")}
           </Link>
         ) : status === "pending" ? (
           <Link
             href="/panel/publisher"
             className="text-sm font-medium text-[var(--primary)] hover:underline"
           >
-            Lihat pengajuan
+            {t("panel.viewApplication")}
           </Link>
         ) : (
           <Link
             href="/panel/publisher"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
-            {rejected ? "Ajukan lagi" : "Ajukan jadi publisher"}
+            {rejected ? t("panel.applyAgain") : t("panel.applyPublisher")}
           </Link>
         )}
       </div>

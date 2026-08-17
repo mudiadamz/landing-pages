@@ -32,7 +32,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
     startTransition(async () => {
       const res = await approvePublisher(id);
       if (res.ok) setApps((prev) => prev.filter((a) => a.id !== id));
-      else setError(res.error ?? "Gagal.");
+      else setError(res.error ?? t("common.failedShort"));
       setPendingId(null);
     });
   }
@@ -47,7 +47,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
         setRejecting(null);
         setNote("");
       } else {
-        setError(res.error ?? "Gagal.");
+        setError(res.error ?? t("common.failedShort"));
       }
       setPendingId(null);
     });
@@ -58,7 +58,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
   return (
     <section className="rounded-xl border border-amber-300/60 bg-amber-50 p-4 shadow-sm dark:border-amber-800/50 dark:bg-amber-900/15">
       <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-foreground">Pengajuan publisher</h2>
+        <h2 className="text-sm font-semibold text-foreground">{t("panel.publisherApplications")}</h2>
         <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-800/50 dark:text-amber-200">
           {apps.length}
         </span>
@@ -93,11 +93,13 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                 <p className="mt-1.5 text-[11px]">
                   {a.terms_accepted_at ? (
                     <span className="text-emerald-700 dark:text-emerald-400">
-                      Menyetujui ketentuan · {new Date(a.terms_accepted_at).toLocaleDateString("id-ID")}
+                      {t("panel.termsAcceptedOn", {
+                        date: new Date(a.terms_accepted_at).toLocaleDateString("id-ID"),
+                      })}
                     </span>
                   ) : (
                     <span className="text-amber-700 dark:text-amber-400">
-                      Pengajuan lama — sebelum ketentuan publisher ada
+                      {t("panel.legacyApplicationLong")}
                     </span>
                   )}
                 </p>
@@ -137,7 +139,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                   htmlFor={`note-${a.id}`}
                   className="block text-xs font-medium text-foreground"
                 >
-                  Alasan penolakan — ditampilkan ke pemohon
+                  {t("panel.rejectReasonLabel")}
                 </label>
                 <textarea
                   id={`note-${a.id}`}
@@ -155,7 +157,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                     disabled={pendingId === a.id || !note.trim()}
                     className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    {pendingId === a.id ? "…" : "Tolak pengajuan"}
+                    {pendingId === a.id ? "…" : t("panel.rejectApplication")}
                   </button>
                   <button
                     type="button"
@@ -163,14 +165,14 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                     disabled={pendingId === a.id}
                     className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-[var(--muted)] transition-colors hover:text-foreground disabled:opacity-50"
                   >
-                    Batal
+                    {t("common.cancel")}
                   </button>
                   {!note.trim() && (
-                    <span className="text-xs text-[var(--muted)]">Alasan wajib diisi.</span>
+                    <span className="text-xs text-[var(--muted)]">{t("panel.reasonRequired")}</span>
                   )}
                 </div>
                 <p className="text-xs text-[var(--muted)]">
-                  Foto KTP &amp; selfie dihapus setelah pengajuan ditolak.
+                  {t("panel.kycDeletedAfterReject")}
                 </p>
               </div>
             )}
@@ -184,10 +186,11 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
 }
 
 function KycPhoto({ label, url }: { label: string; url: string | null }) {
+  const t = useT();
   if (!url) {
     return (
       <div className="flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-[var(--border)] px-3 text-center">
-        <p className="text-xs text-[var(--muted)]">{label} tidak ada (pengajuan lama)</p>
+        <p className="text-xs text-[var(--muted)]">{t("panel.kycMissing", { label })}</p>
       </div>
     );
   }
@@ -196,7 +199,7 @@ function KycPhoto({ label, url }: { label: string; url: string | null }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      title={`Buka ${label} ukuran penuh`}
+      title={t("panel.openFullSize", { label })}
       className="block overflow-hidden rounded-lg border border-[var(--border)]"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -892,6 +892,37 @@ export const en: Record<keyof typeof id, string> = {
   "sites.hostExactHint":
     "Must match the Host header exactly. One wrong letter and this domain shows the main site rather than an error.",
 
+  "panel.stepApplied": "Applied",
+  "panel.stepReviewed": "Reviewed",
+  "panel.stepApproved": "Approved",
+  "panel.publisherActive": "Active publisher",
+  "panel.publisherWaiting": "Awaiting review",
+  "panel.rejected": "Declined",
+  "panel.notApplied": "Not applied",
+  "panel.appliedOn": "Applied {date}",
+  "panel.adminNote": "Admin note:",
+  "panel.shopNameNote": "This is the name buyers see.",
+  "panel.legalNameNote": "Never shown to buyers.",
+  "panel.adminOnlyNote": "Seen by admins only.",
+  "panel.approvedOn": "Approved {date}",
+  "panel.legacyApplication": "An older application, from before the terms existed.",
+  "panel.publisherPitch":
+    "Want to sell your own digital products here? Apply to become a publisher — you will need an ID photo, a selfie, a shop name, a home address, and a payout account.",
+  "panel.manageMyProducts": "Manage my products",
+  "panel.viewApplication": "View application",
+  "panel.applyAgain": "Apply again",
+  "panel.applyPublisher": "Apply to be a publisher",
+
+  "panel.publisherApplications": "Publisher applications",
+  "panel.termsAcceptedOn": "Accepted the terms · {date}",
+  "panel.legacyApplicationLong": "An older application — from before the publisher terms existed",
+  "panel.rejectReasonLabel": "Reason for declining — shown to the applicant",
+  "panel.rejectApplication": "Decline application",
+  "panel.reasonRequired": "A reason is required.",
+  "panel.kycDeletedAfterReject": "The ID photo & selfie are deleted once an application is declined.",
+  "panel.kycMissing": "No {label} (older application)",
+  "panel.openFullSize": "Open {label} full size",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

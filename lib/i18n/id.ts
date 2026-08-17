@@ -882,6 +882,37 @@ export const id = {
   "sites.hostExactHint":
     "Harus sama persis dengan header Host. Salah satu huruf dan domain ini akan menampilkan situs utama, bukan error.",
 
+  "panel.stepApplied": "Diajukan",
+  "panel.stepReviewed": "Ditinjau",
+  "panel.stepApproved": "Disetujui",
+  "panel.publisherActive": "Publisher aktif",
+  "panel.publisherWaiting": "Menunggu ditinjau",
+  "panel.rejected": "Ditolak",
+  "panel.notApplied": "Belum mengajukan",
+  "panel.appliedOn": "Diajukan {date}",
+  "panel.adminNote": "Catatan admin:",
+  "panel.shopNameNote": "Nama ini yang dilihat pembeli.",
+  "panel.legalNameNote": "Tidak pernah ditampilkan ke pembeli.",
+  "panel.adminOnlyNote": "Hanya dilihat admin.",
+  "panel.approvedOn": "Disetujui {date}",
+  "panel.legacyApplication": "Pengajuan lama, sebelum ketentuan ada.",
+  "panel.publisherPitch":
+    "Ingin menjual produk digital Anda sendiri di sini? Ajukan menjadi publisher — perlu foto KTP, selfie, nama toko, alamat tempat tinggal, dan rekening pencairan.",
+  "panel.manageMyProducts": "Kelola produk saya",
+  "panel.viewApplication": "Lihat pengajuan",
+  "panel.applyAgain": "Ajukan lagi",
+  "panel.applyPublisher": "Ajukan jadi publisher",
+
+  "panel.publisherApplications": "Pengajuan publisher",
+  "panel.termsAcceptedOn": "Menyetujui ketentuan · {date}",
+  "panel.legacyApplicationLong": "Pengajuan lama — sebelum ketentuan publisher ada",
+  "panel.rejectReasonLabel": "Alasan penolakan — ditampilkan ke pemohon",
+  "panel.rejectApplication": "Tolak pengajuan",
+  "panel.reasonRequired": "Alasan wajib diisi.",
+  "panel.kycDeletedAfterReject": "Foto KTP & selfie dihapus setelah pengajuan ditolak.",
+  "panel.kycMissing": "{label} tidak ada (pengajuan lama)",
+  "panel.openFullSize": "Buka {label} ukuran penuh",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",
