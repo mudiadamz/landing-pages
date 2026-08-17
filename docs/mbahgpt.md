@@ -139,6 +139,19 @@ mengukur ulang.
   gambar tetap terjawab, dan sebabnya chat panjang berisi gambar jadi mahal.
 - **Riwayat dipotong dari TENGAH**, pesan pembuka selalu dipertahankan: pesan itu
   yang menjangkarkan follow-up pendek seperti "final ucl".
+- **Jangkar query sekarang BERGERBANG** — ini satu-satunya tempat yang sengaja
+  menyimpang dari aplikasi asli. Versi lama menempelkan pesan pembuka ke setiap
+  pesan pendek (≤6 kata), dan itu langsung terlihat salah begitu dijalankan
+  sungguhan (18 Agu 2026): sesi yang dibuka dengan "apa itu row level security di
+  Postgres?" lalu ditanya "siapa juara Liga Champions terbaru?" mencari kedua
+  kalimat sekaligus dan dijawab dokumentasi PostgreSQL. Sekarang penempelan hanya
+  terjadi kalau pesan barunya memang bergantung pada giliran sebelumnya: berbagi
+  kata topik, memakai rujukan balik ("gol**nya**", "itu"), atau tidak menyebut
+  subjek apa pun ("versi terbaru?"). Kata sapaan dan basa-basi pertanyaan tidak
+  pernah ikut terbawa. Sisa lubangnya jujur: pengetikan huruf kecil semua
+  ("siapa juara liga champions terbaru?") terbaca seperti tanpa subjek dan tetap
+  ditempel — sama seperti perilaku lama, bukan kemunduran baru. Aturannya
+  dikunci di `tests/mbahgpt-web-search.test.ts`.
 - **Model & temperature dari environment**, tidak dari UI, dan nilai dari klien
   diabaikan.
 - **Renderer tidak pernah menerima HTML mentah.** Di versi lama itu aturan "jangan
@@ -198,6 +211,7 @@ Belum ada test runner di repo ini. Yang dipakai saat port:
 ```bash
 npx tsc --noEmit -p tsconfig.json        # tipe
 npx eslint lib/mbahgpt lib/templates/mbahgpt lib/actions/chat.ts app/api/mbahgpt
+npx vitest run tests/mbahgpt-web-search.test.ts           # aturan query pencarian
 npx vitest run tests/i18n.test.ts tests/i18n-en.test.ts   # kamus: key mati, duplikat
 npm run i18n:scan                        # string yang masih hardcode
 npm run build; echo $?                   # cek EXIT CODE, bukan teks "Compiled"

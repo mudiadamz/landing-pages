@@ -95,7 +95,81 @@ export function shouldSearch(text: string, afterSearch = false): boolean {
 }
 
 /**
- * Fold earlier turns into a short follow-up so the search stays on topic.
+ * Words that carry no topic, and so must not decide whether two messages are
+ * about the same thing — nor be dragged into a search query.
+ *
+ * Greetings, politeness, the scaffolding a first message opens with ("jelaskan
+ * singkat"), question words and the commonest function words. Curated rather
+ * than derived, for the same reason the TLD list in the renderer is: a generic
+ * rule ("drop words under 4 letters") throws away "ucl" and keeps "singkat".
+ */
+const ANCHOR_NOISE = new Set([
+  // greetings & politeness
+  "halo", "hai", "hei", "hello", "hi", "tolong", "mohon", "please", "coba",
+  // instruction scaffolding
+  "jawab", "jawaban", "jelaskan", "jelasin", "ceritakan", "sebutkan", "buatkan",
+  "singkat", "ringkas", "saja", "aja", "detail", "lengkap", "panjang",
+  "explain", "describe", "tell", "give", "write", "short", "brief",
+  // question scaffolding
+  "apa", "apakah", "adalah", "yang", "gimana", "bagaimana", "kenapa", "mengapa",
+  "kapan", "siapa", "dimana", "mana", "berapa",
+  "what", "whats", "which", "how", "why", "when", "who", "where", "is", "are",
+  "was", "were", "does", "do", "did", "can", "could", "the", "a", "an",
+  // prepositions & conjunctions
+  "di", "ke", "dari", "dan", "atau", "dengan", "pada", "untuk", "itu", "ini",
+  "of", "in", "on", "at", "for", "to", "and", "or", "with", "about",
+]);
+
+/**
+ * Marks a message that cannot stand on its own — it points back at something
+ * said earlier instead of naming it.
+ *
+ * Indonesian does this with the `-nya` suffix ("siapa pencetak gol**nya**"),
+ * English with a pronoun. These are the follow-ups that genuinely need the
+ * earlier turn folded in even when they share no word with it.
+ */
+const BACK_REFERENCE =
+  /\b(?:itu|ini|tersebut|dia|mereka|it|its|they|them|their|that|those|these|he|she|his|her)\b/i;
+
+/** `-nya` words that are ordinary vocabulary, not a possessive. */
+const NOT_POSSESSIVE = new Set(["hanya", "punya", "tanya", "dunia"]);
+
+function hasBackReference(text: string): boolean {
+  if (BACK_REFERENCE.test(text)) return true;
+  return [...text.toLowerCase().matchAll(WORD_RE_Q)].some(
+    (m) => m[0].length >= 5 && m[0].endsWith("nya") && !NOT_POSSESSIVE.has(m[0]),
+  );
+}
+
+/** The words of a message that actually say what it is about. */
+function topicWords(text: string): string[] {
+  return [...text.toLowerCase().matchAll(WORD_RE_Q)]
+    .map((m) => m[0])
+    .filter((word) => !ANCHOR_NOISE.has(word));
+}
+
+/**
+ * Whether the message names something itself — "siapa juara **Liga Champions**"
+ * — rather than describing an attribute of whatever came before ("versi
+ * terbaru?", "berapa penonton?").
+ *
+ * The signal is a capitalised word that is not simply the first one. Crude, and
+ * knowingly so: someone typing entirely in lower case ("siapa juara liga
+ * champions terbaru?") reads as attribute-only and gets anchored — which is the
+ * behaviour this function had before the gate existed, so the failure mode is
+ * "no better than the old code" rather than a new one. Detecting a proper noun
+ * properly needs a tagger, and this module holds the line at lexical rules.
+ */
+function namesItsOwnSubject(text: string): boolean {
+  const words = text.trim().split(/\s+/);
+  return words.slice(1).some((word) => /^[\p{Lu}]/u.test(word));
+}
+
+/** Anchor words prepended to a follow-up. Enough for context, not a paragraph. */
+const ANCHOR_MAX_WORDS = 6;
+
+/**
+ * Fold the earlier turn into a short follow-up so the search stays on topic.
  *
  * `previous` is the session's earlier user messages, oldest first. A message long
  * enough to stand on its own is left alone.
@@ -103,6 +177,35 @@ export function shouldSearch(text: string, afterSearch = false): boolean {
  * The anchor is the message that SET THE TOPIC, not an accumulation of every
  * earlier turn: accumulating them produces a run-on query ("… siapa pencetak
  * golnya di stadion mana berapa penontonnya") that finds nothing.
+ *
+ * ---- Why the anchor is now GATED ----
+ *
+ * Anchoring every short message was wrong, and visibly so the first time this ran
+ * against a real session (2026-08-18): a chat opened with "apa itu row level
+ * security di Postgres?" then asked "siapa juara Liga Champions terbaru?" — five
+ * words, so it counted as a follow-up — and searched for
+ * "…row level security di Postgres? siapa juara Liga Champions terbaru?".
+ * OpenRouter dutifully returned the PostgreSQL documentation.
+ *
+ * Being short is not the same as being dependent. A message is folded into its
+ * anchor only when one of these says it belongs to the earlier topic:
+ *
+ *   1. it SHARES a topic word with the anchor — "final ucl" after
+ *      "highlight ucl 2005";
+ *   2. it POINTS BACK at something unnamed — "siapa pencetak golnya?"; or
+ *   3. it names no subject of its own — "versi terbaru?", "berapa penonton?" —
+ *      so the only subject available is the earlier one.
+ *
+ * What is left out by all three is the case that broke: a short question that
+ * names its own subject and points at nothing. That is a new topic, and it goes
+ * to the search exactly as typed.
+ *
+ * The gate is lexical, like everything else here, so it can be wrong in one
+ * direction: an all-lower-case "siapa juara liga champions terbaru?" reads as
+ * attribute-only (rule 3) and still gets anchored. That is the old behaviour, not
+ * a new failure — the fix narrows the bug rather than closing it, and closing it
+ * properly would mean asking a model what the message is about, which this module
+ * deliberately does not do.
  */
 export function expandQuery(current: string, previous: string[]): string {
   const query = (current || "").split(/\s+/).filter(Boolean).join(" ");
@@ -110,12 +213,17 @@ export function expandQuery(current: string, previous: string[]): string {
   YEAR_RE.lastIndex = 0;
   if (YEAR_RE.test(query)) return query; // already pins its own timeframe
 
-  const anchor = (previous[0] || "").split(/\s+/).filter(Boolean).join(" ");
-  const seen = new Set([...query.toLowerCase().matchAll(WORD_RE_Q)].map((m) => m[0]));
-  const extra = anchor.split(" ").filter((word) => {
-    WORD_RE_Q.lastIndex = 0;
-    return !seen.has(word.toLowerCase()) && WORD_RE_Q.test(word);
-  });
+  const queryTopic = new Set(topicWords(query));
+  const anchorTopic = topicWords(previous[0] || "");
+  if (!anchorTopic.length) return query;
+
+  const shared = anchorTopic.some((word) => queryTopic.has(word));
+  const dependent = shared || hasBackReference(query) || !namesItsOwnSubject(query);
+  if (!dependent) return query; // a subject of its own: a new topic, left alone
+
+  // Only what the query does not already say, and only the topical part of it:
+  // prepending "Halo Jawab singkat saja apa itu" helps no search.
+  const extra = anchorTopic.filter((word) => !queryTopic.has(word)).slice(0, ANCHOR_MAX_WORDS);
   if (!extra.length) return query;
   return `${extra.join(" ")} ${query}`.trim().slice(0, 300);
 }

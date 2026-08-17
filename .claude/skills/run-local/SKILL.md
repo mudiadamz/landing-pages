@@ -234,7 +234,7 @@ reporting; do not loop turns for fun.
 | A thinking model sits silent for 60 s+ | Normal. The "Berpikir… Ns" counter exists for exactly this. |
 | Tawk's `Cannot read properties of undefined (reading '$el')` in the console | Third-party widget, not ours. It is suppressed on full-screen template homepages anyway. |
 | `.next/dev/types/validator.ts` errors about a deleted page | Stale generated types. `rm -rf .next/dev/types` and re-run. |
-| A search query that mixes the session's opening message into the new question | `expandQuery` anchors short follow-ups to the first user message (`lib/mbahgpt/web-search.ts`). Faithful to the original app; it misfires when one session changes topic. |
+| A search query that mixes the session's opening message into the new question | `expandQuery` folds the opener into short follow-ups (`lib/mbahgpt/web-search.ts`). Gated since 2026-08-18 — it only fires when the new message shares a word, points back, or names no subject. Still fires on all-lower-case questions, which read as subject-less. |
 
 ## 9. Teardown
 
