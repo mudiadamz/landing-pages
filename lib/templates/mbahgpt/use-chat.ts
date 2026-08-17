@@ -38,6 +38,15 @@ export const MAX_CONCURRENT = 3;
 /** Where the last open chat is remembered, so a reload lands back in it. */
 const LAST_SESSION_KEY = "mbahgpt:lastSession";
 
+/**
+ * How often the open chat re-checks an answer lock it does not hold itself.
+ *
+ * Only ticks while such a lock exists, which is a rare state: another tab or
+ * device answering this same chat, or a turn whose reader left before the lock
+ * was released. Idle chats poll nothing.
+ */
+const LOCK_POLL_MS = 4_000;
+
 export type Source = { title: string; url: string };
 
 /** A reply being produced, as the UI needs to see it. */
@@ -113,6 +122,31 @@ export function useChat(options: { canChat: boolean }) {
       setLive(snapshot);
     });
   }, []);
+
+  /**
+   * A record's turn is over: drop it, and stop the sidebar claiming the session is
+   * still answering.
+   *
+   * Deleting by `rec.key` and not by whatever key the send STARTED with — the
+   * X-Session-Id handshake re-keys a record mid-flight, and a delete under the old
+   * name left it in the map forever, which made `liveForOpenSession()` keep finding
+   * it and `send` return at the door.
+   *
+   * The `streaming` flag is cleared for the same reason it is cleared here rather
+   * than left to the refresh that always follows: the flag came from a snapshot
+   * taken while this turn was still running, and until the refresh lands the screen
+   * would say "being answered elsewhere" about a turn this tab just watched end.
+   */
+  const finishRec = useCallback(
+    (rec: Rec) => {
+      recs.current.delete(rec.key);
+      flush();
+      const id = rec.sessionId;
+      if (!id) return;
+      setSessions((prev) => prev.map((s) => (s.id === id && s.streaming ? { ...s, streaming: false } : s)));
+    },
+    [flush],
+  );
 
   useEffect(
     () => () => {
@@ -279,8 +313,7 @@ export function useChat(options: { canChat: boolean }) {
       flush();
 
       const fail = async (message: string) => {
-        recs.current.delete(key);
-        flush();
+        finishRec(rec);
         setFailure({ sessionId: rec.sessionId, message, text, files });
         // The user's message may already be stored — the server writes it before
         // it calls the model — so reload the thread rather than guessing.
@@ -363,16 +396,14 @@ export function useChat(options: { canChat: boolean }) {
         } else if (rec.sessionId) {
           setUnread((prev) => new Set(prev).add(rec.sessionId!));
         }
-        recs.current.delete(rec.key);
-        flush();
+        finishRec(rec);
         await refreshSessions();
       } catch (err) {
         const aborted = err instanceof DOMException && err.name === "AbortError";
         if (aborted) {
           // Stopped on purpose. The server keeps the partial answer, so the thread
           // is reloaded exactly like a completed turn.
-          recs.current.delete(rec.key);
-          flush();
+          finishRec(rec);
           if (rec.sessionId && rec.sessionId === openRef.current) {
             const { messages: rows } = await getChatSession(rec.sessionId);
             setMessages(rows);
@@ -383,7 +414,7 @@ export function useChat(options: { canChat: boolean }) {
         await fail(err instanceof Error ? err.message : t("chat.sendFailed"));
       }
     },
-    [canChat, flush, liveForOpenSession, refreshSessions, t],
+    [canChat, finishRec, flush, liveForOpenSession, refreshSessions, t],
   );
 
   const stop = useCallback(() => {
@@ -393,12 +424,55 @@ export function useChat(options: { canChat: boolean }) {
   const activeForOpen = liveForOpenSession();
   const openLive = activeForOpen ? live[activeForOpen.key] ?? null : null;
 
+  /**
+   * A reply is being produced for the open chat, and it is NOT this tab producing
+   * it — so there is no stream to draw and no controller to stop.
+   *
+   * Two ways to get here. The ordinary one is a second tab or another device
+   * answering the same chat. The one this was written for is a RELOAD in the
+   * middle of an answer: the session's answer lock lives in Postgres, so it
+   * outlives the tab that took it, and until it clears the route refuses every
+   * message with "sedang menjawab". Before this, the screen said nothing about
+   * that — the composer sat open and invited a message straight into a 409.
+   *
+   * `sessions` already carries the flag; only the sidebar was reading it.
+   */
+  const remoteBusy =
+    !!sessionId && !activeForOpen && (sessions.find((s) => s.id === sessionId)?.streaming ?? false);
+
+  const wasRemoteBusy = useRef(false);
+  useEffect(() => {
+    const cleared = wasRemoteBusy.current && !remoteBusy;
+    wasRemoteBusy.current = remoteBusy;
+
+    if (cleared) {
+      // Whatever that other reader produced — a whole answer, or the partial the
+      // disconnect saved — exists only in the database. Nothing streamed here.
+      const id = openRef.current;
+      if (id) {
+        void getChatSession(id).then(({ messages: rows }) => {
+          if (openRef.current === id) setMessages(rows);
+        });
+      }
+      return;
+    }
+
+    if (!remoteBusy) return;
+    // The lock resolves either way on its own: released when that turn finishes,
+    // or expired once it stops proving it is alive. Polling is what turns a dead
+    // lock from "the chat is broken" into a wait with an end.
+    const timer = setInterval(() => void refreshSessions(), LOCK_POLL_MS);
+    return () => clearInterval(timer);
+  }, [remoteBusy, refreshSessions]);
+
   return {
     sessions,
     sessionId,
     messages,
     /** The reply streaming into the chat on screen, if any. */
     openLive,
+    /** The open chat is answering somewhere this tab cannot see. */
+    remoteBusy,
     /** Every running reply, so the sidebar can mark them. */
     live,
     failure,

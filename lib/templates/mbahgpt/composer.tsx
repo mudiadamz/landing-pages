@@ -31,6 +31,7 @@ export function Composer({
   onSubmit,
   onStop,
   busy,
+  waiting = false,
   disabled,
   disabledReason,
   files,
@@ -45,6 +46,13 @@ export function Composer({
   onStop: () => void;
   /** A reply is streaming into the chat on screen. */
   busy: boolean;
+  /**
+   * A reply is running that this tab is not producing — another tab, another
+   * device, or a lock left behind by a reader who reloaded. Closes the box the
+   * same way `busy` does, but offers no stop button: there is nothing here to
+   * stop, and a button that does nothing is worse than no button.
+   */
+  waiting?: boolean;
   /** No signed-in user, or the feature is unconfigured. */
   disabled: boolean;
   disabledReason?: string;
@@ -67,6 +75,8 @@ export function Composer({
     area.style.height = `${Math.min(area.scrollHeight, GROW_MAX)}px`;
   }, [value, textareaRef]);
 
+  // Both mean "not now". They differ only in what the button offers.
+  const blocked = busy || waiting;
   const canSend = !disabled && (!!value.trim() || files.length > 0);
 
   return (
@@ -74,7 +84,7 @@ export function Composer({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (busy || !canSend) return;
+          if (blocked || !canSend) return;
           onSubmit();
         }}
         onMouseDown={(e) => {
@@ -90,14 +100,14 @@ export function Composer({
           ref={textareaRef}
           rows={1}
           value={value}
-          disabled={disabled || busy}
+          disabled={disabled || blocked}
           placeholder={disabled ? (disabledReason ?? t("chat.unavailable")) : t("chat.placeholder")}
           enterKeyHint="send"
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              if (!busy && canSend) onSubmit();
+              if (!blocked && canSend) onSubmit();
             }
           }}
           // 16px on phones: under that, Safari zooms the page on focus and never
@@ -148,7 +158,7 @@ export function Composer({
           <button
             type="button"
             onClick={() => filePicker.current?.click()}
-            disabled={disabled || busy}
+            disabled={disabled || blocked}
             title={t("chat.attachTitle")}
             aria-label={t("chat.attachLabel")}
             className="mr-auto grid h-11 w-11 place-items-center rounded-full text-2xl leading-none text-[var(--muted)] transition-colors hover:text-[var(--primary)] disabled:opacity-40"
@@ -168,7 +178,7 @@ export function Composer({
           ) : (
             <button
               type="submit"
-              disabled={!canSend}
+              disabled={!canSend || waiting}
               aria-label={t("contact.sendMessage")}
               className="grid h-11 w-11 place-items-center rounded-full bg-[var(--primary)] text-lg text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-40"
             >

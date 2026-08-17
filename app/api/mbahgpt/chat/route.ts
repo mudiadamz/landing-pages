@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { currentSiteId } from "@/lib/site-resolve";
 import {
+  ANSWER_LOCK_HEARTBEAT_MS,
   ANSWER_LOCK_STALE_MS,
   MAX_FILES,
   MAX_UPLOAD,
@@ -224,8 +225,22 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (!locked) return fail(t("chat.busy"), 409);
 
+  /**
+   * The lock this turn holds, as a value that can be compared.
+   *
+   * Every write to `answering_at` from here on is conditional on it still being
+   * the stamp we last wrote. Unconditional writes were a way to clear — or worse,
+   * to refresh — a lock that had gone stale and been legitimately taken over by a
+   * later turn, which is precisely the interleaving the lock exists to prevent.
+   */
+  const lock = { heldAt: claimedAt };
+
   const release = async () => {
-    await supabase.from("lp_chat_sessions").update({ answering_at: null }).eq("id", sessionId);
+    await supabase
+      .from("lp_chat_sessions")
+      .update({ answering_at: null })
+      .eq("id", sessionId)
+      .eq("answering_at", lock.heldAt);
   };
 
   try {
@@ -239,6 +254,7 @@ export async function POST(req: NextRequest) {
       mode,
       retry: !!body.retry,
       release,
+      lock,
       t,
       limits,
     });
@@ -259,6 +275,8 @@ type Ctx = {
   mode: "auto" | "on" | "off";
   retry: boolean;
   release: () => Promise<void>;
+  /** The stamp this turn wrote into `answering_at`, kept current by the heartbeat. */
+  lock: { heldAt: string };
   t: Translate;
   limits: PlanLimits;
 };
@@ -399,7 +417,7 @@ function streamTurn(
   ctx: Ctx,
   turn: { system: string; searching: boolean; searchLocked: boolean; resolved: string; captured: number },
 ): Response {
-  const { supabase, userId, sessionId, release, t, limits } = ctx;
+  const { supabase, userId, sessionId, release, lock, t, limits } = ctx;
 
   // What the reply accumulates to. Held out here so the disconnect path can
   // persist exactly what had arrived.
@@ -412,10 +430,52 @@ function streamTurn(
   };
   const upstreamAbort = new AbortController();
 
+  /** The beat in flight, if any. `finalize` waits for it before letting go. */
+  let beating: Promise<unknown> | null = null;
+
+  /**
+   * Keep saying "still here" for as long as this turn runs.
+   *
+   * A stamp that stops moving is the only evidence available that an invocation
+   * died — there is no other signal a later request can read, and the later
+   * request may not even land on the same machine. Stops touching the row the
+   * moment the stamp is not ours any more: that means the lock went stale and
+   * somebody else took it, and stealing it back would put two answers into one
+   * conversation.
+   */
+  const heartbeat = setInterval(() => {
+    if (state.finished) return;
+    beating = (async () => {
+      const next = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("lp_chat_sessions")
+        .update({ answering_at: next })
+        .eq("id", sessionId)
+        .eq("answering_at", lock.heldAt)
+        .select("id")
+        .maybeSingle();
+      if (data) {
+        lock.heldAt = next;
+        return;
+      }
+      // No row matched AND no error: the stamp is not ours any more. A failed round
+      // trip is not that — keep beating, or one blocked query would hand the session
+      // to the next turn while this one is still writing into it.
+      if (!error) clearInterval(heartbeat);
+    })().catch(() => {
+      /* a missed beat is survivable; four missed in a row is what expiry is for */
+    });
+  }, ANSWER_LOCK_HEARTBEAT_MS);
+
   /** Persist the reply and release the lock. Safe to call twice; runs once. */
   async function finalize() {
     if (state.finished) return;
     state.finished = true;
+    clearInterval(heartbeat);
+    // A beat already in flight would move the stamp out from under `release()`,
+    // which matches on it — and the lock would then sit there until it expired,
+    // which is the whole failure this heartbeat exists to end.
+    if (beating) await beating;
     try {
       const text = state.reply.replace(/^\s+/, "");
       if (text || state.reasoning) {

@@ -1696,6 +1696,8 @@ export const en: Record<keyof typeof id, string> = {
   "chat.uploading": "Uploading attachments…",
   "chat.waitingHere":
     "Waiting on this chat's reply — open or start another chat if you want to ask something now.",
+  "chat.answeringElsewhere":
+    "This chat is being answered elsewhere — the screen catches up on its own once the reply lands.",
   "chat.maxConcurrent": "At most {count} chats at once — wait for one to finish.",
   "chat.othersRunning": "{count} other chats are still running in the background.",
   "chat.maxFiles": "At most {count} files per message.",

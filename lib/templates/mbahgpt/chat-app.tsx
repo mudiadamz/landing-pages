@@ -85,6 +85,13 @@ export function ChatApp({
   }, [user]);
 
   const streaming = !!chat.openLive;
+  /**
+   * Answering, but not here — a second tab, another device, or a turn whose reader
+   * reloaded and left its lock behind. Nothing to draw and nothing to stop; the
+   * box closes and the status line says why, rather than letting a message be
+   * typed into a chat the server will refuse.
+   */
+  const waiting = chat.remoteBusy;
 
   // Auto-scroll ONLY while the reader is parked at the bottom. Forcing the view
   // down on every token makes it impossible to read back over a long answer.
@@ -178,6 +185,7 @@ export function ChatApp({
     if (chat.notice) return chat.notice;
     if (chat.openLive?.uploading) return t("chat.uploading");
     if (streaming) return t("chat.waitingHere");
+    if (waiting) return t("chat.answeringElsewhere");
     if (chat.running > 0) {
       return chat.running >= MAX_CONCURRENT
         ? t("chat.maxConcurrent", { count: MAX_CONCURRENT })
@@ -368,6 +376,7 @@ export function ChatApp({
           onSubmit={submit}
           onStop={chat.stop}
           busy={streaming}
+          waiting={waiting}
           disabled={!canChat}
           disabledReason={configured ? t("chat.signInTitle") : t("chat.inactiveTitle")}
           files={files}

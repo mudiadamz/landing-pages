@@ -63,6 +63,7 @@ browser                     app                          Supabase / OpenRouter
    │ POST /api/mbahgpt/chat {session_id, content, attachments[]}
    │                          ├─ auth + rate limit (hitung pesan 1 menit terakhir)
    │                          ├─ claim: answering_at = now()  ← kunci per sesi
+   │                          ├─ heartbeat: answering_at = now() tiap 15 dtk
    │                          ├─ simpan pesan user + baris lampiran
    │                          ├─ tangkap "remember this…" → lp_chat_memories
    │                          ├─ system prompt = prefs + memori terpilih
@@ -239,7 +240,7 @@ mengukur ulang.
 |---|---|---|
 | SQLite lokal, satu pengguna | Postgres + RLS per user | satu deployment melayani banyak pengunjung |
 | Lampiran BLOB di `chats.db` | Supabase Storage (bucket privat) | baris Postgres direplikasi & di-backup; unggahan lewat browser langsung karena body function dibatasi ~4.5 MB |
-| Lock sesi di memori proses | kolom `answering_at` + kedaluwarsa | request berikutnya bisa mendarat di instance lain; lock yang mati harus melepas dirinya sendiri |
+| Lock sesi di memori proses | kolom `answering_at` + heartbeat 15 dtk, basi setelah 4 ketukan | request berikutnya bisa mendarat di instance lain; lock yang mati harus melepas dirinya sendiri, dan satu-satunya bukti "masih hidup" yang bisa dibaca request lain adalah stempel yang terus bergerak |
 | Rate limit per IP di memori | hitung pesan user 1 menit terakhir di Postgres | instance ephemeral, dan banyak orang berbagi IP di belakang NAT |
 | CSRF/Host pinning, token UI, CSP nonce sendiri | auth Supabase + cookie SameSite + header aplikasi | ancamannya beda: ini bukan lagi port di `127.0.0.1` |
 | `prefs (key, value)` | satu baris per user, kolom bernama | migration di sini normal; key salah ketik = no-op senyap |
@@ -253,6 +254,14 @@ mengukur ulang.
    putus, jadi yang sudah diproduksi ada di transkrip setelah reload — yang hilang
    hanya kelanjutan tokennya. Kalau ini jadi masalah nyata, jalan keluarnya adalah
    menulis potongan ke tabel dari worker terpisah, bukan menghidupkan lagi buffer.
+
+   Yang **tidak** boleh terjadi dan dulu terjadi: reload meninggalkan `answering_at`
+   terisi, lalu sesi itu menolak setiap pesan berikutnya dengan "sedang menjawab"
+   selama 2,5 menit — dan reload lagi tidak menolong, karena kuncinya baris Postgres,
+   bukan sesuatu yang dipegang tab. Sekarang giliran yang hidup men-stempel ulang
+   kuncinya sendiri, jadi kunci yang ditinggal mati lepas empat ketukan kemudian; dan
+   selama kunci itu masih ada, komposer ditutup dengan alasannya (`chat.answeringElsewhere`)
+   lalu menunggu sambil polling, bukan mengundang pesan yang pasti ditolak 409.
 2. **Eksekusi skrip (`tools.py`) dihapus.** Butuh `subprocess` + rlimit + direktori
    kerja yang bisa ditulis; runtime serverless tidak punya satupun. Fitur ini juga
    opt-in dan mati secara default di aplikasi asli.

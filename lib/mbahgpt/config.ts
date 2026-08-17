@@ -59,14 +59,31 @@ export const TIMEOUT_MS = num("OPENROUTER_TIMEOUT", 120) * 1000;
 export const RATE_LIMIT = num("OPENROUTER_RATE_LIMIT", 30);
 
 /**
+ * How often a running turn re-stamps its own answer lock.
+ *
+ * On a timer rather than on token arrival: a thinking model can sit silent for a
+ * minute before the first token, and a search plus a few attachments downloaded
+ * out of Storage take their own time. Tokens say "the model is talking"; what the
+ * lock needs to know is "this invocation is alive", which only a clock can say.
+ */
+export const ANSWER_LOCK_HEARTBEAT_MS = num("OPENROUTER_LOCK_HEARTBEAT", 15) * 1000;
+
+/**
  * How long a session's answer lock is trusted before another turn may take it.
  *
  * The Python server released its lock in a `finally` block, which a killed
  * process never runs. Here the lock is a timestamp in the row, so it has to be
- * able to expire on its own: a shade longer than the upstream timeout, so a slow
- * but living generation is never stolen from.
+ * able to expire on its own.
+ *
+ * It used to be `TIMEOUT_MS + 30s` — long enough to cover a whole slow generation
+ * in ONE stamp, because nothing re-stamped it. That made a lock left behind by a
+ * torn-down invocation hold the session for two and a half minutes, refusing every
+ * message with "sedang menjawab" while nothing was answering, and a reload could
+ * not clear it because the lock lives in Postgres. With the heartbeat above, a
+ * living turn keeps proving it is alive, so this only has to outlast a few missed
+ * beats — and a dead one frees the session four beats later instead.
  */
-export const ANSWER_LOCK_STALE_MS = TIMEOUT_MS + 30_000;
+export const ANSWER_LOCK_STALE_MS = ANSWER_LOCK_HEARTBEAT_MS * 4;
 
 /**
  * The API key, read at call time rather than at module load.

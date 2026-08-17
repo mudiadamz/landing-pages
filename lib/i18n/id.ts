@@ -1692,6 +1692,8 @@ export const id = {
   "chat.uploading": "Mengunggah lampiran…",
   "chat.waitingHere":
     "Menunggu jawaban di chat ini… buka atau buat chat lain kalau ingin bertanya sekarang.",
+  "chat.answeringElsewhere":
+    "Chat ini sedang dijawab di tempat lain — layar menyusul sendiri begitu jawabannya masuk.",
   "chat.maxConcurrent": "Maksimal {count} chat berjalan bersamaan — tunggu salah satunya selesai.",
   "chat.othersRunning": "{count} chat lain sedang berjalan di latar.",
   "chat.maxFiles": "Maksimal {count} berkas per pesan.",
