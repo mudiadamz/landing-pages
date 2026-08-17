@@ -137,6 +137,7 @@ describe("dictionary integrity", () => {
     "Judul halaman": ["content.pageTitle", "panel.pageTitlePlaceholder"],
     "Ke beranda": ["common.toHome", "notFound.home"],
     // Panel sidebar destinations vs the screens they lead to.
+    Hiring: ["nav.hiring", "panel.navHiring"],
     Kontak: ["nav.contact", "panel.navContacts"],
     "Pembelian saya": ["nav.myPurchases", "panel.navPurchases"],
     Assets: ["assets.heading", "panel.navAssets"],

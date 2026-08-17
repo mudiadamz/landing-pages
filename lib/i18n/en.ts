@@ -1478,6 +1478,46 @@ export const en: Record<keyof typeof id, string> = {
 
   "legal.lastUpdated": "Last updated: {date}",
 
+  "hiring.backToAd": "← Back to the job ad",
+
+  "nav.hiring": "Hiring",
+
+  /* ---- panel: hiring ---- */
+  "panel.navHiring": "Hiring",
+  "hiring.panelIntro":
+    "The vacancy at /hiring and the test at /hiring/test for this domain. Correct answers are used to grade applicants and are never sent to their browser.",
+  "hiring.enabled": "Vacancy open",
+  "hiring.enabledHint":
+    "Turned off, /hiring and /hiring/test return 404 and the Hiring link leaves the footer. The content is kept.",
+  "hiring.adHeading": "Job ad",
+  "hiring.badge": "Small label above the title",
+  "hiring.jobTitle": "Role name",
+  "hiring.intro": "Opening paragraph",
+  "hiring.tags": "Role tags",
+  "hiring.addTag": "Add tag",
+  "hiring.scopeHeading": "Scope heading",
+  "hiring.scopeBody": "Scope body",
+  "hiring.requirementsHeading": "Qualifications heading",
+  "hiring.addRequirement": "Add qualification",
+  "hiring.benefitsHeading": "Benefits heading",
+  "hiring.addBenefit": "Add benefit",
+  "hiring.ctaCard": "Take-the-test card",
+  "hiring.countHint": "Write {count} to print the current number of questions.",
+  "hiring.testHeading": "Test page",
+  "hiring.testIntro": "Test opening paragraph",
+  "hiring.questions": "Questions ({count})",
+  "hiring.questionsHint":
+    "Pick the radio beside the correct option. A question with no text, or fewer than two options, is not shown.",
+  "hiring.addQuestion": "Add question",
+  "hiring.noQuestions": "No questions yet — the test page will render without any.",
+  "hiring.questionPlaceholder": "Write a situational question",
+  "hiring.removeQuestion": "Remove question",
+  "hiring.optionPlaceholder": "Answer option",
+  "hiring.addOption": "Add option",
+  "hiring.removeOption": "Remove option",
+  "hiring.markCorrect": "Mark option {n} as the correct answer",
+  "hiring.viewPage": "View /hiring ↗",
+
   /* ---- panel: legal pages ---- */
   "panel.navLegal": "Legal pages",
   "legal.intro":

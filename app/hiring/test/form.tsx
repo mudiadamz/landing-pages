@@ -2,12 +2,16 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { hiringQuestions } from "@/lib/hiring-questions";
+import type { HiringQuestion } from "@/lib/hiring-config";
 import { Button } from "@/components/ui/button";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
-export function HiringTestForm() {
+/**
+ * `questions` is a prop, not an import: they are per-site data now, and the page
+ * has already read them to print the count in its intro.
+ */
+export function HiringTestForm({ questions }: { questions: HiringQuestion[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -135,7 +139,7 @@ export function HiringTestForm() {
         </p>
       </div>
 
-      {hiringQuestions.map((q, qi) => (
+      {questions.map((q, qi) => (
         <div
           key={q.id}
           className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-8 space-y-4"

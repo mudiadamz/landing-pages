@@ -1468,6 +1468,46 @@ export const id = {
 
   "legal.lastUpdated": "Terakhir diperbarui: {date}",
 
+  "hiring.backToAd": "← Kembali ke halaman hiring",
+
+  "nav.hiring": "Hiring",
+
+  /* ---- panel: hiring ---- */
+  "panel.navHiring": "Hiring",
+  "hiring.panelIntro":
+    "Isi lowongan di /hiring dan soal tes di /hiring/test untuk domain ini. Jawaban benar dipakai untuk menilai pelamar dan tidak pernah dikirim ke browser mereka.",
+  "hiring.enabled": "Lowongan dibuka",
+  "hiring.enabledHint":
+    "Kalau dimatikan, /hiring dan /hiring/test menjadi 404 dan link Hiring hilang dari footer. Isinya tetap tersimpan.",
+  "hiring.adHeading": "Iklan lowongan",
+  "hiring.badge": "Label kecil di atas judul",
+  "hiring.jobTitle": "Nama posisi",
+  "hiring.intro": "Paragraf pembuka",
+  "hiring.tags": "Tag posisi",
+  "hiring.addTag": "Tambah tag",
+  "hiring.scopeHeading": "Judul scope pekerjaan",
+  "hiring.scopeBody": "Isi scope pekerjaan",
+  "hiring.requirementsHeading": "Judul kualifikasi",
+  "hiring.addRequirement": "Tambah kualifikasi",
+  "hiring.benefitsHeading": "Judul benefit",
+  "hiring.addBenefit": "Tambah benefit",
+  "hiring.ctaCard": "Kartu ajakan ikut tes",
+  "hiring.countHint": "Tulis {count} untuk menampilkan jumlah soal saat ini.",
+  "hiring.testHeading": "Halaman tes",
+  "hiring.testIntro": "Paragraf pembuka tes",
+  "hiring.questions": "Soal ({count})",
+  "hiring.questionsHint":
+    "Pilih radio di sebelah opsi yang benar. Soal tanpa teks atau dengan kurang dari dua opsi tidak akan ditampilkan.",
+  "hiring.addQuestion": "Tambah soal",
+  "hiring.noQuestions": "Belum ada soal — halaman tes akan tampil tanpa pertanyaan.",
+  "hiring.questionPlaceholder": "Tulis pertanyaan situasional",
+  "hiring.removeQuestion": "Hapus soal",
+  "hiring.optionPlaceholder": "Pilihan jawaban",
+  "hiring.addOption": "Tambah pilihan",
+  "hiring.removeOption": "Hapus pilihan",
+  "hiring.markCorrect": "Tandai pilihan {n} sebagai jawaban benar",
+  "hiring.viewPage": "Lihat /hiring ↗",
+
   /* ---- panel: halaman legal ---- */
   "panel.navLegal": "Halaman legal",
   "legal.intro":

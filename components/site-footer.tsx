@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
-import { getSocialUrls } from "@/lib/actions/site-settings";
+import { getSocialUrls, getHiringContent } from "@/lib/actions/site-settings";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
@@ -19,12 +19,13 @@ import { t } from "@/lib/i18n";
  * there is no client boundary forcing the brand through props.
  */
 export async function SiteFooter() {
-  const [content, supabase, site, socialUrls, locale] = await Promise.all([
+  const [content, supabase, site, socialUrls, locale, hiring] = await Promise.all([
     getSiteContent(),
     createClient(),
     currentSite(),
     getSocialUrls(),
     requestLocale(),
+    getHiringContent(),
   ]);
   const {
     data: { user },
@@ -73,9 +74,13 @@ export async function SiteFooter() {
             <Link href="/refund" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               {t("nav.refund", {}, locale)}
             </Link>
-            <Link href="/hiring" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
-              Hiring
-            </Link>
+            {/* Only while the vacancy is open — a dead link to a 404 is worse
+                than no link. */}
+            {hiring.enabled && (
+              <Link href="/hiring" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
+                {t("nav.hiring", {}, locale)}
+              </Link>
+            )}
           </nav>
         </div>
         <div className="mt-8 flex flex-col items-center gap-3 border-t border-[var(--border)] pt-6 text-sm text-[var(--muted)] sm:flex-row sm:justify-between">

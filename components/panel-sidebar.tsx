@@ -111,6 +111,7 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       // Beside Konten situs: same job, different surface — that one is homepage
       // copy, this one is the three pages with fixed URLs.
       { href: "/panel/legal", labelKey: "panel.navLegal", icon: DocIcon, feature: "legal" },
+      { href: "/panel/hiring", labelKey: "panel.navHiring", icon: BadgeIcon, feature: "hiring" },
       // Other places the owner exists, not other storefronts this app serves —
       // those are "Domain" above.
       { href: "/panel/pages", labelKey: "panel.navPages", icon: PageIcon, adminOnly: true },

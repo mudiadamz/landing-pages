@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hiringQuestions } from "@/lib/hiring-questions";
+import { getHiringContent } from "@/lib/actions/site-settings";
 
 const CV_BUCKET = "hiring-cv";
 
@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
 
   const cvUrl = signedData?.signedUrl ?? null;
 
-  // Grade answers
+  // Grade answers against the questions THIS site is currently asking. Read
+  // here rather than trusted from the form: the correct index must never come
+  // from the applicant's request.
+  const { questions: hiringQuestions } = await getHiringContent();
   const results = hiringQuestions.map((q) => {
     const raw = formData.get(`q${q.id}`);
     const selected = raw !== null ? Number(raw) : -1;
