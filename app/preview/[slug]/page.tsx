@@ -28,6 +28,7 @@ import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
 import { ImmersiveController } from "@/components/immersive-controller";
 import { requestLocale } from "@/lib/i18n/request";
+import { t } from "@/lib/i18n";
 
 const getPageBySlug = cache((slug: string) => getLandingPageBySlug(slug));
 const getCheckoutData = cache((slug: string) => getLandingPageForCheckout(slug));
@@ -186,19 +187,19 @@ async function PreviewContent({ slug }: { slug: string }) {
   // the reader stopped mid-chapter wants to know how to keep reading, so the
   // default answers that instead. A seller's own cta_label still wins.
   const defaultLabel = calendarMode
-    ? "Tambahkan ke kalender"
+    ? t("product.ctaActionCalendar", undefined, locale)
     : epubExcerpt
       ? showAsFree
-        ? "Buka semua bab — gratis"
-        : "Baca sampai habis"
+        ? t("preview.openAllChapters", undefined, locale)
+        : t("preview.readToTheEnd", undefined, locale)
       : showAsFree
-        ? "Ambil gratis"
-        : "Beli sekarang";
+        ? t("checkout.getFree", undefined, locale)
+        : t("checkout.buyNow", undefined, locale);
   const buyLabel = checkout?.cta_label?.trim() || defaultLabel;
   const priceText = showAsFree ? null : `Rp ${displayPrice.toLocaleString("id-ID")}`;
   const buyNote =
     checkout?.cta_note?.trim() ||
-    (epubExcerpt ? "Akses penuh, selamanya — baca kapan saja di HP." : null);
+    (epubExcerpt ? t("preview.fullAccessNote", undefined, locale) : null);
 
   const buyHref = calendarMode
     ? `/api/calendar/${slug}`

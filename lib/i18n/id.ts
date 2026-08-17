@@ -1450,6 +1450,13 @@ export const id = {
   "auth.afterSignInFree": "Setelah masuk, produk langsung masuk ke akunmu.",
   "auth.afterSignInPaid": "Setelah masuk, kamu langsung diarahkan ke pembayaran.",
 
+  "preview.openAllChapters": "Buka semua bab — gratis",
+  "preview.readToTheEnd": "Baca sampai habis",
+  "preview.fullAccessNote": "Akses penuh, selamanya — baca kapan saja di HP.",
+  "home.newBadge": "Baru",
+  "home.seeCountdown": "Lihat hitung mundur",
+  "contact.sendMessage": "Kirim pesan",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
@@ -27,7 +29,8 @@ function formatPrice(value: number): string {
   }).format(value);
 }
 
-export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Props) {
+export async function LandingPageCard({ page, priority = false, reviewCount = 0 }: Props) {
+  const t = translator(await requestLocale());
   // Cards are 16:9, so a wide thumbnail is used when the seller uploaded one;
   // portrait covers get badly cropped here otherwise.
   const listThumb = page.thumbnail_landscape_url || page.thumbnail_url;
@@ -106,7 +109,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           {showAsFree ? (
             <span className="text-sm font-medium text-[var(--primary)]">
-              Gratis
+              {t("common.free")}
             </span>
           ) : (
             <>
@@ -142,7 +145,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
         ) : (
           <div className="mt-2">
             <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-[var(--accent-subtle)] text-[var(--muted)]">
-              Baru
+              {t("home.newBadge")}
             </span>
           </div>
         )}
@@ -159,7 +162,7 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
                 </svg>
               }
             >
-              Lihat hitung mundur
+              {t("home.seeCountdown")}
             </Button>
           ) : (
           <>
@@ -179,27 +182,27 @@ export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Pro
               fullWidth
               className="flex-1"
             >
-              Ambil gratis
+              {t("checkout.getFree")}
             </Button>
           ) : isInternal ? (
             <Button
               size="md"
               href={`/checkout/${page.slug}`}
               fullWidth
-              title="Beli sekarang"
+              title={t("checkout.buyNow")}
               className="flex-1"
             >
-              Beli sekarang
+              {t("checkout.buyNow")}
             </Button>
           ) : (
             <Button
               size="md"
               href={externalUrl || `/preview/${page.slug}`}
               external={!!externalUrl}
-              title={externalUrl ? "Beli sekarang" : "Preview"}
+              title={externalUrl ? t("checkout.buyNow") : t("checkout.preview")}
               className="flex-1"
             >
-              {externalUrl ? "Beli sekarang" : "Preview"}
+              {externalUrl ? t("checkout.buyNow") : t("checkout.preview")}
             </Button>
           )}
           </>

@@ -1460,6 +1460,13 @@ export const en: Record<keyof typeof id, string> = {
   "auth.afterSignInFree": "Once you sign in, the product lands in your account.",
   "auth.afterSignInPaid": "Once you sign in, you go straight to payment.",
 
+  "preview.openAllChapters": "Open every chapter — free",
+  "preview.readToTheEnd": "Read to the end",
+  "preview.fullAccessNote": "Full access, forever — read it on your phone any time.",
+  "home.newBadge": "New",
+  "home.seeCountdown": "See the countdown",
+  "contact.sendMessage": "Send a message",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

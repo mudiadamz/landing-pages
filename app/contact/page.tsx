@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
@@ -13,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
+  const t = translator(await requestLocale());
   const supabase = await createClient();
   const [
     { data: { user } },
@@ -39,7 +42,7 @@ export default async function ContactPage() {
               {content.contactIntro}
             </p>
             <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-8 mb-10">
-              <h2 className="text-base font-semibold text-foreground mb-4">Kirim pesan</h2>
+              <h2 className="text-base font-semibold text-foreground mb-4">{t("contact.sendMessage")}</h2>
               <ContactForm />
             </div>
             <h2 className="text-base font-semibold text-foreground mb-3">
@@ -47,7 +50,7 @@ export default async function ContactPage() {
             </h2>
             <p className="text-sm text-[var(--muted)] mb-4">{content.supportContactIntro}</p>
             <SupportContactImages />
-            <h2 className="text-base font-semibold text-foreground mb-3 mt-10">Media sosial</h2>
+            <h2 className="text-base font-semibold text-foreground mb-3 mt-10">{t("panel.tabSocial")}</h2>
             <SocialLinks variant="stack" urls={socialUrls} />
           </div>
         </section>
