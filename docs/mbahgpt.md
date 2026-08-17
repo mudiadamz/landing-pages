@@ -133,7 +133,7 @@ Yang perlu diketahui sebelum mengubahnya:
   sudah terbit — menurunkan produk dari peredaran karena langganan habis menghukum
   pembelinya, bukan penjualnya.
 
-Harga **per tahun** dan **per storefront**: `lp_site_settings` key `plan_prices`,
+Harga **per bulan** dan **per storefront**: `lp_site_settings` key `plan_prices`,
 diedit di `/panel/plans`. Nol berarti belum dijual (tombol beli tidak muncul),
 bukan gratis. Paketnya sendiri global per akun — yang membeli Pro di satu
 storefront adalah Pro di semua, karena kebalikannya mustahil dijelaskan ke
@@ -143,11 +143,11 @@ Alur beli: `/upgrade` → `POST /api/plans/create-invoice` (menulis baris `pendi
 di `lp_plan_orders`, lalu invoice Duitku ber-prefix `PL_`) → callback Duitku yang
 sama dengan produk, dibedakan lewat prefix itu. Perpanjangan **menambah** masa
 aktif kalau paketnya sama dan masih jalan; pindah paket mulai dari sekarang.
-`merchant_order_id` UNIQUE — callback yang dikirim ulang tidak menambah setahun
+`merchant_order_id` UNIQUE — callback yang dikirim ulang tidak menambah sebulan
 lagi untuk satu pembayaran.
 
 Admin bisa memberi paket langsung di `/panel/users`. Yang diberi tangan **tidak**
-kedaluwarsa (`plan_expires_at` dikosongkan): itu keputusan, bukan penjualan setahun.
+kedaluwarsa (`plan_expires_at` dikosongkan): itu keputusan, bukan penjualan sebulan.
 
 ## 6. Bahasa
 

@@ -161,7 +161,7 @@ GET /api/download/[slug]
   `OPENROUTER_API_KEY` kosong. Detail & batasannya di [`docs/mbahgpt.md`](docs/mbahgpt.md).
 - **Paket pengguna** (Free/Pro/Business/Enterprise): batas ada di `lib/plans.ts`
   (kode, bukan DB — lihat I12), paket & masa aktif di `lp_profiles.plan` +
-  `plan_expires_at`, harga per tahun per-situs di `lp_site_settings` key
+  `plan_expires_at`, harga per bulan per-situs di `lp_site_settings` key
   `plan_prices` (diedit di `/panel/plans`). Beli di `/upgrade` → `POST
   /api/plans/create-invoice` (order `PL_…` di `lp_plan_orders`) → callback Duitku
   yang sama dengan produk, dibedakan lewat prefix merchantOrderId. Ditegakkan di

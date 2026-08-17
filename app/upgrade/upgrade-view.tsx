@@ -47,7 +47,7 @@ export function UpgradeView({
       const res = await fetch("/api/plans/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: target, years: 1 }),
+        body: JSON.stringify({ plan: target, months: 1 }),
       });
       const data = (await res.json()) as { paymentUrl?: string; error?: string };
       if (!res.ok || !data.paymentUrl) {
@@ -106,7 +106,7 @@ export function UpgradeView({
                 {price > 0 ? (
                   <>
                     {formatRupiah(price)}
-                    <span className="text-xs font-normal text-[var(--muted)]">{t("plan.perYear")}</span>
+                    <span className="text-xs font-normal text-[var(--muted)]">{t("plan.perMonth")}</span>
                   </>
                 ) : (
                   <span className="text-base font-normal text-[var(--muted)]">

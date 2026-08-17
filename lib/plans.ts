@@ -165,7 +165,7 @@ export function nextPlanUp(plan: PlanKey): PlanKey | null {
 /* -------------------------------------------------------------------------- */
 
 /**
- * What each paid plan costs PER YEAR, in rupiah, on one storefront.
+ * What each paid plan costs PER MONTH, in rupiah, on one storefront.
  *
  * Per storefront and not in this file, because a price is a business decision on
  * a different clock from a limit: lp_site_settings key `plan_prices`, edited at

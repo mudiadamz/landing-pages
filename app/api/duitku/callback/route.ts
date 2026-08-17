@@ -200,17 +200,17 @@ export async function POST(req: NextRequest) {
  * twice for one payment.
  *
  * Renewing EXTENDS rather than restarts, but only when the same plan is still
- * running. Paying for a second year in month eleven should give thirteen months
- * of Pro, not reset to twelve; upgrading from Pro to Business mid-year starts
- * Business now, because the two are not the same thing and adding their time
- * together would mean paying for Business and getting Pro's leftovers.
+ * running. Paying for another month on day twenty should give six weeks of Pro,
+ * not reset to four; upgrading from Pro to Business mid-month starts Business
+ * now, because the two are not the same thing and adding their time together
+ * would mean paying for Business and getting Pro's leftovers.
  */
 async function settlePlanOrder(merchantOrderId: string): Promise<void> {
   const admin = createAdminClient();
 
   const { data: order } = await admin
     .from("lp_plan_orders")
-    .select("id, user_id, plan, years, status")
+    .select("id, user_id, plan, months, status")
     .eq("merchant_order_id", merchantOrderId)
     .maybeSingle();
 
@@ -235,7 +235,10 @@ async function settlePlanOrder(merchantOrderId: string): Promise<void> {
   const from = runningEnd && runningEnd > now ? runningEnd : now;
 
   const expiresAt = new Date(from);
-  expiresAt.setFullYear(expiresAt.getFullYear() + (order.years ?? 1));
+  // setMonth handles the short months for us: 31 Jan + 1 month lands on 3 March
+  // in a non-leap year, which is later than the buyer expects but never earlier —
+  // the direction to be wrong in when somebody has paid.
+  expiresAt.setMonth(expiresAt.getMonth() + (order.months ?? 1));
 
   const { error: profileError } = await admin
     .from("lp_profiles")

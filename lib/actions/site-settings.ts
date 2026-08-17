@@ -831,7 +831,7 @@ export async function subscribePopupEmail(
 /* -------------------------------------------------------------------------- */
 
 /**
- * What each paid plan costs per year ON THIS STOREFRONT.
+ * What each paid plan costs per month ON THIS STOREFRONT.
  *
  * Per-site, like every other setting here, because two storefronts on one
  * deployment sell to different audiences at different money. The PLAN itself is
