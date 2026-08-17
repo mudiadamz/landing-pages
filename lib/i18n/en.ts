@@ -1094,6 +1094,38 @@ export const en: Record<keyof typeof id, string> = {
   "sites.emptyWord": "Empty",
   "sites.wholeCatalogNote": "shows the whole catalogue (which is what the main domain uses).",
 
+  "panel.epubQuickHint":
+    "The title, cover, description and preview are taken from this file. Max 10 MB.",
+  "panel.readyToProcess": "Ready to process",
+  "panel.epubAutoIntro": "Taken from the EPUB:",
+  "panel.epubAutoTitle": "title",
+  "panel.epubAutoCover": "cover",
+  "panel.epubAutoDescription": "description",
+  "panel.epubAutoTail": ". All of it is still editable in the full form after this.",
+  "panel.processingBook": "Processing the book…",
+  "panel.createProduct": "Create product",
+  "panel.allCategories": "All categories",
+  "panel.sortUpdatedDesc": "Recently updated",
+  "panel.sortUpdatedAsc": "Least recently updated",
+  "panel.sortViewsDesc": "Most visited",
+  "panel.sortViewsAsc": "Least visited",
+  "panel.noProductMatch": "No product matches “{query}”.",
+  "panel.noProductInCategory": "No products in this category.",
+  "panel.showingRange": "Showing {from}–{to} of {total} products",
+
+  "panel.errSelectHtml": "Please select an HTML file.",
+  "panel.errCreatePageFailed": "Failed to create the landing page.",
+  "panel.htmlFile": "HTML file",
+  "panel.slugHintUpload": "Lowercase letters, numbers, hyphens. Used in /preview/[slug]",
+  "panel.upload": "Upload",
+
+  "panel.starsOutOfFive": "{rating} out of 5 stars",
+  "panel.fromBundle": "From the bundle: {title}",
+  "panel.readEpub": "Read EPUB",
+  "panel.readPdf": "Read PDF",
+  "panel.editReview": "Edit review",
+  "panel.writeReview": "Write a review",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

@@ -1084,6 +1084,38 @@ export const id = {
   "sites.emptyWord": "Kosong",
   "sites.wholeCatalogNote": "tampilkan seluruh katalog (itu yang dipakai domain utama).",
 
+  "panel.epubQuickHint":
+    "Judul, sampul, deskripsi dan preview diambil otomatis dari file ini. Maks 10 MB.",
+  "panel.readyToProcess": "Siap diproses",
+  "panel.epubAutoIntro": "Otomatis dari EPUB:",
+  "panel.epubAutoTitle": "judul",
+  "panel.epubAutoCover": "sampul",
+  "panel.epubAutoDescription": "deskripsi",
+  "panel.epubAutoTail": ". Semuanya masih bisa diubah di form lengkap setelah ini.",
+  "panel.processingBook": "Memproses buku…",
+  "panel.createProduct": "Buat produk",
+  "panel.allCategories": "Semua kategori",
+  "panel.sortUpdatedDesc": "Terbaru diperbarui",
+  "panel.sortUpdatedAsc": "Terlama diperbarui",
+  "panel.sortViewsDesc": "Kunjungan terbanyak",
+  "panel.sortViewsAsc": "Kunjungan tersedikit",
+  "panel.noProductMatch": "Tidak ada produk yang cocok dengan “{query}”.",
+  "panel.noProductInCategory": "Tidak ada produk pada kategori ini.",
+  "panel.showingRange": "Menampilkan {from}–{to} dari {total} produk",
+
+  "panel.errSelectHtml": "Pilih file HTML dulu.",
+  "panel.errCreatePageFailed": "Gagal membuat landing page.",
+  "panel.htmlFile": "File HTML",
+  "panel.slugHintUpload": "Huruf kecil, angka, tanda hubung. Dipakai di /preview/[slug]",
+  "panel.upload": "Unggah",
+
+  "panel.starsOutOfFive": "{rating} dari 5 bintang",
+  "panel.fromBundle": "Dari bundle: {title}",
+  "panel.readEpub": "Baca EPUB",
+  "panel.readPdf": "Baca PDF",
+  "panel.editReview": "Edit review",
+  "panel.writeReview": "Beri review",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

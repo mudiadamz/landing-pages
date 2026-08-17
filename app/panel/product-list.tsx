@@ -225,7 +225,7 @@ export function ProductList({
             aria-label={t("home.filterLabel")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:w-56"
           >
-            <option value="">Semua kategori</option>
+            <option value="">{t("panel.allCategories")}</option>
             {categories
               .filter((c) => !c.parent_id)
               .map((parent) => {
@@ -239,7 +239,7 @@ export function ProductList({
                 }
                 return (
                   <optgroup key={parent.id} label={parent.name}>
-                    <option value={parent.id}>{parent.name} — semua</option>
+                    <option value={parent.id}>{t("product.categoryAllOf", { name: parent.name })}</option>
                     {children.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -263,10 +263,10 @@ export function ProductList({
           aria-label={t("panel.sortBy")}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:hidden"
         >
-          <option value="updated:desc">Terbaru diperbarui</option>
-          <option value="updated:asc">Terlama diperbarui</option>
-          <option value="views:desc">Kunjungan terbanyak</option>
-          <option value="views:asc">Kunjungan tersedikit</option>
+          <option value="updated:desc">{t("panel.sortUpdatedDesc")}</option>
+          <option value="updated:asc">{t("panel.sortUpdatedAsc")}</option>
+          <option value="views:desc">{t("panel.sortViewsDesc")}</option>
+          <option value="views:asc">{t("panel.sortViewsAsc")}</option>
           <option value="title:asc">{t("panel.sortTitleAsc")}</option>
           <option value="title:desc">{t("panel.sortTitleDesc")}</option>
         </select>
@@ -275,8 +275,8 @@ export function ProductList({
       {total === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted)] shadow-sm">
           {query.trim()
-            ? `Tidak ada produk yang cocok dengan “${query.trim()}”.`
-            : "Tidak ada produk pada kategori ini."}
+            ? t("panel.noProductMatch", { query: query.trim() })
+            : t("panel.noProductInCategory")}
         </div>
       ) : (
         <>
@@ -352,7 +352,11 @@ export function ProductList({
           {(pageCount > 1 || total > 0) && (
             <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
               <p className="text-xs text-[var(--muted)]">
-                Menampilkan {start + 1}–{start + slice.length} dari {total} produk
+                {t("panel.showingRange", {
+                  from: start + 1,
+                  to: start + slice.length,
+                  total,
+                })}
               </p>
               {pageCount > 1 && (
                 <div className="flex items-center gap-2">

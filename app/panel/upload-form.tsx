@@ -28,17 +28,17 @@ export function UploadForm() {
     const slug = (slugInput?.value || "").trim().toLowerCase() || slugFromTitle(title);
 
     if (!file) {
-      setError("Please select an HTML file.");
+      setError(t("panel.errSelectHtml"));
       setLoading(false);
       return;
     }
     if (!title) {
-      setError("Please enter a title.");
+      setError(t("product.errTitleEmpty"));
       setLoading(false);
       return;
     }
     if (!isValidSlug(slug)) {
-      setError("Slug must be lowercase letters, numbers, and hyphens only.");
+      setError(t("product.errSlugFormat"));
       setLoading(false);
       return;
     }
@@ -50,7 +50,7 @@ export function UploadForm() {
       router.push(`/panel/product/${id}/edit`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create landing page.");
+      setError(err instanceof Error ? err.message : t("panel.errCreatePageFailed"));
       setLoading(false);
     }
   }
@@ -64,7 +64,7 @@ export function UploadForm() {
       )}
       <div>
         <label htmlFor="file" className="block text-sm font-medium text-foreground mb-1.5">
-          HTML file
+          {t("panel.htmlFile")}
         </label>
         <input
           id="file"
@@ -77,7 +77,7 @@ export function UploadForm() {
       </div>
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1.5">
-          Title
+          {t("panel.title")}
         </label>
         <input
           id="title"
@@ -89,17 +89,17 @@ export function UploadForm() {
       </div>
       <div>
         <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-1.5">
-          Slug (URL path)
+          {t("product.slugLabel")}
         </label>
         <input
           id="slug"
           name="slug"
           type="text"
-          placeholder="my-landing-page"
+          placeholder={t("product.slugPlaceholder")}
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground font-mono text-base sm:text-sm focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Lowercase letters, numbers, hyphens. Used in /preview/[slug]
+          {t("panel.slugHintUpload")}
         </p>
       </div>
       <Button
@@ -109,7 +109,7 @@ export function UploadForm() {
         disabled={loading}
         className="py-3 shadow-sm"
       >
-        {loading ? "Uploading…" : "Upload"}
+        {loading ? t("panel.uploading") : t("panel.upload")}
       </Button>
     </form>
   );

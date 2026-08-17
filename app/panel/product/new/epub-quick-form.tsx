@@ -84,7 +84,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
     <form onSubmit={onSubmit} className="space-y-5">
       <FileUploadCard
         label={t("panel.epubFile")}
-        hint="Judul, sampul, deskripsi dan preview diambil otomatis dari file ini. Maks 10 MB."
+        hint={t("panel.epubQuickHint")}
         accept="application/epub+zip,.epub"
         badge="EPUB"
         badgeClass="bg-[var(--primary)]/10 text-[var(--primary)]"
@@ -92,7 +92,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
         meta={meta}
         uploading={uploading}
         error={uploadError}
-        statusText="Siap diproses"
+        statusText={t("panel.readyToProcess")}
         onUpload={onUpload}
         onRemove={() => {
           setEpubPath("");
@@ -152,17 +152,19 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
       </div>
 
       <div className="rounded-xl bg-[var(--accent-subtle)] px-4 py-3 text-sm text-[var(--muted)]">
-        Otomatis dari EPUB: <strong className="text-foreground">judul</strong>,{" "}
-        <strong className="text-foreground">sampul</strong>,{" "}
-        <strong className="text-foreground">deskripsi</strong>, dan{" "}
-        <strong className="text-foreground">{t("panel.epubQuickPreview")}</strong>. Semuanya masih
-        bisa diubah di form lengkap setelah ini.
+        {t("panel.epubAutoIntro")}{" "}
+        <strong className="text-foreground">{t("panel.epubAutoTitle")}</strong>,{" "}
+        <strong className="text-foreground">{t("panel.epubAutoCover")}</strong>,{" "}
+        <strong className="text-foreground">{t("panel.epubAutoDescription")}</strong>,{" "}
+        {t("product.ctaIntroAnd")}{" "}
+        <strong className="text-foreground">{t("panel.epubQuickPreview")}</strong>
+        {t("panel.epubAutoTail")}
       </div>
 
       {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
       <Button type="submit" size="lg" fullWidth disabled={!epubPath || uploading || creating}>
-        {creating ? "Memproses buku…" : "Buat produk"}
+        {creating ? t("panel.processingBook") : t("panel.createProduct")}
       </Button>
     </form>
   );
