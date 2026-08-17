@@ -53,7 +53,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error ?? "Gagal mengubah role");
+        alert(data.error ?? t("panel.roleChangeFailed"));
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, role: prev } : u)));
       }
     } finally {
@@ -76,7 +76,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
           list.map((u) => (u.id === user.id ? { ...u, exclude_from_stats: next } : u)),
         );
       } else {
-        alert(data.error ?? "Gagal mengubah pengaturan statistik");
+        alert(data.error ?? t("panel.statsToggleFailed"));
       }
     } finally {
       setUpdating(null);
@@ -85,7 +85,12 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
 
   async function toggleActive(user: UserRow) {
     const nextActive = !user.is_active;
-    if (!nextActive && !confirm(`Ban ${user.full_name || user.email || "user"}? Mereka tidak bisa masuk sampai di-unban.`)) {
+    if (
+      !nextActive &&
+      !confirm(
+        t("panel.banConfirm", { name: user.full_name || user.email || "user" }),
+      )
+    ) {
       return;
     }
     setUpdating(user.id);
@@ -99,7 +104,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
       if (res.ok) {
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, is_active: nextActive } : u)));
       } else {
-        alert(data.error ?? "Gagal mengubah status");
+        alert(data.error ?? t("panel.statusChangeFailed"));
       }
     } finally {
       setUpdating(null);
@@ -180,7 +185,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 onClick={() => setVerifyFilter("unverified")}
                 className="font-medium text-amber-700 underline-offset-2 hover:underline dark:text-amber-400"
               >
-                {unverifiedCount} belum verifikasi
+                {t("panel.unverifiedCount", { count: unverifiedCount })}
               </button>
             </>
           )}
@@ -220,11 +225,11 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--background)]/50">
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Nama</th>
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Email</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Role</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Verifikasi</th>
-                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("content.name")}</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("sales.email")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.role")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.verification")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.status")}</th>
                 <th
                   className="text-center px-4 py-3 font-medium text-[var(--muted)]"
                   title={t("panel.excludeStatsHint")}
@@ -258,8 +263,8 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                       disabled={updating === u.id}
                       title={
                         u.exclude_from_stats
-                          ? "Kunjungan user ini TIDAK dihitung — klik untuk menghitung lagi"
-                          : "Kunjungan user ini dihitung — klik untuk mengecualikan"
+                          ? t("panel.statsExcludedHint")
+                          : t("panel.statsCountedHint")
                       }
                       className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
                         u.exclude_from_stats
@@ -267,7 +272,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                           : "bg-[var(--background)] text-[var(--muted)] hover:text-foreground"
                       }`}
                     >
-                      {u.exclude_from_stats ? "Dikecualikan" : "Dihitung"}
+                      {u.exclude_from_stats ? t("panel.excluded") : t("panel.counted")}
                     </button>
                   </td>
                   <td className="px-4 py-3">
@@ -321,14 +326,15 @@ function RoleControl({
 }
 
 function BanButton({ user, disabled, onClick }: { user: UserRow; disabled: boolean; onClick: () => void }) {
+  const t = useT();
   const active = user.is_active;
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={active ? "Ban user" : "Unban user"}
-      aria-label={active ? "Ban user" : "Unban user"}
+      title={active ? t("panel.banUser") : t("panel.unbanUser")}
+      aria-label={active ? t("panel.banUser") : t("panel.unbanUser")}
       className={`rounded-lg p-2 transition-colors disabled:opacity-40 ${
         active
           ? "text-[var(--muted)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
@@ -366,13 +372,14 @@ function RoleBadge({ role }: { role: Role }) {
  * download, and most simply haven't got round to clicking the link.
  */
 function VerifyBadge({ verifiedAt }: { verifiedAt?: string | null }) {
+  const t = useT();
   const done = !!verifiedAt;
   return (
     <span
       title={
         verifiedAt
-          ? `Terverifikasi ${new Date(verifiedAt).toLocaleDateString("id-ID")}`
-          : "Belum pernah membuka link verifikasi"
+          ? t("panel.verifiedOn", { date: new Date(verifiedAt).toLocaleDateString("id-ID") })
+          : t("panel.neverVerified")
       }
       className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
         done
@@ -380,12 +387,13 @@ function VerifyBadge({ verifiedAt }: { verifiedAt?: string | null }) {
           : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
       }`}
     >
-      {done ? "Terverifikasi" : "Belum"}
+      {done ? t("home.verified") : t("panel.notYet")}
     </span>
   );
 }
 
 function StatusBadge({ active }: { active: boolean }) {
+  const t = useT();
   return (
     <span
       className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
@@ -394,7 +402,7 @@ function StatusBadge({ active }: { active: boolean }) {
           : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
       }`}
     >
-      {active ? "Aktif" : "Banned"}
+      {active ? t("sites.active") : t("panel.banned")}
     </span>
   );
 }

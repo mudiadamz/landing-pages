@@ -106,7 +106,7 @@ function ExcludedIpsDialog({
     start(async () => {
       const res = await addExcludedIp(v, label);
       if (!res.ok) {
-        setMsg(res.error ?? "Gagal.");
+        setMsg(res.error ?? t("common.failedShort"));
         return;
       }
       setRows((prev) => [
@@ -117,8 +117,8 @@ function ExcludedIpsDialog({
       setNote("");
       setMsg(
         res.purged
-          ? `${v} dikecualikan — ${res.purged} sesi lama ikut dihapus.`
-          : `${v} dikecualikan.`,
+          ? t("analytics.ipExcludedPurged", { ip: v, count: res.purged })
+          : t("analytics.ipExcluded", { ip: v }),
       );
     });
   }
@@ -127,11 +127,11 @@ function ExcludedIpsDialog({
     start(async () => {
       const res = await removeExcludedIp(value);
       if (!res.ok) {
-        setMsg(res.error ?? "Gagal.");
+        setMsg(res.error ?? t("common.failedShort"));
         return;
       }
       setRows((prev) => prev.filter((r) => r.ip !== value));
-      setMsg(`${value} dihitung lagi.`);
+      setMsg(t("analytics.ipCountedAgain", { ip: value }));
     });
   }
 
@@ -139,7 +139,11 @@ function ExcludedIpsDialog({
     start(async () => {
       const res = await purgeExcludedIp(value);
       setRows((prev) => prev.map((r) => (r.ip === value ? { ...r, sessions: 0 } : r)));
-      setMsg(res.purged ? `${res.purged} sesi dari ${value} dihapus.` : "Tidak ada sesi tersisa.");
+      setMsg(
+        res.purged
+          ? t("analytics.ipPurged", { count: res.purged, ip: value })
+          : t("analytics.ipNoSessions"),
+      );
     });
   }
 
@@ -158,9 +162,9 @@ function ExcludedIpsDialog({
           <div>
             <h2 className="text-base font-semibold text-foreground">{t("analytics.excludedIps")}</h2>
             <p className="mt-0.5 text-xs text-[var(--muted)]">
-              Kunjungan dari alamat ini tidak dihitung — berguna saat kamu membuka situs
-              sendiri <strong className="text-foreground">tanpa login</strong>. Menambahkan IP
-              juga menghapus sesi lamanya.
+              {t("analytics.excludedIntroBefore")}{" "}
+              <strong className="text-foreground">{t("analytics.excludedIntroBold")}</strong>
+              {t("analytics.excludedIntroAfter")}
             </p>
           </div>
           <button
@@ -179,16 +183,17 @@ function ExcludedIpsDialog({
           {myIp && !alreadyMine && (
             <button
               type="button"
-              onClick={() => add(myIp, "IP saya")}
+              onClick={() => add(myIp, t("analytics.myIpNote"))}
               disabled={pending}
               className="w-full rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              Kecualikan IP saya ({myIp})
+              {t("analytics.excludeMyIp", { ip: myIp })}
             </button>
           )}
           {myIp && alreadyMine && (
             <p className="text-xs text-[var(--muted)]">
-              IP kamu <code className="font-mono">{myIp}</code> sudah dikecualikan.
+              {t("analytics.myIpBefore")} <code className="font-mono">{myIp}</code>{" "}
+              {t("analytics.myIpAfter")}
             </p>
           )}
 
@@ -211,14 +216,14 @@ function ExcludedIpsDialog({
               disabled={pending || !ip.trim()}
               className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[var(--background)] disabled:opacity-50"
             >
-              Tambah
+              {t("common.add")}
             </button>
           </div>
 
           {msg && <p className="text-xs text-[var(--primary)]">{msg}</p>}
 
           {rows.length === 0 ? (
-            <p className="text-xs text-[var(--muted)]">Belum ada IP yang dikecualikan.</p>
+            <p className="text-xs text-[var(--muted)]">{t("analytics.noExcludedIps")}</p>
           ) : (
             <ul className="divide-y divide-[var(--border)]">
               {rows.map((r) => (
@@ -233,7 +238,7 @@ function ExcludedIpsDialog({
                       className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/25 disabled:opacity-50 dark:text-amber-400"
                       title={t("analytics.staleSession")}
                     >
-                      {r.sessions} sesi lama · hapus
+                      {t("analytics.staleSessionCount", { count: r.sessions })}
                     </button>
                   )}
                   <button
@@ -242,7 +247,7 @@ function ExcludedIpsDialog({
                     disabled={pending}
                     className="ml-auto text-xs font-medium text-[var(--muted)] transition-colors hover:text-red-600 disabled:opacity-50"
                   >
-                    Hapus
+                    {t("common.delete")}
                   </button>
                 </li>
               ))}
