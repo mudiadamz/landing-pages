@@ -146,6 +146,7 @@ export const id = {
   "panel.navAssets": "Assets",
   "panel.navSales": "Penjualan",
   "panel.navUsers": "Users",
+  "panel.navPlans": "Paket & harga",
   "panel.navRoles": "Roles",
   "panel.navContacts": "Kontak",
   "panel.navInbox": "Email masuk",
@@ -1631,6 +1632,30 @@ export const id = {
 
   /* ---- paket pengguna ---- */
   "plan.productLimit": "Paket {plan} dibatasi {limit} produk. Naikkan paket untuk menambah.",
+  "plan.pricesNote":
+    "Harga per tahun, dalam rupiah, untuk domain ini. Isi 0 kalau paketnya belum dijual — tombol belinya tidak akan muncul.",
+  "plan.noEmail": "Akun ini belum punya alamat email. Perbarui profil dulu.",
+  "plan.notPurchasable": "Paket itu belum dijual di situs ini.",
+  "plan.orderFailed": "Gagal membuat pesanan.",
+  "plan.buyFailed": "Gagal memulai pembayaran.",
+  "plan.signInFirst": "Masuk dulu untuk berlangganan.",
+  "plan.chooseTitle": "Pilih paket",
+  "plan.chooseIntro": "Semua paket ditagih per tahun dan aktif langsung setelah pembayaran terkonfirmasi.",
+  "plan.current": "Paket Anda sekarang",
+  "plan.choose": "Pilih paket ini",
+  "plan.contactUs": "Hubungi kami",
+  "plan.perYear": "/tahun",
+  "plan.activeUntil": "Aktif sampai {date}",
+  "plan.pending": "Pembayaran sedang diproses. Paketnya aktif otomatis begitu terkonfirmasi.",
+  "plan.colPlan": "Paket",
+  "plan.colMessages": "Pesan/hari",
+  "plan.colProducts": "Jumlah produk",
+  "plan.colWeb": "Pencarian web",
+  "plan.colPrice": "Harga/tahun",
+  "plan.notForSale": "Belum dijual",
+  "plan.contactOnly": "Lewat kontak",
+  "plan.yes": "Ya",
+  "plan.no": "Tidak",
 
   /* ---- template chat (MbahGPT) ---- */
   /* Nama produknya sendiri ("MbahGPT") tidak ada di sini: itu merek, bukan teks. */
@@ -1653,7 +1678,6 @@ export const id = {
   /* paket & kuota */
   "chat.quotaLeft": "{used} dari {limit} pesan terpakai hari ini",
   "chat.quotaUnlimited": "Pesan tanpa batas",
-  "chat.planUntil": "Aktif sampai {date}",
   "chat.quotaSpent":
     "Kuota harian paket {plan} sudah habis ({limit} pesan). Tunggu beberapa jam atau naikkan paket.",
   "chat.webLocked": "Butuh pencarian web — tersedia mulai paket Pro",

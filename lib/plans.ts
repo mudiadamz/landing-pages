@@ -159,3 +159,51 @@ export function nextPlanUp(plan: PlanKey): PlanKey | null {
   const i = PLAN_KEYS.indexOf(plan);
   return i >= 0 && i < PLAN_KEYS.length - 1 ? PLAN_KEYS[i + 1] : null;
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Prices                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What each paid plan costs PER YEAR, in rupiah, on one storefront.
+ *
+ * Per storefront and not in this file, because a price is a business decision on
+ * a different clock from a limit: lp_site_settings key `plan_prices`, edited at
+ * /panel/plans. Free is absent — it has no price by definition.
+ *
+ * ZERO MEANS NOT FOR SALE, not "free of charge": nothing is purchasable until an
+ * admin has typed a number, so a fresh deployment cannot accidentally sell Pro
+ * for nothing. The upgrade page renders those plans as "hubungi kami" instead of
+ * a buy button.
+ */
+export type PaidPlanKey = Exclude<PlanKey, "free">;
+
+export type PlanPrices = Record<PaidPlanKey, number>;
+
+export const PAID_PLAN_KEYS: PaidPlanKey[] = ["pro", "business", "enterprise"];
+
+export const DEFAULT_PLAN_PRICES: PlanPrices = { pro: 0, business: 0, enterprise: 0 };
+
+/** A price nobody typed by accident: ~100 juta is far past any plausible plan. */
+const MAX_PLAN_PRICE = 100_000_000;
+
+export function normalizePlanPrices(raw: unknown): PlanPrices {
+  const v = (raw ?? {}) as Record<string, unknown>;
+  const one = (value: unknown): number => {
+    const n = Math.floor(Number(value));
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.min(n, MAX_PLAN_PRICE);
+  };
+  return { pro: one(v.pro), business: one(v.business), enterprise: one(v.enterprise) };
+}
+
+/** Whether this plan can actually be bought right now on this storefront. */
+export function isPurchasable(plan: PlanKey, prices: PlanPrices): boolean {
+  if (plan === "free") return false;
+  return PLANS[plan].selfServe && prices[plan as PaidPlanKey] > 0;
+}
+
+/** Rupiah, the way the rest of the site writes it. */
+export function formatRupiah(amount: number): string {
+  return `Rp${amount.toLocaleString("id-ID")}`;
+}

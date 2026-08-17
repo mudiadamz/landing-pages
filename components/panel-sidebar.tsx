@@ -88,6 +88,10 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
     labelKey: "panel.navGroupUsers",
     items: [
       { href: "/panel/users", labelKey: "panel.navUsers", icon: UsersIcon, feature: "users" },
+      // Beside Users on purpose: a plan is a property of a user, and the two
+      // screens are opened in the same breath — "who is on what, and what does
+      // what cost".
+      { href: "/panel/plans", labelKey: "panel.navPlans", icon: BadgeIcon, adminOnly: true },
       { href: "/panel/roles", labelKey: "panel.navRoles", icon: ShieldIcon, adminOnly: true },
     ],
   },

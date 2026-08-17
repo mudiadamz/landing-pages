@@ -6,6 +6,7 @@ import { sendPurchaseConfirmationEmail } from "@/lib/email";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { sendMetaPurchaseEvent } from "@/lib/meta-capi";
+import { effectivePlan } from "@/lib/plans";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +40,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (resultCode !== "00") {
+      return new NextResponse("OK", { status: 200 });
+    }
+
+    // A plan, not a product. Told apart by the id this route made itself, and
+    // handled separately because the two grant different things: a product is
+    // access to a file forever, a plan is a capability until a date.
+    if (merchantOrderId.startsWith("PL_")) {
+      await settlePlanOrder(merchantOrderId);
       return new NextResponse("OK", { status: 200 });
     }
 
@@ -181,4 +190,73 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Turn a paid plan order into an actual plan.
+ *
+ * Idempotent by row: only an order still `pending` is settled, so Duitku's
+ * retries — which it sends until it gets a 200 — cannot extend a subscription
+ * twice for one payment.
+ *
+ * Renewing EXTENDS rather than restarts, but only when the same plan is still
+ * running. Paying for a second year in month eleven should give thirteen months
+ * of Pro, not reset to twelve; upgrading from Pro to Business mid-year starts
+ * Business now, because the two are not the same thing and adding their time
+ * together would mean paying for Business and getting Pro's leftovers.
+ */
+async function settlePlanOrder(merchantOrderId: string): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data: order } = await admin
+    .from("lp_plan_orders")
+    .select("id, user_id, plan, years, status")
+    .eq("merchant_order_id", merchantOrderId)
+    .maybeSingle();
+
+  if (!order) {
+    console.error("[plans] callback untuk order yang tidak ada:", merchantOrderId);
+    return;
+  }
+  if (order.status === "paid") return; // already settled; a retry
+
+  const { data: profile } = await admin
+    .from("lp_profiles")
+    .select("plan, plan_expires_at")
+    .eq("id", order.user_id)
+    .maybeSingle();
+
+  const now = new Date();
+  const current = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null, now.getTime());
+  const runningEnd =
+    current === order.plan && profile?.plan_expires_at
+      ? new Date(profile.plan_expires_at)
+      : null;
+  const from = runningEnd && runningEnd > now ? runningEnd : now;
+
+  const expiresAt = new Date(from);
+  expiresAt.setFullYear(expiresAt.getFullYear() + (order.years ?? 1));
+
+  const { error: profileError } = await admin
+    .from("lp_profiles")
+    .update({ plan: order.plan, plan_expires_at: expiresAt.toISOString() })
+    .eq("id", order.user_id);
+
+  if (profileError) {
+    // Leave the order pending: it is money received and not yet delivered, and a
+    // pending row is the only thing that will show that in the panel.
+    console.error("[plans] gagal menaikkan paket:", profileError);
+    return;
+  }
+
+  await admin
+    .from("lp_plan_orders")
+    .update({
+      status: "paid",
+      paid_at: now.toISOString(),
+      expires_at: expiresAt.toISOString(),
+      invoice_number: generateInvoiceNumber(),
+    })
+    .eq("id", order.id)
+    .eq("status", "pending");
 }

@@ -321,7 +321,7 @@ function PlanBadge({ plan }: { plan: MyPlan | null }) {
       </span>
       {plan.expiresAt && (
         <span className="block text-[0.68rem] text-[var(--muted)]">
-          {t("chat.planUntil", {
+          {t("plan.activeUntil", {
             date: new Date(plan.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "id-ID"),
           })}
         </span>

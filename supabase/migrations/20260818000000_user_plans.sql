@@ -39,8 +39,12 @@ create table if not exists public.lp_plan_orders (
   -- does; the plan itself is on the account and follows the user everywhere.
   site_id uuid references public.lp_sites (id) on delete set null,
   plan text not null,
-  /** Billing period bought, in months. The price per month is the site setting. */
-  months integer not null default 1 check (months between 1 and 24),
+  /**
+   * Billing period bought, in YEARS — these plans are sold annually, and the
+   * price in lp_site_settings is a price per year. Stored rather than assumed at
+   * 1 so buying two years at once stays one order and one payment.
+   */
+  years integer not null default 1 check (years between 1 and 5),
   /** Rupiah, as an integer — the same shape lp_purchases.amount uses. */
   amount integer not null default 0,
   /**

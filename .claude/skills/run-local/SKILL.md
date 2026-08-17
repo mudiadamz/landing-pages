@@ -106,6 +106,21 @@ grep -m1 '^OPENROUTER_API_KEY=' ../mbahgpt/.env >> .env.development.local
 Without it the chat page still renders and says "Chat belum aktif" — that is the
 designed behaviour, not a broken setup.
 
+**Two more lines you want locally**, or the admin panel is unreachable from this
+machine:
+
+```
+NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000
+```
+
+`canonicalOrigin()` reads that variable, and admin screens are canonical-only
+(invariant I9). Left pointing at production, opening `/panel/plans` on 127.0.0.1
+redirects the browser to **https://admuiux.com/login** — which looks like a
+broken session and is actually the multi-domain rule working. The matching half
+is in the database: the local `lp_sites` row for `127.0.0.1` is the canonical one
+(`is_canonical = true`, with `admuiux.com` set false), because the flag and the
+env var have to name the same host.
+
 ## 5. Which storefront renders: the lp_sites row
 
 One deployment serves several storefronts, and the **host decides the template**

@@ -169,6 +169,9 @@ describe("dictionary integrity", () => {
     Sumber: ["analytics.source", "chat.sources"],
     // Re-check a domain's DNS vs re-send a chat message that failed.
     "Coba lagi": ["sites.tryAgain", "chat.retry"],
+    // The 404 page's way out vs the enquiry route for a plan with no price on it.
+    // English is already free to split them ("Contact us" / "Get in touch").
+    "Hubungi kami": ["notFound.contact", "plan.contactUs"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

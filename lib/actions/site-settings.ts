@@ -12,6 +12,7 @@ import { DEFAULT_LEGAL, normalizeLegal, type LegalContent } from "@/lib/legal-co
 import { DEFAULT_HIRING, normalizeHiring, type HiringContent } from "@/lib/hiring-config";
 import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
 import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
+import { DEFAULT_PLAN_PRICES, normalizePlanPrices, type PlanPrices } from "@/lib/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   DEFAULT_POPUP,
@@ -33,6 +34,7 @@ const TRACKING_KEY = "tracking";
 const PALETTE_KEY = "panel_palette";
 const OTHER_LINKS_KEY = "other_links";
 const SOCIAL_KEY = "social_links";
+const PLAN_PRICES_KEY = "plan_prices";
 
 /* Role-based feature access (edited at /panel/roles). The cached reader lives in
  * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
@@ -821,5 +823,74 @@ export async function subscribePopupEmail(
     console.error("subscribePopupEmail error:", error);
     return { ok: false, error: "Gagal menyimpan. Coba lagi." };
   }
+  return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Plan prices                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What each paid plan costs per year ON THIS STOREFRONT.
+ *
+ * Per-site, like every other setting here, because two storefronts on one
+ * deployment sell to different audiences at different money. The PLAN itself is
+ * global to the account (lp_profiles.plan) — somebody who buys Pro on one
+ * storefront is Pro everywhere, which is the only reading that does not require
+ * explaining to a customer why their paid plan vanished on another domain.
+ */
+const readPlanPrices = unstable_cache(
+  async (siteId: string): Promise<PlanPrices> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", PLAN_PRICES_KEY)
+        .maybeSingle();
+      if (!data?.value) return DEFAULT_PLAN_PRICES;
+      return normalizePlanPrices(JSON.parse(data.value as string));
+    } catch {
+      // Nothing sellable beats a wrong price: a read that failed must not fall
+      // back to a number somebody could be charged.
+      return DEFAULT_PLAN_PRICES;
+    }
+  },
+  ["plan-prices"],
+  { revalidate: 120, tags: ["plan-prices"] },
+);
+
+export async function getPlanPrices(siteId?: string): Promise<PlanPrices> {
+  return readPlanPrices(siteId ?? (await currentSiteId()));
+}
+
+export async function updatePlanPrices(
+  prices: PlanPrices,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizePlanPrices(prices);
+  const supabase = await createClient();
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: PLAN_PRICES_KEY,
+      value: JSON.stringify(clean),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
+
+  if (error) {
+    console.error("updatePlanPrices error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  revalidateTag("plan-prices", "max");
+  revalidatePath("/upgrade");
   return { ok: true };
 }

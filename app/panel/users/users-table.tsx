@@ -1,5 +1,6 @@
 "use client";
 
+import { PLANS, PLAN_LIST, normalizePlan } from "@/lib/plans";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 
@@ -20,6 +21,9 @@ type UserRow = {
    * so this is worth seeing here, next to the ban control.
    */
   email_verified_at?: string | null;
+  /** Plan key as stored. `plan_expires_at` null means it does not lapse. */
+  plan?: string | null;
+  plan_expires_at?: string | null;
 };
 
 export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -55,6 +59,31 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
         const data = await res.json();
         alert(data.error ?? t("panel.roleChangeFailed"));
         setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, role: prev } : u)));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function changePlan(user: UserRow, plan: string) {
+    if (plan === (user.plan ?? "free")) return;
+    const prev = user.plan ?? "free";
+    // Granting by hand clears the expiry, which is what the API does too — the
+    // optimistic row has to say the same thing or it will flip back on reload.
+    setUsers((list) =>
+      list.map((u) => (u.id === user.id ? { ...u, plan, plan_expires_at: null } : u)),
+    );
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, plan }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error ?? t("common.failed"));
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, plan: prev } : u)));
       }
     } finally {
       setUpdating(null);
@@ -207,8 +236,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
               </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-start gap-2">
               <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
+              <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
             </div>
           </div>
         ))}
@@ -228,6 +258,7 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("content.name")}</th>
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("sales.email")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.role")}</th>
+                <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("plan.colPlan")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.verification")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.status")}</th>
                 <th
@@ -249,6 +280,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                   <td className="px-4 py-3 text-[var(--muted)]">{u.email || "—"}</td>
                   <td className="px-4 py-3 text-center">
                     <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
                   </td>
                   <td className="px-4 py-3 text-center">
                     <VerifyBadge verifiedAt={u.email_verified_at} />
@@ -294,6 +328,53 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The plan a user is on, and the way an admin overrides it.
+ *
+ * Read-only for a delegate with the Users feature: changing what somebody may
+ * spend is a full-admin decision, the same line the role control draws.
+ */
+function PlanControl({
+  user,
+  canEdit,
+  disabled,
+  onChange,
+}: {
+  user: UserRow;
+  canEdit: boolean;
+  disabled: boolean;
+  onChange: (user: UserRow, plan: string) => void;
+}) {
+  const t = useT();
+  const current = user.plan ?? "free";
+  if (!canEdit) {
+    return <span className="text-xs font-medium">{PLANS[normalizePlan(current)].label}</span>;
+  }
+  return (
+    <>
+      <select
+        value={current}
+        disabled={disabled}
+        onChange={(e) => onChange(user, e.target.value)}
+        className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+        aria-label={t("plan.colPlan")}
+      >
+        {PLAN_LIST.map((p) => (
+          <option key={p.key} value={p.key}>
+            {p.label}
+          </option>
+        ))}
+      </select>
+      {/* Only a bought plan has an end date; a granted one has none. */}
+      {user.plan_expires_at && (
+        <span className="mt-0.5 block text-[0.65rem] text-[var(--muted)]">
+          {t("plan.activeUntil", { date: new Date(user.plan_expires_at).toLocaleDateString() })}
+        </span>
+      )}
+    </>
   );
 }
 

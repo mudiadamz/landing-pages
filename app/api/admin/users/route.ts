@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireFeature } from "@/lib/actions/profiles";
+import { normalizePlan } from "@/lib/plans";
 
 /** Caller identity + access: full admin, and whether they can reach the Users feature. */
 async function getCaller() {
@@ -23,7 +24,9 @@ export async function GET() {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("lp_profiles")
-    .select("id, full_name, email, role, is_active, exclude_from_stats, email_verified_at")
+    .select(
+      "id, full_name, email, role, is_active, exclude_from_stats, email_verified_at, plan, plan_expires_at",
+    )
     .order("role", { ascending: true })
     .order("full_name", { ascending: true });
 
@@ -40,11 +43,12 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, role, excludeFromStats } = body as {
+  const { userId, active, role, excludeFromStats, plan } = body as {
     userId: string;
     active?: boolean;
     role?: string;
     excludeFromStats?: boolean;
+    plan?: string;
   };
 
   if (!userId) {
@@ -75,6 +79,33 @@ export async function PATCH(req: Request) {
       .eq("id", userId);
     if (error) {
       return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  /**
+   * Put a user on a plan by hand.
+   *
+   * Stays even though plans are bought with money: a refund, a comped account and
+   * a support fix all need a way in that does not involve charging somebody.
+   *
+   * Granted this way it does NOT expire — `plan_expires_at` is cleared. An admin
+   * setting a plan is making a decision, not selling a year, and inventing an end
+   * date for it would surprise everyone later.
+   */
+  if (typeof plan === "string") {
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Hanya admin penuh yang bisa mengubah paket." }, { status: 403 });
+    }
+    if (normalizePlan(plan) !== plan) {
+      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    }
+    const { error } = await admin
+      .from("lp_profiles")
+      .update({ plan, plan_expires_at: null })
+      .eq("id", userId);
+    if (error) {
+      return NextResponse.json({ error: "Failed to update plan" }, { status: 500 });
     }
     return NextResponse.json({ success: true });
   }

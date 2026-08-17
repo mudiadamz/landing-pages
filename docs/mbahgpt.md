@@ -101,7 +101,55 @@ dari skema SQLite lama, dan alasannya, ditulis di kepala file migration.
 Peran `system` **tidak pernah** disimpan — selalu diturunkan dari prefs + memori +
 konteks search, jadi mengubah instruksi langsung berlaku ke chat lama.
 
-## 5. Bahasa
+## 5. Paket pengguna
+
+Chat ini tidak gratis untuk dijalankan, jadi apa yang boleh dipakai ditentukan
+paket: **Free / Pro / Business / Enterprise**.
+
+| | Free | Pro | Business | Enterprise |
+|---|---:|---:|---:|---:|
+| Pesan / 24 jam | 20 | 300 | 2.000 | ∞ |
+| Pencarian web | — | ✓ | ✓ | ✓ |
+| Lampiran/pesan | 1 | 6 | 6 | 12 |
+| Riwayat dikirim | 20 | 40 | 80 | 160 |
+| Produk (marketplace) | 1 | 20 | 100 | ∞ |
+
+Yang perlu diketahui sebelum mengubahnya:
+
+- **Batasnya di `lib/plans.ts`, bukan di database** (I12). Kolom `lp_profiles.plan`
+  hanya menyimpan kuncinya, dan kunci tak dikenal dibaca sebagai `free`.
+- **Kuota memakai jendela 24 jam berjalan**, bukan reset tengah malam — tengah
+  malam itu pertanyaan zona waktu yang deployment multi-domain ini tidak punya
+  jawabannya.
+- **Pencarian web mati di Free** karena di situ biayanya: flat ~$0.007 per
+  pencarian, jadi satu pengguna gratis yang mencari bisa lebih mahal dari seratus
+  yang mengobrol. UI mengatakannya, tidak diam-diam menjawab dari data latih.
+- **Paket hanya boleh mempersempit** langit-langit deployment
+  (`OPENROUTER_MAX_FILES`, `OPENROUTER_MAX_HISTORY`), tidak pernah melebarkan.
+- **Semua pembaca lewat `effectivePlan()`**, tidak pernah kolomnya langsung: baris
+  Pro yang masa aktifnya lewat tetap tertulis "pro". Kedaluwarsa dibaca saat baca,
+  bukan disapu cron.
+- **Batas produk dicek saat BUAT saja.** Akun yang turun paket tetap memegang yang
+  sudah terbit — menurunkan produk dari peredaran karena langganan habis menghukum
+  pembelinya, bukan penjualnya.
+
+Harga **per tahun** dan **per storefront**: `lp_site_settings` key `plan_prices`,
+diedit di `/panel/plans`. Nol berarti belum dijual (tombol beli tidak muncul),
+bukan gratis. Paketnya sendiri global per akun — yang membeli Pro di satu
+storefront adalah Pro di semua, karena kebalikannya mustahil dijelaskan ke
+pelanggan.
+
+Alur beli: `/upgrade` → `POST /api/plans/create-invoice` (menulis baris `pending`
+di `lp_plan_orders`, lalu invoice Duitku ber-prefix `PL_`) → callback Duitku yang
+sama dengan produk, dibedakan lewat prefix itu. Perpanjangan **menambah** masa
+aktif kalau paketnya sama dan masih jalan; pindah paket mulai dari sekarang.
+`merchant_order_id` UNIQUE — callback yang dikirim ulang tidak menambah setahun
+lagi untuk satu pembayaran.
+
+Admin bisa memberi paket langsung di `/panel/users`. Yang diberi tangan **tidak**
+kedaluwarsa (`plan_expires_at` dikosongkan): itu keputusan, bukan penjualan setahun.
+
+## 6. Bahasa
 
 Seluruh teks antarmuka ada di kamus, prefix **`chat.*`** (`lib/i18n/id.ts` +
 `en.ts`). Komponen klien memakai `useT()`, komponen server `translator(locale)`,
@@ -119,7 +167,7 @@ Pemilih bahasa duduk di **header sidebar**, bukan di footer seperti tema lain:
 halaman depan tema ini tidak punya footer sama sekali (komposer yang memegang tepi
 bawah layar), jadi tanpa itu pengunjung tidak punya jalan untuk mengganti bahasa.
 
-## 6. Keputusan yang dibawa utuh dari aplikasi asli
+## 7. Keputusan yang dibawa utuh dari aplikasi asli
 
 Ini yang lahir dari pengukuran, bukan selera. Jangan "disederhanakan" tanpa
 mengukur ulang.
@@ -167,7 +215,7 @@ mengukur ulang.
   terukur diam 95 detik; diam tanpa kabar terasa seperti hang, tapi menampilkan
   seluruh isi pikirannya mengganggu.
 
-## 7. Yang berubah karena pindah platform
+## 8. Yang berubah karena pindah platform
 
 | Versi Python | Di sini | Alasan |
 |---|---|---|
@@ -178,7 +226,7 @@ mengukur ulang.
 | CSRF/Host pinning, token UI, CSP nonce sendiri | auth Supabase + cookie SameSite + header aplikasi | ancamannya beda: ini bukan lagi port di `127.0.0.1` |
 | `prefs (key, value)` | satu baris per user, kolom bernama | migration di sini normal; key salah ketik = no-op senyap |
 
-## 8. Batasan yang diketahui
+## 9. Batasan yang diketahui
 
 1. **Tidak ada resume stream.** `server.py` memproduksi jawaban di thread pekerja
    yang menulis ke buffer memori, jadi halaman bisa reload di tengah jawaban lalu
@@ -204,7 +252,7 @@ mengukur ulang.
    URI. Ini menjaga perilaku asli (follow-up soal gambar tetap terjawab) dengan
    ongkos latensi pada chat panjang berlampiran banyak.
 
-## 9. Menguji perubahan
+## 10. Menguji perubahan
 
 Belum ada test runner di repo ini. Yang dipakai saat port:
 

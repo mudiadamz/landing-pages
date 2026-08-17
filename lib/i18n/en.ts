@@ -157,6 +157,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.navAssets": "Assets",
   "panel.navSales": "Sales",
   "panel.navUsers": "Users",
+  "panel.navPlans": "Plans & pricing",
   "panel.navRoles": "Roles",
   "panel.navContacts": "Contacts",
   "panel.navInbox": "Inbox",
@@ -1641,6 +1642,30 @@ export const en: Record<keyof typeof id, string> = {
 
   /* ---- user plans ---- */
   "plan.productLimit": "The {plan} plan allows {limit} products. Upgrade to add more.",
+  "plan.pricesNote":
+    "Price per year, in rupiah, for this domain. Leave 0 for a plan that is not on sale — its buy button stays hidden.",
+  "plan.noEmail": "This account has no email address. Update the profile first.",
+  "plan.notPurchasable": "That plan is not on sale on this site.",
+  "plan.orderFailed": "Could not create the order.",
+  "plan.buyFailed": "Could not start the payment.",
+  "plan.signInFirst": "Sign in to subscribe.",
+  "plan.chooseTitle": "Choose a plan",
+  "plan.chooseIntro": "Every plan is billed yearly and starts the moment payment clears.",
+  "plan.current": "Your current plan",
+  "plan.choose": "Choose this plan",
+  "plan.contactUs": "Contact us",
+  "plan.perYear": "/year",
+  "plan.activeUntil": "Active until {date}",
+  "plan.pending": "Payment is being processed. The plan starts on its own once it clears.",
+  "plan.colPlan": "Plan",
+  "plan.colMessages": "Messages/day",
+  "plan.colProducts": "Products",
+  "plan.colWeb": "Web search",
+  "plan.colPrice": "Price/year",
+  "plan.notForSale": "Not on sale",
+  "plan.contactOnly": "By enquiry",
+  "plan.yes": "Yes",
+  "plan.no": "No",
 
   /* ---- chat template (MbahGPT) ---- */
   "chat.nav": "Chat",
@@ -1659,7 +1684,6 @@ export const en: Record<keyof typeof id, string> = {
 
   "chat.quotaLeft": "{used} of {limit} messages used today",
   "chat.quotaUnlimited": "Unlimited messages",
-  "chat.planUntil": "Active until {date}",
   "chat.quotaSpent":
     "The {plan} plan's daily quota is spent ({limit} messages). Wait a few hours, or upgrade.",
   "chat.webLocked": "This needed a web search — available from Pro",

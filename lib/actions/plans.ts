@@ -9,10 +9,7 @@
  * can be sold for different money on two storefronts, and usually is.
  */
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/actions/profiles";
 import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
 import { effectivePlan, normalizePlan, planLimits, type PlanKey, type PlanLimits } from "@/lib/plans";
 
@@ -57,39 +54,4 @@ export async function getMyPlan(): Promise<MyPlan> {
     limits: planLimits(plan),
     used: await chatMessagesUsed(supabase, user.id),
   };
-}
-
-/**
- * Put a user on a plan, by hand.
- *
- * Admin-only, and it stays even after the paid upgrade flow exists: a refund, a
- * comped account and a support fix all need a way in that does not involve
- * charging somebody. `expiresAt = null` means it does not lapse.
- *
- * Service-role, because a profile row is not writable by another user under RLS —
- * so `requireAdmin()` above is the whole gate (invariant I6).
- */
-export async function setUserPlan(
-  userId: string,
-  plan: string,
-  expiresAt: string | null = null,
-): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
-
-  const key = normalizePlan(plan);
-  // An unknown key would silently land everyone on free; say so instead.
-  if (key !== plan) return { ok: false, error: `Paket "${plan}" tidak dikenal.` };
-
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("lp_profiles")
-    .update({ plan: key, plan_expires_at: key === "free" ? null : expiresAt })
-    .eq("id", userId);
-
-  if (error) {
-    console.error("setUserPlan error:", error);
-    return { ok: false, error: "Gagal menyimpan paket." };
-  }
-  revalidatePath("/panel/users");
-  return { ok: true };
 }
