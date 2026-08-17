@@ -1777,7 +1777,6 @@ export const id = {
   "chat.unsupportedType": "Jenis berkas {type} tidak didukung.",
   "chat.uploadTooBig": "Total lampiran terlalu besar.",
   "chat.rateLimited": "Terlalu banyak permintaan, tunggu sebentar.",
-  "chat.notFound": "Chat tidak ditemukan.",
   "chat.createFailed": "Gagal membuat chat.",
   "chat.busy": "Chat ini sedang menjawab; tunggu sampai selesai.",
   "chat.startFailed": "Gagal memulai jawaban.",

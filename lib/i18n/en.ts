@@ -1775,7 +1775,6 @@ export const en: Record<keyof typeof id, string> = {
   "chat.unsupportedType": "{type} files are not supported.",
   "chat.uploadTooBig": "Those attachments are too large.",
   "chat.rateLimited": "Too many requests — slow down a moment.",
-  "chat.notFound": "Chat not found.",
   "chat.createFailed": "Could not create the chat.",
   "chat.busy": "This chat is already answering; wait until it finishes.",
   "chat.startFailed": "Could not start the reply.",

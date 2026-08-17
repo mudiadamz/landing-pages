@@ -180,14 +180,26 @@ export async function POST(req: NextRequest) {
 
   // -- session ---------------------------------------------------------------
   const requested = (body.session_id ?? "").trim();
+  // RLS scopes this read to the caller, so a miss covers both a deleted chat and
+  // somebody else's — and both get the same answer below.
+  const existing = requested
+    ? (await supabase.from("lp_chat_sessions").select("id").eq("id", requested).maybeSingle()).data
+    : null;
+
   let sessionId: string;
-  if (requested) {
-    // RLS scopes this read to the caller, so "not found" covers both a bad id and
-    // somebody else's chat — and says the same thing either way.
-    const { data } = await supabase.from("lp_chat_sessions").select("id").eq("id", requested).maybeSingle();
-    if (!data) return fail(t("chat.notFound"), 404);
+  if (existing) {
     sessionId = requested;
   } else {
+    /**
+     * No session, or the named one is gone: START A NEW ONE rather than refusing.
+     *
+     * Refusing was worse than useless. The id comes from the visitor's own tab,
+     * so it goes stale in ordinary ways — the chat was deleted in another tab, or
+     * the database was reset under a local session — and the person hitting it
+     * has just typed a message. "Chat tidak ditemukan" made them lose it to fix
+     * something they could not see. The new session id travels back in the
+     * X-Session-Id header, which the client already reads.
+     */
     const siteId = await currentSiteId();
     const { data, error } = await supabase
       .from("lp_chat_sessions")

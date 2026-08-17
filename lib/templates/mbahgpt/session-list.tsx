@@ -11,12 +11,23 @@
  * the same reason it was in the original: it has to close on an outside click, on
  * Escape, and when the list scrolls, and it must not swallow the action queued
  * behind it.
+ *
+ * It is also PORTALLED to the body and positioned from the button's own rect. As
+ * an ordinary absolutely-positioned child it was clipped by the list's
+ * `overflow-y-auto` — invisible exactly when the list was short, because then the
+ * scroll box ends a few pixels under the last row and the menu opens into
+ * nothing. The standalone app hit this too and solved it the same way.
  */
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocale, useT } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n";
 import type { ChatSessionRow } from "@/lib/actions/chat";
+
+/** Two items and the padding around them. Used to decide which way to open. */
+const MENU_WIDTH = 168;
+const MENU_HEIGHT = 88;
 
 function timestamp(iso: string, locale: Locale): string {
   // Local time, minute precision. Seconds on a chat list is noise, and the ISO
@@ -52,28 +63,57 @@ export function SessionList({
 }) {
   const t = useT();
   const locale = useLocale();
-  const [menuFor, setMenuFor] = useState<string | null>(null);
+  // Where the menu is, not just whether: fixed coordinates, computed from the ⋮
+  // that opened it.
+  const [menu, setMenu] = useState<{ id: string; left: number; top: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!menuFor) return;
-    const close = () => setMenuFor(null);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuFor(null);
+    if (!menu) return;
+    const close = () => setMenu(null);
+    const onClick = (e: MouseEvent) => {
+      // A click inside the menu is a choice, not a dismissal.
+      if (menuRef.current?.contains(e.target as Node)) return;
+      close();
     };
-    // Capture phase: the row underneath must not also handle the click that
-    // dismisses the menu.
-    document.addEventListener("click", close);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKey);
-    container.current?.addEventListener("scroll", close);
+    // Fixed coordinates go stale the moment anything moves, so anything that
+    // moves closes it rather than leaving the menu pointing at the wrong row.
     const node = container.current;
+    node?.addEventListener("scroll", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
     return () => {
-      document.removeEventListener("click", close);
+      document.removeEventListener("click", onClick);
       document.removeEventListener("keydown", onKey);
       node?.removeEventListener("scroll", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
     };
-  }, [menuFor]);
+  }, [menu]);
+
+  /**
+   * Anchor the menu under the ⋮, flipping above it when the viewport runs out.
+   *
+   * The height is a constant rather than a measurement: the menu always has the
+   * same two items, and measuring would mean rendering it once in the wrong place
+   * to find out where the right place is.
+   */
+  const openMenu = (event: React.MouseEvent<HTMLButtonElement>, id: string) => {
+    const r = event.currentTarget.getBoundingClientRect();
+    const below = window.innerHeight - r.bottom;
+    setMenu({
+      id,
+      left: Math.max(8, Math.min(r.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8)),
+      top: below < MENU_HEIGHT ? Math.max(8, r.top - MENU_HEIGHT) : r.bottom + 4,
+    });
+  };
 
   if (!sessions.length) {
     return <p className="px-2 py-2.5 text-xs text-[var(--muted)]">{t("chat.noSessions")}</p>;
@@ -140,45 +180,49 @@ export function SessionList({
               aria-label={t("chat.rowActions")}
               onClick={(e) => {
                 e.stopPropagation();
-                setMenuFor(menuFor === session.id ? null : session.id);
+                if (menu?.id === session.id) setMenu(null);
+                else openMenu(e, session.id);
               }}
               className={`shrink-0 rounded px-1 text-[var(--muted)] transition-opacity hover:text-[var(--primary)] ${
-                active || menuFor === session.id ? "opacity-75" : "opacity-0 group-hover/row:opacity-75"
+                active || menu?.id === session.id ? "opacity-75" : "opacity-0 group-hover/row:opacity-75"
               }`}
             >
               ⋮
             </button>
 
-            {menuFor === session.id && (
-              <div
-                role="menu"
-                onClick={(e) => e.stopPropagation()}
-                className="absolute top-full right-1 z-20 mt-1 flex min-w-40 flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 shadow-xl"
-              >
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuFor(null);
-                    setRenamingId(session.id);
-                  }}
-                  className="rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-[var(--accent-subtle)]"
+            {menu?.id === session.id &&
+              createPortal(
+                <div
+                  ref={menuRef}
+                  role="menu"
+                  style={{ position: "fixed", left: menu.left, top: menu.top, width: MENU_WIDTH }}
+                  className="z-50 flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 shadow-xl"
                 >
-                  {t("chat.rename")}
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuFor(null);
-                    onDelete(session.id);
-                  }}
-                  className="rounded-lg px-2.5 py-2 text-left text-sm text-red-600 transition-colors hover:bg-[var(--accent-subtle)] dark:text-red-400"
-                >
-                  {t("chat.deleteChat")}
-                </button>
-              </div>
-            )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenu(null);
+                      setRenamingId(session.id);
+                    }}
+                    className="rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-[var(--accent-subtle)]"
+                  >
+                    {t("chat.rename")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenu(null);
+                      onDelete(session.id);
+                    }}
+                    className="rounded-lg px-2.5 py-2 text-left text-sm text-red-600 transition-colors hover:bg-[var(--accent-subtle)] dark:text-red-400"
+                  >
+                    {t("chat.deleteChat")}
+                  </button>
+                </div>,
+                document.body,
+              )}
           </div>
         );
       })}

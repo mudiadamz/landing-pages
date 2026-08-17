@@ -143,6 +143,17 @@ export function useChat(options: { canChat: boolean }) {
       try {
         const { session, messages: rows } = await getChatSession(id);
         if (!session) {
+          // Gone — deleted here or in another tab. Put the reader in a new chat
+          // instead of leaving them staring at a dead one, and forget it so the
+          // next reload does not try again.
+          try {
+            localStorage.removeItem(LAST_SESSION_KEY);
+          } catch {
+            /* nothing to forget */
+          }
+          setSessionId(null);
+          openRef.current = null;
+          setMessages([]);
           setNotice(t("chat.sessionGone"));
           await refreshSessions();
           return;
@@ -315,14 +326,20 @@ export function useChat(options: { canChat: boolean }) {
           return;
         }
 
-        // The server creates the session on the first message and reports its id.
+        // The server reports which session it actually wrote to — a new one on the
+        // first message, and ALSO a new one when the id we sent had gone stale
+        // (deleted in another tab). Either way the answer belongs to that session,
+        // so the record follows it rather than the other way round.
         const created = res.headers.get("X-Session-Id");
-        if (created && rec.sessionId === null) {
+        if (created && created !== rec.sessionId) {
+          const replaced = rec.sessionId !== null;
           rec.sessionId = created;
-          recs.current.delete(key);
+          recs.current.delete(rec.key);
           rec.key = `s${created}`;
           recs.current.set(rec.key, rec);
-          if (openRef.current === null) {
+          // Follow it on screen when the reader was looking at the session that
+          // just turned out not to exist, as well as on a brand-new chat.
+          if (openRef.current === null || replaced) {
             setSessionId(created);
             openRef.current = created;
             try {

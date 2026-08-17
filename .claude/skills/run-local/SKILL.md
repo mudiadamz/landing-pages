@@ -2,7 +2,7 @@
 name: run-local
 description: >-
   Bring the whole app up on this machine and actually drive it: Docker (colima),
-  the local Supabase stack, pending migrations, `next dev`, a browser session,
+  the local Supabase stack, pending migrations, `next dev`, a curl-ready session,
   and the per-domain row that decides which storefront template renders. Use when
   the user says "run local", "jalankan lokal", "start the dev server", "coba di
   lokal", asks to see a change working in the real app, wants to exercise a
@@ -144,10 +144,12 @@ Locale: the row's `locale` is the storefront default; a visitor's own choice
 lives in the `lp_locale` cookie and wins. To see English without clicking, send
 `-H 'Cookie: lp_locale=en'` with curl.
 
-## 6. Signing in without a password
+## 6. A session for curl (no browser)
 
-Most surfaces worth driving need a session, and **do not create accounts or type
-passwords** to get one. There is already a test user in the local DB:
+Most routes worth checking need a session. **This repo is not verified through a
+browser** (docs/architecture.md §6), so the session is built for `curl` — and
+**do not create accounts or type passwords** to get one. There is already a test
+user in the local DB:
 
 ```bash
 docker exec supabase_db_landing_pages psql -U postgres -d postgres -tAc \
@@ -166,60 +168,53 @@ curl -s -X POST 'http://127.0.0.1:54321/auth/v1/admin/generate_link' \
   | python3 -c "import sys,json;print(json.load(sys.stdin)['hashed_token'])"
 ```
 
-Then, in the page (browser JS), with the token pasted in:
+Then redeem it and build the cookie header. `@supabase/ssr` stores the session as
+`base64-` + b64(session JSON), under a name whose middle segment is the FIRST
+LABEL OF THE SUPABASE HOST — `127` for 127.0.0.1, a project ref in production:
 
-```js
-const ANON = "<NEXT_PUBLIC_SUPABASE_ANON_KEY>";
-const s = await fetch("http://127.0.0.1:54321/auth/v1/verify", {
-  method: "POST",
-  headers: { apikey: ANON, "Content-Type": "application/json" },
-  body: JSON.stringify({ type: "magiclink", token_hash: "<hashed_token>" }),
-}).then((r) => r.json());
+```bash
+ANON=$(grep -m1 '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.development.local | cut -d= -f2-)
+curl -s -X POST http://127.0.0.1:54321/auth/v1/verify \
+  -H "apikey: $ANON" -H 'Content-Type: application/json' \
+  -d '{"type":"magiclink","token_hash":"<hashed_token>"}' > /tmp/sess.json
 
-const session = {
-  access_token: s.access_token, token_type: s.token_type,
-  expires_in: s.expires_in, expires_at: s.expires_at,
-  refresh_token: s.refresh_token, user: s.user,
-};
-// @supabase/ssr's cookie format: "base64-" + b64(session), chunked at 3180 chars
-// into name.0 / name.1 when it does not fit. The name's middle segment is the
-// FIRST LABEL OF THE SUPABASE HOST — "127" for 127.0.0.1, a project ref in prod.
-const bytes = new TextEncoder().encode(JSON.stringify(session));
-let bin = ""; bytes.forEach((b) => { bin += String.fromCharCode(b); });
-const value = "base64-" + btoa(bin);
-const name = "sb-127-auth-token";
-const parts = [];
-for (let i = 0; i < value.length; i += 3180) parts.push(value.slice(i, i + 3180));
-parts.length === 1
-  ? (document.cookie = `${name}=${parts[0]}; path=/; max-age=3600; samesite=lax`)
-  : parts.forEach((p, i) => { document.cookie = `${name}.${i}=${p}; path=/; max-age=3600; samesite=lax`; });
+# The cookie header, ready to paste into any curl below.
+python3 - <<'EOF' > /tmp/cookie.txt
+import json, base64
+s = json.load(open('/tmp/sess.json'))
+sess = {k: s[k] for k in ("access_token","token_type","expires_in","expires_at","refresh_token","user")}
+print("sb-127-auth-token=base64-" + base64.b64encode(json.dumps(sess, separators=(",",":")).encode()).decode())
+EOF
+
+curl -s -X POST http://127.0.0.1:3000/api/mbahgpt/chat \
+  -H 'Content-Type: application/json' -H "Cookie: $(cat /tmp/cookie.txt)" \
+  -d '{"content":"halo"}' -D - -o /dev/null | grep -iE '^HTTP/|^x-session-id'
 ```
 
-Reload; the sidebar and composer come alive.
+A session over ~3180 characters is split into `sb-127-auth-token.0` / `.1`; the
+one here fits in one cookie, and if it ever stops fitting the split is what
+`@supabase/ssr` does with it.
 
-**What does NOT work, and why** — worth knowing before rediscovering it:
+**One thing that does NOT work**, worth knowing before rediscovering it: the
+`action_link` that `generate_link` also returns redirects with tokens in the URL
+**hash** (implicit flow), and `app/auth/callback` only accepts `?code=` (PKCE).
+Redeeming the `hashed_token` yourself, as above, is the way in.
 
-- The `action_link` from `generate_link` redirects with tokens in the URL
-  **hash** (implicit flow). `@supabase/ssr`'s browser client is PKCE-based and
-  ignores that hash, so you land on the page still signed out.
-- `app/auth/callback` only accepts `?code=` (PKCE). The admin API does not mint
-  one.
+## 7. Prove it — from the server, not from a screen
 
-If the user would rather sign in themselves, that is always fine — hand them the
-URL and stop.
-
-## 7. Drive it
-
-Launching proves the entrypoint resolves. Drive the surface the change touched:
+Launching proves the entrypoint resolves. Prove the surface the change touched,
+and **do not open a browser to do it** (docs/architecture.md §6): what a page
+rendered is visible in its HTML, and what it wrote is visible in the database.
 
 ```bash
 curl -s http://127.0.0.1:3000/ | grep -o 'data-template="[a-z]*"' | head -1
 curl -s -X POST http://127.0.0.1:3000/api/mbahgpt/chat \
   -H 'Content-Type: application/json' -d '{"content":"halo"}'   # → 401 without a session
+curl -s http://127.0.0.1:3000/ -H 'Cookie: lp_locale=en' | grep -o 'Sign in to start chatting'
 ```
 
-In the browser: type a message, press Return, screenshot, **look at it**. Then
-confirm the write landed rather than trusting the screen:
+Then confirm the write landed, which is the half a screenshot could never show
+anyway:
 
 ```bash
 docker exec supabase_db_landing_pages psql -U postgres -d postgres -c \
