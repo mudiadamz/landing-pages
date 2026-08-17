@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { resendVerification, type ResendState } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Email verification state, inline on the profile page.
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
  * banner were the only place it can be handled.
  */
 export function VerifyEmailRow({ verified }: { verified: boolean }) {
+  const t = useT();
   const [state, action, pending] = useActionState<ResendState, FormData>(
     resendVerification,
     null,
@@ -32,7 +34,7 @@ export function VerifyEmailRow({ verified }: { verified: boolean }) {
   return (
     <div className="space-y-1.5">
       <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-        Belum diverifikasi
+        {t("panel.notVerifiedYet")}
       </span>
       <div className="flex flex-wrap items-center gap-2">
         <form action={action}>
@@ -44,7 +46,7 @@ export function VerifyEmailRow({ verified }: { verified: boolean }) {
             disabled={pending}
             className="px-3 text-xs"
           >
-            {pending ? "Mengirim…" : "Kirim link verifikasi"}
+            {pending ? "Mengirim…" : t("panel.sendVerifyLink")}
           </Button>
         </form>
         {state && (

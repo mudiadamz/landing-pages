@@ -249,7 +249,7 @@ export function DeliveryTab({
                   label={t("product.bundleNoteLabel")}
                   value={bundleNote}
                   onChange={setBundleNote}
-                  options={BUNDLE_NOTES}
+                  options={BUNDLE_NOTES.map((k) => t(k))}
                   placeholder={t("product.bundleNotePlaceholder")}
                   maxLength={120}
                   hint={t("product.bundleNoteHint")}

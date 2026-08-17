@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
@@ -22,6 +24,7 @@ export const metadata = { title: "Identitas situs" };
  * not from this screen.
  */
 export default async function BrandingPage() {
+  const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
 
   // Same belt-and-braces guard as /panel/sites: this screen rewrites a site row, and
@@ -42,9 +45,9 @@ export default async function BrandingPage() {
           href="/panel/sites"
           className="text-sm text-[var(--muted)] transition-colors hover:text-foreground"
         >
-          ← Domain
+          {t("panel.backToDomains")}
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Identitas &amp; tampilan situs</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{t("sites.identityAndLook")}</h1>
       </div>
 
       <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />

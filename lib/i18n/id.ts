@@ -1179,6 +1179,44 @@ export const id = {
   "panel.hideFromSite": "Sembunyikan dari frontend",
   "panel.showOnSite": "Tampilkan di frontend",
 
+  "panel.noPurchasesYet": "Belum ada pembelian",
+  "panel.noFavoritesYet": "Belum ada favorit",
+  "panel.productCount": "{count} produk",
+  "panel.soldSuffix": "terjual ·",
+  "panel.unpin": "Lepas pin",
+  "panel.pinToFront": "Pin ke depan",
+  "panel.notVerifiedYet": "Belum diverifikasi",
+  "panel.sendVerifyLink": "Kirim link verifikasi",
+  "editor.linkUrl": "URL tautan:",
+  "product.bundleNoteAll": "Semua bagian sekaligus — lebih hemat.",
+  "product.bundleNoteOnePayment": "Paket lengkap, satu kali bayar.",
+  "product.bundleNoteCheaper": "Hemat dibanding beli satuan.",
+  "product.bundleNoteInstant": "Langsung dapat semuanya, tanpa nunggu.",
+  "product.bundleNoteCollection": "Koleksi lengkap dalam satu paket.",
+
+  "panel.gtmContainerId": "GTM Container ID",
+  "panel.gtmEmptyHint": "Kosongkan untuk menonaktifkan GTM.",
+
+  "panel.paletteForBefore": "Palet warna untuk",
+  "panel.paletteForAdmin": "panel admin",
+  "panel.paletteForAfter":
+    ". Halaman publik dan halaman baca tidak ikut berubah — warna di sana menempel pada konversi, jadi dipisah dengan sengaja.",
+  "panel.backToDomains": "← Domain",
+  "sites.identityAndLook": "Identitas & tampilan situs",
+  "sites.domainsIntro":
+    "Hostname, status Vercel, dan aktif/nonaktif. Nama, logo, template, palet, dan niche ada di",
+  "panel.storageIntro": "Semua file di Supabase Storage.",
+  "panel.storageLoadFailed": "Gagal memuat file: {error}",
+  "panel.backShort": "← Kembali",
+  "panel.uploadHtmlTitle": "Upload HTML landing page",
+  "analytics.pageIntro": "Sesi & perjalanan pengunjung.",
+  "panel.gtmHeading": "Google Tag Manager",
+  "panel.gtmIntroBefore": "Masukkan ID container GTM (format",
+  "panel.gtmIntroAfter":
+    "). Skrip GTM dimuat di semua halaman publik (di-skip di /panel). Dari GTM kamu bisa mengelola GA4, Meta Pixel, dan tag lain tanpa mengubah kode.",
+  "panel.gtmEnvBefore": "Catatan:",
+  "panel.gtmEnvAfter": "diset di environment — dipakai sebagai fallback bila field ini dikosongkan.",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

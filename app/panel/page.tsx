@@ -67,7 +67,7 @@ export default async function PanelPage() {
         <ShortcutCard
           href="/panel/purchases"
           label={t("panel.dashMyEbooks")}
-          detail={purchases.length > 0 ? `${nf(purchases.length)} judul` : "Belum ada pembelian"}
+          detail={purchases.length > 0 ? `${nf(purchases.length)} judul` : t("panel.noPurchasesYet")}
           icon={
             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -77,7 +77,7 @@ export default async function PanelPage() {
         <ShortcutCard
           href="/panel/favorites"
           label={t("panel.navFavorites")}
-          detail={favorites.length > 0 ? `${nf(favorites.length)} produk` : "Belum ada favorit"}
+          detail={favorites.length > 0 ? t("panel.productCount", { count: nf(favorites.length) }) : t("panel.noFavoritesYet")}
           icon={
             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -137,7 +137,7 @@ export default async function PanelPage() {
                       {f.title}
                     </span>
                     <span className="shrink-0 text-xs text-[var(--muted)]">
-                      {f.is_free || price <= 0 ? "Gratis" : formatIDR(price)}
+                      {f.is_free || price <= 0 ? t("common.free") : formatIDR(price)}
                     </span>
                   </Link>
                 </li>
@@ -184,7 +184,7 @@ export default async function PanelPage() {
                       {p.revoked > 0 && (
                         <span className="text-red-600 dark:text-red-400"> ({nf(p.revoked)})</span>
                       )}{" "}
-                      terjual · {formatIDR(p.revenue)}
+                      {t("panel.soldSuffix")} {formatIDR(p.revenue)}
                     </span>
                   </Link>
                 </li>

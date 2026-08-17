@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { setLandingPageFeatured } from "@/lib/actions/landing-pages";
+import { useT } from "@/lib/i18n/client";
 
 export function PinButton({ id, featured, size = "sm" }: { id: string; featured: boolean; size?: "sm" | "lg" }) {
+  const t = useT();
   const [pinned, setPinned] = useState(featured);
   const [pending, startTransition] = useTransition();
   const shape = size === "lg" ? "h-11 flex-1 border border-[var(--border)] active:scale-95" : "p-2 active:scale-90";
@@ -26,8 +28,8 @@ export function PinButton({ id, featured, size = "sm" }: { id: string; featured:
       onClick={toggle}
       disabled={pending}
       aria-pressed={pinned}
-      title={pinned ? "Lepas pin" : "Pin ke depan"}
-      aria-label={pinned ? "Lepas pin" : "Pin ke depan"}
+      title={pinned ? t("panel.unpin") : t("panel.pinToFront")}
+      aria-label={pinned ? t("panel.unpin") : t("panel.pinToFront")}
       className={`inline-flex items-center justify-center rounded-lg transition disabled:opacity-50 hover:bg-[var(--background)] ${shape} ${
         pinned ? "text-[var(--primary)]" : "text-[var(--muted)] hover:text-foreground"
       }`}

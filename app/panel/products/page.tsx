@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { Button } from "@/components/ui/button";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPagesForUser, getCategories } from "@/lib/actions/landing-pages";
@@ -15,6 +17,7 @@ export default async function PanelPage() {
 }
 
 async function SellerPanel() {
+  const t = translator(await requestLocale());
   const [pages, categories, scope] = await Promise.all([
     getLandingPagesForUser(),
     getCategories(),
@@ -24,7 +27,7 @@ async function SellerPanel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-xl font-semibold tracking-tight">Produk digital</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{t("panel.navProducts")}</h1>
         <Button
           size="md"
           href="/panel/product/new"

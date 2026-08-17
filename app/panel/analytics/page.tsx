@@ -41,7 +41,7 @@ export default async function AnalyticsPage({
       <PanelPageHeader
         backHref="/panel"
         title={t("panel.navAnalytics")}
-        description="Sesi & perjalanan pengunjung."
+        description={t("analytics.pageIntro")}
         actions={
           <>
           {/* Popup trigger — sits inline with the range picker so the exclusion

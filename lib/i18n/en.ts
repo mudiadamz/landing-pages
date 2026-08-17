@@ -1189,6 +1189,44 @@ export const en: Record<keyof typeof id, string> = {
   "panel.hideFromSite": "Hide from the site",
   "panel.showOnSite": "Show on the site",
 
+  "panel.noPurchasesYet": "No purchases yet",
+  "panel.noFavoritesYet": "No favourites yet",
+  "panel.productCount": "{count} products",
+  "panel.soldSuffix": "sold ·",
+  "panel.unpin": "Unpin",
+  "panel.pinToFront": "Pin to the front",
+  "panel.notVerifiedYet": "Not verified",
+  "panel.sendVerifyLink": "Send verification link",
+  "editor.linkUrl": "Link URL:",
+  "product.bundleNoteAll": "Every part at once — better value.",
+  "product.bundleNoteOnePayment": "The complete set, one payment.",
+  "product.bundleNoteCheaper": "Cheaper than buying them separately.",
+  "product.bundleNoteInstant": "Get it all straight away, no waiting.",
+  "product.bundleNoteCollection": "The full collection in one bundle.",
+
+  "panel.gtmContainerId": "GTM container ID",
+  "panel.gtmEmptyHint": "Leave empty to switch GTM off.",
+
+  "panel.paletteForBefore": "The colour palette for the",
+  "panel.paletteForAdmin": "admin panel",
+  "panel.paletteForAfter":
+    ". The public pages and the reader do not follow it — colour there is tied to conversion, so the two are deliberately separate.",
+  "panel.backToDomains": "← Domains",
+  "sites.identityAndLook": "Site identity & appearance",
+  "sites.domainsIntro":
+    "Hostname, Vercel status, and active/inactive. Name, logo, template, palette and niche live in",
+  "panel.storageIntro": "Every file in Supabase Storage.",
+  "panel.storageLoadFailed": "Could not load the files: {error}",
+  "panel.backShort": "← Back",
+  "panel.uploadHtmlTitle": "Upload an HTML landing page",
+  "analytics.pageIntro": "Sessions & visitor journeys.",
+  "panel.gtmHeading": "Google Tag Manager",
+  "panel.gtmIntroBefore": "Enter the GTM container ID (format",
+  "panel.gtmIntroAfter":
+    "). The GTM script loads on every public page (skipped in /panel). From GTM you can manage GA4, the Meta Pixel and other tags without touching code.",
+  "panel.gtmEnvBefore": "Note:",
+  "panel.gtmEnvAfter": "is set in the environment — used as a fallback when this field is empty.",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

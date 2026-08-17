@@ -18,9 +18,9 @@ export default async function AppearancePage() {
       <PanelPageHeader backHref="/panel" title={t("panel.navAppearance")} />
 
       <p className="text-sm text-[var(--muted)]">
-        Palet warna untuk <strong className="text-foreground">panel admin</strong>. Halaman
-        publik dan halaman baca tidak ikut berubah — warna di sana menempel pada konversi,
-        jadi dipisah dengan sengaja.
+        {t("panel.paletteForBefore")}{" "}
+        <strong className="text-foreground">{t("panel.paletteForAdmin")}</strong>
+        {t("panel.paletteForAfter")}
       </p>
 
       <AppearanceForm initial={palette} />

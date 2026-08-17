@@ -19,12 +19,12 @@ export default async function StoragePage() {
       <PanelPageHeader
         backHref="/panel"
         title={t("panel.navStorage")}
-        description="Semua file di Supabase Storage."
+        description={t("panel.storageIntro")}
       />
 
       {error ? (
         <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600 dark:text-red-400">
-          Gagal memuat file: {error}
+          {t("panel.storageLoadFailed", { error })}
         </div>
       ) : (
         <StorageManager initialFiles={files} buckets={buckets} truncated={truncated} />

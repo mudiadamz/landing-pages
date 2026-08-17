@@ -25,17 +25,18 @@ export default async function TrackingPage() {
       <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
-        <h2 className="text-base font-semibold">Google Tag Manager</h2>
+        <h2 className="text-base font-semibold">{t("panel.gtmHeading")}</h2>
         <p className="mb-4 mt-1 text-sm text-[var(--muted)]">
-          Masukkan ID container GTM (format <code className="rounded bg-[var(--background)] px-1">GTM-XXXXXXX</code>).
-          Skrip GTM dimuat di semua halaman publik (di-skip di /panel). Dari GTM kamu bisa mengelola GA4, Meta
-          Pixel, dan tag lain tanpa mengubah kode.
+          {t("panel.gtmIntroBefore")}{" "}
+          <code className="rounded bg-[var(--background)] px-1">GTM-XXXXXXX</code>
+          {t("panel.gtmIntroAfter")}
         </p>
         <TrackingForm key={site.id} initialGtmId={tracking.gtmId} siteId={site.id} />
         {fromEnv && (
           <p className="mt-3 text-xs text-[var(--muted)]">
-            Catatan: <code className="rounded bg-[var(--background)] px-1">NEXT_PUBLIC_GTM_ID</code> diset di
-            environment — dipakai sebagai fallback bila field ini dikosongkan.
+            {t("panel.gtmEnvBefore")}{" "}
+            <code className="rounded bg-[var(--background)] px-1">NEXT_PUBLIC_GTM_ID</code>{" "}
+            {t("panel.gtmEnvAfter")}
           </p>
         )}
       </div>

@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getSites, isVercelConfigured } from "@/lib/actions/sites";
@@ -10,6 +12,7 @@ import { SitesManager } from "./sites-manager";
 export const metadata = { title: "Domain" };
 
 export default async function SitesPage() {
+  const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
 
   // Belt and braces: app/panel/layout.tsx already sends admin routes on a niche
@@ -30,12 +33,11 @@ export default async function SitesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Domain</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{t("panel.navDomains")}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Hostname, status Vercel, dan aktif/nonaktif. Nama, logo, template, palet, dan
-          niche ada di{" "}
+          {t("sites.domainsIntro")}{" "}
           <Link href="/panel/branding" className="text-[var(--primary)] hover:underline">
-            Identitas situs
+            {t("sites.identity")}
           </Link>
           .
         </p>

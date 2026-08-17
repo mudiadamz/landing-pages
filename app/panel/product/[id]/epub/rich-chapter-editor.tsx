@@ -253,7 +253,7 @@ export function RichChapterEditor({
         <Divider />
         <ToolButton
           onClick={() => {
-            const url = window.prompt("URL tautan:");
+            const url = window.prompt(t("editor.linkUrl"));
             if (url) exec("createLink", url);
           }}
           title={t("panel.link")}

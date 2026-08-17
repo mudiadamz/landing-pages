@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 
 function SubmitButton() {
+  const t = useT();
   const { pending } = useFormStatus();
   return (
     <Button
@@ -17,7 +18,7 @@ function SubmitButton() {
       disabled={pending}
       className="hover:opacity-90 disabled:opacity-60"
     >
-      {pending ? "Menyimpan..." : "Simpan"}
+      {pending ? t("common.saving") : t("common.save")}
     </Button>
   );
 }
@@ -51,7 +52,7 @@ export function CustomJsForm({ initialScript, siteId }: { initialScript: string;
       <div className="flex items-center gap-3">
         <SubmitButton />
         {state?.error && <span className="text-sm text-red-600">{state.error}</span>}
-        {state?.ok && <span className="text-sm text-green-600">Tersimpan.</span>}
+        {state?.ok && <span className="text-sm text-green-600">{t("common.saved")}</span>}
       </div>
     </form>
   );

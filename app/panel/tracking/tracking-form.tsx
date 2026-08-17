@@ -4,17 +4,20 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { updateTracking } from "@/lib/actions/site-settings";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 function SubmitButton() {
+  const t = useT();
   const { pending } = useFormStatus();
   return (
     <Button type="submit" size="md" loading={pending} disabled={pending} className="hover:opacity-90 disabled:opacity-60">
-      {pending ? "Menyimpan..." : "Simpan"}
+      {pending ? t("common.saving") : t("common.save")}
     </Button>
   );
 }
 
 export function TrackingForm({ initialGtmId, siteId }: { initialGtmId: string; siteId: string }) {
+  const t = useT();
   const [state, formAction] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, formData: FormData) => {
       const gtmId = (formData.get("gtmId") as string) ?? "";
@@ -32,7 +35,7 @@ export function TrackingForm({ initialGtmId, siteId }: { initialGtmId: string; s
     <form action={formAction} className="space-y-4">
       <div>
         <label htmlFor="gtmId" className="mb-1 block text-sm font-medium text-foreground">
-          GTM Container ID
+          {t("panel.gtmContainerId")}
         </label>
         <input
           id="gtmId"
@@ -44,12 +47,12 @@ export function TrackingForm({ initialGtmId, siteId }: { initialGtmId: string; s
           spellCheck={false}
           className="w-full max-w-xs rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
-        <p className="mt-1 text-xs text-[var(--muted)]">Kosongkan untuk menonaktifkan GTM.</p>
+        <p className="mt-1 text-xs text-[var(--muted)]">{t("panel.gtmEmptyHint")}</p>
       </div>
       <div className="flex items-center gap-3">
         <SubmitButton />
         {state?.error && <span className="text-sm text-red-600">{state.error}</span>}
-        {state?.ok && <span className="text-sm text-green-600">Tersimpan.</span>}
+        {state?.ok && <span className="text-sm text-green-600">{t("common.saved")}</span>}
       </div>
     </form>
   );
