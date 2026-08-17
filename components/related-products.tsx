@@ -36,7 +36,7 @@ export async function RelatedProducts({
     <section className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-foreground">
-          Produk terkait
+          {t("product.relatedHeading")}
           {parent && <span className="font-normal text-[var(--muted)]"> · {parent.name}</span>}
         </h2>
       </div>

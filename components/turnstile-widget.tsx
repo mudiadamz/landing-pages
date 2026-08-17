@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Cloudflare Turnstile, rendered explicitly and reported through a hidden input
@@ -50,6 +51,7 @@ function loadTurnstile(): Promise<void> {
 }
 
 export function TurnstileWidget({ siteKey, field }: { siteKey: string; field: string }) {
+  const t = useT();
   const boxRef = useRef<HTMLDivElement>(null);
   const idRef = useRef<string | null>(null);
   const [token, setToken] = useState("");
@@ -97,8 +99,7 @@ export function TurnstileWidget({ siteKey, field }: { siteKey: string; field: st
       <input type="hidden" name={field} value={token} readOnly />
       {broken && (
         <p className="mt-2 text-xs text-[var(--muted)]">
-          Verifikasi keamanan tidak bisa dimuat. Muat ulang halaman, atau daftar dengan Google
-          di atas.
+          {t("auth.turnstileFailed")}
         </p>
       )}
     </div>

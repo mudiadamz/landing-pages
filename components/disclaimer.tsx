@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { getSiteContent } from "@/lib/actions/site-settings";
 
 export async function Disclaimer() {
+  const t = translator(await requestLocale());
   const content = await getSiteContent();
 
   return (
@@ -47,7 +50,7 @@ export async function Disclaimer() {
           <p className="text-sm text-[var(--muted)] leading-relaxed mt-4">
             {content.supportOutro}{" "}
             <Link href="/contact" className="text-[var(--primary)] hover:underline font-medium">
-              halaman Kontak
+              {t("content.contactPageLink")}
             </Link>
           </p>
         </div>

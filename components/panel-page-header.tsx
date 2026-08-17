@@ -17,7 +17,7 @@ import Link from "next/link";
  */
 export function PanelPageHeader({
   backHref,
-  backLabel = "Kembali",
+  backLabel,
   title,
   /** A slug or id, rendered in mono under the title. */
   identifier,

@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { Countdown } from "./countdown";
 
 function formatWhen(iso: string): string {
@@ -18,7 +20,7 @@ function formatWhen(iso: string): string {
  * countdown, and the release date. No read/buy affordances — those return once
  * the countdown reaches zero (Countdown refreshes the route).
  */
-export function ComingSoon({
+export async function ComingSoon({
   title,
   thumbnailUrl,
   target,
@@ -27,6 +29,7 @@ export function ComingSoon({
   thumbnailUrl?: string | null;
   target: string;
 }) {
+  const t = translator(await requestLocale());
   const when = formatWhen(target);
 
   return (
@@ -49,7 +52,7 @@ export function ComingSoon({
           )}
           <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-md bg-[var(--primary)] px-2.5 py-1 text-xs font-semibold text-[var(--primary-foreground)] shadow-sm">
             <ClockIcon className="h-3.5 w-3.5" />
-            Segera hadir
+            {t("home.comingSoon")}
           </span>
         </div>
 

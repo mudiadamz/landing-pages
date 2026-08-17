@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { translator, type MessageKey } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import type { HomepageSort } from "@/lib/actions/landing-pages";
 
 type Props = {
@@ -7,15 +9,16 @@ type Props = {
   current: HomepageSort;
 };
 
-const TABS: { key: HomepageSort; label: string }[] = [
-  { key: "newest", label: "Terbaru" },
-  { key: "popular", label: "Terlaris" },
+const TABS: { key: HomepageSort; labelKey: MessageKey }[] = [
+  { key: "newest", labelKey: "panel.sortRecent" },
+  { key: "popular", labelKey: "home.bestSelling" },
 ];
 
-export function SortTabs({ basePath, current }: Props) {
+export async function SortTabs({ basePath, current }: Props) {
+  const t = translator(await requestLocale());
   return (
     <div className="mb-4 sm:mb-6 flex items-center gap-1.5">
-      <span className="sr-only">Urutkan produk</span>
+      <span className="sr-only">{t("home.sortProducts")}</span>
       {TABS.map((tab) => {
         const active = tab.key === current;
         // "newest" is the default — omit the query for a clean URL.
@@ -34,7 +37,7 @@ export function SortTabs({ basePath, current }: Props) {
                 : "px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--muted)] hover:text-foreground hover:bg-[var(--card)] transition-colors"
             }
           >
-            {tab.label}
+            {t(tab.labelKey)}
           </Link>
         );
       })}

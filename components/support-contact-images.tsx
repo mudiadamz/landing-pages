@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 const CONTACT_IMAGES = {
   email: "/admuiux-email.png",
@@ -13,7 +15,8 @@ const LABELS = {
 } as const;
 
 /** Gambar kontak support tanpa link agar tidak di-crawl bot. Tampilan vertikal: label lalu gambar. */
-export function SupportContactImages() {
+export async function SupportContactImages() {
+  const t = translator(await requestLocale());
   return (
     <div className="flex flex-col gap-6">
       {(Object.keys(CONTACT_IMAGES) as (keyof typeof CONTACT_IMAGES)[]).map((key) => (
@@ -22,7 +25,7 @@ export function SupportContactImages() {
           <span className="inline-block">
             <Image
               src={CONTACT_IMAGES[key]}
-              alt={`${LABELS[key]} kontak support`}
+              alt={t("content.supportContactAlt", { label: LABELS[key] })}
               width={280}
               height={80}
               className="h-auto w-full max-w-[280px] object-contain"

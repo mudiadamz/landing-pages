@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { SOCIAL_LINKS } from "@/components/social-links";
 
 /**
@@ -25,6 +26,7 @@ export function SocialLinksCompact({
   /** Per-network addresses from site settings; omitted = the shipped defaults. */
   urls?: Partial<Record<(typeof SOCIAL_LINKS)[number]["key"], string>>;
 }) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
 
   // A network with no address drops out entirely rather than linking nowhere.
@@ -37,7 +39,7 @@ export function SocialLinksCompact({
   return (
     <ul
       className={`flex flex-wrap items-center justify-center gap-2 ${className}`}
-      aria-label="Tautan media sosial"
+      aria-label={t("home.socialLinks")}
     >
       {visible.map(({ name, href, icon, brand, brandDark }) => (
         <li key={name}>
@@ -65,7 +67,7 @@ export function SocialLinksCompact({
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            aria-label={`Tampilkan ${overflow} tautan lainnya`}
+            aria-label={t("home.showMoreLinks", { count: overflow })}
             className="flex h-10 min-w-10 items-center justify-center rounded-full bg-[var(--accent-subtle)] px-2 text-xs font-semibold text-[var(--primary)] transition-colors hover:bg-[var(--primary)]/15 active:scale-[0.96]"
           >
             +{overflow}

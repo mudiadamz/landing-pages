@@ -1,3 +1,6 @@
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
+
 /* Brand marks: glyph and colour per network, keyed by the same id the settings
    use. Deliberately NOT data — the mark belongs to the network, so no storefront
    can point the Instagram icon at YouTube. Only the address is editable.
@@ -69,7 +72,8 @@ type Props = {
   urls?: Partial<Record<SocialLink["key"], string>>;
 };
 
-export function SocialLinks({ className = "", variant = "row", urls }: Props) {
+export async function SocialLinks({ className = "", variant = "row", urls }: Props) {
+  const t = translator(await requestLocale());
   const isStack = variant === "stack";
   // A network with no address is not shown — that is how a storefront without a
   // TikTok stops displaying a TikTok icon.
@@ -79,7 +83,7 @@ export function SocialLinks({ className = "", variant = "row", urls }: Props) {
   return (
     <ul
       className={`flex flex-wrap gap-3 ${isStack ? "flex-col" : "flex-row"} ${className}`}
-      aria-label="Tautan media sosial"
+      aria-label={t("home.socialLinks")}
     >
       {shown.map(({ name, label, href, icon, brand, brandDark }) => (
         <li key={name}>

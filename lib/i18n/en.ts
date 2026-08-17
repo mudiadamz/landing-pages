@@ -1386,6 +1386,22 @@ export const en: Record<keyof typeof id, string> = {
   "panel.pendingActions": "{count} actions waiting",
   "panel.viewSite": "View site",
 
+  "popup.emailPlaceholder": "your email",
+  "popup.emailLabel": "Email address",
+  "home.socialLinks": "Social media links",
+  "home.showMoreLinks": "Show {count} more links",
+  "product.loadingPdf": "Loading the PDF…",
+  "home.loadingPage": "Loading page",
+  "auth.turnstileFailed":
+    "The security check could not load. Reload the page, or sign up with Google above.",
+  "home.sortProducts": "Sort products",
+  "home.comingSoon": "Coming soon",
+  "content.contactPageLink": "Contact page",
+  "home.publishedCount": "{count} products published · ",
+  "content.supportContactAlt": "{label} support contact",
+
+  "home.bestSelling": "Best selling",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

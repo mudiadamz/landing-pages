@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { getSiteContent } from "@/lib/actions/site-settings";
 
 type Props = {
@@ -18,11 +20,12 @@ function initial(name: string): string {
  * All copy/photo is editable from /panel/content (SiteContent.founder).
  */
 export async function FounderCredibility({ templateCount, className = "" }: Props) {
+  const t = translator(await requestLocale());
   const { founder } = await getSiteContent();
   if (!founder.enabled) return null;
 
   const publishedLabel =
-    templateCount && templateCount > 0 ? `${templateCount} produk diterbitkan · ` : "";
+    templateCount && templateCount > 0 ? t("home.publishedCount", { count: templateCount }) : "";
 
   return (
     <div

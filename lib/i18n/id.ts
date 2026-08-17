@@ -1376,6 +1376,22 @@ export const id = {
   "panel.pendingActions": "{count} tindakan menunggu",
   "panel.viewSite": "Lihat situs",
 
+  "popup.emailPlaceholder": "email kamu",
+  "popup.emailLabel": "Alamat email",
+  "home.socialLinks": "Tautan media sosial",
+  "home.showMoreLinks": "Tampilkan {count} tautan lainnya",
+  "product.loadingPdf": "Memuat PDF…",
+  "home.loadingPage": "Memuat halaman",
+  "auth.turnstileFailed":
+    "Verifikasi keamanan tidak bisa dimuat. Muat ulang halaman, atau daftar dengan Google di atas.",
+  "home.sortProducts": "Urutkan produk",
+  "home.comingSoon": "Segera hadir",
+  "content.contactPageLink": "halaman Kontak",
+  "home.publishedCount": "{count} produk diterbitkan · ",
+  "content.supportContactAlt": "{label} kontak support",
+
+  "home.bestSelling": "Terlaris",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

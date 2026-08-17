@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 import { useEffect, useState, useRef } from "react";
 
 const EVENT_NAME = "next-route-progress-start";
@@ -16,6 +17,7 @@ function isSameOrigin(href: string): boolean {
 }
 
 export function RouteProgress() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [progress, setProgress] = useState(0);
@@ -99,7 +101,7 @@ export function RouteProgress() {
       aria-valuenow={progress}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label="Memuat halaman"
+      aria-label={t("home.loadingPage")}
     >
       <div
         className="h-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)] transition-[width] duration-300 ease-out"

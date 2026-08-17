@@ -1,17 +1,24 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useT } from "@/lib/i18n/client";
 import { useTheme } from "@/lib/use-theme";
 
 // pdf.js touches browser-only APIs (canvas, workers), so load the viewer
 // client-side only.
+// A component, so the placeholder can use the hook.
+function PdfLoading() {
+  const t = useT();
+  return (
+    <div className="flex h-full w-full items-center justify-center text-sm text-[var(--muted)]">
+      {t("product.loadingPdf")}
+    </div>
+  );
+}
+
 const PdfViewer = dynamic(() => import("./pdf-viewer"), {
   ssr: false,
-  loading: () => (
-    <div className="flex h-full w-full items-center justify-center text-sm text-[var(--muted)]">
-      Memuat PDF…
-    </div>
-  ),
+  loading: () => <PdfLoading />,
 });
 
 export function PdfPreview({

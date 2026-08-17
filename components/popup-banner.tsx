@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { subscribePopupEmail } from "@/lib/actions/site-settings";
 import type { PopupBanner as PopupConfig } from "@/lib/popup-config";
 
@@ -39,6 +40,7 @@ const RAINDROPS = 14;
 type Phase = "form" | "done";
 
 export function PopupBanner({ config, slug }: { config: PopupConfig; slug: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("form");
   const [email, setEmail] = useState("");
@@ -228,8 +230,8 @@ export function PopupBanner({ config, slug }: { config: PopupConfig; slug: strin
                       setEmail(e.target.value);
                       setInvalid(false);
                     }}
-                    placeholder="email kamu"
-                    aria-label="Alamat email"
+                    placeholder={t("popup.emailPlaceholder")}
+                    aria-label={t("popup.emailLabel")}
                     autoComplete="email"
                     className={invalid ? "is-invalid" : undefined}
                   />
