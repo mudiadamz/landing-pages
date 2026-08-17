@@ -24,6 +24,8 @@ import { UpstreamError, parseDelta, streamChat, toSources, type ChatMessage, typ
 import { contextBlock, expandQuery, runSearch, shouldSearch, stripWebPrefix } from "@/lib/mbahgpt/web-search";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
+import { effectivePlan, planLimits, withinLimit, PLANS, type PlanLimits } from "@/lib/plans";
+import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
 
 /**
  * One chat turn: store the user's message, then stream the model's reply.
@@ -113,7 +115,25 @@ export async function POST(req: NextRequest) {
   const uploads = Array.isArray(body.attachments) ? body.attachments : [];
 
   if (!content && !uploads.length) return fail(t("chat.emptyMessage"), 400);
-  if (uploads.length > MAX_FILES) return fail(t("chat.maxFiles", { count: MAX_FILES }), 400);
+
+  /**
+   * The plan decides how much of this the caller gets.
+   *
+   * Read once, here, and threaded down — not read again inside the stream, where a
+   * second lookup could disagree with the one the quota was checked against.
+   */
+  const { data: profile } = await supabase
+    .from("lp_profiles")
+    .select("plan, plan_expires_at")
+    .eq("id", user.id)
+    .maybeSingle();
+  const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
+  const limits = planLimits(plan);
+
+  // The tighter of the two ceilings. The plan may narrow what the deployment
+  // allows; it may never widen it.
+  const fileCap = Math.min(MAX_FILES, limits.chatMaxFiles);
+  if (uploads.length > fileCap) return fail(t("chat.maxFiles", { count: fileCap }), 400);
 
   // Files were uploaded straight to Storage by the browser (Server Actions and
   // route bodies are capped at ~4.5 MB on Vercel), so what arrives here is a set
@@ -144,6 +164,16 @@ export async function POST(req: NextRequest) {
       .eq("role", "user")
       .gte("created_at", since);
     if ((count ?? 0) >= RATE_LIMIT) return fail(t("chat.rateLimited"), 429);
+  }
+
+  // The plan's daily quota. A different guard from the rate limit above: that one
+  // stops a burst, this one stops a day.
+  const spent = await chatMessagesUsed(supabase, user.id);
+  if (!withinLimit(spent, limits.chatMessagesPerDay)) {
+    return fail(
+      t("chat.quotaSpent", { plan: PLANS[plan].label, limit: limits.chatMessagesPerDay ?? 0 }),
+      429,
+    );
   }
 
   // -- session ---------------------------------------------------------------
@@ -196,6 +226,7 @@ export async function POST(req: NextRequest) {
       retry: !!body.retry,
       release,
       t,
+      limits,
     });
   } catch (err) {
     await release();
@@ -215,10 +246,11 @@ type Ctx = {
   retry: boolean;
   release: () => Promise<void>;
   t: Translate;
+  limits: PlanLimits;
 };
 
 async function runTurn(ctx: Ctx): Promise<Response> {
-  const { supabase, userId, sessionId, content, uploads, forced, mode, retry } = ctx;
+  const { supabase, userId, sessionId, content, uploads, forced, mode, retry, limits } = ctx;
 
   // Earlier turns decide two things: whether a bare follow-up still needs the web,
   // and what the search query should actually say.
@@ -234,7 +266,12 @@ async function runTurn(ctx: Ctx): Promise<Response> {
 
   const earlierUser = prior.filter((m) => m.role === "user").map((m) => m.content);
   const afterSearch = prior.slice(-2).some((m) => m.role === "assistant" && m.hadSources);
-  const searching = forced || mode === "on" || (mode === "auto" && shouldSearch(content, afterSearch));
+  // What the message asks for, and what the plan actually allows. Kept apart so
+  // the UI can say "this needed the web and your plan does not include it" rather
+  // than silently answering from training data and looking out of date.
+  const wantsSearch = forced || mode === "on" || (mode === "auto" && shouldSearch(content, afterSearch));
+  const searching = wantsSearch && limits.chatWebSearch;
+  const searchLocked = wantsSearch && !limits.chatWebSearch;
 
   // -- store the user's message ---------------------------------------------
   if (!alreadyStored) {
@@ -287,7 +324,7 @@ async function runTurn(ctx: Ctx): Promise<Response> {
     system = system ? `${system}\n\n${hint}` : hint;
   }
 
-  return streamTurn(ctx, { system, searching, resolved, captured });
+  return streamTurn(ctx, { system, searching, searchLocked, resolved, captured });
 }
 
 /** Whether an assistant turn came from a search — enough to steer the next one. */
@@ -346,9 +383,9 @@ async function captureMemories(
  */
 function streamTurn(
   ctx: Ctx,
-  turn: { system: string; searching: boolean; resolved: string; captured: number },
+  turn: { system: string; searching: boolean; searchLocked: boolean; resolved: string; captured: number },
 ): Response {
-  const { supabase, userId, sessionId, release, t } = ctx;
+  const { supabase, userId, sessionId, release, t, limits } = ctx;
 
   // What the reply accumulates to. Held out here so the disconnect path can
   // persist exactly what had arrived.
@@ -410,7 +447,16 @@ function streamTurn(
       };
 
       try {
-        write(sse({ status: { searching: turn.searching, memories_saved: turn.captured } }));
+        write(
+          sse({
+            status: {
+              searching: turn.searching,
+              // The message wanted the web and the plan does not include it.
+              search_locked: turn.searchLocked,
+              memories_saved: turn.captured,
+            },
+          }),
+        );
 
         let system = turn.system;
         if (turn.searching) {
@@ -437,7 +483,7 @@ function streamTurn(
         // part of it — the same reason the Python version read the DB here.
         const history = await loadHistory(supabase, sessionId);
         const { messages, needsPdf } = await buildMessages(history, (path) => loadBytes(supabase, path));
-        const trimmed = trimHistory(messages);
+        const trimmed = trimHistory(messages, limits.chatHistory);
         const payload: ChatMessage[] = system ? [{ role: "system", content: system }, ...trimmed] : trimmed;
 
         const upstream = await streamChat({

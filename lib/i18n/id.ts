@@ -1629,6 +1629,9 @@ export const id = {
   "scope.startsAtZero":
     "Angkanya mulai dari nol: {what} sebelum pencatatan per-domain tidak bisa diatribusikan ke belakang, jadi yang tampil hanya yang tercatat sejak fitur ini aktif.",
 
+  /* ---- paket pengguna ---- */
+  "plan.productLimit": "Paket {plan} dibatasi {limit} produk. Naikkan paket untuk menambah.",
+
   /* ---- template chat (MbahGPT) ---- */
   /* Nama produknya sendiri ("MbahGPT") tidak ada di sini: itu merek, bukan teks. */
   "chat.nav": "Chat",
@@ -1646,6 +1649,14 @@ export const id = {
   "chat.signOut": "Keluar",
   "chat.appearance": "Tampilan & bahasa",
   "chat.theme": "Tema",
+
+  /* paket & kuota */
+  "chat.quotaLeft": "{used} dari {limit} pesan terpakai hari ini",
+  "chat.quotaUnlimited": "Pesan tanpa batas",
+  "chat.planUntil": "Aktif sampai {date}",
+  "chat.quotaSpent":
+    "Kuota harian paket {plan} sudah habis ({limit} pesan). Tunggu beberapa jam atau naikkan paket.",
+  "chat.webLocked": "Butuh pencarian web — tersedia mulai paket Pro",
 
   /* status di bawah komposer — kosong saat idle, jadi tiap string di sini
      hanya muncul kalau memang ada kabar yang perlu disampaikan */

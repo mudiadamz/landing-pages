@@ -1,5 +1,8 @@
 "use server";
 
+import { t } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
+import { effectivePlan, planLimits, withinLimit, PLANS } from "@/lib/plans";
 import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
@@ -287,6 +290,25 @@ export async function createLandingPage(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
+
+  /**
+   * The seller's plan caps how many products they may own.
+   *
+   * Checked on CREATE only: an account that drops to a smaller plan keeps what it
+   * already published — taking a live product off sale because a subscription
+   * lapsed would punish the buyer, not the seller.
+   */
+  const [{ data: profile }, { count }] = await Promise.all([
+    supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
+    supabase.from("lp_landing_pages").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+  ]);
+  const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
+  const { maxProducts } = planLimits(plan);
+  if (!withinLimit(count ?? 0, maxProducts)) {
+    throw new Error(
+      t("plan.productLimit", { plan: PLANS[plan].label, limit: maxProducts ?? 0 }, await requestLocale()),
+    );
+  }
 
   const { data, error } = await supabase
     .from("lp_landing_pages")

@@ -160,9 +160,13 @@ export async function buildMessages(
  * from the middle keeps the thread answerable where trimming from the front would
  * quietly change the subject.
  */
-export function trimHistory(messages: ChatMessage[]): ChatMessage[] {
-  if (MAX_HISTORY <= 0 || messages.length <= MAX_HISTORY) return messages;
-  return [messages[0], ...messages.slice(-(MAX_HISTORY - 1))];
+export function trimHistory(messages: ChatMessage[], planCap?: number | null): ChatMessage[] {
+  // The plan may only ever tighten the deployment's own ceiling, never widen it:
+  // MAX_HISTORY is what the owner is willing to pay per turn, and no plan sold to
+  // a visitor should be able to raise it.
+  const cap = planCap == null ? MAX_HISTORY : Math.min(MAX_HISTORY, planCap);
+  if (cap <= 0 || messages.length <= cap) return messages;
+  return [messages[0], ...messages.slice(-(cap - 1))];
 }
 
 /**

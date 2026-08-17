@@ -1639,6 +1639,9 @@ export const en: Record<keyof typeof id, string> = {
   "scope.startsAtZero":
     "The count starts at zero: {what} from before per-domain recording cannot be attributed after the fact, so only what has been recorded since that went live shows up here.",
 
+  /* ---- user plans ---- */
+  "plan.productLimit": "The {plan} plan allows {limit} products. Upgrade to add more.",
+
   /* ---- chat template (MbahGPT) ---- */
   "chat.nav": "Chat",
   "chat.newChat": "New chat",
@@ -1653,6 +1656,13 @@ export const en: Record<keyof typeof id, string> = {
   "chat.signOut": "Sign out",
   "chat.appearance": "Appearance & language",
   "chat.theme": "Theme",
+
+  "chat.quotaLeft": "{used} of {limit} messages used today",
+  "chat.quotaUnlimited": "Unlimited messages",
+  "chat.planUntil": "Active until {date}",
+  "chat.quotaSpent":
+    "The {plan} plan's daily quota is spent ({limit} messages). Wait a few hours, or upgrade.",
+  "chat.webLocked": "This needed a web search — available from Pro",
 
   "chat.uploading": "Uploading attachments…",
   "chat.waitingHere":

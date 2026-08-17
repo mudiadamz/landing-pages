@@ -55,6 +55,8 @@ export type LiveReply = {
   citations: Source[];
   webSearch: boolean;
   webFailed: boolean;
+  /** The message needed a web search the plan does not include. */
+  webLocked: boolean;
   query: string;
   savedMemories: number;
   startedAt: number;
@@ -252,6 +254,7 @@ export function useChat(options: { canChat: boolean }) {
         citations: [],
         webSearch: false,
         webFailed: false,
+        webLocked: false,
         query: "",
         savedMemories: 0,
         startedAt: Date.now(),
@@ -436,8 +439,13 @@ async function consume(rec: Rec, body: ReadableStream<Uint8Array>, flush: () => 
       }
 
       if (chunk.status) {
-        const status = chunk.status as { searching?: boolean; memories_saved?: number };
+        const status = chunk.status as {
+          searching?: boolean;
+          search_locked?: boolean;
+          memories_saved?: number;
+        };
         if (status.searching) rec.webSearch = true;
+        if (status.search_locked) rec.webLocked = true;
         rec.savedMemories = status.memories_saved ?? 0;
         flush();
         continue;

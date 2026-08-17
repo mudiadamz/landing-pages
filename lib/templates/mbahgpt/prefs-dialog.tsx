@@ -25,6 +25,8 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { signOut } from "@/lib/actions/auth";
+import { getMyPlan, type MyPlan } from "@/lib/actions/plans";
+import { PLANS } from "@/lib/plans";
 import {
   addChatMemory,
   deleteChatMemory,
@@ -65,6 +67,7 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
   const t = useT();
   const locale = useLocale();
   const [profile, setProfile] = useState<ChatProfile | null>(null);
+  const [plan, setPlan] = useState<MyPlan | null>(null);
   const [instructions, setInstructions] = useState("");
   const [memories, setMemories] = useState<ChatMemoryRow[]>([]);
   const [status, setStatus] = useState("");
@@ -80,15 +83,17 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
     if (!signedIn) return;
     let cancelled = false;
     (async () => {
-      const [prefs, stored, who] = await Promise.all([
+      const [prefs, stored, who, mine] = await Promise.all([
         getChatPrefs(),
         listChatMemories(),
         getChatProfile(),
+        getMyPlan(),
       ]);
       if (cancelled) return;
       setInstructions(prefs.responseInstructions);
       setMemories(stored);
       setProfile(who);
+      setPlan(mine);
       setLoading(false);
     })();
     return () => {
@@ -155,6 +160,7 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
                     <p className="m-0 truncate text-xs text-[var(--muted)]">{profile.email}</p>
                   )}
                 </div>
+                <PlanBadge plan={plan} />
                 <Link
                   href="/panel/profile"
                   className="shrink-0 rounded-lg px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:text-foreground"
@@ -286,6 +292,40 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The plan, and what is left of its quota.
+ *
+ * Sits in the account block rather than in a screen of its own: the question it
+ * answers — "why did that message get refused" — is asked here, one click from
+ * the composer that refused it.
+ */
+function PlanBadge({ plan }: { plan: MyPlan | null }) {
+  const t = useT();
+  const locale = useLocale();
+  if (!plan) return null;
+
+  const limit = plan.limits.chatMessagesPerDay;
+  return (
+    <div className="shrink-0 text-right">
+      <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">
+        {PLANS[plan.plan].label}
+      </span>
+      <span className="mt-0.5 block text-[0.68rem] text-[var(--muted)]">
+        {limit === null
+          ? t("chat.quotaUnlimited")
+          : t("chat.quotaLeft", { used: Math.min(plan.used, limit), limit })}
+      </span>
+      {plan.expiresAt && (
+        <span className="block text-[0.68rem] text-[var(--muted)]">
+          {t("chat.planUntil", {
+            date: new Date(plan.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "id-ID"),
+          })}
+        </span>
+      )}
     </div>
   );
 }

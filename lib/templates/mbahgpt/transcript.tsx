@@ -287,6 +287,7 @@ export function Transcript({
               </div>
             )}
             {live.webSearch && <div className={CHIP}>{webChipText(live, t)}</div>}
+            {live.webLocked && <div className={CHIP}>{`🔒 ${t("chat.webLocked")}`}</div>}
             {live.reasoning && (
               <ThinkingPanel
                 reasoning={live.reasoning}
