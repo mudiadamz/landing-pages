@@ -150,6 +150,9 @@ describe("dictionary integrity", () => {
     // The sales section heading (plural in English) vs the invoice's label for
     // the one person being billed.
     Pelanggan: ["sales.customer", "sales.customers"],
+    // A session-table column (one device) vs a chart section (all devices);
+    // English already splits them into "Device" and "Devices".
+    Perangkat: ["analytics.device", "stats.devices"],
     // The popup's body field vs the chapter editor's rich/source view switch.
     Teks: ["editor.richText", "panel.text"],
     // Storage's "open this file" vs the setup guide's "open this section".
