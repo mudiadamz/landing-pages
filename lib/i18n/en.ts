@@ -1258,6 +1258,29 @@ export const en: Record<keyof typeof id, string> = {
   "content.publisherTermsIntro":
     "Shown on the publisher application form (Profile → Become a publisher). Applicants must tick to accept before they can submit, and the time they accepted is recorded.",
 
+  "reader.lightMode": "Light mode",
+  "reader.darkMode": "Dark mode",
+  "reader.exitFullscreen": "Exit full screen",
+  "reader.fullscreen": "Full screen",
+  "reader.addToHome": "Add to Home Screen",
+  "reader.iosTapButton": "Tap the",
+  "reader.iosShareWhere": "button at the bottom of the screen (the box with an arrow pointing up).",
+  "reader.iosScrollPick": "Scroll down and pick",
+  "reader.tap": "Tap",
+  "reader.topRight": "in the top right.",
+  "reader.iosOnlyBefore": "On iPhone/iPad only",
+  "reader.iosOnlyAfter": "can install an app to the home screen.",
+  "reader.openInSafari": "Open this page in",
+  "reader.tapMenu": "Tap the",
+  "reader.topRightBrowser": "menu in the top right of the browser.",
+  "reader.pick": "Pick",
+  "reader.confirmWith": "Confirm with",
+  "reader.clickIcon": "Click the",
+  "reader.addressBarEnd": "icon at the right-hand end of the address bar.",
+  "reader.orBrowserMenu": "Or open the browser menu and pick",
+  "reader.installUnavailable":
+    "If that option is missing, the app is already installed or your browser does not support it yet.",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

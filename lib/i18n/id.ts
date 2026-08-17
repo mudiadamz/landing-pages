@@ -1248,6 +1248,29 @@ export const id = {
   "content.publisherTermsIntro":
     "Ditampilkan di formulir pengajuan publisher (Profil → Jadi publisher). Pemohon harus mencentang persetujuan sebelum bisa mengirim, dan waktu persetujuannya dicatat.",
 
+  "reader.lightMode": "Mode terang",
+  "reader.darkMode": "Mode gelap",
+  "reader.exitFullscreen": "Keluar layar penuh",
+  "reader.fullscreen": "Layar penuh",
+  "reader.addToHome": "Add to Home Screen",
+  "reader.iosTapButton": "Ketuk tombol",
+  "reader.iosShareWhere": "di bawah layar (ikon kotak dengan panah ke atas).",
+  "reader.iosScrollPick": "Geser ke bawah, pilih",
+  "reader.tap": "Ketuk",
+  "reader.topRight": "di pojok kanan atas.",
+  "reader.iosOnlyBefore": "Di iPhone/iPad, hanya",
+  "reader.iosOnlyAfter": "yang bisa memasang aplikasi ke layar utama.",
+  "reader.openInSafari": "Buka halaman ini di",
+  "reader.tapMenu": "Ketuk menu",
+  "reader.topRightBrowser": "di pojok kanan atas browser.",
+  "reader.pick": "Pilih",
+  "reader.confirmWith": "Konfirmasi dengan",
+  "reader.clickIcon": "Klik ikon",
+  "reader.addressBarEnd": "di ujung kanan address bar browser.",
+  "reader.orBrowserMenu": "Atau buka menu browser lalu pilih",
+  "reader.installUnavailable":
+    "Kalau pilihan itu tidak ada, aplikasi ini sudah terpasang atau browser kamu belum mendukungnya.",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

@@ -367,7 +367,7 @@ export function ProductActionsMenu({
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-foreground transition-all duration-150 hover:bg-[var(--background)] active:scale-[0.98]"
             >
               <GoogleIcon className="h-4 w-4" />
-              Masuk dengan Google
+              {t("reader.signInGoogle")}
             </button>
           </form>
           <div className="my-1 h-px bg-[var(--border)]" />
@@ -421,7 +421,7 @@ export function ProductActionsMenu({
       <MenuButton
         onClick={toggle}
         icon={dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-        label={dark ? "Mode terang" : "Mode gelap"}
+        label={dark ? t("reader.lightMode") : t("reader.darkMode")}
       />
 
       {/* Fullscreen — hides the mobile address/status bar for a focused read. */}
@@ -431,7 +431,7 @@ export function ProductActionsMenu({
           icon={
             isFullscreen ? <FullscreenExitIcon className="h-4 w-4" /> : <FullscreenIcon className="h-4 w-4" />
           }
-          label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+          label={isFullscreen ? t("reader.exitFullscreen") : t("reader.fullscreen")}
         />
       )}
 
@@ -561,7 +561,7 @@ export function ProductActionsMenu({
         <MenuButton
           onClick={addToHome}
           icon={<HomePlusIcon className="h-4 w-4" />}
-          label="Add to Home Screen"
+          label={t("reader.addToHome")}
         />
       )}
     </div>
@@ -653,9 +653,9 @@ export function ProductActionsMenu({
           >
             <div className="mb-3 flex items-center gap-2">
               <HomePlusIcon className="h-5 w-5 text-[var(--primary)]" />
-              <h3 className="text-sm font-semibold text-foreground">Add to Home Screen</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t("reader.addToHome")}</h3>
             </div>
-            <InstallSteps platform={platform} menuLang={menuLang} />
+            <InstallSteps platform={platform} menuLang={menuLang} locale={locale} />
             <button
               type="button"
               onClick={() => setIosHelp(false)}
@@ -701,22 +701,30 @@ function MenuTerm({ en, id, lang }: { en: string; id: string; lang: "id" | "en" 
 function InstallSteps({
   platform,
   menuLang,
+  locale,
 }: {
   platform: InstallPlatform;
+  /** The language of the BROWSER's own menus — a different axis from the UI locale. */
   menuLang: "id" | "en";
+  locale: Locale;
 }) {
+  // translator(locale), not useT(): this renders on public pages, which have no
+  // LocaleProvider above them — the locale arrives as a prop from the page.
+  const t = translator(locale);
   if (platform === "ios-safari") {
     return (
       <ol className="space-y-2.5 text-sm text-[var(--muted)]">
         <Step n={1}>
-          Ketuk tombol <MenuTerm en="Share" id="Bagikan" lang={menuLang} /> di bawah layar (ikon kotak dengan panah ke
-          atas).
+          {t("reader.iosTapButton")} <MenuTerm en="Share" id="Bagikan" lang={menuLang} />{" "}
+          {t("reader.iosShareWhere")}
         </Step>
         <Step n={2}>
-          Geser ke bawah, pilih <MenuTerm en="Add to Home Screen" id="Tambahkan ke Layar Utama" lang={menuLang} />.
+          {t("reader.iosScrollPick")}{" "}
+          <MenuTerm en="Add to Home Screen" id="Tambahkan ke Layar Utama" lang={menuLang} />.
         </Step>
         <Step n={3}>
-          Ketuk <MenuTerm en="Add" id="Tambah" lang={menuLang} /> di pojok kanan atas.
+          {t("reader.tap")} <MenuTerm en="Add" id="Tambah" lang={menuLang} />{" "}
+          {t("reader.topRight")}
         </Step>
       </ol>
     );
@@ -726,15 +734,15 @@ function InstallSteps({
     return (
       <div className="space-y-3 text-sm text-[var(--muted)]">
         <p>
-          Di iPhone/iPad, hanya <strong className="text-foreground">Safari</strong> yang bisa
-          memasang aplikasi ke layar utama.
+          {t("reader.iosOnlyBefore")} <strong className="text-foreground">Safari</strong>{" "}
+          {t("reader.iosOnlyAfter")}
         </p>
         <ol className="space-y-2.5">
           <Step n={1}>
-            Buka halaman ini di <strong className="text-foreground">Safari</strong>.
+            {t("reader.openInSafari")} <strong className="text-foreground">Safari</strong>.
           </Step>
           <Step n={2}>
-            Ketuk <MenuTerm en="Share" id="Bagikan" lang={menuLang} /> →{" "}
+            {t("reader.tap")} <MenuTerm en="Share" id="Bagikan" lang={menuLang} /> →{" "}
             <MenuTerm en="Add to Home Screen" id="Tambahkan ke Layar Utama" lang={menuLang} />.
           </Step>
         </ol>
@@ -746,14 +754,18 @@ function InstallSteps({
     return (
       <ol className="space-y-2.5 text-sm text-[var(--muted)]">
         <Step n={1}>
-          Ketuk menu <strong className="text-foreground">⋮</strong> di pojok kanan atas browser.
+          {t("reader.tapMenu")} <strong className="text-foreground">⋮</strong>{" "}
+          {t("reader.topRightBrowser")}
         </Step>
         <Step n={2}>
-          Pilih <MenuTerm en="Add to Home screen" id="Tambahkan ke layar utama" lang={menuLang} /> atau{" "}
+          {t("reader.pick")}{" "}
+          <MenuTerm en="Add to Home screen" id="Tambahkan ke layar utama" lang={menuLang} />{" "}
+          {t("analytics.engOr")}{" "}
           <MenuTerm en="Install app" id="Instal aplikasi" lang={menuLang} />.
         </Step>
         <Step n={3}>
-          Konfirmasi dengan <MenuTerm en="Add" id="Tambah" lang={menuLang} /> / <MenuTerm en="Install" id="Instal" lang={menuLang} />.
+          {t("reader.confirmWith")} <MenuTerm en="Add" id="Tambah" lang={menuLang} /> /{" "}
+          <MenuTerm en="Install" id="Instal" lang={menuLang} />.
         </Step>
       </ol>
     );
@@ -763,16 +775,16 @@ function InstallSteps({
     <div className="space-y-3 text-sm text-[var(--muted)]">
       <ol className="space-y-2.5">
         <Step n={1}>
-          Klik ikon <MenuTerm en="Install" id="Instal" lang={menuLang} /> di ujung kanan address bar browser.
+          {t("reader.clickIcon")} <MenuTerm en="Install" id="Instal" lang={menuLang} />{" "}
+          {t("reader.addressBarEnd")}
         </Step>
         <Step n={2}>
-          Atau buka menu browser lalu pilih <MenuTerm en="Install" id="Instal" lang={menuLang} /> /{" "}
+          {t("reader.orBrowserMenu")} <MenuTerm en="Install" id="Instal" lang={menuLang} /> /{" "}
           <MenuTerm en="Add to Home screen" id="Tambahkan ke layar utama" lang={menuLang} />.
         </Step>
       </ol>
       <p className="text-xs">
-        Kalau pilihan itu tidak ada, aplikasi ini sudah terpasang atau browser kamu belum
-        mendukungnya.
+        {t("reader.installUnavailable")}
       </p>
     </div>
   );

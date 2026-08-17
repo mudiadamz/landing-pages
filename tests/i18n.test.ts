@@ -71,7 +71,6 @@ describe("dictionary integrity", () => {
     "home.themeToggle",
     "nav.categories",
     "panel.socialHint",
-    "reader.signInGoogle",
     "sites.domain",
   ];
 
