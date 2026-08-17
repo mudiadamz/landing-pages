@@ -1126,6 +1126,44 @@ export const en: Record<keyof typeof id, string> = {
   "panel.editReview": "Edit review",
   "panel.writeReview": "Write a review",
 
+  "editor.loading": "Loading editor…",
+  "editor.invalidMarkup": "The markup is not valid.",
+  "editor.discardChanges": "This chapter has unsaved changes. Discard them?",
+  "editor.markupInvalid": "Markup is not valid yet, nothing saved — {detail}",
+  "editor.epubRewritten": "Saved. The EPUB file has been rewritten.",
+  "editor.freePreview": "Free preview",
+  "editor.pickChapter": "Pick a chapter on the left to start editing.",
+  "editor.saveChapter": "Save chapter",
+  "editor.orPress": "or press {key}+S",
+  "editor.unsaved": "Unsaved",
+  "editor.richText": "Text",
+  "editor.htmlSource": "HTML source",
+
+  "product.previewHintHtml": "Use the HTML/CSS/JS content from the editor below.",
+  "product.previewHintPdf": "Upload a PDF to embed on the preview page.",
+  "product.previewHintEpub":
+    "Upload an EPUB — readers can switch between light and dark right in the reader.",
+  "product.previewHintLink": "Embed an external URL on the preview page.",
+  "product.previewSameAsDeliverable": "Same as the deliverable",
+  "product.previewHintDeliverable":
+    "The preview uses the same buyer file (PDF/EPUB) — nothing extra to upload. The whole thing is readable for free in the preview.",
+  "product.previewPartOfDeliverable": "Part of the deliverable",
+  "product.previewHintExcerpt":
+    "One file only: the preview shows the opening part of the buyer's EPUB. No separate preview file to keep in sync.",
+
+  "panel.noInboxEmails": "No email yet.",
+  "panel.list": "List",
+  "panel.noSubject": "(No subject)",
+  "panel.backToList": "← Back to the list",
+  "panel.emailFrom": "From: {from}",
+  "panel.emailTo": "To: {to}",
+  "panel.emailNoBody": "No content.",
+  "panel.pickEmail": "Pick an email from the list to read it.",
+  "panel.invoiceTagline": "Landing Page & Digital Assets",
+  "sales.customer": "Customer",
+  "panel.invoiceMethod": "Method: {method}",
+  "panel.item": "Item",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

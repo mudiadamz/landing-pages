@@ -129,12 +129,15 @@ export function PreviewTab({
                 : "text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            {opt.label}
+            {opt.labelKey ? t(opt.labelKey) : opt.label}
           </button>
         ))}
       </div>
       <p className="text-xs text-[var(--muted)]">
-        {PREVIEW_OPTIONS.find((o) => o.value === previewType)?.hint}
+        {(() => {
+          const hintKey = PREVIEW_OPTIONS.find((o) => o.value === previewType)?.hintKey;
+          return hintKey ? t(hintKey) : null;
+        })()}
       </p>
     </div>
 

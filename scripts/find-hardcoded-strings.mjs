@@ -150,6 +150,8 @@ const CODE_ATTRS = new Set([
   // `t("panel.order")` is the fix, not a finding — and a key like "common.edit"
   // contains "edit", so the Indonesian word list would otherwise keep it.
   "t", "translator", "usetranslator",
+  // State setters whose argument is a tab id or an enum, not copy.
+  "settab", "usestate", "setview", "setmode", "setsort",
 ]);
 
 const UI_ATTRS = new Set([
@@ -172,7 +174,7 @@ const NOISE_TEXT =
  * none of this.
  */
 const CODEISH =
-  /(;|=>|&&|\|\||!==|\?\?|[={}]|^\)|\($|^<|\b(function|export|const|let|var|return|async|await|else|catch|typeof|interface|import|class|useState|useEffect)\b)/;
+  /(;|=>|&&|\|\||!==|\?\?|[={}]|^[:.()]|\($|^<|\w+\.\w+\s*\?|\b(function|export|const|let|var|return|async|await|else|catch|typeof|interface|import|class|Props|useState|useEffect)\b)/;
 /**
  * No regex-literal state in the scanner, so shards like `/gi, "")` get through.
  * Deliberately not matching `\n`: a confirm() body is full of them and is copy.

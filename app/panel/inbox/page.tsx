@@ -42,7 +42,7 @@ export default async function InboxPage({ searchParams }: Props) {
 
       {emails.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-          <p className="text-sm text-[var(--muted)]">Belum ada email masuk.</p>
+          <p className="text-sm text-[var(--muted)]">{t("panel.noInboxEmails")}</p>
           <p className="mt-1 text-xs text-[var(--muted)]">
             {t("panel.inboxEmpty", { address: SUPPORT_CONTACT.email })}
           </p>
@@ -51,7 +51,7 @@ export default async function InboxPage({ searchParams }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className={`lg:col-span-1 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm max-h-[70vh] flex flex-col ${detail ? "hidden lg:flex" : ""}`}>
             <div className="p-3 border-b border-[var(--border)] bg-[var(--background)]/50">
-              <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">Daftar</p>
+              <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider">{t("panel.list")}</p>
             </div>
             <ul className="overflow-y-auto flex-1 divide-y divide-[var(--border)]">
               {emails.map((e) => {
@@ -62,7 +62,7 @@ export default async function InboxPage({ searchParams }: Props) {
                       href={isActive ? "/panel/inbox" : `/panel/inbox?id=${e.id}`}
                       className={`block px-4 py-3 hover:bg-[var(--background)]/50 transition-colors ${isActive ? "bg-[var(--accent-subtle)]" : ""}`}
                     >
-                      <p className="font-medium text-foreground truncate">{e.subject || "(Tanpa subjek)"}</p>
+                      <p className="font-medium text-foreground truncate">{e.subject || t("panel.noSubject")}</p>
                       <p className="text-sm text-[var(--muted)] truncate">{fromDisplay(e)}</p>
                       <p className="text-xs text-[var(--muted)] mt-0.5">{formatDate(e.received_at)}</p>
                     </Link>
@@ -77,13 +77,15 @@ export default async function InboxPage({ searchParams }: Props) {
                 <div className="p-4 border-b border-[var(--border)] bg-[var(--background)]/50 space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <Link href="/panel/inbox" className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-foreground transition-colors lg:hidden">
-                      ← Kembali ke daftar
+                      {t("panel.backToList")}
                     </Link>
                     <DeleteEmailButton emailId={detail.id} />
                   </div>
-                  <p className="text-sm font-medium text-foreground">{detail.subject || "(Tanpa subjek)"}</p>
-                  <p className="text-sm text-[var(--muted)]">Dari: {fromDisplay(detail)}</p>
-                  <p className="text-xs text-[var(--muted)]">Kepada: {detail.to_addresses?.join(", ") || "—"}</p>
+                  <p className="text-sm font-medium text-foreground">{detail.subject || t("panel.noSubject")}</p>
+                  <p className="text-sm text-[var(--muted)]">{t("panel.emailFrom", { from: fromDisplay(detail) })}</p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {t("panel.emailTo", { to: detail.to_addresses?.join(", ") || "—" })}
+                  </p>
                   <p className="text-xs text-[var(--muted)]">{formatDate(detail.received_at)}</p>
                 </div>
                 <div className="p-4 min-h-[200px]">
@@ -95,13 +97,13 @@ export default async function InboxPage({ searchParams }: Props) {
                   ) : detail.body_text ? (
                     <pre className="whitespace-pre-wrap font-sans text-sm text-foreground">{detail.body_text}</pre>
                   ) : (
-                    <p className="text-sm text-[var(--muted)]">Tidak ada isi.</p>
+                    <p className="text-sm text-[var(--muted)]">{t("panel.emailNoBody")}</p>
                   )}
                 </div>
               </div>
             ) : (
               <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center shadow-sm">
-                <p className="text-sm text-[var(--muted)]">Pilih email di daftar untuk melihat isi.</p>
+                <p className="text-sm text-[var(--muted)]">{t("panel.pickEmail")}</p>
               </div>
             )}
           </div>

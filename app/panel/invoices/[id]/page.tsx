@@ -60,7 +60,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
           </div>
           <div className="text-sm sm:text-right">
             <p className="font-semibold text-foreground">ADM.UIUX</p>
-            <p className="text-[var(--muted)]">Landing Page & Digital Assets</p>
+            <p className="text-[var(--muted)]">{t("panel.invoiceTagline")}</p>
             <p className="text-[var(--muted)]">{SUPPORT_CONTACT.email}</p>
           </div>
         </div>
@@ -68,15 +68,15 @@ export default async function InvoiceDetailPage({ params }: Props) {
         {/* Customer + date */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <div>
-            <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1">Pelanggan</p>
+            <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1">{t("sales.customer")}</p>
             <p className="text-sm font-medium text-foreground">{invoice.user_name}</p>
             <p className="text-sm text-[var(--muted)]">{invoice.user_email}</p>
           </div>
           <div className="sm:text-right">
-            <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1">Tanggal</p>
+            <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-wider mb-1">{t("panel.date")}</p>
             <p className="text-sm text-foreground">{formatDate(invoice.purchased_at)}</p>
             <p className="text-xs text-[var(--muted)] mt-1">
-              Metode: {invoice.payment_method ?? "—"}
+              {t("panel.invoiceMethod", { method: invoice.payment_method ?? "—" })}
             </p>
           </div>
         </div>
@@ -86,15 +86,15 @@ export default async function InvoiceDetailPage({ params }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[var(--background)]/50 print:bg-gray-100">
-                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">Item</th>
-                <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">Harga</th>
+                <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("panel.item")}</th>
+                <th className="text-right px-4 py-3 font-medium text-[var(--muted)]">{t("product.tabPrice")}</th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-t border-[var(--border)] print:border-gray-300">
                 <td className="px-4 py-3">
                   <p className="font-medium text-foreground">{invoice.title}</p>
-                  <p className="text-xs text-[var(--muted)]">Landing Page</p>
+                  <p className="text-xs text-[var(--muted)]">{t("panel.tabProducts")}</p>
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-foreground">
                   {formatPrice(invoice.amount)}

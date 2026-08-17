@@ -14,13 +14,20 @@ import { Button } from "@/components/ui/button";
 import { RichChapterEditor, type RichEditorHandle } from "./rich-chapter-editor";
 import { useT } from "@/lib/i18n/client";
 
+// A component rather than inline JSX, so the placeholder can use the hook —
+// dynamic()'s `loading` is rendered like any other component.
+function EditorLoading() {
+  const t = useT();
+  return (
+    <div className="flex h-[60vh] min-h-[280px] w-full items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
+      {t("editor.loading")}
+    </div>
+  );
+}
+
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
-  loading: () => (
-    <div className="flex h-[60vh] min-h-[280px] w-full items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--background)] text-[var(--muted)]">
-      Loading editor…
-    </div>
-  ),
+  loading: () => <EditorLoading />,
 });
 
 /**
@@ -66,7 +73,8 @@ function useIsDark(): boolean {
  * in strict readers, not just the chapter. Catch it here, where the seller can
  * still fix it, rather than after it has been written into the archive.
  */
-function xhtmlError(body: string): string | null {
+/** `fallback` comes from the caller: this runs outside a component, so it has no t. */
+function xhtmlError(body: string, fallback: string): string | null {
   if (typeof window === "undefined") return null;
   const doc = new DOMParser().parseFromString(
     `<root xmlns="http://www.w3.org/1999/xhtml">${body}</root>`,
@@ -75,7 +83,7 @@ function xhtmlError(body: string): string | null {
   const err = doc.querySelector("parsererror");
   if (!err) return null;
   const detail = (err.textContent ?? "").split("\n").find((l) => l.trim()) ?? "";
-  return detail.slice(0, 160) || "Markup tidak valid.";
+  return detail.slice(0, 160) || fallback;
 }
 
 export function EpubChapterEditor({
@@ -155,7 +163,7 @@ export function EpubChapterEditor({
   }, [dirty]);
 
   const confirmDiscard = () =>
-    !dirty || window.confirm("Perubahan bab ini belum disimpan. Buang perubahan?");
+    !dirty || window.confirm(t("editor.discardChanges"));
 
   async function openChapter(ch: EpubChapterInfo) {
     if (ch.path === selected?.path) return;
@@ -213,13 +221,13 @@ export function EpubChapterEditor({
     if (!selected || saving) return;
     const html = currentHtml();
     if (html === saved) {
-      setMsg({ ok: true, text: "Tidak ada perubahan." });
+      setMsg({ ok: true, text: t("editor.noChanges") });
       return;
     }
 
-    const bad = xhtmlError(html);
+    const bad = xhtmlError(html, t("editor.invalidMarkup"));
     if (bad) {
-      setMsg({ ok: false, text: `Markup belum valid, belum disimpan — ${bad}` });
+      setMsg({ ok: false, text: t("editor.markupInvalid", { detail: bad }) });
       return;
     }
 
@@ -232,7 +240,7 @@ export function EpubChapterEditor({
       setSource(html);
       setSaved(html);
       setRichDirty(false);
-      setMsg({ ok: true, text: "Tersimpan. File EPUB sudah ditulis ulang." });
+      setMsg({ ok: true, text: t("editor.epubRewritten") });
       // Chapter lengths shift after an edit; keep the list honest.
       const fresh = await getEpubChapters(pageId, target);
       if (!("error" in fresh)) setChapters(fresh.chapters);
@@ -279,10 +287,10 @@ export function EpubChapterEditor({
         {hasPreview && hasDeliverable && (
           <div className="inline-flex shrink-0 rounded-lg border border-[var(--border)] p-0.5">
             <PillTab active={target === "deliverable"} onClick={() => switchTarget("deliverable")}>
-              File pembeli
+              {t("product.buyerFile")}
             </PillTab>
             <PillTab active={target === "preview"} onClick={() => switchTarget("preview")}>
-              Preview gratis
+              {t("editor.freePreview")}
             </PillTab>
           </div>
         )}
@@ -338,7 +346,7 @@ export function EpubChapterEditor({
           {!selected ? (
             <div className="flex h-[60vh] min-h-[280px] items-center justify-center rounded-lg border border-dashed border-[var(--border)] px-6 text-center">
               <p className="text-sm text-[var(--muted)]">
-                Pilih bab di sebelah kiri untuk mulai mengedit.
+                {t("editor.pickChapter")}
               </p>
             </div>
           ) : loadingSource || !loaded ? (
@@ -382,14 +390,14 @@ export function EpubChapterEditor({
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <Button size="md" onClick={() => void save()} disabled={saving || !dirty}>
-                  {saving ? "Menyimpan…" : "Simpan bab"}
+                  {saving ? t("common.saving") : t("editor.saveChapter")}
                 </Button>
                 <span className="text-xs text-[var(--muted)]">
-                  atau tekan {navigatorIsMac() ? "⌘" : "Ctrl"}+S
+                  {t("editor.orPress", { key: navigatorIsMac() ? "⌘" : "Ctrl" })}
                 </span>
                 {dirty && (
                   <span className="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                    Belum disimpan
+                    {t("editor.unsaved")}
                   </span>
                 )}
                 {msg && (
@@ -405,10 +413,10 @@ export function EpubChapterEditor({
                     control for the editor below it, not a page-level tab. */}
                 <div className="ml-auto inline-flex shrink-0 rounded-lg border border-[var(--border)] p-0.5">
                   <PillTab active={mode === "rich"} onClick={() => switchMode("rich")}>
-                    Teks
+                    {t("editor.richText")}
                   </PillTab>
                   <PillTab active={mode === "source"} onClick={() => switchMode("source")}>
-                    Sumber HTML
+                    {t("editor.htmlSource")}
                   </PillTab>
                 </div>
               </div>

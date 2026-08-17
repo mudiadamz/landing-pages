@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { t } from "@/lib/i18n";
 import { readFileSync } from "node:fs";
 import { PREVIEW_OPTIONS } from "@/app/panel/product/[id]/edit/preview-options";
 
@@ -41,8 +42,11 @@ describe("PREVIEW_OPTIONS", () => {
     // The hint is the only place the difference between "deliverable" and
     // "excerpt" is explained. An empty one is a mode nobody can choose between.
     for (const opt of PREVIEW_OPTIONS) {
-      expect(opt.label.trim(), `label for ${opt.value}`).not.toBe("");
-      expect(opt.hint.trim().length, `hint for ${opt.value}`).toBeGreaterThan(20);
+      // Labels and hints moved into the dictionary; resolve them the way the
+      // tab does, so an option whose key is missing still fails here.
+      const label = opt.labelKey ? t(opt.labelKey) : (opt.label ?? "");
+      expect(label.trim(), `label for ${opt.value}`).not.toBe("");
+      expect(t(opt.hintKey).trim().length, `hint for ${opt.value}`).toBeGreaterThan(20);
     }
   });
 

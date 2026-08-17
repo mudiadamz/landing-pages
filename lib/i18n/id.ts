@@ -1116,6 +1116,44 @@ export const id = {
   "panel.editReview": "Edit review",
   "panel.writeReview": "Beri review",
 
+  "editor.loading": "Memuat editor…",
+  "editor.invalidMarkup": "Markup tidak valid.",
+  "editor.discardChanges": "Perubahan bab ini belum disimpan. Buang perubahan?",
+  "editor.markupInvalid": "Markup belum valid, belum disimpan — {detail}",
+  "editor.epubRewritten": "Tersimpan. File EPUB sudah ditulis ulang.",
+  "editor.freePreview": "Preview gratis",
+  "editor.pickChapter": "Pilih bab di sebelah kiri untuk mulai mengedit.",
+  "editor.saveChapter": "Simpan bab",
+  "editor.orPress": "atau tekan {key}+S",
+  "editor.unsaved": "Belum disimpan",
+  "editor.richText": "Teks",
+  "editor.htmlSource": "Sumber HTML",
+
+  "product.previewHintHtml": "Pakai konten HTML/CSS/JS dari editor di bawah.",
+  "product.previewHintPdf": "Upload file PDF untuk di-embed di halaman preview.",
+  "product.previewHintEpub":
+    "Upload file EPUB — pembaca bisa ganti tema terang/gelap langsung di reader.",
+  "product.previewHintLink": "Embed URL eksternal di halaman preview.",
+  "product.previewSameAsDeliverable": "Sama dgn deliverable",
+  "product.previewHintDeliverable":
+    "Preview memakai file pembeli (PDF/EPUB) yang sama — tak perlu upload lagi. Seluruh isi bisa dibaca gratis di preview.",
+  "product.previewPartOfDeliverable": "Sebagian deliverable",
+  "product.previewHintExcerpt":
+    "Satu file saja: preview menampilkan sebagian awal EPUB pembeli. Tidak ada file preview terpisah yang harus ikut diedit.",
+
+  "panel.noInboxEmails": "Belum ada email masuk.",
+  "panel.list": "Daftar",
+  "panel.noSubject": "(Tanpa subjek)",
+  "panel.backToList": "← Kembali ke daftar",
+  "panel.emailFrom": "Dari: {from}",
+  "panel.emailTo": "Kepada: {to}",
+  "panel.emailNoBody": "Tidak ada isi.",
+  "panel.pickEmail": "Pilih email di daftar untuk melihat isi.",
+  "panel.invoiceTagline": "Landing Page & Digital Assets",
+  "sales.customer": "Pelanggan",
+  "panel.invoiceMethod": "Metode: {method}",
+  "panel.item": "Item",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

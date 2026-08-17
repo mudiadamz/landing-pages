@@ -146,6 +146,11 @@ describe("dictionary integrity", () => {
     // A dashboard stat ("how many buyers") beside a role name ("this user is a
     // buyer"). English already splits them: "Buyers" and "Buyer".
     Pembeli: ["panel.dashBuyers", "panel.roleCustomer"],
+    // The sales section heading (plural in English) vs the invoice's label for
+    // the one person being billed.
+    Pelanggan: ["sales.customer", "sales.customers"],
+    // The popup's body field vs the chapter editor's rich/source view switch.
+    Teks: ["editor.richText", "panel.text"],
     // Storage's "open this file" vs the setup guide's "open this section".
     Buka: ["panel.open", "sites.open"],
   };
