@@ -103,7 +103,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
 
       <div>
         <label htmlFor="quick-category" className="mb-1.5 block text-sm font-medium text-foreground">
-          Kategori
+          {t("panel.navCategories")}
         </label>
         <select
           id="quick-category"
@@ -122,7 +122,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
 
       <div>
         <label htmlFor="quick-price" className="mb-1.5 block text-sm font-medium text-foreground">
-          Harga
+          {t("product.tabPrice")}
         </label>
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
@@ -146,7 +146,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
               onChange={(e) => setIsFree(e.target.checked)}
               className="h-4 w-4 rounded border-[var(--border)] accent-[var(--primary)]"
             />
-            Gratis
+            {t("common.free")}
           </label>
         </div>
       </div>

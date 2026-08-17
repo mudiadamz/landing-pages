@@ -62,10 +62,10 @@ export default async function ContactsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[var(--border)] bg-[var(--background)]/50">
-                    <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">Nama</th>
+                    <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">{t("content.name")}</th>
                     <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">Email</th>
-                    <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">Pesan</th>
-                    <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">Tanggal</th>
+                    <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">{t("panel.navGroupMessages")}</th>
+                    <th className="px-4 py-3.5 text-left text-sm font-medium text-foreground">{t("panel.date")}</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -8,9 +8,9 @@ import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
 const STEPS = [
-  { n: 1, title: "Buat produk", desc: "Judul, URL & kategori" },
-  { n: 2, title: "Lengkapi detail", desc: "Preview, harga & file" },
-];
+  { n: 1, titleKey: "panel.createProduct", descKey: "panel.step1Desc" },
+  { n: 2, titleKey: "panel.step2Title", descKey: "panel.step2Desc" },
+] as const;
 
 export default async function NewPagePage() {
   const t = translator(await requestLocale());
@@ -50,9 +50,9 @@ export default async function NewPagePage() {
                       active ? "text-foreground" : "text-[var(--muted)]"
                     }`}
                   >
-                    {step.title}
+                    {t(step.titleKey)}
                   </p>
-                  <p className="truncate text-xs text-[var(--muted)]">{step.desc}</p>
+                  <p className="truncate text-xs text-[var(--muted)]">{t(step.descKey)}</p>
                 </div>
               </li>
               {i < STEPS.length - 1 && (

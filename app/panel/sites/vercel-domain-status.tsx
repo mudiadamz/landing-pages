@@ -204,7 +204,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
               label={t("sites.apexHint")}
               rows={[
                 ["Type", "A"],
-                ["Host / Name", "@"],
+                [t("sites.hostName"), "@"],
                 ["Value", state.dns!.ipv4[0]],
               ]}
             />
@@ -215,7 +215,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
               label={t("sites.subdomainHint")}
               rows={[
                 ["Type", "CNAME"],
-                ["Host / Name", host.split(".")[0]],
+                [t("sites.hostName"), host.split(".")[0]],
                 ["Value", state.dns!.cname],
               ]}
             />

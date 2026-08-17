@@ -55,9 +55,9 @@ export function LinksTabs({
         {tab === "social" ? (
           <>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-foreground">Media sosial</h2>
+              <h2 className="text-base font-semibold text-foreground">{t("panel.tabSocial")}</h2>
               <p className="text-sm text-[var(--muted)]">
-                Ikon di homepage, footer, dan halaman kontak.
+                {t("panel.tabSocialIntro")}
               </p>
             </div>
             <SocialForm initial={socialUrls} />
@@ -65,7 +65,7 @@ export function LinksTabs({
         ) : (
           <>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-foreground">Link lainnya</h2>
+              <h2 className="text-base font-semibold text-foreground">{t("panel.tabOther")}</h2>
               <p className="text-sm text-[var(--muted)]">
                 Situs lain milik Anda — toko lain, portfolio, newsletter. Muncul lewat
                 ikon link di samping ikon media sosial.

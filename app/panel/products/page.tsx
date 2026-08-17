@@ -38,7 +38,7 @@ async function SellerPanel() {
           }
           className="gap-2 hover:opacity-90"
         >
-          Buat baru
+          {t("panel.createNew")}
         </Button>
       </div>
 
@@ -52,10 +52,10 @@ async function SellerPanel() {
 
       {pages.length === 0 ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-          <p className="text-sm text-[var(--muted)]">Belum ada produk digital.</p>
+          <p className="text-sm text-[var(--muted)]">{t("panel.noDigitalProducts")}</p>
           <div className="mt-4 flex justify-center">
             <Button size="md" href="/panel/product/new" className="gap-2 hover:opacity-90">
-              Buat produk baru
+              {t("panel.createNewProduct")}
             </Button>
           </div>
         </div>

@@ -7,7 +7,9 @@ import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
-export const metadata = { title: "Jadi publisher" };
+export async function generateMetadata() {
+  return { title: translator(await requestLocale())("panel.becomePublisher") };
+}
 
 /**
  * The publisher application, on its own page.
@@ -42,7 +44,7 @@ export default async function PublisherPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PanelPageHeader
         backHref="/panel/profile"
-        backLabel="Kembali ke profil"
+        backLabel={t("panel.backToProfile")}
         title={t("panel.becomePublisher")}
       />
 

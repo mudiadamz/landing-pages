@@ -76,7 +76,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
       )}
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-foreground mb-1.5">
-          Judul (Title)
+          {t("product.titleLabel")}
         </label>
         <input
           id="title"

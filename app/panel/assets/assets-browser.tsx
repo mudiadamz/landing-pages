@@ -80,7 +80,7 @@ export function AssetsBrowser({ initialAssets }: { initialAssets: Asset[] }) {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            {uploading ? "Mengupload…" : "Upload aset"}
+            {uploading ? t("panel.uploading") : t("assets.upload")}
           </span>
         </label>
 
@@ -107,7 +107,7 @@ export function AssetsBrowser({ initialAssets }: { initialAssets: Asset[] }) {
 
       {total === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)]/50 p-10 text-center text-sm text-[var(--muted)]">
-          {query.trim() ? `Tidak ada aset yang cocok dengan “${query.trim()}”.` : "Belum ada aset."}
+          {query.trim() ? t("assets.noMatch", { query: query.trim() }) : t("assets.none")}
         </div>
       ) : (
         <>
@@ -144,7 +144,11 @@ export function AssetsBrowser({ initialAssets }: { initialAssets: Asset[] }) {
           {/* Pagination */}
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
             <p className="text-xs text-[var(--muted)]">
-              Menampilkan {start + 1}–{start + slice.length} dari {total} aset
+              {t("assets.showingRange", {
+                from: start + 1,
+                to: start + slice.length,
+                total,
+              })}
             </p>
             {pageCount > 1 && (
               <div className="flex items-center gap-2">

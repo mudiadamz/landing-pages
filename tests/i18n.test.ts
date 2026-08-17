@@ -93,7 +93,9 @@ describe("dictionary integrity", () => {
       // label resolved in a module-scope array would freeze the language that
       // happened to load first. Those are uses; counting only `t("…")` calls
       // reported six of them as dead.
-      for (const [, key] of src.matchAll(/(?<!t\()"([a-z]+\.[A-Za-z]+)"/g)) {
+      // Digits count: `titleKey: "panel.step1Desc"` is a use, and the old
+      // [A-Za-z]+ tail reported three of those as dead keys.
+      for (const [, key] of src.matchAll(/(?<!t\()"([a-z]+\.[A-Za-z0-9]+)"/g)) {
         if (key in id) used.add(key);
       }
     }

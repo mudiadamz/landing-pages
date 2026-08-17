@@ -43,18 +43,18 @@ export default async function EpubChaptersPage({
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <BackButton id={id} label={t("panel.backToProduct")} />
-          <h1 className="text-lg font-semibold tracking-tight">Edit isi EPUB</h1>
+          <h1 className="text-lg font-semibold tracking-tight">{t("editor.epubTitle")}</h1>
         </div>
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
           <p className="text-sm text-[var(--muted)]">
-            Produk ini belum punya file EPUB. Upload dulu di{" "}
+            {t("editor.noEpubBefore")}{" "}
             <Link
               href={`/panel/product/${id}/edit`}
               className="font-medium text-[var(--primary)] hover:underline"
             >
-              halaman produk
+              {t("editor.productPage")}
             </Link>
-            , lalu kembali ke sini untuk mengedit per bab.
+            {t("editor.noEpubAfter")}
           </p>
         </div>
       </div>
