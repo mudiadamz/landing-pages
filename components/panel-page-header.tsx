@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * The header every panel screen opens with: back, title, an optional identifier,
@@ -15,8 +17,9 @@ import Link from "next/link";
  * least: an arrow at the top-left of a subpage is already understood, and every
  * pixel it takes is a pixel the title truncates by.
  */
-export function PanelPageHeader({
+export async function PanelPageHeader({
   backHref,
+  /** Defaults to "Kembali" in the caller's locale. */
   backLabel,
   title,
   /** A slug or id, rendered in mono under the title. */
@@ -32,6 +35,8 @@ export function PanelPageHeader({
   description?: string;
   actions?: React.ReactNode;
 }) {
+  const t = translator(await requestLocale());
+  const back = backLabel ?? t("common.back");
   return (
     <header className="flex flex-col gap-2">
       {/* flex-wrap, so a pair of icon buttons stays on the title's line while a
@@ -45,7 +50,7 @@ export function PanelPageHeader({
           className="-ml-2 flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
         >
           <span aria-hidden>←</span>
-          <span className="sr-only sm:not-sr-only">{backLabel}</span>
+          <span className="sr-only sm:not-sr-only">{back}</span>
         </Link>
 
         <h1 className="min-w-[6rem] flex-1 truncate text-lg font-semibold tracking-tight sm:text-xl">
