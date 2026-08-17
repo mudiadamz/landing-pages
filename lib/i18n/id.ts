@@ -1031,6 +1031,59 @@ export const id = {
   "sites.paymentBefore": "Pembayaran tidak perlu disetel apa pun: callback Duitku selalu ke",
   "sites.paymentAfter": ", sedangkan pembeli dikembalikan ke domain tempat dia belanja.",
 
+  "panel.adminCanSell": "Sebagai admin, Anda dapat mengelola & menjual produk.",
+  "panel.publisherCanSell":
+    "Anda adalah publisher — buka menu Produk digital untuk mulai menjual.",
+  "panel.applyFailed": "Gagal mengirim pengajuan.",
+  "panel.applyIntro":
+    "Ingin menjual produk digital Anda sendiri di sini? Ajukan menjadi publisher. Setelah disetujui admin, Anda bisa membuat & menjual produk.",
+  "panel.applyPending": "Pengajuan sedang ditinjau admin",
+  "panel.applyRejected": "Pengajuan sebelumnya ditolak.",
+  "panel.applyAgainHint": "Anda dapat mengajukan lagi dengan foto yang baru.",
+  "panel.kycIntroBefore": "Untuk verifikasi identitas, ambil dua foto",
+  "panel.kycIntroBold": "langsung dari kamera",
+  "panel.kycIntroAfter":
+    "(tidak bisa pilih dari galeri). Foto hanya dilihat admin untuk verifikasi dan tidak ditampilkan di mana pun.",
+  "panel.idPhotoHint": "Pastikan seluruh kartu terlihat, teks terbaca, tidak silau.",
+  "panel.selfieHint": "Wajah terlihat jelas, sambil memegang KTP kalau bisa.",
+  "panel.legalNameHint": "Harus sama persis dengan KTP. Tidak ditampilkan ke pembeli.",
+  "panel.shopNameHint": "Nama inilah yang dilihat pembeli. Boleh berbeda dari nama asli.",
+  "panel.addressHint":
+    "Alamat Anda sekarang — boleh berbeda dari alamat di KTP. Hanya dilihat admin.",
+  "panel.addressPlaceholder": "Jalan, nomor, RT/RW\nKelurahan, Kecamatan\nKota, Provinsi, Kode Pos",
+  "panel.payoutAccountHint": "Harus atas nama Anda sendiri. Hanya dilihat admin untuk pembayaran.",
+  "panel.kycConfirm": "Saya menyatakan nama di atas sama dengan KTP saya, dan saya menyetujui",
+  "panel.sending": "Mengirim…",
+  "panel.sendApplication": "Kirim pengajuan",
+  "panel.needBothPhotos": "Kedua foto wajib diambil.",
+  "panel.needFields": "Lengkapi nama, alamat, dan data rekening.",
+  "panel.needTerms": "Centang persetujuan ketentuan publisher.",
+
+  "sites.savedPublicLater": "Tersimpan. Halaman publik menyusul dalam ~1 menit.",
+  "sites.identityHeading": "Identitas",
+  "sites.identityIntro": "Dipakai di judul tab, hasil pencarian, OG, dan JSON-LD untuk",
+  "sites.taglineHint": "Muncul di judul tab:",
+  "sites.taglineExample": "{name} — tagline",
+  "sites.logoHint":
+    "Lebar/wordmark, PNG · WebP · JPEG · SVG, maks 300 KB. Menggantikan tulisan nama di header.",
+  "sites.iconHint":
+    "Persegi, minimal 192×192, PNG · WebP · SVG, maks 200 KB. Dipakai di tab browser, install ke home screen, dan avatar Link in bio.",
+  "sites.defaultSuffix": "· bawaan",
+  "sites.defaultWord": "bawaan",
+  "sites.suggestedPalette": "Palet disarankan:",
+  "sites.templateBadgeNoteBefore": "Badge di atas = permukaan yang template ini punya sendiri;",
+  "sites.templateBadgeNoteAfter":
+    "berarti ikut tampilan Marketplace. Yang selalu sama di semua template: halaman produk, checkout, reader, dan halaman legal.",
+  "sites.paletteNote":
+    "Mengubah warna aksi, tint, dan aksen. Latar, teks, dan border tetap — di situlah kontrasnya, jadi tidak bisa diatur sampai rusak.",
+  "sites.localeNote":
+    "Bahasa antarmuka untuk domain ini — tombol, label, dan teks bawaan. Isi yang Anda tulis sendiri (judul produk, deskripsi, halaman) tidak ikut diterjemahkan.",
+  "sites.catalogNote":
+    "Domain memilih kategori, bukan produk — jadi tidak ada produk yang diduplikasi, dan satu produk bisa tampil di beberapa storefront.",
+  "sites.subcategoriesNote": "Sub-kategori ikut otomatis.",
+  "sites.emptyWord": "Kosong",
+  "sites.wholeCatalogNote": "tampilkan seluruh katalog (itu yang dipakai domain utama).",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

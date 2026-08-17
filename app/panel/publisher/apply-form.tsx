@@ -115,9 +115,7 @@ export function PublisherApplyForm({
   if (role === "admin" || role === "publisher") {
     return (
       <p className="text-sm text-[var(--muted)]">
-        {role === "admin"
-          ? "Sebagai admin, Anda dapat mengelola & menjual produk."
-          : "Anda adalah publisher — buka menu Produk digital untuk mulai menjual."}
+        {role === "admin" ? t("panel.adminCanSell") : t("panel.publisherCanSell")}
       </p>
     );
   }
@@ -138,7 +136,7 @@ export function PublisherApplyForm({
         setFields(EMPTY);
         setAgreed(false);
       } else {
-        setError(res.error ?? "Gagal mengirim pengajuan.");
+        setError(res.error ?? t("panel.applyFailed"));
       }
     });
   }
@@ -146,28 +144,27 @@ export function PublisherApplyForm({
   return (
     <div>
       <p className="text-sm text-[var(--muted)]">
-        Ingin menjual produk digital Anda sendiri di sini? Ajukan menjadi publisher.
-        Setelah disetujui admin, Anda bisa membuat &amp; menjual produk.
+        {t("panel.applyIntro")}
       </p>
 
       {status === "pending" ? (
         <p className="mt-3 inline-flex items-center gap-2 rounded-md bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-          Pengajuan sedang ditinjau admin
+          {t("panel.applyPending")}
         </p>
       ) : (
         <>
           {status === "rejected" && (
             <div className="mt-3 rounded-lg border border-red-300/60 bg-red-50 p-3 dark:border-red-800/50 dark:bg-red-900/15">
               <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                Pengajuan sebelumnya ditolak.
+                {t("panel.applyRejected")}
               </p>
               {rejectNote && (
                 <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-                  Catatan admin: {rejectNote}
+                  {t("panel.adminNote")} {rejectNote}
                 </p>
               )}
               <p className="mt-1 text-xs text-red-700/80 dark:text-red-300/80">
-                Anda dapat mengajukan lagi dengan foto yang baru.
+                {t("panel.applyAgainHint")}
               </p>
             </div>
           )}
@@ -175,23 +172,22 @@ export function PublisherApplyForm({
           {form ? (
             <div className="mt-3 space-y-3">
               <p className="text-xs text-[var(--muted)]">
-                Untuk verifikasi identitas, ambil dua foto{" "}
-                <strong className="text-foreground">langsung dari kamera</strong> (tidak bisa
-                pilih dari galeri). Foto hanya dilihat admin untuk verifikasi dan tidak
-                ditampilkan di mana pun.
+                {t("panel.kycIntroBefore")}{" "}
+                <strong className="text-foreground">{t("panel.kycIntroBold")}</strong>{" "}
+                {t("panel.kycIntroAfter")}
               </p>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <LivePhotoCapture
                   label={t("panel.idPhoto")}
-                  hint="Pastikan seluruh kartu terlihat, teks terbaca, tidak silau."
+                  hint={t("panel.idPhotoHint")}
                   facing="environment"
                   value={ktp}
                   onChange={setKtp}
                 />
                 <LivePhotoCapture
                   label={t("panel.selfiePhoto")}
-                  hint="Wajah terlihat jelas, sambil memegang KTP kalau bisa."
+                  hint={t("panel.selfieHint")}
                   facing="user"
                   value={selfie}
                   onChange={setSelfie}
@@ -201,14 +197,14 @@ export function PublisherApplyForm({
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field
                   label={t("panel.legalName")}
-                  hint="Harus sama persis dengan KTP. Tidak ditampilkan ke pembeli."
+                  hint={t("panel.legalNameHint")}
                   value={fields.realName}
                   onChange={set("realName")}
                   placeholder={t("panel.legalNamePlaceholder")}
                 />
                 <Field
                   label={t("panel.shopName")}
-                  hint="Nama inilah yang dilihat pembeli. Boleh berbeda dari nama asli."
+                  hint={t("panel.shopNameHint")}
                   value={fields.displayName}
                   onChange={set("displayName")}
                   placeholder={t("panel.shopNamePlaceholder")}
@@ -217,16 +213,16 @@ export function PublisherApplyForm({
 
               <AreaField
                 label={t("panel.address")}
-                hint="Alamat Anda sekarang — boleh berbeda dari alamat di KTP. Hanya dilihat admin."
+                hint={t("panel.addressHint")}
                 value={fields.address}
                 onChange={set("address")}
-                placeholder={"Jalan, nomor, RT/RW\nKelurahan, Kecamatan\nKota, Provinsi, Kode Pos"}
+                placeholder={t("panel.addressPlaceholder")}
               />
 
               <div className="rounded-lg border border-[var(--border)] p-3">
-                <p className="text-xs font-medium text-foreground">Rekening pencairan</p>
+                <p className="text-xs font-medium text-foreground">{t("panel.payoutAccount")}</p>
                 <p className="mt-0.5 text-[11px] text-[var(--muted)]">
-                  Harus atas nama Anda sendiri. Hanya dilihat admin untuk pembayaran.
+                  {t("panel.payoutAccountHint")}
                 </p>
                 <div className="mt-2 grid gap-3 sm:grid-cols-3">
                   <Field label={t("panel.bankName")} value={fields.bankName} onChange={set("bankName")} placeholder={t("panel.bankNamePlaceholder")} />
@@ -259,7 +255,7 @@ export function PublisherApplyForm({
                   className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
                 />
                 <span>
-                  Saya menyatakan nama di atas sama dengan KTP saya, dan saya menyetujui{" "}
+                  {t("panel.kycConfirm")}{" "}
                   <strong className="font-medium">{termsHeading.toLowerCase()}</strong>.
                 </span>
               </label>
@@ -271,7 +267,7 @@ export function PublisherApplyForm({
                   disabled={pending || !ready}
                   className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                  {pending ? "Mengirim…" : "Kirim pengajuan"}
+                  {pending ? t("panel.sending") : t("panel.sendApplication")}
                 </button>
                 <button
                   type="button"
@@ -286,15 +282,15 @@ export function PublisherApplyForm({
                   disabled={pending}
                   className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:text-foreground disabled:opacity-50"
                 >
-                  Batal
+                  {t("common.cancel")}
                 </button>
                 {!ready && (
                   <span className="text-xs text-[var(--muted)]">
                     {!ktp || !selfie
-                      ? "Kedua foto wajib diambil."
+                      ? t("panel.needBothPhotos")
                       : !filled
-                        ? "Lengkapi nama, alamat, dan data rekening."
-                        : "Centang persetujuan ketentuan publisher."}
+                        ? t("panel.needFields")
+                        : t("panel.needTerms")}
                   </span>
                 )}
               </div>

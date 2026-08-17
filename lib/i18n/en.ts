@@ -1041,6 +1041,59 @@ export const en: Record<keyof typeof id, string> = {
   "sites.paymentBefore": "Payments need no setup at all: the Duitku callback always goes to",
   "sites.paymentAfter": ", while the buyer is returned to the domain they shopped on.",
 
+  "panel.adminCanSell": "As an admin you can manage & sell products.",
+  "panel.publisherCanSell":
+    "You are a publisher — open the Digital products menu to start selling.",
+  "panel.applyFailed": "Could not send the application.",
+  "panel.applyIntro":
+    "Want to sell your own digital products here? Apply to become a publisher. Once an admin approves it, you can create & sell products.",
+  "panel.applyPending": "Your application is with an admin",
+  "panel.applyRejected": "Your previous application was declined.",
+  "panel.applyAgainHint": "You can apply again with new photos.",
+  "panel.kycIntroBefore": "For identity verification, take two photos",
+  "panel.kycIntroBold": "with the camera itself",
+  "panel.kycIntroAfter":
+    "(picking from the gallery is not possible). Admins see the photos for verification only, and they are shown nowhere else.",
+  "panel.idPhotoHint": "Make sure the whole card is visible, the text readable, no glare.",
+  "panel.selfieHint": "Face clearly visible, holding the ID card if you can.",
+  "panel.legalNameHint": "Must match the ID exactly. Not shown to buyers.",
+  "panel.shopNameHint": "This is the name buyers see. It may differ from your real name.",
+  "panel.addressHint":
+    "Where you live now — it may differ from the address on your ID. Seen by admins only.",
+  "panel.addressPlaceholder": "Street, number\nDistrict\nCity, Province, Postcode",
+  "panel.payoutAccountHint": "Must be in your own name. Seen by admins for payouts only.",
+  "panel.kycConfirm": "I confirm the name above matches my ID, and I accept the",
+  "panel.sending": "Sending…",
+  "panel.sendApplication": "Send application",
+  "panel.needBothPhotos": "Both photos are required.",
+  "panel.needFields": "Fill in the name, address and account details.",
+  "panel.needTerms": "Tick to accept the publisher terms.",
+
+  "sites.savedPublicLater": "Saved. The public pages follow within ~1 minute.",
+  "sites.identityHeading": "Identity",
+  "sites.identityIntro": "Used in the tab title, search results, OG and JSON-LD for",
+  "sites.taglineHint": "Shows in the tab title:",
+  "sites.taglineExample": "{name} — tagline",
+  "sites.logoHint":
+    "Wide/wordmark, PNG · WebP · JPEG · SVG, max 300 KB. Replaces the name text in the header.",
+  "sites.iconHint":
+    "Square, at least 192×192, PNG · WebP · SVG, max 200 KB. Used for the browser tab, the home-screen install, and the Link in bio avatar.",
+  "sites.defaultSuffix": "· default",
+  "sites.defaultWord": "default",
+  "sites.suggestedPalette": "Suggested palette:",
+  "sites.templateBadgeNoteBefore": "The badges above are the surfaces this template owns;",
+  "sites.templateBadgeNoteAfter":
+    "means it follows the Marketplace look. Identical across every template: the product page, checkout, reader, and legal pages.",
+  "sites.paletteNote":
+    "Changes the action, tint and accent colours. Background, text and borders stay put — that is where the contrast lives, so it cannot be adjusted into unreadability.",
+  "sites.localeNote":
+    "The interface language for this domain — buttons, labels and default text. What you write yourself (product titles, descriptions, pages) is not translated.",
+  "sites.catalogNote":
+    "A domain picks categories, not products — so nothing is duplicated, and one product can appear on several storefronts.",
+  "sites.subcategoriesNote": "Sub-categories come along automatically.",
+  "sites.emptyWord": "Empty",
+  "sites.wholeCatalogNote": "shows the whole catalogue (which is what the main domain uses).",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

@@ -82,8 +82,8 @@ export function SiteProfileForm({
       const res = await updateSiteProfile(siteId, draft);
       setMessage(
         res.ok
-          ? { type: "ok", text: "Tersimpan. Halaman publik menyusul dalam ~1 menit." }
-          : { type: "err", text: res.error ?? "Gagal menyimpan." },
+          ? { type: "ok", text: t("sites.savedPublicLater") }
+          : { type: "err", text: res.error ?? t("common.failed") },
       );
       if (res.ok) router.refresh();
     });
@@ -106,16 +106,16 @@ export function SiteProfileForm({
       {/* 1 — Identity */}
       <section className={CARD}>
         <header>
-          <h2 className="text-sm font-semibold text-foreground">Identitas</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t("sites.identityHeading")}</h2>
           <p className="mt-0.5 text-xs text-[var(--muted)]">
-            Dipakai di judul tab, hasil pencarian, OG, dan JSON-LD untuk{" "}
+            {t("sites.identityIntro")}{" "}
             <span className="font-mono text-foreground">{host}</span>.
           </p>
         </header>
 
         <div className="space-y-1.5">
           <label className="block text-sm font-medium text-foreground">
-            Nama situs <span className="text-red-500">*</span>
+            {t("sites.siteName")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -137,8 +137,11 @@ export function SiteProfileForm({
             className={INPUT}
           />
           <p className="text-xs text-[var(--muted)]">
-            Muncul di judul tab:{" "}
-            <span className="font-mono">{draft.name || "Nama"} — tagline</span>.
+            {t("sites.taglineHint")}{" "}
+            <span className="font-mono">
+              {t("sites.taglineExample", { name: draft.name || t("content.name") })}
+            </span>
+            .
           </p>
         </div>
 
@@ -166,14 +169,14 @@ export function SiteProfileForm({
             <BrandUpload
               kind="logo"
               label={t("panel.logoHeader")}
-              hint="Lebar/wordmark, PNG · WebP · JPEG · SVG, maks 300 KB. Menggantikan tulisan nama di header."
+              hint={t("sites.logoHint")}
               url={draft.logoUrl}
               onChange={(url) => set("logoUrl", url)}
             />
             <BrandUpload
               kind="icon"
               label={t("panel.iconFavicon")}
-              hint="Persegi, minimal 192×192, PNG · WebP · SVG, maks 200 KB. Dipakai di tab browser, install ke home screen, dan avatar Link in bio."
+              hint={t("sites.iconHint")}
               url={draft.iconUrl}
               onChange={(url) => set("iconUrl", url)}
             />
@@ -199,13 +202,13 @@ export function SiteProfileForm({
         <div className="space-y-2">
           <span className="block text-sm font-medium text-foreground">Template</span>
           <div className="grid gap-2 sm:grid-cols-2">
-            {templates.map((t) => {
-              const active = draft.template === t.key;
+            {templates.map((tpl) => {
+              const active = draft.template === tpl.key;
               return (
                 <button
-                  key={t.key}
+                  key={tpl.key}
                   type="button"
-                  onClick={() => set("template", t.key)}
+                  onClick={() => set("template", tpl.key)}
                   aria-pressed={active}
                   className={`rounded-xl border p-3 text-left transition-colors ${
                     active
@@ -213,15 +216,15 @@ export function SiteProfileForm({
                       : "border-[var(--border)] hover:bg-[var(--background)]"
                   }`}
                 >
-                  <span className="block text-sm font-medium text-foreground">{t.label}</span>
+                  <span className="block text-sm font-medium text-foreground">{tpl.label}</span>
                   <span className="mt-0.5 block text-xs text-[var(--muted)]">
-                    {t.description}
+                    {tpl.description}
                   </span>
                   {/* Read live from the registry, so a new theme's coverage shows up here
                       without anyone updating this list. "bawaan" = falls back to
                       Marketplace for that surface. */}
                   <span className="mt-2 flex flex-wrap gap-1">
-                    {t.coverage.map((c) => (
+                    {tpl.coverage.map((c) => (
                       <span
                         key={c.label}
                         className={`rounded px-1.5 py-0.5 text-[10px] ${
@@ -231,15 +234,15 @@ export function SiteProfileForm({
                         }`}
                       >
                         {c.label}
-                        {c.own ? "" : " · bawaan"}
+                        {c.own ? "" : ` ${t("sites.defaultSuffix")}`}
                       </span>
                     ))}
                   </span>
-                  {t.defaultPalette && (
+                  {tpl.defaultPalette && (
                     <span className="mt-1.5 block text-[10px] text-[var(--muted)]">
-                      Palet disarankan:{" "}
-                      {palettes.find((p) => p.key === t.defaultPalette)?.label ??
-                        t.defaultPalette}
+                      {t("sites.suggestedPalette")}{" "}
+                      {palettes.find((p) => p.key === tpl.defaultPalette)?.label ??
+                        tpl.defaultPalette}
                     </span>
                   )}
                 </button>
@@ -247,9 +250,8 @@ export function SiteProfileForm({
             })}
           </div>
           <p className="text-xs text-[var(--muted)]">
-            Badge di atas = permukaan yang template ini punya sendiri; <em>bawaan</em>{" "}
-            berarti ikut tampilan Marketplace. Yang selalu sama di semua template: halaman
-            produk, checkout, reader, dan halaman legal.
+            {t("sites.templateBadgeNoteBefore")} <em>{t("sites.defaultWord")}</em>{" "}
+            {t("sites.templateBadgeNoteAfter")}
           </p>
         </div>
 
@@ -291,8 +293,7 @@ export function SiteProfileForm({
             })}
           </div>
           <p className="text-xs text-[var(--muted)]">
-            Mengubah warna aksi, tint, dan aksen. Latar, teks, dan border tetap — di
-            situlah kontrasnya, jadi tidak bisa diatur sampai rusak.
+            {t("sites.paletteNote")}
           </p>
         </div>
       </section>
@@ -304,8 +305,7 @@ export function SiteProfileForm({
         <header>
           <h2 className="text-sm font-semibold text-foreground">{t("nav.language")}</h2>
           <p className="mt-0.5 text-xs text-[var(--muted)]">
-            Bahasa antarmuka untuk domain ini — tombol, label, dan teks bawaan. Isi yang
-            Anda tulis sendiri (judul produk, deskripsi, halaman) tidak ikut diterjemahkan.
+            {t("sites.localeNote")}
           </p>
         </header>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -336,8 +336,7 @@ export function SiteProfileForm({
         <header>
           <h2 className="text-sm font-semibold text-foreground">{t("panel.catalogNiche")}</h2>
           <p className="mt-0.5 text-xs text-[var(--muted)]">
-            Domain memilih kategori, bukan produk — jadi tidak ada produk yang
-            diduplikasi, dan satu produk bisa tampil di beberapa storefront.
+            {t("sites.catalogNote")}
           </p>
         </header>
 
@@ -364,8 +363,9 @@ export function SiteProfileForm({
           </div>
         )}
         <p className="text-xs text-[var(--muted)]">
-          Sub-kategori ikut otomatis. <strong className="text-foreground">Kosong</strong> ={" "}
-          tampilkan seluruh katalog (itu yang dipakai domain utama).
+          {t("sites.subcategoriesNote")}{" "}
+          <strong className="text-foreground">{t("sites.emptyWord")}</strong> ={" "}
+          {t("sites.wholeCatalogNote")}
         </p>
       </section>
 
@@ -400,6 +400,7 @@ function BrandUpload({
   url: string;
   onChange: (url: string) => void;
 }) {
+  const t = useT();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ name: string; size?: number } | null>(null);
@@ -416,7 +417,7 @@ function BrandUpload({
       form.set("file", file);
       const res = await uploadSiteBrandImage(form);
       if (!res.ok || !res.url) {
-        setError(res.error ?? "Gagal mengunggah.");
+        setError(res.error ?? t("panel.uploadFailed"));
         return;
       }
       setMeta({ name: file.name, size: file.size });
