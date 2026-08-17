@@ -3,19 +3,20 @@
 import { Fragment, useState } from "react";
 import { getSessionJourney, type JourneyStep, type SessionListRow } from "@/lib/actions/analytics";
 import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 
-const ENGAGEMENT_LABEL: Record<string, { label: string; cls: string }> = {
-  read: { label: "Baca", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-  curious: { label: "Penasaran", cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  left: { label: "Pergi", cls: "bg-rose-500/15 text-rose-600 dark:text-rose-400" },
+const ENGAGEMENT_LABEL: Record<string, { labelKey: MessageKey; cls: string }> = {
+  read: { labelKey: "analytics.read", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  curious: { labelKey: "analytics.curious", cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  left: { labelKey: "analytics.left", cls: "bg-rose-500/15 text-rose-600 dark:text-rose-400" },
 };
 
-const PAGE_LABEL: Record<string, string> = {
-  home: "Beranda",
-  preview: "Preview",
-  checkout: "Checkout",
-  panel: "Panel",
-  other: "Lainnya",
+const PAGE_LABEL: Record<string, MessageKey> = {
+  home: "nav.home",
+  preview: "checkout.preview",
+  checkout: "product.ctaLabelCheckout",
+  panel: "analytics.pagePanel",
+  other: "home.otherLinks",
 };
 
 function fmtTime(iso: string): string {
@@ -103,7 +104,7 @@ export function SessionRow({
             )}
             {loading && <p className="text-xs text-[var(--muted)]">{t("analytics.loadingJourney")}</p>}
             {steps && steps.length === 0 && (
-              <p className="text-xs text-[var(--muted)]">Tidak ada langkah tercatat.</p>
+              <p className="text-xs text-[var(--muted)]">{t("analytics.noSteps")}</p>
             )}
             {steps && steps.length > 0 && (
               <ol className="space-y-1.5">
@@ -113,7 +114,10 @@ export function SessionRow({
                     <li key={i} className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="w-5 shrink-0 text-right tabular-nums text-[var(--muted)]">{i + 1}.</span>
                       <span className="rounded bg-[var(--card)] px-1.5 py-0.5 text-[var(--muted)]">
-                        {PAGE_LABEL[st.pageType ?? "other"] ?? st.pageType}
+                        {(() => {
+                          const key = PAGE_LABEL[st.pageType ?? "other"];
+                          return key ? t(key) : st.pageType;
+                        })()}
                       </span>
                       <span className="font-medium">{st.title || st.path}</span>
                       <span className="text-[var(--muted)]">{fmtDuration(st.dwellMs)}</span>
@@ -121,7 +125,7 @@ export function SessionRow({
                         <span className="text-[var(--muted)]">scroll {st.scrollDepth}%</span>
                       )}
                       {eng && (
-                        <span className={`rounded px-1.5 py-0.5 font-medium ${eng.cls}`}>{eng.label}</span>
+                        <span className={`rounded px-1.5 py-0.5 font-medium ${eng.cls}`}>{t(eng.labelKey)}</span>
                       )}
                     </li>
                   );

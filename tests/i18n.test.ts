@@ -70,7 +70,6 @@ describe("dictionary integrity", () => {
     "common.search",
     "home.themeToggle",
     "nav.categories",
-    "nav.home",
     "panel.socialHint",
     "reader.signInGoogle",
     "sites.domain",

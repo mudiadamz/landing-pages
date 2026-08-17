@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { setLandingPagePublished } from "@/lib/actions/landing-pages";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Quick action to show/hide a product. Hidden products drop out of the public
  * homepage listing and 404 for visitors on /preview/[slug] & /checkout/[slug].
  */
 export function VisibilityToggle({ id, published, size = "sm" }: { id: string; published: boolean; size?: "sm" | "lg" }) {
+  const t = useT();
   const [visible, setVisible] = useState(published);
   const [pending, startTransition] = useTransition();
   const shape = size === "lg" ? "h-11 flex-1 border border-[var(--border)] active:scale-95" : "p-2 active:scale-90";
@@ -17,8 +19,8 @@ export function VisibilityToggle({ id, published, size = "sm" }: { id: string; p
     const next = !visible;
     const ok = confirm(
       next
-        ? "Tampilkan produk ini di frontend? Produk akan muncul di homepage & bisa diakses pengunjung."
-        : "Sembunyikan produk ini dari frontend? Produk akan hilang dari homepage & tidak bisa diakses pengunjung.",
+        ? t("panel.showConfirm")
+        : t("panel.hideConfirm"),
     );
     if (!ok) return;
     setVisible(next); // optimistic
@@ -37,8 +39,8 @@ export function VisibilityToggle({ id, published, size = "sm" }: { id: string; p
       onClick={toggle}
       disabled={pending}
       aria-pressed={visible}
-      title={visible ? "Sembunyikan dari frontend" : "Tampilkan di frontend"}
-      aria-label={visible ? "Sembunyikan dari frontend" : "Tampilkan di frontend"}
+      title={visible ? t("panel.hideFromSite") : t("panel.showOnSite")}
+      aria-label={visible ? t("panel.hideFromSite") : t("panel.showOnSite")}
       className={`inline-flex items-center justify-center rounded-lg transition disabled:opacity-50 hover:bg-[var(--background)] ${shape} ${
         visible ? "text-[var(--primary)]" : "text-[var(--muted)] hover:text-foreground"
       }`}

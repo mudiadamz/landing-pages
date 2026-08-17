@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EpubQuickForm } from "./epub-quick-form";
 import { NewPageForm } from "./new-page-form";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Two ways to start a product, with the short one first.
@@ -17,6 +18,7 @@ import type { LandingPageCategory } from "@/lib/actions/landing-pages";
  * and it does not deserve a page of its own to navigate back out of.
  */
 export function NewProductModeTabs({ categories }: { categories: LandingPageCategory[] }) {
+  const t = useT();
   const [mode, setMode] = useState<"epub" | "full">("epub");
 
   const tab = (key: "epub" | "full", label: string, sub: string) => {
@@ -44,18 +46,17 @@ export function NewProductModeTabs({ categories }: { categories: LandingPageCate
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-2 sm:flex-row">
-        {tab("epub", "Buku (EPUB)", "Upload file, sisanya otomatis")}
-        {tab("full", "Lainnya", "Isi judul, URL & kategori sendiri")}
+        {tab("epub", t("panel.modeEpub"), t("panel.modeEpubSub"))}
+        {tab("full", t("home.otherLinks"), t("panel.modeFullSub"))}
       </div>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm sm:p-6">
         {mode === "epub" ? (
           <>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-foreground">Dari file EPUB</h2>
+              <h2 className="text-base font-semibold text-foreground">{t("panel.fromEpubFile")}</h2>
               <p className="text-sm text-[var(--muted)]">
-                Cukup file, kategori, dan harga — judul, sampul, deskripsi, dan preview
-                dibaca dari bukunya.
+                {t("panel.fromEpubIntro")}
               </p>
             </div>
             <EpubQuickForm categories={categories} />
@@ -63,10 +64,9 @@ export function NewProductModeTabs({ categories }: { categories: LandingPageCate
         ) : (
           <>
             <div className="mb-5">
-              <h2 className="text-base font-semibold text-foreground">Info dasar</h2>
+              <h2 className="text-base font-semibold text-foreground">{t("panel.basicInfo")}</h2>
               <p className="text-sm text-[var(--muted)]">
-                Langkah 1 dari 2 — mulai dari judul, URL &amp; kategori produk. Detail, harga,
-                dan file diatur di langkah berikutnya.
+                {t("panel.basicInfoIntro")}
               </p>
             </div>
             <NewPageForm categories={categories} />

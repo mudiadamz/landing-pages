@@ -1164,6 +1164,31 @@ export const en: Record<keyof typeof id, string> = {
   "panel.invoiceMethod": "Method: {method}",
   "panel.item": "Item",
 
+  "analytics.pagePanel": "Panel",
+  "analytics.noSteps": "No steps recorded.",
+  "panel.modeEpub": "Book (EPUB)",
+  "panel.modeEpubSub": "Upload the file, the rest is automatic",
+  "panel.modeFullSub": "Enter the title, URL & category yourself",
+  "panel.fromEpubFile": "From an EPUB file",
+  "panel.fromEpubIntro":
+    "Just the file, a category and a price — title, cover, description and preview are read from the book.",
+  "panel.basicInfo": "Basic info",
+  "panel.basicInfoIntro":
+    "Step 1 of 2 — start with the product's title, URL & category. Details, price and files come next.",
+  "panel.fullName": "Full name",
+  "panel.ratingRequired": "Pick a rating of at least 1 star",
+  "panel.updateReview": "Update review",
+  "panel.sendReview": "Send review",
+  "panel.rolePublisherNote": "Already included: purchases, their own products, their product stats.",
+  "panel.roleCustomerNote": "Already included: the purchase list.",
+  "panel.adminFullAccess": "Admins always have full access to every feature (not configurable).",
+  "panel.showConfirm":
+    "Show this product on the site? It will appear on the homepage and be reachable by visitors.",
+  "panel.hideConfirm":
+    "Hide this product from the site? It disappears from the homepage and visitors cannot reach it.",
+  "panel.hideFromSite": "Hide from the site",
+  "panel.showOnSite": "Show on the site",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

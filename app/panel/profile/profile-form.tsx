@@ -28,7 +28,7 @@ export function ProfileForm({ initialFullName }: Props) {
       setSaved(true);
       router.refresh();
     } else {
-      setError(result.error ?? "Gagal menyimpan.");
+      setError(result.error ?? t("common.failed"));
     }
   }
 
@@ -37,7 +37,7 @@ export function ProfileForm({ initialFullName }: Props) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <label htmlFor="profile-full_name" className="sr-only">
-            Nama lengkap
+            {t("panel.fullName")}
           </label>
           <input
             id="profile-full_name"
@@ -56,10 +56,10 @@ export function ProfileForm({ initialFullName }: Props) {
           />
         </div>
         <Button type="submit" size="md" disabled={saving || !dirty} className="shrink-0">
-          {saving ? "Menyimpan…" : "Simpan"}
+          {saving ? t("common.saving") : t("common.save")}
         </Button>
       </div>
-      {saved && <p className="text-sm text-green-600 dark:text-green-400">Tersimpan.</p>}
+      {saved && <p className="text-sm text-green-600 dark:text-green-400">{t("common.saved")}</p>}
       {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
     </form>
   );

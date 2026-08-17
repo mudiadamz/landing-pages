@@ -30,7 +30,7 @@ export function ReviewForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (rating < 1) {
-      setError("Pilih rating minimal 1 bintang");
+      setError(t("panel.ratingRequired"));
       return;
     }
     setError(null);
@@ -102,7 +102,7 @@ export function ReviewForm({
           loading={loading}
           disabled={loading || rating < 1}
         >
-          {loading ? "Menyimpan…" : existingRating > 0 ? "Update review" : "Kirim review"}
+          {loading ? t("common.saving") : existingRating > 0 ? t("panel.updateReview") : t("panel.sendReview")}
         </Button>
         <Button
           variant="secondary"
@@ -110,7 +110,7 @@ export function ReviewForm({
           onClick={onDone}
           className="text-[var(--muted)] hover:text-foreground"
         >
-          Batal
+          {t("common.cancel")}
         </Button>
       </div>
     </form>

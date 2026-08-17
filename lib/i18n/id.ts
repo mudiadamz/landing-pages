@@ -1154,6 +1154,31 @@ export const id = {
   "panel.invoiceMethod": "Metode: {method}",
   "panel.item": "Item",
 
+  "analytics.pagePanel": "Panel",
+  "analytics.noSteps": "Tidak ada langkah tercatat.",
+  "panel.modeEpub": "Buku (EPUB)",
+  "panel.modeEpubSub": "Upload file, sisanya otomatis",
+  "panel.modeFullSub": "Isi judul, URL & kategori sendiri",
+  "panel.fromEpubFile": "Dari file EPUB",
+  "panel.fromEpubIntro":
+    "Cukup file, kategori, dan harga — judul, sampul, deskripsi, dan preview dibaca dari bukunya.",
+  "panel.basicInfo": "Info dasar",
+  "panel.basicInfoIntro":
+    "Langkah 1 dari 2 — mulai dari judul, URL & kategori produk. Detail, harga, dan file diatur di langkah berikutnya.",
+  "panel.fullName": "Nama lengkap",
+  "panel.ratingRequired": "Pilih rating minimal 1 bintang",
+  "panel.updateReview": "Update review",
+  "panel.sendReview": "Kirim review",
+  "panel.rolePublisherNote": "Sudah otomatis: pembelian, produk sendiri, stats produknya.",
+  "panel.roleCustomerNote": "Sudah otomatis: daftar pembelian.",
+  "panel.adminFullAccess": "Admin selalu punya akses penuh ke semua fitur (tidak dapat diubah).",
+  "panel.showConfirm":
+    "Tampilkan produk ini di frontend? Produk akan muncul di homepage & bisa diakses pengunjung.",
+  "panel.hideConfirm":
+    "Sembunyikan produk ini dari frontend? Produk akan hilang dari homepage & tidak bisa diakses pengunjung.",
+  "panel.hideFromSite": "Sembunyikan dari frontend",
+  "panel.showOnSite": "Tampilkan di frontend",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",
