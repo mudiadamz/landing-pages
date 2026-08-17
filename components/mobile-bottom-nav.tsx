@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/lib/i18n/client";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -21,6 +22,7 @@ function buzz() {
  * isn't hidden behind the fixed bar. Hidden on md+.
  */
 export function MobileBottomNav({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const t = useT();
   const pathname = usePathname() ?? "/";
 
   const items: {
@@ -30,18 +32,18 @@ export function MobileBottomNav({ isLoggedIn }: { isLoggedIn: boolean }) {
     icon: React.ReactNode;
     match: (p: string) => boolean;
   }[] = [
-    { key: "home", href: "/", label: "Beranda", icon: <HomeIcon />, match: (p) => p === "/" },
+    { key: "home", href: "/", label: t("nav.home"), icon: <HomeIcon />, match: (p) => p === "/" },
     {
       key: "categories",
       href: "/categories",
-      label: "Kategori",
+      label: t("panel.navCategories"),
       icon: <GridIcon />,
       match: (p) => p === "/categories" || p.startsWith("/category/"),
     },
     {
       key: "profile",
       href: isLoggedIn ? "/panel" : "/login",
-      label: isLoggedIn ? "Profil" : "Masuk",
+      label: isLoggedIn ? t("nav.profile") : t("nav.signIn"),
       icon: <UserIcon />,
       match: (p) => p.startsWith("/panel") || p === "/login" || p === "/signup",
     },
@@ -61,7 +63,7 @@ export function MobileBottomNav({ isLoggedIn }: { isLoggedIn: boolean }) {
       {/* Reserve space so the fixed bar never covers the footer. */}
       <div className="h-[4.5rem] md:hidden" aria-hidden />
       <nav
-        aria-label="Navigasi bawah"
+        aria-label={t("home.bottomNav")}
         className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--card)]/80 pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <div className="relative mx-auto flex max-w-5xl items-stretch">

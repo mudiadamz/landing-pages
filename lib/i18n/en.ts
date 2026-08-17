@@ -1363,6 +1363,29 @@ export const en: Record<keyof typeof id, string> = {
   "product.nextImage": "Next image",
   "product.goToImage": "Go to image {n}",
 
+  "checkout.guaranteeTitle": "7-day money-back guarantee.",
+  "checkout.guaranteeBody":
+    "Not a fit, or a problem with the file? I fix it or refund you — guaranteed by Adam personally.",
+  "checkout.securePayment": "Secure payment via Duitku",
+  "checkout.readMore": "Read more",
+  "reviews.verifiedBuyer": "Verified buyer",
+  "reviews.buyerReviews": "Buyer reviews",
+  "product.moreInCategory": "More products in {name}",
+
+  "reader.partN": "Part {n}",
+  "reader.pageOf": "Page {page} of {total}",
+  "reader.pageOfOpenToc": "Page {page} of {total} — open the chapter list",
+  "reviews.whatBuyersSay": "What buyers say",
+  "reviews.reviewN": "Review {n}",
+  "home.tutorialVideo": "Tutorial video",
+  "reader.chapterList": "Chapters",
+  "reader.closeChapterList": "Close the chapter list",
+  "auth.emailNotVerified": "Your email is not verified yet",
+  "auth.resend": "Resend",
+  "home.bottomNav": "Bottom navigation",
+  "panel.pendingActions": "{count} actions waiting",
+  "panel.viewSite": "View site",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

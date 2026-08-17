@@ -1,8 +1,11 @@
 import type { PublicReview } from "@/lib/actions/reviews";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
-function Stars({ rating }: { rating: number }) {
+async function Stars({ rating }: { rating: number }) {
+  const t = translator(await requestLocale());
   return (
-    <span className="inline-flex items-center" aria-label={`${rating} dari 5 bintang`}>
+    <span className="inline-flex items-center" aria-label={t("panel.starsOutOfFive", { rating })}>
       {Array.from({ length: 5 }).map((_, i) => (
         <span
           key={i}
@@ -16,7 +19,8 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export function VerifiedBadge() {
+export async function VerifiedBadge() {
+  const t = translator(await requestLocale());
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--primary)]">
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -27,7 +31,7 @@ export function VerifiedBadge() {
           d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      Pembeli terverifikasi
+      {t("reviews.verifiedBuyer")}
     </span>
   );
 }
@@ -42,17 +46,20 @@ export function formatReviewMonth(iso: string): string {
  * Server-rendered list of verified-buyer reviews. Renders nothing when empty,
  * so callers can drop it in unconditionally.
  */
-export function VerifiedReviews({
+export async function VerifiedReviews({
   reviews,
-  title = "Ulasan pembeli",
+  title,
 }: {
   reviews: PublicReview[];
+  /** Defaults to "Ulasan pembeli" in the caller's locale. */
   title?: string;
 }) {
+  const t = translator(await requestLocale());
+  const heading = title ?? t("reviews.buyerReviews");
   if (!reviews.length) return null;
   return (
     <section className="border-t border-[var(--border)] pt-5">
-      <h2 className="text-sm font-semibold text-foreground mb-3">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground mb-3">{heading}</h2>
       <ul className="space-y-4">
         {reviews.map((r) => (
           <li

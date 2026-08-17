@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { resendVerification, type ResendState } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
  * lands is a typo at signup, and the reader can't fix what they can't see.
  */
 export function EmailConfirmBanner({ email }: { email: string | null }) {
+  const t = useT();
   const [state, action, pending] = useActionState<ResendState, FormData>(
     resendVerification,
     null,
@@ -29,7 +31,7 @@ export function EmailConfirmBanner({ email }: { email: string | null }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
         <p className="min-w-0 text-amber-800 dark:text-amber-200">
-          Email Anda belum diverifikasi
+          {t("auth.emailNotVerified")}
           {email && (
             <>
               {" — "}
@@ -47,7 +49,7 @@ export function EmailConfirmBanner({ email }: { email: string | null }) {
             disabled={pending}
             className="shrink-0 border-0 bg-amber-500/20 px-3 text-sm text-amber-800 hover:bg-amber-500/20 hover:opacity-90 disabled:opacity-70 dark:bg-amber-600/20 dark:text-amber-200 dark:hover:bg-amber-600/20"
           >
-            {pending ? "Mengirim…" : "Kirim ulang"}
+            {pending ? "Mengirim…" : t("auth.resend")}
           </Button>
         </form>
       </div>

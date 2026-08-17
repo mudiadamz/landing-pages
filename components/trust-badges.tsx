@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Local payment methods accepted via Duitku. Rendered as honest text pills
@@ -28,17 +30,18 @@ function ShieldCheckIcon({ className }: { className?: string }) {
  * bordered badge placed at the hesitation point (right above the buy CTA). On a
  * low-review store this is the strongest social-proof substitute.
  */
-export function GuaranteeBadge({ className = "" }: { className?: string }) {
+export async function GuaranteeBadge({ className = "" }: { className?: string }) {
+  const t = translator(await requestLocale());
   return (
     <div
       className={`flex items-start gap-2.5 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 p-3 ${className}`}
     >
       <ShieldCheckIcon className="w-5 h-5 shrink-0 text-[var(--primary)] mt-0.5" />
       <p className="text-xs text-foreground leading-relaxed">
-        <span className="font-semibold">Garansi 7 hari uang kembali.</span> Nggak cocok atau
-        file bermasalah? Aku perbaiki atau kembalikan dana — dijamin langsung oleh Adam.{" "}
+        <span className="font-semibold">{t("checkout.guaranteeTitle")}</span>{" "}
+        {t("checkout.guaranteeBody")}{" "}
         <Link href="/refund" className="text-[var(--primary)] hover:underline font-medium">
-          Selengkapnya
+          {t("checkout.readMore")}
         </Link>
       </p>
     </div>
@@ -49,12 +52,13 @@ export function GuaranteeBadge({ className = "" }: { className?: string }) {
  * Row of accepted payment methods + a "secure via Duitku" cue. A primary
  * Indonesian trust signal; place it directly under the buy CTA.
  */
-export function PaymentMethodsRow({ className = "" }: { className?: string }) {
+export async function PaymentMethodsRow({ className = "" }: { className?: string }) {
+  const t = translator(await requestLocale());
   return (
     <div className={`flex flex-col items-center gap-1.5 ${className}`}>
       <span className="inline-flex items-center gap-1.5 text-xs text-[var(--muted)]">
         <LockIcon className="w-3.5 h-3.5 text-[var(--primary)]" />
-        Pembayaran aman lewat Duitku
+        {t("checkout.securePayment")}
       </span>
       <span className="flex flex-wrap justify-center gap-1">
         {PAYMENT_METHODS.map((m) => (

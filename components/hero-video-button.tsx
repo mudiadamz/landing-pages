@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 
 /** Extract an 11-char YouTube id from watch/embed/youtu.be URLs. */
@@ -18,6 +19,7 @@ const PlayIcon = (
 );
 
 export function HeroVideoButton({ label, href }: { label: string; href: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const vid = youtubeId(href);
 
@@ -63,7 +65,7 @@ export function HeroVideoButton({ label, href }: { label: string; href: string }
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"
-          aria-label="Video tutorial"
+          aria-label={t("home.tutorialVideo")}
         >
           <div className="relative w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
             <button
@@ -80,7 +82,7 @@ export function HeroVideoButton({ label, href }: { label: string; href: string }
               <iframe
                 className="absolute inset-0 h-full w-full"
                 src={`https://www.youtube.com/embed/${vid}?autoplay=1&rel=0`}
-                title="Video tutorial"
+                title={t("home.tutorialVideo")}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />

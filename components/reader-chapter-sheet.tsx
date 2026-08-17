@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useT } from "@/lib/i18n/client";
 
 export type ChapterItem = {
   /** The section element in the reader — scrolled to on selection. */
@@ -31,6 +32,7 @@ export function ReaderChapterSheet({
   onSelect: (item: ChapterItem, index: number) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const panelRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef<HTMLButtonElement>(null);
 
@@ -55,18 +57,18 @@ export function ReaderChapterSheet({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Daftar bab"
+        aria-label={t("reader.chapterList")}
         tabIndex={-1}
         className="reader-toc"
         // The backdrop closes on click; taps inside the sheet must not bubble to it.
         onClick={(e) => e.stopPropagation()}
       >
         <div className="reader-toc-head">
-          <span className="reader-toc-title">Daftar bab</span>
+          <span className="reader-toc-title">{t("reader.chapterList")}</span>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup daftar bab"
+            aria-label={t("reader.closeChapterList")}
             className="reader-toc-close"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

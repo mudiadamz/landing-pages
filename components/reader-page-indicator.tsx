@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useT } from "@/lib/i18n/client";
 import { getScrolled, getScrolledServer, subscribeFirstScroll } from "@/lib/first-scroll";
 import { showChrome, useChromeHidden } from "@/lib/immersive";
 import { trackCta } from "@/lib/track";
@@ -63,7 +64,8 @@ const PING_MS = 900;
  * the conventional class names, a plain heading is the common case, and front
  * matter often has neither.
  */
-function readChapters(): ChapterItem[] {
+/** `fallback` comes from the caller — this runs outside a component. */
+function readChapters(partLabel: (n: number) => string): ChapterItem[] {
   const content = document.querySelector<HTMLElement>(".epub-inline");
   const vh = window.innerHeight;
   if (!content || vh === 0) return [];
@@ -78,7 +80,7 @@ function readChapters(): ChapterItem[] {
       text(el.querySelector(".chapter-title")) ||
       text(el.querySelector("h1, h2, h3, h4")) ||
       num ||
-      `Bagian ${i + 1}`;
+      partLabel(i + 1);
     const top = el.getBoundingClientRect().top + window.scrollY;
     // Same screenful arithmetic as the readout, so the number in the list is the
     // number the reader will see once they land there.
@@ -97,6 +99,7 @@ export function ReaderPageIndicator({
   /** For the `toc` CTA event — whether readers actually use the chapter list. */
   slug?: string;
 }) {
+  const t = useT();
   const [place, setPlace] = useState<Place>(null);
   const [atEnd, setAtEnd] = useState(false);
   const [chapterCount, setChapterCount] = useState(0);
@@ -199,7 +202,7 @@ export function ReaderPageIndicator({
   }, [hasChapters, shown, hidden]);
 
   const open = () => {
-    const items = readChapters();
+    const items = readChapters((n) => t("reader.partN", { n }));
     if (items.length < 2) return;
     // Which chapter is being read, measured once here rather than on every render
     // — the readout keeps updating behind the sheet, and re-deriving this from the
@@ -244,7 +247,7 @@ export function ReaderPageIndicator({
           onClick={open}
           aria-haspopup="dialog"
           aria-expanded={!!toc}
-          aria-label={`Halaman ${place.page} dari ${place.total} — buka daftar bab`}
+          aria-label={t("reader.pageOfOpenToc", { page: place.page, total: place.total })}
           className={`reader-place is-button${hide ? " is-hidden" : ""}${
             pinged ? "" : " is-new"
           }`}
@@ -256,7 +259,7 @@ export function ReaderPageIndicator({
           className={`reader-place${hide ? " is-hidden" : ""}`}
           role="status"
           aria-live="off"
-          aria-label={`Halaman ${place.page} dari ${place.total}`}
+          aria-label={t("reader.pageOf", { page: place.page, total: place.total })}
         >
           {readout}
         </div>

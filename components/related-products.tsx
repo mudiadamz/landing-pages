@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
 import type { LandingPageCategory, RelatedProduct } from "@/lib/actions/landing-pages";
 
@@ -20,13 +22,14 @@ function formatPrice(value: number): string {
  * full category page. Rendered at the bottom of the checkout page. Renders
  * nothing when there are no siblings to show.
  */
-export function RelatedProducts({
+export async function RelatedProducts({
   items,
   parent,
 }: {
   items: RelatedProduct[];
   parent: LandingPageCategory | null;
 }) {
+  const t = translator(await requestLocale());
   if (items.length === 0) return null;
 
   return (
@@ -73,7 +76,7 @@ export function RelatedProducts({
                   </span>
                   <span className="mt-0.5 flex items-center gap-2">
                     {showAsFree ? (
-                      <span className="text-sm font-semibold text-[var(--primary)]">Gratis</span>
+                      <span className="text-sm font-semibold text-[var(--primary)]">{t("common.free")}</span>
                     ) : (
                       <>
                         {hasDiscount && price > 0 && (
@@ -109,7 +112,7 @@ export function RelatedProducts({
           href={`/category/${parent.slug}`}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[var(--background)]"
         >
-          Produk lainnya di {parent.name}
+          {t("product.moreInCategory", { name: parent.name })}
           <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>

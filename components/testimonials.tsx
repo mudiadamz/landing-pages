@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useT } from "@/lib/i18n/client";
 import Link from "next/link";
 import type { PublicReview } from "@/lib/actions/reviews";
 import { VerifiedBadge, formatReviewMonth } from "@/components/verified-reviews";
 import { Button } from "@/components/ui/button";
 
 function Stars({ rating }: { rating: number }) {
+  const t = useT();
   return (
-    <span className="inline-flex items-center text-base" aria-label={`${rating} dari 5 bintang`}>
+    <span className="inline-flex items-center text-base" aria-label={t("panel.starsOutOfFive", { rating })}>
       {Array.from({ length: 5 }).map((_, i) => (
         <span key={i} aria-hidden className={i < rating ? "text-amber-500" : "text-[var(--border)]"}>
           ★
@@ -23,6 +25,7 @@ function Stars({ rating }: { rating: number }) {
  * when there are no reviews yet (honest > fabricated).
  */
 export function Testimonials({ reviews }: { reviews: PublicReview[] }) {
+  const t = useT();
   const [active, setActive] = useState(0);
 
   const goNext = useCallback(() => {
@@ -40,7 +43,7 @@ export function Testimonials({ reviews }: { reviews: PublicReview[] }) {
   return (
     <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 border-t border-[var(--border)] testimonials-section">
       <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground mb-8 sm:mb-10">
-        Kata pembeli
+        {t("reviews.whatBuyersSay")}
       </h2>
       <div className="relative">
         <div className="overflow-hidden">
@@ -79,11 +82,11 @@ export function Testimonials({ reviews }: { reviews: PublicReview[] }) {
         {reviews.length > 1 && (
           <div className="flex items-center justify-between mt-6 sm:mt-8">
             <div className="flex gap-2">
-              {reviews.map((t, i) => (
+              {reviews.map((review, i) => (
                 <button
-                  key={t.id}
+                  key={review.id}
                   type="button"
-                  aria-label={`Ulasan ${i + 1}`}
+                  aria-label={t("reviews.reviewN", { n: i + 1 })}
                   onClick={() => setActive(i)}
                   className={`w-2 h-2 rounded-full transition-all duration-300 ${
                     i === current ? "bg-[var(--primary)] scale-125" : "bg-[var(--border)] hover:bg-[var(--muted)] hover:scale-110"

@@ -1353,6 +1353,29 @@ export const id = {
   "product.nextImage": "Gambar berikutnya",
   "product.goToImage": "Ke gambar {n}",
 
+  "checkout.guaranteeTitle": "Garansi 7 hari uang kembali.",
+  "checkout.guaranteeBody":
+    "Nggak cocok atau file bermasalah? Aku perbaiki atau kembalikan dana — dijamin langsung oleh Adam.",
+  "checkout.securePayment": "Pembayaran aman lewat Duitku",
+  "checkout.readMore": "Selengkapnya",
+  "reviews.verifiedBuyer": "Pembeli terverifikasi",
+  "reviews.buyerReviews": "Ulasan pembeli",
+  "product.moreInCategory": "Produk lainnya di {name}",
+
+  "reader.partN": "Bagian {n}",
+  "reader.pageOf": "Halaman {page} dari {total}",
+  "reader.pageOfOpenToc": "Halaman {page} dari {total} — buka daftar bab",
+  "reviews.whatBuyersSay": "Kata pembeli",
+  "reviews.reviewN": "Ulasan {n}",
+  "home.tutorialVideo": "Video tutorial",
+  "reader.chapterList": "Daftar bab",
+  "reader.closeChapterList": "Tutup daftar bab",
+  "auth.emailNotVerified": "Email Anda belum diverifikasi",
+  "auth.resend": "Kirim ulang",
+  "home.bottomNav": "Navigasi bawah",
+  "panel.pendingActions": "{count} tindakan menunggu",
+  "panel.viewSite": "Lihat situs",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

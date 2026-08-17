@@ -377,7 +377,7 @@ function NavContent({
                       {badgeCount > 0 && (
                         <span
                           className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white"
-                          title={`${badgeCount} tindakan menunggu`}
+                          title={t("panel.pendingActions", { count: badgeCount })}
                         >
                           {badgeCount}
                         </span>
@@ -437,7 +437,7 @@ function NavContent({
           className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-3 text-[15px] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
         >
           <HomeIcon className="h-5 w-5 shrink-0" />
-          <span>Lihat situs</span>
+          <span>{t("panel.viewSite")}</span>
         </Link>
         <form action={signOut} className="flex-1">
           <button
