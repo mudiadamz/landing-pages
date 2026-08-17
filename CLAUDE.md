@@ -35,6 +35,7 @@ Ringkasan yang paling sering dilanggar:
 | Setup, script, env | [`README.md`](README.md), [`.env.example`](.env.example) |
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
 | Laporan kampanye iklan | `docs/campaign-reports/` |
+| Sisa string hardcode (i18n) | [`docs/i18n-backlog.md`](docs/i18n-backlog.md) — regen: `npm run i18n:scan` |
 
 ## Konvensi penting
 
