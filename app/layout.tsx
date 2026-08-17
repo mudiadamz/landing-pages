@@ -17,6 +17,8 @@ import { SessionTracker } from "@/components/session-tracker";
 import { GtmScripts } from "@/components/gtm-scripts";
 import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
 import { currentOrigin, currentSite, type Site } from "@/lib/site-resolve";
+import { requestLocale } from "@/lib/i18n/request";
+import { LocaleProvider } from "@/lib/i18n/client";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { paletteCss, paletteFromKey, surfaceCss } from "@/lib/palette";
@@ -139,7 +141,11 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme");
   // Which storefront: drives the JSON-LD org name and the iOS home-screen title.
-  const [site, origin] = await Promise.all([currentSite(), currentOrigin()]);
+  const [site, origin, locale] = await Promise.all([
+    currentSite(),
+    currentOrigin(),
+    requestLocale(),
+  ]);
   // Some templates ship light only. The theme cookie is shared across storefronts
   // (one browser, one cookie), so without this a visitor who turned dark on
   // another domain would arrive here to a half-dark page with no way back.
@@ -239,7 +245,9 @@ export default async function RootLayout({
           <RouteProgress />
         </Suspense>
         <SessionTracker />
-        {children}
+        {/* Every client component under here can call useT(). The panel layout
+            provides its own; nesting is harmless and keeps that one explicit. */}
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
         <Analytics />
         <SpeedInsights />
       </body>

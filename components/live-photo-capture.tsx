@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Take a photo with the device camera. No file input anywhere, by design: the
@@ -37,6 +38,7 @@ export function LivePhotoCapture({
   value: string | null;
   onChange: (dataUrl: string | null) => void;
 }) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [live, setLive] = useState(false);
@@ -98,10 +100,10 @@ export function LivePhotoCapture({
       const name = (err as DOMException)?.name;
       setError(
         name === "NotAllowedError"
-          ? "Akses kamera ditolak. Izinkan kamera di pengaturan browser, lalu coba lagi."
+          ? t("panel.cameraDenied")
           : name === "NotFoundError"
-            ? "Kamera tidak ditemukan. Coba buka halaman ini dari ponsel."
-            : "Kamera tidak bisa dibuka. Coba buka halaman ini dari ponsel.",
+            ? t("panel.cameraMissing")
+            : t("panel.cameraFailed"),
       );
     } finally {
       setStarting(false);
@@ -149,14 +151,14 @@ export function LivePhotoCapture({
             />
             {!ready && (
               <div className="absolute inset-0 flex items-center justify-center bg-[var(--background)]/70">
-                <p className="text-xs text-[var(--muted)]">Menyalakan kamera…</p>
+                <p className="text-xs text-[var(--muted)]">{t("panel.cameraStarting")}</p>
               </div>
             )}
           </>
         ) : (
           <div className="flex h-full items-center justify-center px-4 text-center">
             <p className="text-xs text-[var(--muted)]">
-              {error ?? "Kamera belum aktif"}
+              {error ?? t("panel.cameraOff")}
             </p>
           </div>
         )}
@@ -172,7 +174,7 @@ export function LivePhotoCapture({
             }}
             className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-[var(--background)]"
           >
-            Ambil ulang
+            {t("panel.retakePhoto")}
           </button>
         ) : live ? (
           <>
@@ -182,7 +184,7 @@ export function LivePhotoCapture({
               disabled={!ready}
               className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {ready ? "Ambil foto" : "Menyiapkan…"}
+              {ready ? t("panel.takePhoto") : "Menyiapkan…"}
             </button>
             <button
               type="button"
@@ -199,7 +201,7 @@ export function LivePhotoCapture({
             disabled={starting}
             className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-[var(--background)] disabled:opacity-50"
           >
-            {starting ? "Membuka kamera…" : "Buka kamera"}
+            {starting ? t("panel.openingCamera") : t("panel.openCamera")}
           </button>
         )}
       </div>

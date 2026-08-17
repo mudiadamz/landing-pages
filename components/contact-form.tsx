@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { submitContact } from "@/lib/actions/contacts";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 const HONEYPOT_NAME = "fax";
 
 export function ContactForm() {
+  const t = useT();
   const [state, setState] = useState<{ ok?: boolean; error?: string } | null>(null);
 
   async function handleSubmit(formData: FormData) {
@@ -29,7 +31,7 @@ export function ContactForm() {
         className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none h-0 w-0 overflow-hidden"
         aria-hidden
       >
-        <label htmlFor={HONEYPOT_NAME}>Jangan isi</label>
+        <label htmlFor={HONEYPOT_NAME}>{t("contact.honeypot")}</label>
         <input
           id={HONEYPOT_NAME}
           name={HONEYPOT_NAME}
@@ -41,7 +43,7 @@ export function ContactForm() {
 
       <div>
         <label htmlFor="contact-name" className="block text-sm font-medium text-foreground mb-1.5">
-          Nama
+          {t("content.name")}
         </label>
         <input
           id="contact-name"
@@ -51,12 +53,12 @@ export function ContactForm() {
           maxLength={200}
           autoComplete="name"
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
-          placeholder="Nama Anda"
+          placeholder={t("panel.yourName")}
         />
       </div>
       <div>
         <label htmlFor="contact-email" className="block text-sm font-medium text-foreground mb-1.5">
-          Email
+          {t("sales.email")}
         </label>
         <input
           id="contact-email"
@@ -65,12 +67,12 @@ export function ContactForm() {
           required
           autoComplete="email"
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
-          placeholder="email@contoh.com"
+          placeholder={t("contact.emailPlaceholder")}
         />
       </div>
       <div>
         <label htmlFor="contact-message" className="block text-sm font-medium text-foreground mb-1.5">
-          Pesan
+          {t("panel.navGroupMessages")}
         </label>
         <textarea
           id="contact-message"
@@ -80,22 +82,22 @@ export function ContactForm() {
           maxLength={2000}
           rows={4}
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent resize-y"
-          placeholder="Tulis pesan Anda..."
+          placeholder={t("contact.messagePlaceholder")}
         />
-        <p className="mt-1 text-xs text-[var(--muted)]">Minimal 10 karakter</p>
+        <p className="mt-1 text-xs text-[var(--muted)]">{t("contact.minChars")}</p>
       </div>
       {state?.error && (
         <p className="text-sm text-red-600">{state.error}</p>
       )}
       {state?.ok && (
-        <p className="text-sm text-[var(--primary)]">Pesan terkirim. Terima kasih.</p>
+        <p className="text-sm text-[var(--primary)]">{t("contact.sent")}</p>
       )}
       <Button
         type="submit"
         size="md"
         className="w-full sm:w-auto px-6 py-2.5 hover:opacity-90"
       >
-        Kirim
+        {t("contact.send")}
       </Button>
     </form>
   );

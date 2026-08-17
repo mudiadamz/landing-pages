@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useT } from "@/lib/i18n/client";
 import {
   getExcerptMeta,
   getExcerptMetaServer,
@@ -29,6 +30,7 @@ import {
  * failed fetch degrades to a plain gate rather than to "0 dari 0 bab".
  */
 export function ExcerptGate() {
+  const t = useT();
   const meta = useSyncExternalStore(
     subscribeExcerptMeta,
     getExcerptMeta,
@@ -64,30 +66,33 @@ export function ExcerptGate() {
             </svg>
           </span>
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
-            Cuplikan gratis
+            {t("reader.freeExcerpt")}
           </p>
         </div>
 
         <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           {chaptersLeft && chaptersLeft > 0
-            ? `Masih ada ${chaptersLeft} bab lagi`
-            : "Ceritanya belum selesai"}
+            ? t("reader.chaptersLeft", { count: chaptersLeft })
+            : t("reader.storyUnfinished")}
         </h2>
 
         <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">
           {meta ? (
             <>
-              Kamu baru baca <strong className="text-foreground">{pct}%</strong> dari buku ini
+              {t("reader.readSoFar")} <strong className="text-foreground">{pct}%</strong>{" "}
+              {t("reader.ofThisBook")}
               {mins ? (
                 <>
                   {" "}
-                  — sisanya sekitar <strong className="text-foreground">{mins} menit</strong> bacaan
+                  {t("reader.remainingAbout")}{" "}
+                  <strong className="text-foreground">{t("reader.minutes", { mins })}</strong>{" "}
+                  {t("reader.ofReading")}
                 </>
               ) : null}
-              . Lanjutannya ada di buku lengkap.
+              {t("reader.restInFullBook")}
             </>
           ) : (
-            <>Bagian ini cuplikan gratis. Lanjutannya ada di buku lengkap.</>
+            <>{t("reader.excerptOnly")}</>
           )}
         </p>
 
@@ -101,7 +106,7 @@ export function ExcerptGate() {
               aria-valuenow={pct}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Bagian yang sudah dibaca"
+              aria-label={t("reader.readProgress")}
             >
               <div
                 className="h-full rounded-full bg-[var(--primary)] transition-[width] duration-700 ease-out"
@@ -110,9 +115,12 @@ export function ExcerptGate() {
             </div>
             <div className="mt-1.5 flex items-center justify-between text-[11px] text-[var(--muted)]">
               <span>
-                {meta.shownChapters} dari {meta.totalChapters} bab
+                {t("reader.chaptersOf", {
+                  shown: meta.shownChapters,
+                  total: meta.totalChapters,
+                })}
               </span>
-              <span>{100 - pct}% belum kebuka</span>
+              <span>{t("reader.percentLocked", { pct: 100 - pct })}</span>
             </div>
           </div>
         )}
