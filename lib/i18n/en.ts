@@ -842,6 +842,27 @@ export const en: Record<keyof typeof id, string> = {
   "panel.notYet": "Not yet",
   "panel.banned": "Banned",
 
+  "panel.sortRecent": "Newest",
+  "panel.sortOldest": "Oldest",
+  "panel.sortLargest": "Largest",
+  "panel.sortSmallest": "Smallest",
+  "panel.sortPath": "Path A–Z",
+  "panel.deleteFileFailed": "Could not delete the file",
+  "panel.fileCount": "{count} files · {size}",
+  "panel.showingCap": "(showing {cap})",
+  "panel.searchExpands": "· folders open automatically while searching",
+
+  "panel.publisherPending": "Publisher application under review",
+  "panel.publisherRejected": "Publisher application declined",
+  "panel.publisherStatusIntro": "Where you stand as a seller of digital products here.",
+  "panel.noName": "No name",
+  "panel.viewAll": "See all →",
+  "panel.emailIntro": "Used for signing in, invoices, and download links.",
+  "panel.emailAddress": "Address",
+  "panel.displayName": "Display name",
+  "panel.displayNameIntro": "The name shown in the panel and on your reviews.",
+  "panel.signOut": "Sign out",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

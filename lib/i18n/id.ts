@@ -832,6 +832,27 @@ export const id = {
   "panel.notYet": "Belum",
   "panel.banned": "Banned",
 
+  "panel.sortRecent": "Terbaru",
+  "panel.sortOldest": "Terlama",
+  "panel.sortLargest": "Terbesar",
+  "panel.sortSmallest": "Terkecil",
+  "panel.sortPath": "Path A–Z",
+  "panel.deleteFileFailed": "Gagal menghapus file",
+  "panel.fileCount": "{count} file · {size}",
+  "panel.showingCap": "(menampilkan {cap})",
+  "panel.searchExpands": "· folder dibuka otomatis saat mencari",
+
+  "panel.publisherPending": "Pengajuan publisher ditinjau",
+  "panel.publisherRejected": "Pengajuan publisher ditolak",
+  "panel.publisherStatusIntro": "Status Anda sebagai penjual produk digital di sini.",
+  "panel.noName": "Tanpa nama",
+  "panel.viewAll": "Lihat semua →",
+  "panel.emailIntro": "Dipakai untuk masuk, invoice, dan link download.",
+  "panel.emailAddress": "Alamat",
+  "panel.displayName": "Nama tampilan",
+  "panel.displayNameIntro": "Nama yang muncul di panel dan pada ulasan Anda.",
+  "panel.signOut": "Keluar dari akun",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

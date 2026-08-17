@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { deleteStorageFile, type StorageFile } from "@/lib/actions/storage-admin";
 import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 
 function formatBytes(n: number | null): string {
   if (n == null) return "—";
@@ -34,12 +35,12 @@ const VISIBLE_CAP = 500;
  * default view is unchanged and picking it again is a way back.
  */
 const SORTS = {
-  recent: { label: "Terbaru", cmp: (a: StorageFile, b: StorageFile) => cmpDate(b, a) },
-  oldest: { label: "Terlama", cmp: (a: StorageFile, b: StorageFile) => cmpDate(a, b) },
-  largest: { label: "Terbesar", cmp: (a: StorageFile, b: StorageFile) => (b.size ?? 0) - (a.size ?? 0) },
-  smallest: { label: "Terkecil", cmp: (a: StorageFile, b: StorageFile) => (a.size ?? 0) - (b.size ?? 0) },
-  path: { label: "Path A–Z", cmp: (a: StorageFile, b: StorageFile) => a.path.localeCompare(b.path) },
-} as const;
+  recent: { labelKey: "panel.sortRecent", cmp: (a: StorageFile, b: StorageFile) => cmpDate(b, a) },
+  oldest: { labelKey: "panel.sortOldest", cmp: (a: StorageFile, b: StorageFile) => cmpDate(a, b) },
+  largest: { labelKey: "panel.sortLargest", cmp: (a: StorageFile, b: StorageFile) => (b.size ?? 0) - (a.size ?? 0) },
+  smallest: { labelKey: "panel.sortSmallest", cmp: (a: StorageFile, b: StorageFile) => (a.size ?? 0) - (b.size ?? 0) },
+  path: { labelKey: "panel.sortPath", cmp: (a: StorageFile, b: StorageFile) => a.path.localeCompare(b.path) },
+} as const satisfies Record<string, { labelKey: MessageKey; cmp: (a: StorageFile, b: StorageFile) => number }>;
 
 type SortKey = keyof typeof SORTS;
 
@@ -190,10 +191,10 @@ export function StorageManager({
       if (res.ok) {
         setFiles((prev) => prev.filter((x) => !(x.bucket === f.bucket && x.path === f.path)));
       } else {
-        setError(res.error ?? "Gagal menghapus file");
+        setError(res.error ?? t("panel.deleteFileFailed"));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menghapus file");
+      setError(e instanceof Error ? e.message : t("panel.deleteFileFailed"));
     } finally {
       setBusy(null);
       setConfirm(null);
@@ -239,7 +240,7 @@ export function StorageManager({
           >
             {(Object.keys(SORTS) as SortKey[]).map((k) => (
               <option key={k} value={k}>
-                {SORTS[k].label}
+                {t(SORTS[k].labelKey)}
               </option>
             ))}
           </select>
@@ -256,9 +257,9 @@ export function StorageManager({
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
         <span>
-          {filtered.length} file · {formatBytes(totalSize)}
-          {filtered.length > VISIBLE_CAP && ` (menampilkan ${VISIBLE_CAP})`}
-          {searching && " · folder dibuka otomatis saat mencari"}
+          {t("panel.fileCount", { count: filtered.length, size: formatBytes(totalSize) })}
+          {filtered.length > VISIBLE_CAP && ` ${t("panel.showingCap", { cap: VISIBLE_CAP })}`}
+          {searching && ` ${t("panel.searchExpands")}`}
         </span>
         <div className="flex items-center gap-3">
           {error && <span className="text-red-500">{error}</span>}
@@ -326,6 +327,7 @@ function TreeFolder({
   toggle: (key: string) => void;
   ctx: RowCtx;
 }) {
+  const t = useT();
   const open = isOpen(node.key);
   return (
     <li className="border-b border-[var(--border)] last:border-b-0">
@@ -344,7 +346,7 @@ function TreeFolder({
           {node.name}
         </span>
         <span className="shrink-0 text-[11px] text-[var(--muted)]">
-          {node.count} file · {formatBytes(node.size)}
+          {t("panel.fileCount", { count: node.count, size: formatBytes(node.size) })}
         </span>
       </button>
 
@@ -411,7 +413,7 @@ function FileRow({ file: f, depth, ctx }: { file: StorageFile; depth: number; ct
             disabled={deleting}
             className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
           >
-            {deleting ? "Menghapus…" : "Hapus"}
+            {deleting ? t("common.deleting") : t("common.delete")}
           </button>
           <button
             type="button"

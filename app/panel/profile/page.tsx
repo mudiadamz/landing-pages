@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import type { MessageKey } from "@/lib/i18n";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/actions/auth";
@@ -38,15 +39,17 @@ function formatDate(value?: string | null) {
   });
 }
 
-const PUBLISHER_BADGE: Record<PublisherStatus, { text: string; className: string } | null> = {
+// textKey, not text: this map is module scope, so a resolved string here would
+// be whichever language rendered first for every request after it.
+const PUBLISHER_BADGE: Record<PublisherStatus, { textKey: MessageKey; className: string } | null> = {
   none: null,
   approved: null, // already carried by the role badge
   pending: {
-    text: "Pengajuan publisher ditinjau",
+    textKey: "panel.publisherPending",
     className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   },
   rejected: {
-    text: "Pengajuan publisher ditolak",
+    textKey: "panel.publisherRejected",
     className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
   },
 };
@@ -100,7 +103,7 @@ export default async function ProfilePage() {
           <AvatarForm initialUrl={avatarUrl} initial={(fullName || email || "?").charAt(0)} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold text-foreground">
-              {fullName || "Tanpa nama"}
+              {fullName || t("panel.noName")}
             </p>
             <p className="mt-0.5 break-all text-sm text-[var(--muted)]">{email || "—"}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -111,7 +114,7 @@ export default async function ProfilePage() {
                 <span
                   className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${publisherBadge.className}`}
                 >
-                  {publisherBadge.text}
+                  {t(publisherBadge.textKey)}
                 </span>
               )}
               <span className="text-xs text-[var(--muted)]">
@@ -128,27 +131,25 @@ export default async function ProfilePage() {
           href="/panel/purchases"
           className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-colors hover:bg-[var(--background)]/50"
         >
-          <p className="text-xs font-medium text-[var(--muted)]">Pembelian</p>
+          <p className="text-xs font-medium text-[var(--muted)]">{t("panel.dashPurchases")}</p>
           <p className="mt-1 text-2xl font-bold text-foreground">{purchases.length}</p>
-          <p className="mt-0.5 text-xs text-[var(--primary)]">Lihat semua →</p>
+          <p className="mt-0.5 text-xs text-[var(--primary)]">{t("panel.viewAll")}</p>
         </Link>
         <Link
           href="/panel/favorites"
           className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-colors hover:bg-[var(--background)]/50"
         >
-          <p className="text-xs font-medium text-[var(--muted)]">Favorit</p>
+          <p className="text-xs font-medium text-[var(--muted)]">{t("panel.navFavorites")}</p>
           <p className="mt-1 text-2xl font-bold text-foreground">{favorites.length}</p>
-          <p className="mt-0.5 text-xs text-[var(--primary)]">Lihat semua →</p>
+          <p className="mt-0.5 text-xs text-[var(--primary)]">{t("panel.viewAll")}</p>
         </Link>
       </div>
 
       {/* Publisher */}
       <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
         <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
-          <h2 className="text-base font-semibold text-foreground">Publisher</h2>
-          <p className="mt-0.5 text-sm text-[var(--muted)]">
-            Status Anda sebagai penjual produk digital di sini.
-          </p>
+          <h2 className="text-base font-semibold text-foreground">{t("panel.rolePublisher")}</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">{t("panel.publisherStatusIntro")}</p>
         </header>
         <div className="p-4 sm:p-6">
           <PublisherCard
@@ -172,15 +173,13 @@ export default async function ProfilePage() {
       {/* Email + verification, next to the address it concerns. */}
       <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
         <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
-          <h2 className="text-base font-semibold text-foreground">Email</h2>
-          <p className="mt-0.5 text-sm text-[var(--muted)]">
-            Dipakai untuk masuk, invoice, dan link download.
-          </p>
+          <h2 className="text-base font-semibold text-foreground">{t("sales.email")}</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">{t("panel.emailIntro")}</p>
         </header>
         <div className="space-y-3 p-4 sm:p-6">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-              Alamat
+              {t("panel.emailAddress")}
             </p>
             <p className="mt-1 break-all text-sm font-medium text-foreground">{email || "—"}</p>
           </div>
@@ -191,10 +190,8 @@ export default async function ProfilePage() {
       {/* Name */}
       <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
         <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
-          <h2 className="text-base font-semibold text-foreground">Nama tampilan</h2>
-          <p className="mt-0.5 text-sm text-[var(--muted)]">
-            Nama yang muncul di panel dan pada ulasan Anda.
-          </p>
+          <h2 className="text-base font-semibold text-foreground">{t("panel.displayName")}</h2>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">{t("panel.displayNameIntro")}</p>
         </header>
         <div className="p-4 sm:p-6">
           <ProfileForm initialFullName={fullName} />
@@ -208,7 +205,7 @@ export default async function ProfilePage() {
           type="submit"
           className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-medium text-[var(--muted)] shadow-sm transition-colors hover:border-red-500/40 hover:text-red-600 dark:hover:text-red-400"
         >
-          Keluar dari akun
+          {t("panel.signOut")}
         </button>
       </form>
     </div>
