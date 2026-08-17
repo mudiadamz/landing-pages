@@ -25,18 +25,16 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { signOut } from "@/lib/actions/auth";
-import { getMyPlan, type MyPlan } from "@/lib/actions/plans";
 import { PLANS } from "@/lib/plans";
 import {
   addChatMemory,
   deleteChatMemory,
   getChatPrefs,
-  getChatProfile,
   listChatMemories,
   saveChatPrefs,
   updateChatMemory,
+  type ChatAccount,
   type ChatMemoryRow,
-  type ChatProfile,
 } from "@/lib/actions/chat";
 
 /**
@@ -51,23 +49,22 @@ import {
  */
 export function PrefsDialog({
   open,
-  signedIn,
+  account,
   onClose,
 }: {
   open: boolean;
-  /** Signed-out visitors get the appearance block and nothing else. */
-  signedIn: boolean;
+  /** Null for a signed-out visitor: they get the appearance block and nothing else. */
+  account: ChatAccount | null;
   onClose: () => void;
 }) {
   if (!open) return null;
-  return <PrefsPanel signedIn={signedIn} onClose={onClose} />;
+  return <PrefsPanel account={account} onClose={onClose} />;
 }
 
-function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => void }) {
+function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose: () => void }) {
   const t = useT();
   const locale = useLocale();
-  const [profile, setProfile] = useState<ChatProfile | null>(null);
-  const [plan, setPlan] = useState<MyPlan | null>(null);
+  const signedIn = !!account;
   const [instructions, setInstructions] = useState("");
   const [memories, setMemories] = useState<ChatMemoryRow[]>([]);
   const [status, setStatus] = useState("");
@@ -83,17 +80,12 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
     if (!signedIn) return;
     let cancelled = false;
     (async () => {
-      const [prefs, stored, who, mine] = await Promise.all([
-        getChatPrefs(),
-        listChatMemories(),
-        getChatProfile(),
-        getMyPlan(),
-      ]);
+      // Only what the dialog itself owns. Identity and plan arrive as a prop —
+      // the sidebar already loaded them to draw the row that opens this.
+      const [prefs, stored] = await Promise.all([getChatPrefs(), listChatMemories()]);
       if (cancelled) return;
       setInstructions(prefs.responseInstructions);
       setMemories(stored);
-      setProfile(who);
-      setPlan(mine);
       setLoading(false);
     })();
     return () => {
@@ -149,18 +141,18 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
             <>
               <h3 className={SECTION}>{t("chat.account")}</h3>
               <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5">
-                <Avatar profile={profile} />
+                <Avatar account={account} />
                 <div className="min-w-0 flex-1">
                   <p className="m-0 truncate text-sm font-medium">
-                    {profile?.fullName || profile?.email || "…"}
+                    {account?.fullName || account?.email || "…"}
                   </p>
                   {/* The name falls back to the address, so only print the address
                       twice-over when there is a real name above it. */}
-                  {profile?.fullName && profile.email && (
-                    <p className="m-0 truncate text-xs text-[var(--muted)]">{profile.email}</p>
+                  {account?.fullName && account.email && (
+                    <p className="m-0 truncate text-xs text-[var(--muted)]">{account.email}</p>
                   )}
                 </div>
-                <PlanBadge plan={plan} />
+                <PlanBadge account={account} />
                 <Link
                   href="/panel/profile"
                   className="shrink-0 rounded-lg px-2 py-1 text-xs text-[var(--muted)] transition-colors hover:text-foreground"
@@ -290,6 +282,23 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
               </div>
             </>
           )}
+
+          {/* The pages a visitor is entitled to be able to find.
+              This theme's homepage renders no footer — the composer owns the
+              bottom edge — so without this row the legal pages exist on the
+              domain and are reachable from nowhere on it. Shown signed out too:
+              the obligation does not depend on having an account. */}
+          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--border)] pt-3 text-xs text-[var(--muted)]">
+            <Link href="/privacy" className="transition-colors hover:text-foreground">
+              {t("nav.privacy")}
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-foreground">
+              {t("nav.terms")}
+            </Link>
+            <Link href="/refund" className="transition-colors hover:text-foreground">
+              {t("nav.refund")}
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -303,26 +312,26 @@ function PrefsPanel({ signedIn, onClose }: { signedIn: boolean; onClose: () => v
  * answers — "why did that message get refused" — is asked here, one click from
  * the composer that refused it.
  */
-function PlanBadge({ plan }: { plan: MyPlan | null }) {
+function PlanBadge({ account }: { account: ChatAccount | null }) {
   const t = useT();
   const locale = useLocale();
-  if (!plan) return null;
+  if (!account) return null;
 
-  const limit = plan.limits.chatMessagesPerDay;
+  const limit = account.limits.chatMessagesPerDay;
   return (
     <div className="shrink-0 text-right">
       <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">
-        {PLANS[plan.plan].label}
+        {PLANS[account.plan].label}
       </span>
       <span className="mt-0.5 block text-[0.68rem] text-[var(--muted)]">
         {limit === null
           ? t("chat.quotaUnlimited")
-          : t("chat.quotaLeft", { used: Math.min(plan.used, limit), limit })}
+          : t("chat.quotaLeft", { used: Math.min(account.used, limit), limit })}
       </span>
-      {plan.expiresAt && (
+      {account.planExpiresAt && (
         <span className="block text-[0.68rem] text-[var(--muted)]">
           {t("plan.activeUntil", {
-            date: new Date(plan.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "id-ID"),
+            date: new Date(account.planExpiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "id-ID"),
           })}
         </span>
       )}
@@ -339,16 +348,16 @@ const SECTION_SPACED = SECTION.replace("mt-0", "mt-6");
  * A plain <img>: the avatar is an uploaded Storage URL, and next/image would need
  * every storage host declared for a 36-pixel circle.
  */
-function Avatar({ profile }: { profile: ChatProfile | null }) {
-  const initial = (profile?.fullName || profile?.email || "?").trim().charAt(0).toUpperCase();
-  if (profile?.avatarUrl) {
+export function Avatar({ account, size = "h-9 w-9" }: { account: ChatAccount | null; size?: string }) {
+  const initial = (account?.fullName || account?.email || "?").trim().charAt(0).toUpperCase();
+  if (account?.avatarUrl) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={profile.avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />;
+    return <img src={account.avatarUrl} alt="" className={`${size} shrink-0 rounded-full object-cover`} />;
   }
   return (
     <span
       aria-hidden
-      className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--accent-subtle)] text-sm font-semibold text-[var(--primary)]"
+      className={`grid ${size} shrink-0 place-items-center rounded-full bg-[var(--accent-subtle)] text-sm font-semibold text-[var(--primary)]`}
     >
       {initial}
     </span>

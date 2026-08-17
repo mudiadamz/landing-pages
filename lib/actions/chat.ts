@@ -21,6 +21,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { currentSiteId } from "@/lib/site-resolve";
 import { ANSWER_LOCK_STALE_MS } from "@/lib/mbahgpt/config";
+import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
+import { getPlanLimits } from "@/lib/actions/site-settings";
+import { effectivePlan, resolvePlanLimits, type PlanKey, type PlanLimits } from "@/lib/plans";
 import { t } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -201,41 +204,47 @@ export async function deleteChatSession(sessionId: string): Promise<{ error?: st
 }
 
 // -- account ----------------------------------------------------------------
-export type ChatProfile = {
+export type ChatAccount = {
   fullName: string | null;
   email: string | null;
   avatarUrl: string | null;
+  plan: PlanKey;
+  planExpiresAt: string | null;
+  limits: PlanLimits;
+  /** Chat turns spent in the rolling window. */
+  used: number;
 };
 
 /**
- * Who is signed in, for the account block in the preferences dialog.
+ * Who is signed in, on what plan, and how much of it is left.
  *
- * Its own reader rather than `getProfileWithUser()` + `getProfile()`: between
- * them those two return the name twice, the role and the publisher status the
- * chat has no use for, and still not the avatar and the email together. This is
- * one query and the three fields the block draws.
+ * ONE action rather than a profile reader and a plan reader, because both the
+ * sidebar row and the preferences dialog need all of it and the sidebar renders
+ * on every page load — two round trips for one row of avatar-name-tier is a cost
+ * paid by every visitor on the critical path of the chat.
  *
- * No row is not an error — a profile is created lazily elsewhere, so a brand-new
- * account falls back to the address it signed up with.
+ * No row is not an error: a profile is created lazily elsewhere, so a brand-new
+ * account falls back to the address it signed up with and the free plan.
  */
-export async function getChatProfile(): Promise<ChatProfile | null> {
+export async function getChatAccount(): Promise<ChatAccount | null> {
   const { supabase, userId } = await requireUser();
   if (!userId) return null;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [{ data: auth }, { data: profile }, overrides] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("lp_profiles").select("full_name, avatar_url, plan, plan_expires_at").eq("id", userId).maybeSingle(),
+    getPlanLimits(),
+  ]);
 
-  const { data } = await supabase
-    .from("lp_profiles")
-    .select("full_name, avatar_url")
-    .eq("id", userId)
-    .maybeSingle();
-
+  const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
   return {
-    fullName: data?.full_name ?? user?.user_metadata?.full_name ?? null,
-    email: user?.email ?? null,
-    avatarUrl: data?.avatar_url ?? null,
+    fullName: profile?.full_name ?? (auth.user?.user_metadata?.full_name as string) ?? null,
+    email: auth.user?.email ?? null,
+    avatarUrl: profile?.avatar_url ?? null,
+    plan,
+    planExpiresAt: profile?.plan_expires_at ?? null,
+    limits: resolvePlanLimits(plan, overrides),
+    used: await chatMessagesUsed(supabase, userId),
   };
 }
 

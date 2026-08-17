@@ -21,8 +21,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n/client";
+import { getChatAccount, type ChatAccount } from "@/lib/actions/chat";
 import { Composer } from "./composer";
-import { PrefsDialog } from "./prefs-dialog";
+import { Avatar, PrefsDialog } from "./prefs-dialog";
+import { PLANS } from "@/lib/plans";
 import { SessionList } from "./session-list";
 import { Transcript } from "./transcript";
 import { useChat, MAX_CONCURRENT } from "./use-chat";
@@ -63,9 +65,24 @@ export function ChatApp({
   const [drawer, setDrawer] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [following, setFollowing] = useState(true);
+  /** Identity + plan for the sidebar row. Null while loading, and when signed out. */
+  const [account, setAccount] = useState<ChatAccount | null>(null);
 
   const scroller = useRef<HTMLDivElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
+
+  // One round trip, on mount, for the row at the bottom of the sidebar — and the
+  // dialog it opens reads the same object rather than fetching it again.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    getChatAccount().then((who) => {
+      if (!cancelled) setAccount(who);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const streaming = !!chat.openLive;
 
@@ -239,15 +256,35 @@ export function ChatApp({
         </div>
 
         <div className="space-y-1 border-t border-[var(--border)] p-2.5">
-          {/* Open to signed-out visitors too: this dialog is the only place the
-              theme and language controls exist, and those need no account. The
-              label says which half they will get. */}
+          {/* Signed in, this is WHO YOU ARE — face, name, tier — and it happens to
+              open preferences. A gear labelled "Preferensi & memori" made the one
+              thing a visitor checks most often (which plan am I on, how much is
+              left) the one thing the sidebar never said.
+
+              Signed out there is no identity to show, so it falls back to naming
+              what the dialog actually holds for them: appearance and language,
+              which need no account. */}
           <button
             type="button"
             onClick={() => setPrefsOpen(true)}
-            className="w-full rounded-xl px-3 py-2 text-left text-sm text-[var(--muted)] transition-colors hover:bg-[var(--accent-subtle)] hover:text-foreground"
+            title={user ? t("chat.prefs") : t("chat.appearance")}
+            className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-[var(--accent-subtle)]"
           >
-            ⚙ {user ? t("chat.prefs") : t("chat.appearance")}
+            {user ? (
+              <>
+                <Avatar account={account} size="h-8 w-8" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">
+                    {account?.fullName || account?.email || "…"}
+                  </span>
+                  <span className="block truncate text-xs text-[var(--muted)]">
+                    {account ? PLANS[account.plan].label : ""}
+                  </span>
+                </span>
+              </>
+            ) : (
+              <span className="text-sm text-[var(--muted)]">⚙ {t("chat.appearance")}</span>
+            )}
           </button>
           {!user && (
             <Link
@@ -341,7 +378,7 @@ export function ChatApp({
         />
       </div>
 
-      <PrefsDialog open={prefsOpen} signedIn={!!user} onClose={() => setPrefsOpen(false)} />
+      <PrefsDialog open={prefsOpen} account={account} onClose={() => setPrefsOpen(false)} />
     </div>
   );
 }
