@@ -65,11 +65,8 @@ describe("dictionary integrity", () => {
    * the test fails on a stale entry as well as on a new one.
    */
   const NOT_YET_CONVERTED = [
-    "analytics.entryPage",
-    "analytics.noUtm",
     "checkout.buyNow",
     "checkout.getFree",
-    "common.all",
     "common.price",
     "common.required",
     "common.search",
@@ -135,7 +132,9 @@ describe("dictionary integrity", () => {
     "Cari produk…": ["home.searchPlaceholder", "product.relatedSearch"],
     "Cari produk": ["home.searchLabel", "home.searchOpen"],
     "Link lainnya": ["home.otherLinks", "panel.tabOther"],
-    Preview: ["checkout.preview", "product.tabPreview"],
+    Preview: ["checkout.preview", "product.tabPreview", "analytics.previews"],
+    // An event's venue field vs the geo column of a session.
+    Lokasi: ["analytics.location", "product.eventLocation"],
     "Nama situs": ["panel.linkName", "sites.siteName"],
     Ketentuan: ["content.tabLegal", "nav.terms"],
     "Judul halaman": ["content.pageTitle", "panel.pageTitlePlaceholder"],

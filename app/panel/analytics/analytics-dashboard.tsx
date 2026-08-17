@@ -6,26 +6,29 @@ import type { ProductSummary } from "@/lib/actions/product-insights";
 import { ProductSummaryCard } from "@/components/product-summary-card";
 import { SessionRow } from "./session-row";
 import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 
 type Tab = "overview" | "products" | "acquisition" | "geography" | "entry" | "engagement" | "sessions";
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: "overview", label: "Ringkasan" },
-  { key: "products", label: "Produk" },
-  { key: "acquisition", label: "Akuisisi / Iklan" },
-  { key: "engagement", label: "Engagement Preview" },
-  { key: "entry", label: "Entry Point" },
-  { key: "geography", label: "Geografi" },
-  { key: "sessions", label: "Sesi" },
+// The label is a KEY, resolved at render. Held as a string here it would freeze
+// whichever language happened to load this module first.
+const TABS: { key: Tab; labelKey: MessageKey }[] = [
+  { key: "overview", labelKey: "analytics.tabOverview" },
+  { key: "products", labelKey: "analytics.product" },
+  { key: "acquisition", labelKey: "analytics.tabAcquisition" },
+  { key: "engagement", labelKey: "analytics.tabEngagement" },
+  { key: "entry", labelKey: "analytics.tabEntry" },
+  { key: "geography", labelKey: "analytics.tabGeography" },
+  { key: "sessions", labelKey: "analytics.sessions" },
 ];
 
 type ProductFilter = "all" | "attention" | "converting" | "ignored";
 
-const PRODUCT_FILTERS: { key: ProductFilter; label: string }[] = [
-  { key: "all", label: "Semua" },
-  { key: "attention", label: "Perlu perhatian" },
-  { key: "converting", label: "Konversi" },
-  { key: "ignored", label: "Diabaikan" },
+const PRODUCT_FILTERS: { key: ProductFilter; labelKey: MessageKey }[] = [
+  { key: "all", labelKey: "common.all" },
+  { key: "attention", labelKey: "analytics.filterAttention" },
+  { key: "converting", labelKey: "analytics.conversion" },
+  { key: "ignored", labelKey: "analytics.filterIgnored" },
 ];
 
 function fmtDuration(ms: number): string {
@@ -109,9 +112,10 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 function EngagementBar({ read, curious, left }: { read: number; curious: number; left: number }) {
+  const t = useT();
   const total = read + curious + left || 1;
   return (
-    <div className="flex h-2.5 w-28 overflow-hidden rounded-full bg-[var(--background)]" title={`Baca ${read} · Penasaran ${curious} · Pergi ${left}`}>
+    <div className="flex h-2.5 w-28 overflow-hidden rounded-full bg-[var(--background)]" title={t("analytics.engagementTitle", { read, curious, left })}>
       <div className="bg-emerald-500" style={{ width: `${(read / total) * 100}%` }} />
       <div className="bg-amber-400" style={{ width: `${(curious / total) * 100}%` }} />
       <div className="bg-rose-400" style={{ width: `${(left / total) * 100}%` }} />
@@ -154,18 +158,18 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
     <div className="space-y-5">
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 border-b border-[var(--border)]">
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t.key}
+            key={item.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => setTab(item.key)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-              tab === t.key
+              tab === item.key
                 ? "border-[var(--primary)] text-[var(--primary)]"
                 : "border-transparent text-[var(--muted)] hover:text-foreground"
             }`}
           >
-            {t.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
@@ -175,8 +179,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
           beside it was computed from that slice. */}
       {data.capped && (
         <p className="rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/50 dark:bg-amber-900/15 dark:text-amber-200">
-          Data dibatasi demi performa — angka di bawah adalah sebagian dari rentang ini.
-          Perkecil rentang untuk hasil yang utuh.
+          {t("analytics.capped")}
         </p>
       )}
 
@@ -184,7 +187,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Card label={t("analytics.sessions")} value={String(overview.sessions)} />
           <Card label={t("analytics.uniqueVisitors")} value={String(overview.visitors)} />
-          <Card label={t("analytics.logins")} value={String(overview.loggedIn)} sub={`${overview.anon} anonim`} />
+          <Card label={t("analytics.logins")} value={String(overview.loggedIn)} sub={t("analytics.anonCount", { count: overview.anon })} />
           <Card label={t("analytics.pageviews")} value={String(overview.pageviews)} />
           <Card label={t("analytics.avgDuration")} value={fmtDuration(overview.avgDurationMs)} />
           <Card
@@ -198,8 +201,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-[var(--muted)]">
-              Ringkasan perilaku per produk: apakah dapat perhatian, dibaca, dan berkonversi. Diurutkan dari
-              trafik terbanyak.
+              {t("analytics.productsIntro")}
             </p>
             <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] p-0.5">
               {PRODUCT_FILTERS.map((f) => (
@@ -213,7 +215,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                       : "text-[var(--muted)] hover:text-foreground"
                   }`}
                 >
-                  {f.label}
+                  {t(f.labelKey)}
                 </button>
               ))}
             </div>
@@ -239,7 +241,10 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
           <div>
             <h2 className="mb-2 text-sm font-semibold">{t("analytics.utmHeading")}</h2>
             {campaigns.length === 0 ? (
-              <Empty>Belum ada trafik ber-UTM. Tambahkan <code>?utm_source=…&amp;utm_campaign=…</code> ke link iklan.</Empty>
+              <Empty>
+                {t("analytics.noUtm")} <code>?utm_source=…&amp;utm_campaign=…</code>{" "}
+                {t("analytics.noUtmSuffix")}
+              </Empty>
             ) : (
               <TableShell>
                 <thead>
@@ -247,10 +252,10 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                     <Th>Campaign</Th>
                     <Th>Source</Th>
                     <Th>Medium</Th>
-                    <Th right>Sesi</Th>
-                    <Th right>Preview</Th>
+                    <Th right>{t("analytics.sessions")}</Th>
+                    <Th right>{t("analytics.previews")}</Th>
                     <Th right>Checkout</Th>
-                    <Th right>Konversi</Th>
+                    <Th right>{t("analytics.conversion")}</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -278,7 +283,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                 <thead>
                   <tr className="border-b border-[var(--border)]">
                     <Th>Host</Th>
-                    <Th right>Sesi</Th>
+                    <Th right>{t("analytics.sessions")}</Th>
                     <Th right>Checkout</Th>
                   </tr>
                 </thead>
@@ -300,10 +305,12 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
       {tab === "engagement" && (
         <div>
           <p className="mb-2 text-xs text-[var(--muted)]">
-            Per produk: berapa yang <span className="text-emerald-600 dark:text-emerald-400">membaca</span>,{" "}
-            <span className="text-amber-600 dark:text-amber-400">penasaran</span>, atau{" "}
-            <span className="text-rose-600 dark:text-rose-400">langsung pergi</span> di halaman preview
-            (dari lama-baca &amp; kedalaman scroll).
+            {t("analytics.engIntro")}{" "}
+            <span className="text-emerald-600 dark:text-emerald-400">{t("analytics.engRead")}</span>,{" "}
+            <span className="text-amber-600 dark:text-amber-400">{t("analytics.engCurious")}</span>,{" "}
+            {t("analytics.engOr")}{" "}
+            <span className="text-rose-600 dark:text-rose-400">{t("analytics.engLeft")}</span>{" "}
+            {t("analytics.engTail")}
           </p>
           {engagement.length === 0 ? (
             <Empty>{t("analytics.noPreview")}</Empty>
@@ -311,14 +318,14 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
             <TableShell>
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <Th>Produk</Th>
-                  <Th>Sebaran</Th>
-                  <Th right>Baca</Th>
-                  <Th right>Penasaran</Th>
-                  <Th right>Pergi</Th>
+                  <Th>{t("analytics.product")}</Th>
+                  <Th>{t("analytics.spread")}</Th>
+                  <Th right>{t("analytics.read")}</Th>
+                  <Th right>{t("analytics.curious")}</Th>
+                  <Th right>{t("analytics.left")}</Th>
                   <Th right>Total</Th>
-                  <Th right>Avg baca</Th>
-                  <Th right>Avg scroll</Th>
+                  <Th right>{t("analytics.avgRead")}</Th>
+                  <Th right>{t("analytics.avgScroll")}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -350,9 +357,9 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
             <TableShell>
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <Th>Halaman masuk</Th>
-                  <Th>Produk</Th>
-                  <Th right>Sesi</Th>
+                  <Th>{t("analytics.entryPage")}</Th>
+                  <Th>{t("analytics.product")}</Th>
+                  <Th right>{t("analytics.sessions")}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -377,9 +384,9 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
             <TableShell>
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <Th>Negara</Th>
-                  <Th>Kota</Th>
-                  <Th right>Sesi</Th>
+                  <Th>{t("analytics.country")}</Th>
+                  <Th>{t("analytics.city")}</Th>
+                  <Th right>{t("analytics.sessions")}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -415,10 +422,10 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                     <SortTh label={t("analytics.time")} col="time" sort={sort} onSort={sortBy} />
                     <Th>{t("analytics.visitor")}</Th>
                     <SortTh right label={t("analytics.duration")} col="duration" sort={sort} onSort={sortBy} />
-                    <Th>Lokasi</Th>
-                    <Th>Sumber</Th>
+                    <Th>{t("analytics.location")}</Th>
+                    <Th>{t("analytics.source")}</Th>
                     <Th>{t("analytics.enteredVia")}</Th>
-                    <Th>Perangkat</Th>
+                    <Th>{t("analytics.device")}</Th>
                     <SortTh right label={t("analytics.pagesShort")} col="pageviews" sort={sort} onSort={sortBy} />
                   </tr>
                 </thead>
@@ -432,7 +439,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
           )}
           {filteredSessions.length > 300 && (
             <p className="text-center text-xs text-[var(--muted)]">
-              Menampilkan 300 dari {filteredSessions.length} sesi. Persempit dengan pencarian.
+              {t("analytics.showingCapped", { count: filteredSessions.length })}
             </p>
           )}
         </div>

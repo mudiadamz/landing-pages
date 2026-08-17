@@ -166,10 +166,18 @@ const CSSISH =
 const NOISE_TEXT =
   /(charset=|\(function|display-mode:|@media|=>|\){|;\s*}|font-family|^[a-z]+\/[a-z+.-]+$|^\(.*:.*\)$|^\$\{[^}]*\}$|^[A-Z_]{3,}$|\bpx\b|^[\d.,\s%+-]+$|width=|http-equiv|application\/|image\/|text\/)/;
 
-/** A .tsx generic also sits between a > and a <. Prose contains none of these. */
-const CODEISH = /(;|=>|&&|\|\||!==|\?\?|[={}]|^\)|\($)/;
-/** No regex-literal state in the scanner, so shards like `/gi, "")` get through. */
-const REGEXISH = /(\/g[im]*[,)]|\\[sdwbn]|\.replace\(|\.trim\(|\[\^)/;
+/**
+ * A .tsx generic also sits between a > and a <, and so does the gap between one
+ * function's closing brace and the next one's opening brace. Prose contains
+ * none of this.
+ */
+const CODEISH =
+  /(;|=>|&&|\|\||!==|\?\?|[={}]|^\)|\($|^<|\b(function|export|const|let|var|return|async|await|else|catch|typeof|interface|import|class|useState|useEffect)\b)/;
+/**
+ * No regex-literal state in the scanner, so shards like `/gi, "")` get through.
+ * Deliberately not matching `\n`: a confirm() body is full of them and is copy.
+ */
+const REGEXISH = /(\/g[im]*[,)]|\.replace\(|\.trim\(|\[\^)/;
 
 const INDONESIAN =
   /\b(yang|dan|dari|untuk|tidak|belum|sudah|bisa|atau|ini|itu|akan|pada|dengan|saat|kalau|jangan|harus|hanya|semua|masih|juga|tanpa|pakai|dipakai|ke|di|per|buat|bikin|sini|adalah|karena|supaya|agar|lalu|setelah|sebelum|setiap|antara|lebih|kurang|maks|misal|contoh|[Ss]impan|[Hh]apus|[Bb]atal|[Tt]ambah|[Uu]bah|[Kk]embali|[Cc]ari|[Gg]agal|[Bb]erhasil|[Pp]ilih|[Kk]irim|[Uu]nggah|[Uu]nduh|[Mm]uat|[Pp]roduk|[Pp]embeli|[Pp]enjualan|[Pp]engguna|[Ss]itus|[Hh]alaman|[Kk]ategori|[Hh]arga|[Gg]ratis|[Nn]ama|[Jj]udul|[Kk]eterangan|[Ww]ajib|[Kk]osong|[Tt]ersimpan|[Mm]enyimpan|[Mm]emuat|[Ss]elesai|[Aa]ktif|[Nn]onaktif|[Tt]erbaru|[Ww]aktu|[Jj]umlah|[Mm]etode|[Tt]anggal|[Pp]esan|[Kk]ontak|[Pp]engaturan|[Bb]ahasa|[Bb]erkas|[Uu]kuran|[Tt]ampil|[Tt]ampilkan|[Ss]embunyikan|[Uu]rutan|[Cc]atatan|[Rr]incian|[Kk]elola|[Dd]aftar|[Pp]encarian|[Cc]oba|[Ll]agi|[Ii]si|[Ee]dit|[Bb]aru|[Ll]ama|[Tt]erakhir)\b/;
@@ -273,12 +281,17 @@ function collect(dictionary) {
 
       for (const s of strings) {
         const attr = attrOf(s.context);
-        const kind = keys.has(s.text.trim()) ? null : classify(s.text, attr);
+        const trimmed = s.text.trim();
+        const kind =
+          keys.has(trimmed) || trimmed.startsWith("<") ? null : classify(s.text, attr);
         if (kind) hits.push({ file, line: s.line, where: attr || "literal", kind, text: s.text.trim() });
       }
 
       if (!file.endsWith(".tsx")) continue;
-      for (const m of skeleton.matchAll(/>([^<>{}\0]+)</g)) {
+      // Three shapes, because half the copy in this codebase sits next to an
+      // interpolation: `>plain text<`, `{count} dicabut<`, and `>Dicabut {date}`.
+      // Matching only the first missed every counter and every date line.
+      for (const m of skeleton.matchAll(/[>}]([^<>{}\0]+)[<{]/g)) {
         const text = m[1].split(/\s+/).join(" ").trim();
         if (!text) continue;
         const kind = classify(text, "");
