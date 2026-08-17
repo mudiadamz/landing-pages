@@ -1,3 +1,4 @@
+import { safeNextPath } from "@/lib/next-path";
 import Link from "next/link";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
@@ -21,7 +22,7 @@ export default async function SignupPage({
 }) {
   const t = translator(await requestLocale());
   const params = await searchParams;
-  const next = params.next && params.next.startsWith("/") ? params.next : undefined;
+  const next = safeNextPath(params.next) ?? undefined;
   // Null until Turnstile is configured; the guard skips the check to match.
   const siteKey = captchaSiteKey();
   return (

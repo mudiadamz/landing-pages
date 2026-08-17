@@ -1,3 +1,4 @@
+import { safeNextPath } from "@/lib/next-path";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isMissingRecord } from "@/lib/missing-record";
@@ -96,8 +97,14 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAuthRoute && user) {
+    // Already signed in, so there is nothing to sign in to — but honour where the
+    // link said to go afterwards. Without this, arriving at /login?next=/ with a
+    // live session (a stale tab, a back button) lands on the panel, which is the
+    // one place the caller explicitly said not to send them.
     const url = request.nextUrl.clone();
-    url.pathname = "/panel";
+    const next = safeNextPath(url.searchParams.get("next"));
+    url.pathname = next ?? "/panel";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 

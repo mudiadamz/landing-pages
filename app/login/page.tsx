@@ -1,3 +1,4 @@
+import { safeNextPath } from "@/lib/next-path";
 import Link from "next/link";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
@@ -16,7 +17,7 @@ export default async function LoginPage({
 }) {
   const t = translator(await requestLocale());
   const params = await searchParams;
-  const next = params.next && params.next.startsWith("/") ? params.next : undefined;
+  const next = safeNextPath(params.next) ?? undefined;
   // The storefront being served, not the canonical one. This line used to read
   // "ADM.UIUX" on every domain — the sign-in box for a niche storefront named a
   // company the visitor had never heard of, which is both wrong and alarming on

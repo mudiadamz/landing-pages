@@ -6,13 +6,16 @@ import { guardSignup } from "@/lib/signup-guard";
 import { sendVerificationEmail } from "@/lib/email-verify";
 import { currentOrigin } from "@/lib/site-resolve";
 import { googleCallbackUrl } from "@/lib/oauth-return";
+import { safeNextPath } from "@/lib/next-path";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const next = (formData.get("next") as string)?.trim();
-  const redirectTo = next && next.startsWith("/") ? next : "/panel";
+  const next = safeNextPath(formData.get("next") as string);
+  // /panel is the default, not the rule: a sign-in that started on a storefront
+  // page carries where it came from, and goes back there.
+  const redirectTo = next ?? "/panel";
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -36,8 +39,7 @@ export async function signup(formData: FormData) {
   const baseUrl = await currentOrigin();
   // Carried through so someone who signs up mid-purchase lands back on the
   // product they were buying rather than the panel.
-  const next = (formData.get("next") as string)?.trim();
-  const safeNext = next && next.startsWith("/") ? next : null;
+  const safeNext = safeNextPath(formData.get("next") as string);
   const withNext = (path: string) =>
     safeNext ? `${path}${path.includes("?") ? "&" : "?"}next=${encodeURIComponent(safeNext)}` : path;
 
@@ -103,7 +105,7 @@ export async function signInWithGoogle(formData?: FormData) {
   // silently swaps out a redirect_to it hasn't been told about. So the return trip
   // goes through the one URL it does know, which bounces back. See
   // lib/oauth-return.ts for why the code, not the session, is what travels.
-  const redirectTo = await googleCallbackUrl(next && next.startsWith("/") ? next : null);
+  const redirectTo = await googleCallbackUrl(safeNextPath(next));
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {

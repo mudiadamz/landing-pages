@@ -31,6 +31,17 @@ import { humanSize, toPendingFile, type PendingFile } from "./upload";
 /** Slack in px: a hair off the end still counts as "reading the newest". */
 const NEAR_BOTTOM = 60;
 
+/**
+ * Signing in from the chat sends the visitor back TO THE CHAT, not to /panel.
+ *
+ * /panel is the right landing spot for the marketplace, where signing in is
+ * usually a step towards a purchase or an admin screen. Here it is the wrong one
+ * twice over: the homepage IS the product, and the visitor was mid-thought when
+ * they hit the sign-in wall. `next` is the flow's own mechanism (lib/actions/auth
+ * reads it, and the proxy honours it for an already-live session).
+ */
+const SIGN_IN_HREF = "/login?next=/";
+
 export function ChatApp({
   user,
   siteName,
@@ -240,7 +251,7 @@ export function ChatApp({
           </button>
           {!user && (
             <Link
-              href="/login"
+              href={SIGN_IN_HREF}
               className="block w-full rounded-xl bg-[var(--primary)] px-3 py-2 text-center text-sm text-[var(--primary-foreground)]"
             >
               {t("nav.signIn")}
@@ -345,7 +356,7 @@ function SignedOutNotice() {
       <p className="m-0 text-base font-semibold">{t("chat.signInTitle")}</p>
       <p className="m-0 max-w-sm text-sm text-[var(--muted)]">{t("chat.signInBody")}</p>
       <Link
-        href="/login"
+        href={SIGN_IN_HREF}
         className="mt-2 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
       >
         {t("nav.signIn")}

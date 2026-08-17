@@ -31,8 +31,11 @@ export function MbahgptHeader({ user, brand }: ChromeProps) {
         </Link>
         <div className="flex shrink-0 items-center gap-1.5">
           <ThemeSwitch />
+          {/* Signing in returns to the chat, like every other entry point on this
+              storefront — its homepage is the product, not a step towards one.
+              A signed-in visitor still gets a direct route to the panel. */}
           <Link
-            href={user ? "/panel" : "/login"}
+            href={user ? "/panel" : "/login?next=/"}
             className="text-xs text-[var(--muted)] transition-colors hover:text-foreground"
           >
             {user ? t("nav.panel") : t("nav.signIn")}
