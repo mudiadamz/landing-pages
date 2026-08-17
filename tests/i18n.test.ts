@@ -152,6 +152,8 @@ describe("dictionary integrity", () => {
     // A session-table column (one device) vs a chart section (all devices);
     // English already splits them into "Device" and "Devices".
     Perangkat: ["analytics.device", "stats.devices"],
+    // The inbox's column heading ("List") vs the sign-up call to action.
+    Daftar: ["auth.signUp", "panel.list"],
     // The popup's body field vs the chapter editor's rich/source view switch.
     Teks: ["editor.richText", "panel.text"],
     // Storage's "open this file" vs the setup guide's "open this section".

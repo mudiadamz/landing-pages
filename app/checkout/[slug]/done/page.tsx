@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { Button } from "@/components/ui/button";
 import { getCategories, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
@@ -13,6 +15,7 @@ type Props = {
 };
 
 export default async function CheckoutDonePage({ params, searchParams }: Props) {
+  const t = translator(await requestLocale());
   const { slug } = await params;
   const { resultCode, merchantOrderId } = await searchParams;
   const supabase = await createClient();
@@ -81,12 +84,12 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
               </svg>
             </div>
             <h1 className="text-xl font-semibold text-foreground mb-2">
-              Pembayaran berhasil
+              {t("checkout.paymentSuccess")}
             </h1>
             <p className="text-[var(--muted)] mb-6">
               {hasPurchase
-                ? "Terima kasih! File kamu siap. Download sekarang, atau akses kapan saja di panel."
-                : "Terima kasih. Pembayaran sedang diproses — biasanya beberapa detik. Cek panel sebentar lagi untuk download."}
+                ? t("checkout.filesReady")
+                : t("checkout.paymentProcessing")}
             </p>
           </>
         ) : (
@@ -107,10 +110,10 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
               </svg>
             </div>
             <h1 className="text-xl font-semibold text-foreground mb-2">
-              Pembayaran belum selesai
+              {t("checkout.paymentIncomplete")}
             </h1>
             <p className="text-[var(--muted)] mb-6">
-              Pembayaran dibatalkan atau belum selesai. Anda dapat mencoba kembali kapan saja.
+              {t("checkout.paymentCancelled")}
             </p>
           </>
         )}
@@ -131,30 +134,30 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
                 )}
                 {(checkoutData?.story_epub_url || checkoutData?.story_pdf_url) && (
                   <Button variant="secondary" size="md" href={`/read/${slug}`}>
-                    {checkoutData?.story_epub_url ? "Baca EPUB" : "Baca PDF"}
+                    {checkoutData?.story_epub_url ? t("panel.readEpub") : t("panel.readPdf")}
                   </Button>
                 )}
                 <Button variant="secondary" size="md" href="/panel">
-                  Ke Panel
+                  {t("checkout.toPanel")}
                 </Button>
               </>
             ) : (
               <>
                 <Button size="md" href="/panel">
-                  Ke Panel
+                  {t("checkout.toPanel")}
                 </Button>
                 <Button variant="secondary" size="md" href="/">
-                  Beranda
+                  {t("nav.home")}
                 </Button>
               </>
             )
           ) : (
             <>
               <Button size="md" href={`/checkout/${slug}?pay=1`}>
-                Coba lagi
+                {t("sites.tryAgain")}
               </Button>
               <Button variant="secondary" size="md" href="/">
-                Beranda
+                {t("nav.home")}
               </Button>
             </>
           )}

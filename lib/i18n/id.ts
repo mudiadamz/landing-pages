@@ -1392,6 +1392,64 @@ export const id = {
 
   "home.bestSelling": "Terlaris",
 
+  "checkout.includesCode": "File HTML/CSS/JS bersih & responsif",
+  "checkout.includesDeploy": "Siap deploy — langsung pakai",
+  "checkout.includesForever": "Akses download selamanya di panel",
+  "checkout.includesZip": "File ZIP langsung download",
+  "checkout.backHome": "← Kembali ke beranda",
+  "checkout.scheduled": "Dijadwalkan (upcoming).",
+  "checkout.scheduledUntil": "Pengunjung hanya melihat hitung mundur sampai",
+  "checkout.scheduledOnlyYou": ". Hanya Anda yang bisa membukanya sekarang.",
+  "checkout.discountBanner": "Hemat {pct}% dari harga normal",
+  "checkout.bundleContents": "Isi bundle ({count} produk)",
+  "checkout.bundleNote":
+    "Semua produk di atas otomatis masuk ke akunmu setelah pembayaran berhasil.",
+  "checkout.whatYouGet": "Yang kamu dapat",
+  "checkout.securePaymentShort": "Pembayaran aman",
+  "checkout.foreverAccess": "Akses file selamanya",
+  "checkout.instantDownload": "Download langsung",
+
+  "checkout.invoiceFailed": "Gagal membuat invoice",
+  "checkout.noPaymentUrl": "URL pembayaran tidak diterima",
+  "checkout.processFailed": "Gagal memproses",
+  "checkout.preparingProduct": "Menyiapkan produkmu…",
+  "checkout.preparingPayment": "Menyiapkan pembayaran…",
+  "checkout.preparingProductNote": "Sebentar, produk sedang dimasukkan ke akunmu.",
+  "checkout.preparingPaymentNote": "Sebentar, kamu akan diarahkan ke halaman pembayaran.",
+  "checkout.tapToRetry": "{error} — ketuk untuk coba lagi",
+  "checkout.freeWithGoogle": "Ambil gratis dengan Google",
+  "checkout.withGoogle": "Checkout dengan Google",
+  "checkout.orSignInEmail": "atau masuk dengan email",
+  "checkout.continueToPayment": "Lanjutkan ke pembayaran",
+  "checkout.processing": "Memproses…",
+  "checkout.payNow": "Bayar sekarang",
+
+  "checkout.paymentSuccess": "Pembayaran berhasil",
+  "checkout.filesReady":
+    "Terima kasih! File kamu siap. Download sekarang, atau akses kapan saja di panel.",
+  "checkout.paymentProcessing":
+    "Terima kasih. Pembayaran sedang diproses — biasanya beberapa detik. Cek panel sebentar lagi untuk download.",
+  "checkout.paymentIncomplete": "Pembayaran belum selesai",
+  "checkout.paymentCancelled":
+    "Pembayaran dibatalkan atau belum selesai. Anda dapat mencoba kembali kapan saja.",
+  "checkout.toPanel": "Ke Panel",
+
+  "auth.backHome": "Kembali ke beranda",
+  "auth.noAccount": "Belum punya akun?",
+  "auth.signUp": "Daftar",
+  "auth.signUpSubtitle": "Buat akun sebagai pelanggan",
+  "auth.signUpGoogle": "Daftar dengan Google",
+  "auth.checkEmail": "Cek email Anda untuk verifikasi akun, lalu masuk.",
+  "auth.emailExample": "you@example.com",
+  "auth.namePlaceholder": "John Doe",
+  "auth.minPassword": "Minimal 6 karakter",
+  "auth.haveAccount": "Sudah punya akun?",
+
+  "auth.signInToGet": "Masuk untuk mengambil",
+  "auth.signInToBuy": "Masuk untuk membeli",
+  "auth.afterSignInFree": "Setelah masuk, produk langsung masuk ke akunmu.",
+  "auth.afterSignInPaid": "Setelah masuk, kamu langsung diarahkan ke pembayaran.",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { login } from "@/lib/actions/auth";
 import { SubmitButton } from "./submit-button";
 import { GoogleSignInButton } from "@/components/google-signin-button";
@@ -12,6 +14,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
+  const t = translator(await requestLocale());
   const params = await searchParams;
   const next = params.next && params.next.startsWith("/") ? params.next : undefined;
   // The storefront being served, not the canonical one. This line used to read
@@ -28,7 +31,7 @@ export default async function LoginPage({
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Back home
+        {t("auth.backHome")}
       </Link>
       <div className="absolute top-4 right-4">
         {/* Toggle hidden on public pages for now — see components/site-header.tsx. */}
@@ -56,13 +59,13 @@ export default async function LoginPage({
               <p className="text-sm text-red-700 dark:text-red-300">{params.error}</p>
             </div>
           )}
-          <GoogleSignInButton label="Masuk dengan Google" next={next} />
+          <GoogleSignInButton label={t("reader.signInGoogle")} next={next} />
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[var(--border)]" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-[var(--card)] text-[var(--muted)]">atau</span>
+              <span className="px-2 bg-[var(--card)] text-[var(--muted)]">{t("analytics.engOr")}</span>
             </div>
           </div>
           <form action={login} className="space-y-5">
@@ -81,7 +84,7 @@ export default async function LoginPage({
                 autoComplete="email"
                 required
                 className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground transition-all duration-200 focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent hover:border-[var(--muted)]/50"
-                placeholder="you@example.com"
+                placeholder={t("auth.emailExample")}
               />
             </div>
             <div>
@@ -103,12 +106,12 @@ export default async function LoginPage({
             <SubmitButton />
           </form>
             <p className="mt-6 text-center text-sm text-[var(--muted)]">
-            Belum punya akun?{" "}
+            {t("auth.noAccount")}{" "}
             <Link
               href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
               className="font-medium text-[var(--primary)] hover:underline underline-offset-2 transition-colors duration-200 hover:opacity-90"
             >
-              Daftar
+              {t("auth.signUp")}
             </Link>
           </p>
         </div>

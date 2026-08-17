@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 
 /**
@@ -7,6 +9,7 @@ import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
  * after tapping "Beli sekarang" reads as a dead end.
  */
 export async function CheckoutIntent({ next }: { next?: string }) {
+  const t = translator(await requestLocale());
   const slug = next?.match(/^\/checkout\/([^/?#]+)/)?.[1];
   if (!slug) return null;
 
@@ -28,7 +31,7 @@ export async function CheckoutIntent({ next }: { next?: string }) {
   return (
     <div className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm">
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-        {showAsFree ? "Masuk untuk mengambil" : "Masuk untuk membeli"}
+        {showAsFree ? t("auth.signInToGet") : t("auth.signInToBuy")}
       </p>
       <div className="flex items-center gap-3">
         {thumb ? (
@@ -41,14 +44,14 @@ export async function CheckoutIntent({ next }: { next?: string }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{product.title}</p>
           <p className="mt-0.5 text-sm font-medium text-[var(--primary)]">
-            {showAsFree ? "Gratis" : `Rp ${display.toLocaleString("id-ID")}`}
+            {showAsFree ? t("common.free") : `Rp ${display.toLocaleString("id-ID")}`}
           </p>
         </div>
       </div>
       <p className="mt-2.5 text-xs text-[var(--muted)]">
         {showAsFree
-          ? "Setelah masuk, produk langsung masuk ke akunmu."
-          : "Setelah masuk, kamu langsung diarahkan ke pembayaran."}
+          ? t("auth.afterSignInFree")
+          : t("auth.afterSignInPaid")}
       </p>
     </div>
   );

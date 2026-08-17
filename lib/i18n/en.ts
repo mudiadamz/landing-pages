@@ -1402,6 +1402,64 @@ export const en: Record<keyof typeof id, string> = {
 
   "home.bestSelling": "Best selling",
 
+  "checkout.includesCode": "Clean, responsive HTML/CSS/JS files",
+  "checkout.includesDeploy": "Ready to deploy — use it as is",
+  "checkout.includesForever": "Download access forever, from your panel",
+  "checkout.includesZip": "ZIP file, downloads immediately",
+  "checkout.backHome": "← Back to the homepage",
+  "checkout.scheduled": "Scheduled (upcoming).",
+  "checkout.scheduledUntil": "Visitors only see a countdown until",
+  "checkout.scheduledOnlyYou": ". Only you can open it right now.",
+  "checkout.discountBanner": "Save {pct}% off the normal price",
+  "checkout.bundleContents": "Bundle contents ({count} products)",
+  "checkout.bundleNote":
+    "Everything above lands in your account automatically once the payment goes through.",
+  "checkout.whatYouGet": "What you get",
+  "checkout.securePaymentShort": "Secure payment",
+  "checkout.foreverAccess": "File access forever",
+  "checkout.instantDownload": "Instant download",
+
+  "checkout.invoiceFailed": "Could not create the invoice",
+  "checkout.noPaymentUrl": "No payment URL came back",
+  "checkout.processFailed": "Could not process that",
+  "checkout.preparingProduct": "Getting your product ready…",
+  "checkout.preparingPayment": "Getting the payment ready…",
+  "checkout.preparingProductNote": "One moment — the product is being added to your account.",
+  "checkout.preparingPaymentNote": "One moment — you are being sent to the payment page.",
+  "checkout.tapToRetry": "{error} — tap to try again",
+  "checkout.freeWithGoogle": "Get it free with Google",
+  "checkout.withGoogle": "Checkout with Google",
+  "checkout.orSignInEmail": "or sign in with email",
+  "checkout.continueToPayment": "Continue to payment",
+  "checkout.processing": "Processing…",
+  "checkout.payNow": "Pay now",
+
+  "checkout.paymentSuccess": "Payment received",
+  "checkout.filesReady":
+    "Thank you! Your files are ready. Download them now, or get them any time from your panel.",
+  "checkout.paymentProcessing":
+    "Thank you. The payment is being processed — usually a few seconds. Check your panel shortly to download.",
+  "checkout.paymentIncomplete": "Payment not completed",
+  "checkout.paymentCancelled":
+    "The payment was cancelled or never completed. You can try again whenever you like.",
+  "checkout.toPanel": "Go to panel",
+
+  "auth.backHome": "Back home",
+  "auth.noAccount": "No account yet?",
+  "auth.signUp": "Sign up",
+  "auth.signUpSubtitle": "Create an account as a customer",
+  "auth.signUpGoogle": "Sign up with Google",
+  "auth.checkEmail": "Check your email to verify the account, then sign in.",
+  "auth.emailExample": "you@example.com",
+  "auth.namePlaceholder": "John Doe",
+  "auth.minPassword": "At least 6 characters",
+  "auth.haveAccount": "Already have an account?",
+
+  "auth.signInToGet": "Sign in to get it",
+  "auth.signInToBuy": "Sign in to buy",
+  "auth.afterSignInFree": "Once you sign in, the product lands in your account.",
+  "auth.afterSignInPaid": "Once you sign in, you go straight to payment.",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

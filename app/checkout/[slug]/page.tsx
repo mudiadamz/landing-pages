@@ -29,6 +29,7 @@ import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
 import { ProductTracker } from "@/components/product-tracker";
 import { requestLocale } from "@/lib/i18n/request";
+import type { MessageKey } from "@/lib/i18n";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -67,11 +68,11 @@ function sanitizeAdHeadline(raw: string | string[] | undefined): string | null {
   return cleaned.length > 80 ? `${cleaned.slice(0, 79).trimEnd()}…` : cleaned;
 }
 
-const includes = [
-  { label: "File HTML/CSS/JS bersih & responsif", icon: CodeIcon },
-  { label: "Siap deploy — langsung pakai", icon: RocketIcon },
-  { label: "Akses download selamanya di panel", icon: InfinityIcon },
-  { label: "File ZIP langsung download", icon: DownloadIcon },
+const includes: { labelKey: MessageKey; icon: typeof CodeIcon }[] = [
+  { labelKey: "checkout.includesCode", icon: CodeIcon },
+  { labelKey: "checkout.includesDeploy", icon: RocketIcon },
+  { labelKey: "checkout.includesForever", icon: InfinityIcon },
+  { labelKey: "checkout.includesZip", icon: DownloadIcon },
 ];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -210,18 +211,18 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
           href="/"
           className="text-sm text-[var(--muted)] hover:text-foreground transition-colors mb-6 inline-block"
         >
-          ← Kembali ke beranda
+          {t("checkout.backHome", undefined, locale)}
         </Link>
 
         {ownerScheduledAt && (
           <div className="mb-4 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-4 py-3 text-sm text-foreground">
-            <span className="font-medium">Dijadwalkan (upcoming).</span>{" "}
+            <span className="font-medium">{t("checkout.scheduled", undefined, locale)}</span>{" "}
             <span className="text-[var(--muted)]">
-              Pengunjung hanya melihat hitung mundur sampai{" "}
+              {t("checkout.scheduledUntil", undefined, locale)}{" "}
               {new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" }).format(
                 new Date(ownerScheduledAt),
               )}
-              . Hanya Anda yang bisa membukanya sekarang.
+              {t("checkout.scheduledOnlyYou", undefined, locale)}
             </span>
           </div>
         )}
@@ -230,7 +231,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
           {/* Discount banner */}
           {hasDiscount && discountPct > 0 && (
             <div className="bg-[var(--primary)] text-[var(--primary-foreground)] text-center py-2 px-4 text-sm font-medium">
-              Hemat {discountPct}% dari harga normal
+              {t("checkout.discountBanner", { pct: discountPct }, locale)}
             </div>
           )}
 
@@ -325,7 +326,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
             {bundleItems.length > 0 && (
               <div className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4">
                 <h2 className="text-sm font-semibold text-foreground">
-                  Isi bundle ({bundleItems.length} produk)
+                  {t("checkout.bundleContents", { count: bundleItems.length }, locale)}
                 </h2>
                 {(page as { bundle_note?: string | null }).bundle_note && (
                   <p className="mt-1 text-sm text-[var(--muted)]">{(page as { bundle_note?: string | null }).bundle_note}</p>
@@ -349,7 +350,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                   ))}
                 </ul>
                 <p className="mt-3 text-xs text-[var(--muted)]">
-                  Semua produk di atas otomatis masuk ke akunmu setelah pembayaran berhasil.
+                  {t("checkout.bundleNote", undefined, locale)}
                 </p>
               </div>
             )}
@@ -359,12 +360,14 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
 
             {/* What you get */}
             <div className="border-t border-[var(--border)] pt-5">
-              <h2 className="text-sm font-semibold text-foreground mb-3">Yang kamu dapat</h2>
+              <h2 className="text-sm font-semibold text-foreground mb-3">
+                {t("checkout.whatYouGet", undefined, locale)}
+              </h2>
               <ul className="space-y-2.5">
                 {includes.map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-[var(--muted)]">
                     <item.icon className="w-4 h-4 shrink-0 text-[var(--primary)]" />
-                    <span>{item.label}</span>
+                    <span>{t(item.labelKey, undefined, locale)}</span>
                   </li>
                 ))}
               </ul>
@@ -409,19 +412,19 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 <svg className="w-4 h-4 shrink-0 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                Pembayaran aman
+                {t("checkout.securePaymentShort", undefined, locale)}
               </div>
               <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
                 <svg className="w-4 h-4 shrink-0 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                Akses file selamanya
+                {t("checkout.foreverAccess", undefined, locale)}
               </div>
               <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
                 <svg className="w-4 h-4 shrink-0 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Download langsung
+                {t("checkout.instantDownload", undefined, locale)}
               </div>
             </div>
 

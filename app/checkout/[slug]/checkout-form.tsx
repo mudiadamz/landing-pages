@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/lib/i18n/client";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { addPurchaseAction } from "@/lib/actions/purchases";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export function CheckoutForm({
   calendarHref,
   ctaLabel,
 }: Props) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -84,16 +86,16 @@ export function CheckoutForm({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Gagal membuat invoice");
+        throw new Error(data.error ?? t("checkout.invoiceFailed"));
       }
 
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
         return;
       }
-      throw new Error("URL pembayaran tidak diterima");
+      throw new Error(t("checkout.noPaymentUrl"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memproses");
+      setError(err instanceof Error ? err.message : t("checkout.processFailed"));
       setLoading(false);
       setAutoContinuing(false);
     }
@@ -152,12 +154,12 @@ export function CheckoutForm({
         </span>
         <div>
           <p className="text-sm font-semibold text-foreground">
-            {showAsFree ? "Menyiapkan produkmu…" : "Menyiapkan pembayaran…"}
+            {showAsFree ? t("checkout.preparingProduct") : t("checkout.preparingPayment")}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
             {showAsFree
-              ? "Sebentar, produk sedang dimasukkan ke akunmu."
-              : "Sebentar, kamu akan diarahkan ke halaman pembayaran."}
+              ? t("checkout.preparingProductNote")
+              : t("checkout.preparingPaymentNote")}
           </p>
         </div>
         {error && (
@@ -166,7 +168,7 @@ export function CheckoutForm({
             onClick={() => setAutoContinuing(false)}
             className="text-xs font-medium text-red-500 underline underline-offset-2"
           >
-            {error} — ketuk untuk coba lagi
+            {t("checkout.tapToRetry", { error })}
           </button>
         )}
       </div>
@@ -223,7 +225,7 @@ export function CheckoutForm({
       <div data-checkout-form className="space-y-3">
         <GoogleSignInButton
           next={nextAfterLogin}
-          label="Ambil gratis dengan Google"
+          label={t("checkout.freeWithGoogle")}
           variant="primary"
           size="lg"
           shine
@@ -233,7 +235,7 @@ export function CheckoutForm({
           href={`/login?next=${encodeURIComponent(nextAfterLogin)}`}
           className="block text-center text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
-          atau masuk dengan email
+          {t("checkout.orSignInEmail")}
         </Link>
       </div>
     );
@@ -253,7 +255,7 @@ export function CheckoutForm({
           fullWidth
           className="py-4 text-center shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01]"
         >
-          Lanjutkan ke pembayaran
+          {t("checkout.continueToPayment")}
         </Button>
       </div>
     );
@@ -267,7 +269,7 @@ export function CheckoutForm({
       <div data-checkout-form className="space-y-3">
         <GoogleSignInButton
           next={nextAfterLogin}
-          label="Checkout dengan Google"
+          label={t("checkout.withGoogle")}
           variant="primary"
           size="lg"
           shine
@@ -277,7 +279,7 @@ export function CheckoutForm({
           href={`/login?next=${encodeURIComponent(nextAfterLogin)}`}
           className="block text-center text-sm text-[var(--muted)] hover:text-foreground transition-colors"
         >
-          atau masuk dengan email
+          {t("checkout.orSignInEmail")}
         </Link>
       </div>
     );
@@ -300,13 +302,13 @@ export function CheckoutForm({
         className="py-4 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] disabled:shadow-none"
       >
         {loading ? (
-          "Memproses…"
+          t("checkout.processing")
         ) : (
           <span className="flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            Bayar sekarang
+            {t("checkout.payNow")}
           </span>
         )}
       </Button>
