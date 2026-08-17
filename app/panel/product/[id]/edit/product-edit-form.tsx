@@ -171,42 +171,42 @@ function isoToLocalInput(iso: string | null | undefined): string {
 /* Ready-made CTA wording, so button copy stays consistent across products
    instead of being retyped each time. "Lainnya…" still allows anything. */
 
-const CTA_LABELS_PAID = [
-  "Beli sekarang",
-  "Miliki sekarang",
-  "Dapatkan sekarang",
-  "Baca sekarang",
-  "Download sekarang",
-  "Checkout",
+const CTA_LABELS_PAID: MessageKey[] = [
+  "checkout.buyNow",
+  "product.ctaLabelOwn",
+  "product.ctaLabelGet",
+  "product.ctaLabelRead",
+  "product.ctaLabelDownload",
+  "product.ctaLabelCheckout",
 ];
-const CTA_LABELS_FREE = [
-  "Ambil gratis",
-  "Baca gratis",
-  "Download gratis",
-  "Mulai baca",
-  "Dapatkan sekarang",
+const CTA_LABELS_FREE: MessageKey[] = [
+  "checkout.getFree",
+  "product.ctaLabelReadFree",
+  "product.ctaLabelDownloadFree",
+  "product.ctaLabelStartReading",
+  "product.ctaLabelGet",
 ];
-const CTA_LABELS_CALENDAR = [
-  "Tambahkan ke kalender",
-  "Simpan tanggalnya",
-  "Ingatkan saya",
+const CTA_LABELS_CALENDAR: MessageKey[] = [
+  "product.ctaActionCalendar",
+  "product.ctaLabelSaveDate",
+  "product.ctaLabelRemindMe",
 ];
-const CTA_NOTES_PAID = [
-  "Miliki sekarang — akses penuh, selamanya.",
-  "Bayar sekali, akses selamanya.",
-  "Langsung bisa diunduh setelah bayar.",
-  "Akses penuh, selamanya.",
-  "Dukung karya ini — akses penuh.",
+const CTA_NOTES_PAID: MessageKey[] = [
+  "product.ctaNotePaidDefault",
+  "product.ctaNotePayOnce",
+  "product.ctaNoteInstantDownload",
+  "product.ctaNoteFullAccess",
+  "product.ctaNoteSupport",
 ];
-const CTA_NOTES_FREE = [
-  "Ambil sekarang — akses penuh, selamanya.",
-  "Gratis — langsung baca.",
-  "Tanpa biaya, tanpa syarat.",
-  "Nikmati sekarang juga.",
+const CTA_NOTES_FREE: MessageKey[] = [
+  "product.ctaNoteFreeDefault",
+  "product.ctaNoteFreeRead",
+  "product.ctaNoteNoStrings",
+  "product.ctaNoteEnjoy",
 ];
-const CTA_NOTES_CALENDAR = [
-  "Simpan tanggalnya biar tidak terlewat.",
-  "Kami ingatkan menjelang acara.",
+const CTA_NOTES_CALENDAR: MessageKey[] = [
+  "product.ctaNoteSaveDate",
+  "product.ctaNoteRemind",
 ];
 
 export function ProductEditForm({
@@ -290,18 +290,23 @@ export function ProductEditForm({
   );
 
   const defaultCtaLabel =
-    actionType === "calendar" ? "Tambahkan ke kalender" : isFree ? "Ambil gratis" : "Beli sekarang";
+    actionType === "calendar"
+      ? t("product.ctaActionCalendar")
+      : isFree
+        ? t("checkout.getFree")
+        : t("checkout.buyNow");
   const defaultCtaNote = isFree
     ? t("product.ctaNoteFreeDefault")
     : t("product.ctaNotePaidDefault");
-  const labelPresets =
-    actionType === "calendar"
-      ? CTA_LABELS_CALENDAR
-      : isFree
-        ? CTA_LABELS_FREE
-        : CTA_LABELS_PAID;
-  const notePresets =
-    actionType === "calendar" ? CTA_NOTES_CALENDAR : isFree ? CTA_NOTES_FREE : CTA_NOTES_PAID;
+  // Resolved here rather than in the arrays above: the presets are module
+  // scope, so a translated string there would be the first request's language
+  // for every request after it. PriceTab still receives plain strings.
+  const labelPresets = (
+    actionType === "calendar" ? CTA_LABELS_CALENDAR : isFree ? CTA_LABELS_FREE : CTA_LABELS_PAID
+  ).map((k) => t(k));
+  const notePresets = (
+    actionType === "calendar" ? CTA_NOTES_CALENDAR : isFree ? CTA_NOTES_FREE : CTA_NOTES_PAID
+  ).map((k) => t(k));
   const [purchaseLink, setPurchaseLink] = useState(initial.purchase_link ?? "");
   // Calendar-event fields (used when actionType === "calendar").
   const [eventTitle, setEventTitle] = useState(initial.event_title ?? "");

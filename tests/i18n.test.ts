@@ -65,8 +65,6 @@ describe("dictionary integrity", () => {
    * the test fails on a stale entry as well as on a new one.
    */
   const NOT_YET_CONVERTED = [
-    "checkout.buyNow",
-    "checkout.getFree",
     "common.price",
     "common.required",
     "common.search",
