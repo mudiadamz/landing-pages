@@ -49,6 +49,12 @@ mengembalikan bug "semua produk tampil di semua domain" tanpa siapa pun sadar.
 Semua tema menerima **props yang identik**; tema menentukan *tampilan*, bukan
 *data apa yang boleh dilihat*.
 
+**Yang bukan pelanggaran:** komponen client di dalam tema yang memanggil Server
+Action setelah mount untuk data **milik satu pengunjung** — riwayat chatnya sendiri,
+misalnya. Aturan di atas soal read per-tenant yang ter-cache dan difilter per
+domain; data privat per-user tidak masuk cache, tidak dibagi, dan tidak punya cache
+key yang bisa salah. Lihat `lib/templates/mbahgpt/chat-app.tsx`.
+
 ---
 
 ## 3. Invarian
@@ -70,6 +76,10 @@ perubahan tidak sampai ke publik sampai TTL habis atau ada deploy.
 
 **I4 — Semua mutasi lewat Server Action di `lib/actions/*.ts`.**
 Bukan route handler, bukan client fetch. Satu tempat untuk otorisasi + invalidasi.
+*Satu-satunya pengecualian yang diakui*: response yang harus **dibaca sambil masih
+ditulis** (streaming token) — Server Action hanya menyelesaikan sekali dengan nilai
+jadi. Itu boleh jadi route handler, dan sisa mutasi fiturnya tetap di actions
+(`app/api/mbahgpt/chat` vs `lib/actions/chat.ts`).
 
 **I5 — Setiap export modul `"use server"` harus fungsi yang async-callable.**
 Setiap export dikompilasi jadi server action. Yang gagal build: **fungsi sinkron**
@@ -118,6 +128,8 @@ tak dikenal jatuh ke default alih-alih merusak halaman.
 | Kebutuhan | Pola | Contoh |
 |---|---|---|
 | Tema baru | komponen + satu entry di registry | `lib/templates/linkbio/*` |
+| Tema yang membawa backend sendiri | inti di `lib/<fitur>/` (server-only) + CRUD di `lib/actions/` + route handler **hanya** untuk streaming | `lib/mbahgpt/*`, [`mbahgpt.md`](mbahgpt.md) |
+| Halaman depan tema yang memakai seluruh layar | flag `fullscreenHome` di registry; layout melepas widget mengambang di rute itu | `mbahgpt` vs launcher Tawk |
 | Permukaan bertema baru | slot **opsional** + fallback + dispatcher | `Categories` di `registry.tsx` |
 | Pengaturan per-domain | kolom di `lp_sites` **atau** key di `lp_site_settings` | `palette` / `hero` |
 | Aset milik domain | kolom URL di `lp_sites` + upload service-role di prefix sendiri | `logo_url`, `icon_url` |

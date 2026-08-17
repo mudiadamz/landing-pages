@@ -32,6 +32,7 @@ Ringkasan yang paling sering dilanggar:
 |---|---|
 | Aturan & pola arsitektur | [`docs/architecture.md`](docs/architecture.md) |
 | Multi-domain, tema, palet | [`docs/multi-domain.md`](docs/multi-domain.md) + README |
+| Template chat MbahGPT (+ backend-nya) | [`docs/mbahgpt.md`](docs/mbahgpt.md) |
 | Setup, script, env | [`README.md`](README.md), [`.env.example`](.env.example) |
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
 | Laporan kampanye iklan | `docs/campaign-reports/` |
@@ -152,6 +153,10 @@ GET /api/download/[slug]
   (`lib/page-html.ts`), dirender di `.page-prose`. URL-nya tetap — beda dari halaman
   editorial `lp_pages` yang slug-nya dibuat orang.
 - **Inbound email** (`/api/webhooks/resend/inbound`): Resend kirim event `email.received` (verifikasi svix). Disimpan ke `lp_received_emails`, dibaca di panel Inbox. Butuh `RESEND_WEBHOOK_SECRET`.
+- **MbahGPT** (template `mbahgpt`): storefront yang halaman depannya adalah chatbox
+  ke model OpenRouter. Tabel `lp_chat_*`, inti di `lib/mbahgpt/`, streaming lewat
+  `app/api/mbahgpt/chat`. Mati sendiri (halaman bilang "belum aktif") kalau
+  `OPENROUTER_API_KEY` kosong. Detail & batasannya di [`docs/mbahgpt.md`](docs/mbahgpt.md).
 - **Contacts** (`components/contact-form.tsx` → `lp_contacts`), dibaca admin di `/panel/contacts`.
 - **Reviews** (`lp_reviews`), **categories** (`lp_landing_page_categories`, hierarki via `parent_id`), **site settings** (`lp_site_settings`).
 - SEO: `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.tsx`, `lib/seo.ts`, JSON-LD Organization di `app/layout.tsx`.

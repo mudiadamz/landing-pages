@@ -158,6 +158,10 @@ export default async function RootLayout({
   const pathname = (await headers()).get("x-pathname") ?? "";
   const coverTheme =
     pathname === "/" ? (await getSiteContent()).founder.coverThemeColor : "";
+  // A template whose homepage is a full-viewport app owns the bottom edge of that
+  // route, so the site-wide floating widgets stay off it — the Tawk launcher was
+  // landing on top of the chat template's send button.
+  const fullscreenHome = !!template.fullscreenHome && pathname === "/";
   const isDark = themeCookie?.value === "dark" && !lightOnly;
 
   return (
@@ -239,7 +243,7 @@ export default async function RootLayout({
           <DeferredScripts />
         </Suspense>
         <MarketingScripts />
-        <TawkChat />
+        {!fullscreenHome && <TawkChat />}
         <PwaRegister />
         <Suspense fallback={null}>
           <RouteProgress />

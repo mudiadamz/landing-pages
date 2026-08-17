@@ -21,6 +21,9 @@ import { PustakaCategories } from "./pustaka/categories";
 import { LinkbioHome } from "./linkbio/home";
 import { LinkbioHeader, LinkbioFooter } from "./linkbio/chrome";
 import { LinkbioCategory, LinkbioCategories } from "./linkbio/category";
+import { MbahgptHome } from "./mbahgpt/home";
+import { MbahgptHeader, MbahgptFooter } from "./mbahgpt/chrome";
+import { MbahgptCategory, MbahgptCategories } from "./mbahgpt/category";
 import type { Locale } from "@/lib/i18n";
 
 /**
@@ -150,6 +153,16 @@ export type TemplateDef = {
    */
   hasBottomNav?: boolean;
   /**
+   * The homepage is a full-viewport app that owns the bottom edge of the screen.
+   *
+   * Read in app/layout.tsx, which then leaves the site-wide floating widgets off
+   * that one route. Declared rather than sniffed, for the same reason as
+   * `hasBottomNav`: only the template knows what it draws, and the alternative is
+   * a support bubble parked on top of a send button — which is exactly what the
+   * Tawk launcher did on the chat template before this existed.
+   */
+  fullscreenHome?: boolean;
+  /**
    * Template renders in light only — no dark variant, and no theme switch.
    *
    * Read in app/layout.tsx, which drops the `dark` class and stops the inline
@@ -226,6 +239,28 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     // blue, and the row stops looking like the same wall lit differently.
     surfaces: { background: "#f5eee8", card: "#fffdfb" },
     defaultPalette: "breeze",
+  },
+  mbahgpt: {
+    key: "mbahgpt",
+    label: "MbahGPT (chat)",
+    description:
+      "Chatbox penuh layar ala ChatGPT: daftar percakapan di kiri, jawaban streaming, lampiran gambar/PDF, memori, dan pencarian web otomatis. Butuh OPENROUTER_API_KEY di server. Cocok untuk situs yang produknya adalah asistennya sendiri.",
+    Home: MbahgptHome,
+    Header: MbahgptHeader,
+    Footer: MbahgptFooter,
+    Category: MbahgptCategory,
+    Categories: MbahgptCategories,
+    // No bottom nav: the composer is already fixed to the bottom edge, and two
+    // things fighting for that strip on a phone means one of them wins by accident.
+    hasBottomNav: false,
+    fullscreenHome: true,
+    // Warm paper page, white cards — the palette the standalone app was designed
+    // in. A long transcript is long-form reading, and a tinted ground fights it.
+    surfaces: { background: "#faf8f5", card: "#ffffff" },
+    // Jade & Mango: the accent is the closest preset to the original's amber, and
+    // the accent here is load-bearing (the assistant's mark, the active session,
+    // the send button) rather than decorative.
+    defaultPalette: "jade",
   },
 };
 
