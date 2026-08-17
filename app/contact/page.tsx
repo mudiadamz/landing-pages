@@ -51,7 +51,7 @@ export default async function ContactPage() {
             <p className="text-sm text-[var(--muted)] mb-4">{content.supportContactIntro}</p>
             <SupportContactImages />
             <h2 className="text-base font-semibold text-foreground mb-3 mt-10">{t("panel.tabSocial")}</h2>
-            <SocialLinks variant="stack" urls={socialUrls} />
+            <SocialLinks variant="stack" urls={socialUrls} label={t("home.socialLinks")} />
           </div>
         </section>
       </main>

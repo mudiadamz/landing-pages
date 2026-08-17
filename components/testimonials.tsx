@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useT } from "@/lib/i18n/client";
 import Link from "next/link";
 import type { PublicReview } from "@/lib/actions/reviews";
-import { VerifiedBadge, formatReviewMonth } from "@/components/verified-reviews";
+import { VerifiedBadge, formatReviewMonth } from "@/components/review-bits";
 import { Button } from "@/components/ui/button";
 
 function Stars({ rating }: { rating: number }) {
@@ -47,31 +47,31 @@ export function Testimonials({ reviews }: { reviews: PublicReview[] }) {
       </h2>
       <div className="relative">
         <div className="overflow-hidden">
-          {reviews.map((t, i) => (
+          {reviews.map((review, i) => (
             <blockquote
-              key={t.id}
+              key={review.id}
               className={`rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-8 text-sm sm:text-base text-[var(--muted)] leading-relaxed transition-all duration-300 ease-out ${
                 i === current ? "opacity-100 block" : "opacity-0 hidden"
               }`}
               style={i === current ? { animation: "fadeIn 0.35s ease-out" } : undefined}
             >
-              <Stars rating={t.rating} />
-              <p className="mb-5 sm:mb-6 mt-3 whitespace-pre-wrap">&ldquo;{t.review_text}&rdquo;</p>
+              <Stars rating={review.rating} />
+              <p className="mb-5 sm:mb-6 mt-3 whitespace-pre-wrap">&ldquo;{review.review_text}&rdquo;</p>
               <footer className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <VerifiedBadge />
-                <span className="text-[var(--muted)]"> · {formatReviewMonth(t.created_at)}</span>
+                <VerifiedBadge label={t("reviews.verifiedBuyer")} />
+                <span className="text-[var(--muted)]"> · {formatReviewMonth(review.created_at)}</span>
                 {/* Only rendered when the product is still published — a hidden
                     page 404s for everyone but its owner. */}
-                {t.product && (
+                {review.product && (
                   <>
                     <span className="text-[var(--muted)]" aria-hidden>
                       ·
                     </span>
                     <Link
-                      href={`/preview/${t.product.slug}`}
+                      href={`/preview/${review.product.slug}`}
                       className="font-medium text-[var(--primary)] hover:underline"
                     >
-                      {t.product.title}
+                      {review.product.title}
                     </Link>
                   </>
                 )}

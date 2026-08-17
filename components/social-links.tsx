@@ -1,5 +1,3 @@
-import { translator } from "@/lib/i18n";
-import { requestLocale } from "@/lib/i18n/request";
 
 /* Brand marks: glyph and colour per network, keyed by the same id the settings
    use. Deliberately NOT data — the mark belongs to the network, so no storefront
@@ -70,10 +68,13 @@ type Props = {
   variant?: "row" | "stack";
   /** Per-network addresses from site settings; omitted = the shipped defaults. */
   urls?: Partial<Record<SocialLink["key"], string>>;
+  /** The list's accessible name. A prop, not a t() call: SOCIAL_LINKS below is
+      imported by client components, so this module must stay free of
+      next/headers. */
+  label?: string;
 };
 
-export async function SocialLinks({ className = "", variant = "row", urls }: Props) {
-  const t = translator(await requestLocale());
+export function SocialLinks({ className = "", variant = "row", urls, label }: Props) {
   const isStack = variant === "stack";
   // A network with no address is not shown — that is how a storefront without a
   // TikTok stops displaying a TikTok icon.
@@ -83,7 +84,7 @@ export async function SocialLinks({ className = "", variant = "row", urls }: Pro
   return (
     <ul
       className={`flex flex-wrap gap-3 ${isStack ? "flex-col" : "flex-row"} ${className}`}
-      aria-label={t("home.socialLinks")}
+      aria-label={label}
     >
       {shown.map(({ name, label, href, icon, brand, brandDark }) => (
         <li key={name}>

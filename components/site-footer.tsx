@@ -46,7 +46,12 @@ export async function SiteFooter() {
             </p>
             <div>
               <p className="text-xs font-medium text-foreground mb-2">{t("panel.tabSocial", {}, locale)}</p>
-              <SocialLinks variant="row" className="gap-x-4 gap-y-2 text-xs" urls={socialUrls} />
+              <SocialLinks
+                variant="row"
+                className="gap-x-4 gap-y-2 text-xs"
+                urls={socialUrls}
+                label={t("home.socialLinks", {}, locale)}
+              />
             </div>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">

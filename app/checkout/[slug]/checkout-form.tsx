@@ -99,7 +99,7 @@ export function CheckoutForm({
       setLoading(false);
       setAutoContinuing(false);
     }
-  }, [fireBeginCheckout, page.slug]);
+  }, [fireBeginCheckout, page.slug, t]);
 
   async function handleDuitku(e: React.FormEvent) {
     e.preventDefault();

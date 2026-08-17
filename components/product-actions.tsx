@@ -290,7 +290,7 @@ export function ProductActionsMenu({
     } catch {
       showHint(url);
     }
-  }, [title, showHint, logCta]);
+  }, [title, showHint, logCta, t]);
 
   const shareTo = useCallback(
     (target: ShareTarget) => {

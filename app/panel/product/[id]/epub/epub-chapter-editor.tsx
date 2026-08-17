@@ -246,7 +246,7 @@ export function EpubChapterEditor({
       if (!("error" in fresh)) setChapters(fresh.chapters);
     }
     setSaving(false);
-  }, [pageId, target, selected, currentHtml, saved, saving]);
+  }, [pageId, target, selected, currentHtml, saved, saving, t]);
 
   // Cmd/Ctrl+S, matching the template editor.
   useEffect(() => {

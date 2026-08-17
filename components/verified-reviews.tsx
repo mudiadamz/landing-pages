@@ -1,4 +1,5 @@
 import type { PublicReview } from "@/lib/actions/reviews";
+import { VerifiedBadge, formatReviewMonth } from "@/components/review-bits";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -19,28 +20,7 @@ async function Stars({ rating }: { rating: number }) {
   );
 }
 
-export async function VerifiedBadge() {
-  const t = translator(await requestLocale());
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--primary)]">
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      {t("reviews.verifiedBuyer")}
-    </span>
-  );
-}
 
-export function formatReviewMonth(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "";
-  return new Date(t).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-}
 
 /**
  * Server-rendered list of verified-buyer reviews. Renders nothing when empty,
@@ -76,7 +56,7 @@ export async function VerifiedReviews({
               {r.review_text}
             </p>
             <div className="mt-2">
-              <VerifiedBadge />
+              <VerifiedBadge label={t("reviews.verifiedBuyer")} />
             </div>
           </li>
         ))}

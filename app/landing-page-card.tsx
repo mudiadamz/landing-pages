@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { translator } from "@/lib/i18n";
-import { requestLocale } from "@/lib/i18n/request";
+import { useT } from "@/lib/i18n/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { LandingPagePublic } from "@/lib/actions/landing-pages";
@@ -29,8 +28,8 @@ function formatPrice(value: number): string {
   }).format(value);
 }
 
-export async function LandingPageCard({ page, priority = false, reviewCount = 0 }: Props) {
-  const t = translator(await requestLocale());
+export function LandingPageCard({ page, priority = false, reviewCount = 0 }: Props) {
+  const t = useT();
   // Cards are 16:9, so a wide thumbnail is used when the seller uploaded one;
   // portrait covers get badly cropped here otherwise.
   const listThumb = page.thumbnail_landscape_url || page.thumbnail_url;
