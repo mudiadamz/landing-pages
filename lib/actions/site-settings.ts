@@ -8,6 +8,8 @@ import { requireFeature, requireAdmin } from "./profiles";
 import { normalizeRolePermissions, type RolePermissions } from "@/lib/role-permissions";
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
+import { DEFAULT_LEGAL, normalizeLegal, type LegalContent } from "@/lib/legal-config";
+import { DEFAULT_HIRING, normalizeHiring, type HiringContent } from "@/lib/hiring-config";
 import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
 import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -19,10 +21,13 @@ import {
 } from "@/lib/popup-config";
 import { POPUP_MAX_BYTES, readWebpHeader } from "@/lib/webp";
 import { canonicalSiteId, currentSiteId } from "@/lib/site-resolve";
+import { sanitizePageHtml } from "@/lib/page-html";
 
 const CUSTOM_JS_KEY = "custom_js";
 const HERO_KEY = "hero";
 const CONTENT_KEY = "site_content";
+const LEGAL_KEY = "legal_content";
+const HIRING_KEY = "hiring_content";
 const ROLE_PERMS_KEY = "role_permissions";
 const TRACKING_KEY = "tracking";
 const PALETTE_KEY = "panel_palette";
@@ -180,6 +185,148 @@ export async function updateSiteContent(
     return { ok: false, error: "Gagal menyimpan." };
   }
   updateTag("site-content");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Legal pages (privacy / terms / refund) and the hiring ad                    */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Both are fixed surfaces with copy an admin owns, so they follow the same
+ * shape as site_content above: one JSON blob per site, read through
+ * unstable_cache with the anon client, written through the cookie client behind
+ * a feature gate.
+ *
+ * The reads deliberately swallow errors into the shipped defaults. A legal page
+ * is linked from every footer and required to exist; a database hiccup should
+ * degrade it to the default text, never to a 500.
+ */
+
+const readLegalContent = unstable_cache(
+  async (siteId: string): Promise<LegalContent> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", LEGAL_KEY)
+        .maybeSingle();
+      if (!data?.value) return DEFAULT_LEGAL;
+      return normalizeLegal(JSON.parse(data.value as string));
+    } catch {
+      return DEFAULT_LEGAL;
+    }
+  },
+  ["legal-content"],
+  { revalidate: 120, tags: ["legal-content"] },
+);
+
+export async function getLegalContent(siteId?: string): Promise<LegalContent> {
+  return readLegalContent(siteId ?? (await currentSiteId()));
+}
+
+export async function updateLegalContent(
+  content: LegalContent,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const allowed = await requireFeature("legal");
+  if (!allowed) return { ok: false, error: "Akses ditolak." };
+
+  // Sanitised here rather than in the form: the action is the only way in, and
+  // an admin pasting a tracking pixel into a privacy policy is exactly the
+  // stored mistake lib/page-html exists to catch.
+  const clean = normalizeLegal({
+    ...content,
+    privacy: { ...content.privacy, body: sanitizePageHtml(content.privacy?.body ?? "") },
+    terms: { ...content.terms, body: sanitizePageHtml(content.terms?.body ?? "") },
+    refund: { ...content.refund, body: sanitizePageHtml(content.refund?.body ?? "") },
+    // Stamped on write, so "Terakhir diperbarui" is the date of the last edit
+    // rather than the date the reader happens to be looking.
+    updatedAt: new Date().toISOString(),
+  });
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: LEGAL_KEY,
+      value: JSON.stringify(clean),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
+
+  if (error) {
+    console.error("updateLegalContent error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  revalidateTag("legal-content", "max");
+  revalidatePath("/privacy");
+  revalidatePath("/terms");
+  revalidatePath("/refund");
+  return { ok: true };
+}
+
+const readHiringContent = unstable_cache(
+  async (siteId: string): Promise<HiringContent> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", HIRING_KEY)
+        .maybeSingle();
+      if (!data?.value) return DEFAULT_HIRING;
+      return normalizeHiring(JSON.parse(data.value as string));
+    } catch {
+      return DEFAULT_HIRING;
+    }
+  },
+  ["hiring-content"],
+  { revalidate: 120, tags: ["hiring-content"] },
+);
+
+export async function getHiringContent(siteId?: string): Promise<HiringContent> {
+  return readHiringContent(siteId ?? (await currentSiteId()));
+}
+
+export async function updateHiringContent(
+  content: HiringContent,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const allowed = await requireFeature("hiring");
+  if (!allowed) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizeHiring(content);
+  const supabase = await createClient();
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: HIRING_KEY,
+      value: JSON.stringify(clean),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
+
+  if (error) {
+    console.error("updateHiringContent error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  revalidateTag("hiring-content", "max");
+  revalidatePath("/hiring");
+  revalidatePath("/hiring/test");
+  // The footer's Hiring link appears and disappears with `enabled`.
   revalidatePath("/", "layout");
   return { ok: true };
 }

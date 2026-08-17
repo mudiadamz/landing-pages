@@ -1476,6 +1476,17 @@ export const en: Record<keyof typeof id, string> = {
   "home.manifestDescription":
     "A marketplace of ready-made landing page templates & digital assets. Preview, buy, download.",
 
+  "legal.lastUpdated": "Last updated: {date}",
+
+  /* ---- panel: legal pages ---- */
+  "panel.navLegal": "Legal pages",
+  "legal.intro":
+    "The Privacy, Terms of service and Refund pages for this domain. All three have fixed URLs and are always linked in the footer.",
+  "legal.metaDescription": "Meta description",
+  "legal.metaHint": "Used in search results and link previews. Leave empty to use the first sentence of the page.",
+  "legal.viewPage": "View {route} ↗",
+  "legal.savesAll": "Saving writes all three pages at once.",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

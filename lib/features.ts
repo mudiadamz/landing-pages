@@ -10,6 +10,8 @@ export const ADMIN_FEATURES = [
   { key: "inbox", label: "Email masuk", href: "/panel/inbox" },
   { key: "hero", label: "Hero", href: "/panel/hero" },
   { key: "content", label: "Konten situs", href: "/panel/content" },
+  { key: "legal", label: "Halaman legal", href: "/panel/legal" },
+  { key: "hiring", label: "Hiring", href: "/panel/hiring" },
   { key: "custom-js", label: "Custom JS", href: "/panel/custom-js" },
 ] as const;
 

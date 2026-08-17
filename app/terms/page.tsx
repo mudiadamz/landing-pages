@@ -1,69 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { getCategories } from "@/lib/actions/landing-pages";
-import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
+import { LegalPageView, legalMetadata } from "@/components/legal-page-view";
 
-export const metadata: Metadata = {
-  title: "Ketentuan Layanan",
-  description:
-    "Ketentuan layanan ADM.UIUX. Syarat dan ketentuan penggunaan produk digital.",
-};
+/**
+ * Terms of service. The copy is per-site data edited at /panel/legal; this route only
+ * pins the URL, which the footer, the sitemap and the publisher application link to.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return legalMetadata("terms");
+}
 
 export default async function TermsPage() {
-  const supabase = await createClient();
-  const [
-    { data: { user } },
-    categories,
-  ] = await Promise.all([
-    supabase.auth.getUser(),
-    getCategories(),
-  ]);
-
-  return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <TemplateHeader user={user} categories={categories} />
-      <main className="flex-1">
-        <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-              Ketentuan Layanan
-            </h1>
-            <p className="text-sm text-[var(--muted)]">
-              Terakhir diperbarui: {new Date().toLocaleDateString("id-ID")}
-            </p>
-            <div className="space-y-4 text-[var(--muted)] leading-relaxed text-sm">
-              <p>
-                Dengan menggunakan layanan kami, Anda setuju dengan ketentuan ini. Mohon baca dengan saksama.
-              </p>
-              <h2 className="text-foreground font-medium text-base pt-2">Penggunaan Layanan</h2>
-              <p>
-                Anda setuju menggunakan platform produk digital kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.
-              </p>
-              <h2 className="text-foreground font-medium text-base pt-2">Akun</h2>
-              <p>
-                Anda wajib memberikan informasi yang akurat saat membuat akun. Anda bertanggung jawab menjaga keamanan kredensial Anda.
-              </p>
-              <h2 className="text-foreground font-medium text-base pt-2">Pembelian</h2>
-              <p>
-                Pembelian produk digital berbayar mengikuti ketentuan penjual. Pengembalian dana diatur dalam{" "}
-                <Link href="/refund" className="text-[var(--primary)] hover:underline font-medium">
-                  Kebijakan Pengembalian Dana
-                </Link>{" "}
-                (garansi 7 hari untuk file rusak/tidak sesuai). Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar.
-              </p>
-              <h2 className="text-foreground font-medium text-base pt-2">Perubahan</h2>
-              <p>
-                Kami dapat memperbarui ketentuan ini sewaktu-waktu. Penggunaan layanan setelah perubahan berarti Anda menerima ketentuan terbaru.
-              </p>
-              <p>
-                Untuk pertanyaan terkait ketentuan ini, hubungi kami melalui link di halaman Kontak.
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
-      <TemplateFooter />
-    </div>
-  );
+  return <LegalPageView pageKey="terms" />;
 }

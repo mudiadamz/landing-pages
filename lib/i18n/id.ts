@@ -1466,6 +1466,17 @@ export const id = {
   "home.manifestDescription":
     "Marketplace template landing page & aset digital siap pakai. Preview, beli, download.",
 
+  "legal.lastUpdated": "Terakhir diperbarui: {date}",
+
+  /* ---- panel: halaman legal ---- */
+  "panel.navLegal": "Halaman legal",
+  "legal.intro":
+    "Isi halaman Privasi, Ketentuan Layanan, dan Pengembalian Dana untuk domain ini. Ketiganya punya URL tetap dan selalu tertaut di footer.",
+  "legal.metaDescription": "Deskripsi meta",
+  "legal.metaHint": "Dipakai di hasil pencarian dan preview link. Kosongkan untuk memakai kalimat pertama isi halaman.",
+  "legal.viewPage": "Lihat {route} ↗",
+  "legal.savesAll": "Simpan menyimpan ketiga halaman sekaligus.",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",
