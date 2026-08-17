@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
 import { EndCtaLink } from "./end-cta-link";
 import { ExcerptGate } from "./excerpt-gate";
@@ -62,7 +64,7 @@ function ItemRow({ item, label }: { item: NextItem; label: string }) {
   );
 }
 
-export function ReaderEndPanel({
+export async function ReaderEndPanel({
   next,
   related,
   bundle,
@@ -92,6 +94,7 @@ export function ReaderEndPanel({
   /** The preview stopped early because the rest is paid. */
   gated?: boolean;
 }) {
+  const t = translator(await requestLocale());
   // One continuation block, not three. A next part always wins; otherwise show
   // a couple of related titles.
   const others = next ? [] : (related ?? []).slice(0, 2);
@@ -120,13 +123,13 @@ export function ReaderEndPanel({
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-[var(--accent-subtle)] px-4 py-3">
               <span className="text-sm font-medium text-foreground">{bundle.title}</span>
               <span className="text-xs text-[var(--muted)]">
-                {bundle.note || `${bundle.itemCount} produk sekaligus`}
+                {bundle.note || t("reader.bundleItems", { count: bundle.itemCount })}
               </span>
               <Link
                 href={`/checkout/${bundle.slug}`}
                 className="ml-auto shrink-0 text-sm font-semibold text-[var(--primary)] hover:underline"
               >
-                {bundle.priceText ? `Paket ${bundle.priceText} →` : "Lihat paket →"}
+                {bundle.priceText ? t("reader.bundlePrice", { price: bundle.priceText }) : t("reader.seeBundle")}
               </Link>
             </div>
           )}
@@ -134,11 +137,11 @@ export function ReaderEndPanel({
           {hasContinuation && (
             <div className="mt-8 space-y-2">
               <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">
-                Kalau mau yang lain
+                {t("reader.ifYouWantAnother")}
               </p>
-              {next && <ItemRow item={next} label="Lanjut baca" />}
+              {next && <ItemRow item={next} label={t("panel.dashKeepReading")} />}
               {others.map((o) => (
-                <ItemRow key={o.slug} item={o} label="Buku lain" />
+                <ItemRow key={o.slug} item={o} label={t("reader.otherBook")} />
               ))}
             </div>
           )}
@@ -154,9 +157,9 @@ export function ReaderEndPanel({
 
           {hasContinuation && (
             <div className="mt-6 space-y-2">
-              {next && <ItemRow item={next} label="Lanjut baca" />}
+              {next && <ItemRow item={next} label={t("panel.dashKeepReading")} />}
               {others.map((o) => (
-                <ItemRow key={o.slug} item={o} label="Buku lain" />
+                <ItemRow key={o.slug} item={o} label={t("reader.otherBook")} />
               ))}
             </div>
           )}
@@ -165,13 +168,13 @@ export function ReaderEndPanel({
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-[var(--accent-subtle)] px-4 py-3">
               <span className="text-sm font-medium text-foreground">{bundle.title}</span>
               <span className="text-xs text-[var(--muted)]">
-                {bundle.note || `${bundle.itemCount} produk sekaligus`}
+                {bundle.note || t("reader.bundleItems", { count: bundle.itemCount })}
               </span>
               <Link
                 href={`/checkout/${bundle.slug}`}
                 className="ml-auto shrink-0 text-sm font-semibold text-[var(--primary)] hover:underline"
               >
-                {bundle.priceText ? `Paket ${bundle.priceText} →` : "Lihat paket →"}
+                {bundle.priceText ? t("reader.bundlePrice", { price: bundle.priceText }) : t("reader.seeBundle")}
               </Link>
             </div>
           )}

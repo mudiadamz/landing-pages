@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Light, ProductSummary, Stage } from "@/lib/actions/product-insights";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
@@ -27,11 +29,11 @@ const GRADE_CLS: Record<string, string> = {
   F: "bg-rose-500/15 text-rose-600 dark:text-rose-400 ring-rose-500/30",
 };
 
-const STAGE_META: Record<Stage, { label: string; cls: string }> = {
-  ignored: { label: "Diabaikan", cls: "text-[var(--muted)]" },
-  "no-interest": { label: "Trafik tanpa minat", cls: "text-rose-600 dark:text-rose-400" },
-  "no-conversion": { label: "Minat tanpa konversi", cls: "text-amber-600 dark:text-amber-400" },
-  converting: { label: "Konversi", cls: "text-emerald-600 dark:text-emerald-400" },
+const STAGE_META: Record<Stage, { labelKey: MessageKey; cls: string }> = {
+  ignored: { labelKey: "analytics.filterIgnored", cls: "text-[var(--muted)]" },
+  "no-interest": { labelKey: "stats.stageNoInterest", cls: "text-rose-600 dark:text-rose-400" },
+  "no-conversion": { labelKey: "stats.stageNoConversion", cls: "text-amber-600 dark:text-amber-400" },
+  converting: { labelKey: "analytics.conversion", cls: "text-emerald-600 dark:text-emerald-400" },
 };
 
 function FunnelLight({ label, level }: { label: string; level: Light }) {
@@ -54,11 +56,12 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 }
 
 function EngagementBar({ read, curious, left }: { read: number; curious: number; left: number }) {
+  const t = useT();
   const total = read + curious + left || 1;
   return (
     <div
       className="flex h-2 overflow-hidden rounded-full bg-[var(--background)]"
-      title={`Baca ${read} · Penasaran ${curious} · Pergi ${left}`}
+      title={t("analytics.engagementTitle", { read, curious, left })}
     >
       <div className="bg-emerald-500" style={{ width: `${(read / total) * 100}%` }} />
       <div className="bg-amber-400" style={{ width: `${(curious / total) * 100}%` }} />
@@ -68,6 +71,7 @@ function EngagementBar({ read, curious, left }: { read: number; curious: number;
 }
 
 export function ProductSummaryCard({ s, href }: { s: ProductSummary; href?: string }) {
+  const t = useT();
   const stage = STAGE_META[s.stage];
   const trendUp = s.trendPct > 0.05;
   const trendDown = s.trendPct < -0.05;
@@ -85,13 +89,13 @@ export function ProductSummaryCard({ s, href }: { s: ProductSummary; href?: stri
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">{title}</div>
-          <p className={`mt-0.5 text-xs font-medium ${stage.cls}`}>{stage.label}</p>
+          <p className={`mt-0.5 text-xs font-medium ${stage.cls}`}>{t(stage.labelKey)}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {(trendUp || trendDown) && (
             <span
               className={`text-xs font-medium tabular-nums ${trendUp ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
-              title="Perubahan views vs periode sebelumnya"
+              title={t("stats.trendTitle")}
             >
               {trendUp ? "▲" : "▼"} {Math.abs(Math.round(s.trendPct * 100))}%
             </span>
@@ -100,7 +104,7 @@ export function ProductSummaryCard({ s, href }: { s: ProductSummary; href?: stri
             className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold ring-1 ${
               s.grade ? GRADE_CLS[s.grade] : "bg-[var(--background)] text-[var(--muted)] ring-[var(--border)]"
             }`}
-            title="Health grade"
+            title={t("stats.healthGrade")}
           >
             {s.grade ?? "–"}
           </span>
@@ -109,13 +113,13 @@ export function ProductSummaryCard({ s, href }: { s: ProductSummary; href?: stri
 
       {/* Funnel lights */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-[var(--background)] px-3 py-2">
-        <FunnelLight label="Jangkauan" level={s.funnel.reach} />
+        <FunnelLight label={t("stats.funnelReach")} level={s.funnel.reach} />
         <span className="text-[var(--border)]">→</span>
-        <FunnelLight label="Minat" level={s.funnel.interest} />
+        <FunnelLight label={t("stats.funnelInterest")} level={s.funnel.interest} />
         <span className="text-[var(--border)]">→</span>
-        <FunnelLight label="Niat" level={s.funnel.intent} />
+        <FunnelLight label={t("stats.funnelIntent")} level={s.funnel.intent} />
         <span className="text-[var(--border)]">→</span>
-        <FunnelLight label="Beli" level={s.funnel.convert} />
+        <FunnelLight label={t("stats.funnelBuy")} level={s.funnel.convert} />
       </div>
 
       {/* Engagement split */}
@@ -132,20 +136,29 @@ export function ProductSummaryCard({ s, href }: { s: ProductSummary; href?: stri
 
       {/* Key metrics */}
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        <Stat label="Preview" value={String(s.previews)} hint={`${s.visitors} unik`} />
-        <Stat label="Read rate" value={`${Math.round(s.readRate * 100)}%`} />
-        <Stat label="Bounce" value={`${Math.round(s.bounceRate * 100)}%`} />
-        <Stat label="Baca (median)" value={fmtDuration(s.medianDwellMs)} />
-        <Stat label="→ Checkout" value={`${Math.round(s.toCheckoutRate * 100)}%`} />
-        <Stat label="CVR" value={`${(s.cvr * 100).toFixed(1)}%`} hint={`${s.purchases} beli`} />
-        <Stat label="Balik lagi" value={String(s.repeatViewers)} />
-        <Stat label="Omzet" value={s.revenue ? rupiah(s.revenue) : "–"} />
+        <Stat
+          label={t("analytics.previews")}
+          value={String(s.previews)}
+          hint={t("stats.uniqueCount", { count: s.visitors })}
+        />
+        <Stat label={t("stats.readRate")} value={`${Math.round(s.readRate * 100)}%`} />
+        <Stat label={t("stats.bounce")} value={`${Math.round(s.bounceRate * 100)}%`} />
+        <Stat label={t("stats.readMedian")} value={fmtDuration(s.medianDwellMs)} />
+        <Stat label={t("stats.toCheckout")} value={`${Math.round(s.toCheckoutRate * 100)}%`} />
+        <Stat
+          label="CVR"
+          value={`${(s.cvr * 100).toFixed(1)}%`}
+          hint={t("stats.purchasesCount", { count: s.purchases })}
+        />
+        <Stat label={t("stats.returning")} value={String(s.repeatViewers)} />
+        <Stat label={t("stats.revenue")} value={s.revenue ? rupiah(s.revenue) : "–"} />
       </div>
 
       {s.bestSource && (
         <p className="text-xs text-[var(--muted)]">
-          Trafik terbaik: <span className="font-medium text-foreground">{s.bestSource.name}</span> (baca{" "}
-          {Math.round(s.bestSource.readRate * 100)}%)
+          {t("stats.bestTraffic")}{" "}
+          <span className="font-medium text-foreground">{s.bestSource.name}</span>{" "}
+          {t("stats.bestTrafficRead", { pct: Math.round(s.bestSource.readRate * 100) })}
         </p>
       )}
 

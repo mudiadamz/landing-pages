@@ -1,4 +1,7 @@
 import type { ReactNode } from "react";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
+
 import { Button } from "@/components/ui/button";
 import { DEFAULT_HERO, type HeroConfig, type HeroIcon } from "@/lib/hero-config";
 import { BrandMark } from "@/components/brand-mark";
@@ -71,7 +74,8 @@ const ICONS: Record<HeroIcon, ReactNode> = {
   ),
 };
 
-export function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps = {}) {
+export async function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps = {}) {
+  const t = translator(await requestLocale());
   const badge =
     templateCount && templateCount > 0
       ? hero.badge.replace(/\{count\}/g, String(templateCount))
@@ -148,7 +152,7 @@ export function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps =
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={hero.imageUrl}
-              alt="Preview produk digital"
+              alt={t("home.heroImageAlt")}
               className="w-full h-auto max-w-lg mx-auto drop-shadow-2xl"
               loading="eager"
             />
@@ -162,7 +166,8 @@ export function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroProps =
 }
 
 /* A tasteful default illustration shown until an admin uploads a hero image. */
-function HeroFallbackMockup() {
+async function HeroFallbackMockup() {
+  const t = translator(await requestLocale());
   return (
     <div className="relative w-full max-w-lg mx-auto">
       <div className="rounded-2xl bg-gradient-to-br from-[#0f2a22] to-[#173d31] p-6 sm:p-8 shadow-2xl aspect-[4/3] flex flex-col justify-between overflow-hidden">
@@ -172,11 +177,11 @@ function HeroFallbackMockup() {
           <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
         </div>
         <div>
-          <div className="text-[var(--accent-gold)] text-xs font-medium mb-2">Template siap pakai</div>
+          <div className="text-[var(--accent-gold)] text-xs font-medium mb-2">{t("home.mockupEyebrow")}</div>
           <div className="text-white text-2xl sm:text-3xl font-semibold leading-tight">
-            Live hari ini,
+            {t("home.mockupLine1")}
             <br />
-            tanpa ngoding.
+            {t("home.mockupLine2")}
           </div>
           <div className="mt-4 flex gap-2">
             <span className="h-2 w-16 rounded-full bg-white/20" />
@@ -193,7 +198,7 @@ function HeroFallbackMockup() {
         <span className="text-[var(--accent-cool)]">QRIS</span> Scan &amp; Pay
       </div>
       <div className="absolute -right-2 bottom-8 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-lg px-3 py-2 text-xs font-medium text-foreground flex items-center gap-1.5">
-        <span className="text-[var(--accent-gold)]">★</span> Download instan
+        <span className="text-[var(--accent-gold)]">★</span> {t("home.instantDownload")}
       </div>
     </div>
   );
