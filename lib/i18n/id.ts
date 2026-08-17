@@ -1457,6 +1457,15 @@ export const id = {
   "home.seeCountdown": "Lihat hitung mundur",
   "contact.sendMessage": "Kirim pesan",
 
+  "about.metaDescription":
+    "Tentang ADM.UIUX dan Adam Mudianto. Produk digital siap pakai, software developer 15+ tahun.",
+  "about.myNameIs": "Nama saya",
+  "home.allCategories": "Semua Kategori",
+  "home.allCategoriesMeta": "Jelajahi semua kategori dan sub-kategori produk digital.",
+  "home.categoryNotFound": "Kategori tidak ditemukan",
+  "home.manifestDescription":
+    "Marketplace template landing page & aset digital siap pakai. Preview, beli, download.",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

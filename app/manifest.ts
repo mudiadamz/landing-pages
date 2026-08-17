@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { currentSite } from "@/lib/site-resolve";
 import { DEFAULT_ICON_192, DEFAULT_ICON_512 } from "@/lib/site-brand";
 
@@ -12,7 +14,8 @@ import { DEFAULT_ICON_192, DEFAULT_ICON_512 } from "@/lib/site-brand";
  * one tiny JSON response fetched once per install prompt, not on every page view.
  */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  const site = await currentSite();
+  const [site, locale] = await Promise.all([currentSite(), requestLocale()]);
+  const t = translator(locale);
   const name = site.name?.trim() || "ADM.UIUX";
   const fullName = site.tagline?.trim() ? `${name} — ${site.tagline.trim()}` : name;
 
@@ -21,7 +24,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     short_name: name,
     description:
       site.description?.trim() ||
-      "Marketplace template landing page & aset digital siap pakai. Preview, beli, download.",
+      t("home.manifestDescription"),
     start_url: "/",
     scope: "/",
     display: "standalone",

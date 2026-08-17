@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/actions/landing-pages";
@@ -6,13 +8,13 @@ import { getSiteContent } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { SupportContactImages } from "@/components/support-contact-images";
 
-export const metadata: Metadata = {
-  title: "Tentang",
-  description:
-    "Tentang ADM.UIUX dan Adam Mudianto. Produk digital siap pakai, software developer 15+ tahun.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = translator(await requestLocale());
+  return { title: t("nav.about"), description: t("about.metaDescription") };
+}
 
 export default async function AboutPage() {
+  const t = translator(await requestLocale());
   const supabase = await createClient();
   const [
     { data: { user } },
@@ -82,7 +84,7 @@ export default async function AboutPage() {
                     />
                   </div>
                   <p className="flex-1 mt-0">
-                    Nama saya <strong className="text-foreground">{founder.name}</strong>
+                    {t("about.myNameIs")} <strong className="text-foreground">{founder.name}</strong>
                     {founder.role ? ` — ${founder.role}.` : "."} {founder.bio}
                   </p>
                 </div>

@@ -1467,6 +1467,15 @@ export const en: Record<keyof typeof id, string> = {
   "home.seeCountdown": "See the countdown",
   "contact.sendMessage": "Send a message",
 
+  "about.metaDescription":
+    "About ADM.UIUX and Adam Mudianto. Ready-made digital products, 15+ years a software developer.",
+  "about.myNameIs": "My name is",
+  "home.allCategories": "All categories",
+  "home.allCategoriesMeta": "Browse every category and sub-category of digital products.",
+  "home.categoryNotFound": "Category not found",
+  "home.manifestDescription":
+    "A marketplace of ready-made landing page templates & digital assets. Preview, buy, download.",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

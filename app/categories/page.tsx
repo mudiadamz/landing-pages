@@ -4,14 +4,18 @@ import { getCategories } from "@/lib/actions/landing-pages";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateCategoriesView } from "@/lib/templates/chrome";
 import { requestLocale } from "@/lib/i18n/request";
+import { translator } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  // No brand suffix: app/layout.tsx appends "| {site.name}" per domain, so a
-  // hardcoded one both doubles up and names the wrong storefront.
-  title: "Semua Kategori",
-  description: "Jelajahi semua kategori dan sub-kategori produk digital.",
-  alternates: { canonical: "/categories" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = translator(await requestLocale());
+  return {
+    // No brand suffix: app/layout.tsx appends "| {site.name}" per domain, so a
+    // hardcoded one both doubles up and names the wrong storefront.
+    title: t("home.allCategories"),
+    description: t("home.allCategoriesMeta"),
+    alternates: { canonical: "/categories" },
+  };
+}
 
 /** Data loader; the storefront's template decides how the sections look. */
 export default async function CategoriesPage() {

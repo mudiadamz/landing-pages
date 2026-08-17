@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { translator } from "@/lib/i18n";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const categories = await getCategories();
   const cat = categories.find((c) => c.slug === slug);
-  if (!cat) return { title: "Kategori tidak ditemukan" };
+  if (!cat) return { title: translator(await requestLocale())("home.categoryNotFound") };
   // Brand comes from the layout title template, per domain.
   return { title: cat.name };
 }
