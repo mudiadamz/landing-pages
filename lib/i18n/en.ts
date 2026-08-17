@@ -1311,6 +1311,11 @@ export const en: Record<keyof typeof id, string> = {
   "panel.openingCamera": "Opening the camera…",
   "panel.openCamera": "Open camera",
 
+  "nav.privacyPolicy": "Privacy policy",
+  "home.allArrow": "All →",
+
+  "nav.termsOfService": "Terms of service",
+
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",
   "stats.ctaCalendar": "Add to calendar",

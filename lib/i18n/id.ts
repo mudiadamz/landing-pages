@@ -1301,6 +1301,11 @@ export const id = {
   "panel.openingCamera": "Membuka kamera…",
   "panel.openCamera": "Buka kamera",
 
+  "nav.privacyPolicy": "Kebijakan Privasi",
+  "home.allArrow": "Semua →",
+
+  "nav.termsOfService": "Ketentuan Layanan",
+
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",
   "stats.ctaCalendar": "Tambah ke kalender",

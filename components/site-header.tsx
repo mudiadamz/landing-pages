@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { CategoryIcon } from "@/lib/category-icons";
@@ -42,11 +44,11 @@ function displayName(user: User): string {
   return "User";
 }
 
-const navLinks = [
-  { href: "/about", label: "Tentang" },
-  { href: "/contact", label: "Kontak" },
-  { href: "/privacy", label: "Kebijakan Privasi" },
-  { href: "/terms", label: "Ketentuan" },
+const navLinks: { href: string; labelKey: MessageKey }[] = [
+  { href: "/about", labelKey: "nav.about" },
+  { href: "/contact", labelKey: "nav.contact" },
+  { href: "/privacy", labelKey: "nav.privacyPolicy" },
+  { href: "/terms", labelKey: "nav.terms" },
 ];
 
 /**
@@ -77,6 +79,7 @@ function Rail({ children, className = "" }: { children: React.ReactNode; classNa
 }
 
 export function SiteHeader({ user, brand, categories = [], currentCategorySlug = null }: Props) {
+  const t = useT();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -177,7 +180,7 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
                         onClick={() => setUserMenuOpen(false)}
                         className="block px-4 py-2.5 text-sm text-foreground hover:bg-[var(--accent-subtle)]"
                       >
-                        Pembelian saya
+                        {t("panel.navPurchases")}
                       </Link>
                       <form action={signOut} className="block">
                         <button
@@ -201,7 +204,7 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
             </div>
             <button
               type="button"
-              aria-label="Buka menu"
+              aria-label={t("panel.openMenu")}
               aria-expanded={mobileOpen}
               onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden p-2 -mr-2 rounded-lg text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] active:scale-[0.95] active:opacity-80 transition-all duration-150"
@@ -242,20 +245,20 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
                 href="/categories"
                 className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium whitespace-nowrap text-[var(--muted)] hover:text-foreground transition-colors"
               >
-                Semua →
+                {t("home.allArrow")}
               </Link>
             </Rail>
           </div>
         ) : (
           <div className="hidden md:block max-w-5xl mx-auto px-4 sm:px-6 pb-2">
             <Rail>
-              {navLinks.map(({ href, label }) => (
+              {navLinks.map(({ href, labelKey }) => (
                 <Link
                   key={href}
                   href={href}
                   className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[13px] text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] transition-colors whitespace-nowrap"
                 >
-                  {label}
+                  {t(labelKey)}
                 </Link>
               ))}
             </Rail>
@@ -272,17 +275,17 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-foreground rounded-xl bg-[var(--accent-subtle)]"
               >
-                Semua kategori
+                {t("panel.allCategories")}
                 <span aria-hidden className="text-[var(--primary)]">→</span>
               </Link>
-              {navLinks.map(({ href, label }) => (
+              {navLinks.map(({ href, labelKey }) => (
                 <Link
                   key={href}
                   href={href}
                   onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2.5 text-sm text-[var(--muted)] hover:text-foreground rounded-lg hover:bg-[var(--accent-subtle)] active:opacity-90 transition-all duration-150"
                 >
-                  {label}
+                  {t(labelKey)}
                 </Link>
               ))}
               {user ? (
@@ -292,7 +295,7 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
                     onClick={() => setMobileOpen(false)}
                     className="block px-3 py-2.5 text-sm text-foreground rounded-lg hover:bg-[var(--accent-subtle)]"
                   >
-                    Pembelian saya
+                    {t("panel.navPurchases")}
                   </Link>
                   <form action={signOut}>
                     <button

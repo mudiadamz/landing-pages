@@ -45,28 +45,28 @@ export async function SiteFooter() {
               {content.footerTagline}
             </p>
             <div>
-              <p className="text-xs font-medium text-foreground mb-2">Sosial media</p>
+              <p className="text-xs font-medium text-foreground mb-2">{t("panel.tabSocial", {}, locale)}</p>
               <SocialLinks variant="row" className="gap-x-4 gap-y-2 text-xs" urls={socialUrls} />
             </div>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <Link href="/" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
-              Beranda
+              {t("nav.home", {}, locale)}
             </Link>
             <Link href="/about" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
-              Tentang
+              {t("nav.about", {}, locale)}
             </Link>
             <Link href="/contact" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
-              Kontak
+              {t("nav.contact", {}, locale)}
             </Link>
             <Link href="/privacy" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
-              Kebijakan Privasi
+              {t("nav.privacyPolicy", {}, locale)}
             </Link>
             <Link href="/terms" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
-              Ketentuan Layanan
+              {t("nav.termsOfService", {}, locale)}
             </Link>
             <Link href="/refund" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
-              Pengembalian Dana
+              {t("nav.refund", {}, locale)}
             </Link>
             <Link href="/hiring" className="inline-block py-1 text-[var(--muted)] hover:text-foreground active:scale-[0.98] active:opacity-80 transition-all duration-150">
               Hiring
