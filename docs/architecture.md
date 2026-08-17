@@ -194,6 +194,20 @@ karena **alat ukurnya** yang bohong, bukan kodenya. Aturannya:
 - **Angka diambil dari DB**, bukan dari hitungan link di HTML (testimoni & related
   products juga menghasilkan link produk).
 
+**Test otomatis: unit saja.** `tests/*.test.ts` (vitest) hanya menguji fungsi
+murni dan berkas — tanpa database, tanpa jaringan, tanpa browser. Tidak ada
+integration/e2e suite di repo ini, dan tidak perlu diusulkan: menjalankannya
+berarti menyalakan Supabase lokal, membuat sesi, dan memanggil gateway
+pembayaran — lambat, rapuh, dan sudah ditutupi verifikasi manual di atas.
+
+Yang layak ditulis test-nya adalah aturan yang **gagalnya senyap**: `expandQuery`
+(query pencarian yang salah tetap menghasilkan jawaban yang terdengar benar),
+`safeNextPath` (open redirect terlihat persis seperti login yang bekerja),
+integritas kamus i18n (key mati dan nilai kembar tidak kelihatan sampai ada yang
+membaca layarnya). Verifikasi end-to-end tetap dilakukan dengan menjalankan
+aplikasinya (lihat skill `run-local`) dan dilaporkan apa adanya — bukan dikodekan
+jadi suite yang harus dirawat.
+
 ---
 
 ## 7. Konvensi
