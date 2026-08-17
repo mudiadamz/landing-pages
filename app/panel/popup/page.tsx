@@ -8,7 +8,9 @@ import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
-export const metadata = { title: "Popup banner" };
+export async function generateMetadata() {
+  return { title: translator(await requestLocale())("panel.navPopup") };
+}
 
 export default async function PopupPage() {
   const t = translator(await requestLocale());

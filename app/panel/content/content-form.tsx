@@ -753,9 +753,7 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.publisherTerms")}</SectionTitle>
         <p className="text-xs text-[var(--muted)]">
-          Ditampilkan di formulir pengajuan publisher (Profil → Jadi publisher). Pemohon
-          harus mencentang persetujuan sebelum bisa mengirim, dan waktu persetujuannya
-          dicatat.
+          {t("content.publisherTermsIntro")}
         </p>
         <div>
           <label className={labelCls}>{t("panel.title")}</label>

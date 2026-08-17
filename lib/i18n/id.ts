@@ -1235,6 +1235,19 @@ export const id = {
   "panel.backToProfile": "Kembali ke profil",
   "sites.hostName": "Host / Name",
 
+  "panel.deleteProductConfirm": "Hapus produk ini?",
+  "panel.deletePageConfirm": "Hapus halaman “{title}”? Tindakan ini tidak bisa dibatalkan.",
+  "panel.zipUploaded": "{count} file diupload • preview: {path}",
+  "panel.tabOtherIntro":
+    "Situs lain milik Anda — toko lain, portfolio, newsletter. Muncul lewat ikon link di samping ikon media sosial.",
+  "panel.rolesIntro":
+    "Atur fitur admin mana yang bisa diakses tiap role. User mewarisi akses dari role-nya — ubah role user di halaman Users.",
+  "panel.userList": "Daftar User",
+  "panel.customJsIntro":
+    "Skrip ini diinjeksi ke setiap halaman situs (termasuk publik). Gunakan untuk analytics, tracking, atau kode tambahan.",
+  "content.publisherTermsIntro":
+    "Ditampilkan di formulir pengajuan publisher (Profil → Jadi publisher). Pemohon harus mencentang persetujuan sebelum bisa mengirim, dan waktu persetujuannya dicatat.",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

@@ -70,7 +70,7 @@ export function AssetUpload({
       if ("error" in result) {
         setZipError(result.error);
       } else {
-        setZipInfo(`${result.fileCount} file diupload • preview: ${result.indexPath}`);
+        setZipInfo(t("panel.zipUploaded", { count: result.fileCount, path: result.indexPath }));
         onSiteUploaded?.(result.html);
         router.refresh();
       }

@@ -134,7 +134,7 @@ export function AssetsBrowser({ initialAssets }: { initialAssets: Asset[] }) {
                     onClick={() => copyUrl(a.url)}
                     className="mt-1 text-xs font-medium text-[var(--primary)] hover:underline"
                   >
-                    {copied === a.url ? "Tersalin!" : "Salin URL"}
+                    {copied === a.url ? "Tersalin!" : t("assets.copyUrl")}
                   </button>
                 </div>
               </div>

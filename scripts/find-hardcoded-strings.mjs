@@ -151,7 +151,7 @@ const CODE_ATTRS = new Set([
   // contains "edit", so the Indonesian word list would otherwise keep it.
   "t", "translator", "usetranslator",
   // State setters whose argument is a tab id or an enum, not copy.
-  "settab", "usestate", "setview", "setmode", "setsort",
+  "settab", "usestate", "setview", "setmode", "setsort", "font_stack",
 ]);
 
 const UI_ATTRS = new Set([
@@ -166,7 +166,7 @@ const CSSISH =
   /(^|\s)(px-|py-|pt-|pb-|pl-|pr-|mx-|my-|mt-|mb-|ml-|mr-|text-|bg-|border|rounded|flex|grid|gap-|w-|h-|min-|max-|absolute|relative|hidden|sm:|md:|lg:|hover:|focus:|dark:|shadow|opacity|space-|truncate|font-|items-|justify-|overflow|z-|inline|block\b|ring-|leading-|tracking-|transition-|whitespace-|active:|duration-|cursor-|select-none|pointer-events|backdrop|animate-|snap-|aspect-|object-|first:|last:|disabled:|placeholder:|group-|peer-|motion-)/;
 
 const NOISE_TEXT =
-  /(charset=|\(function|display-mode:|@media|=>|\){|;\s*}|font-family|^[a-z]+\/[a-z+.-]+$|^\(.*:.*\)$|^\$\{[^}]*\}$|^[A-Z_]{3,}$|\bpx\b|^[\d.,\s%+-]+$|width=|http-equiv|application\/|image\/|text\/)/;
+  /(charset=|\(function|display-mode:|@media|=>|\){|;\s*}|font-family|^[a-z]+\/[a-z+.-]+$|^\(.*:.*\)$|^\$\{[^}]*\}$|^[A-Z_]{3,}$|\bpx\b|^[\d.,\s%+-]+$|width=|http-equiv|application\/|image\/|text\/|utm_[a-z]+=|^[a-z-]+, [A-Z])/;
 
 /**
  * A .tsx generic also sits between a > and a <, and so does the gap between one
@@ -174,7 +174,7 @@ const NOISE_TEXT =
  * none of this.
  */
 const CODEISH =
-  /(;|=>|&&|\|\||!==|\?\?|[={}]|^[:.()]|\($|^<|\w+\.\w+\s*\?|\b(function|export|const|let|var|return|async|await|else|catch|typeof|interface|import|class|Props|useState|useEffect)\b)/;
+  /(;|=>|&&|\|\||!==|\?\?|[={}]|^[:.(),]|^if\s|\($|^<|\w+\.\w+\s*\?|\b(function|export|const|let|var|return|async|await|else|catch|typeof|interface|import|class|Props|useState|useEffect)\b)/;
 /**
  * No regex-literal state in the scanner, so shards like `/gi, "")` get through.
  * Deliberately not matching `\n`: a confirm() body is full of them and is copy.

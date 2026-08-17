@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import { requireFeature, requireAdmin } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { UsersTable } from "./users-table";
 import { PublisherApplications } from "./publisher-applications";
 
 export default async function UsersPage() {
+  const t = translator(await requestLocale());
   const ok = await requireFeature("users");
   if (!ok) redirect("/panel");
 
@@ -15,7 +18,7 @@ export default async function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold tracking-tight">Daftar User</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{t("panel.userList")}</h1>
       <PublisherApplications initial={applications} />
       <UsersTable isAdmin={isAdmin} />
     </div>

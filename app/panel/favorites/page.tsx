@@ -67,7 +67,7 @@ export default async function FavoritesPage() {
                     </span>
                     <span className="mt-0.5 block text-sm">
                       {showAsFree ? (
-                        <span className="font-semibold text-[var(--primary)]">Gratis</span>
+                        <span className="font-semibold text-[var(--primary)]">{t("common.free")}</span>
                       ) : (
                         <>
                           {hasDiscount && price > 0 && (

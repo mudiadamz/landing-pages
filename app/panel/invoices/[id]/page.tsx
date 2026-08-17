@@ -9,8 +9,9 @@ import { requestLocale } from "@/lib/i18n/request";
 
 type Props = { params: Promise<{ id: string }> };
 
-function formatPrice(value: number): string {
-  if (value === 0) return "Gratis";
+/** `free` is passed in: this is module scope, with no translator of its own. */
+function formatPrice(value: number, free: string): string {
+  if (value === 0) return free;
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -97,7 +98,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
                   <p className="text-xs text-[var(--muted)]">{t("panel.tabProducts")}</p>
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-foreground">
-                  {formatPrice(invoice.amount)}
+                  {formatPrice(invoice.amount, t("common.free"))}
                 </td>
               </tr>
             </tbody>
@@ -105,7 +106,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
               <tr className="border-t-2 border-[var(--border)] print:border-gray-400">
                 <td className="px-4 py-3 font-semibold text-foreground">Total</td>
                 <td className="px-4 py-3 text-right font-bold text-lg text-foreground">
-                  {formatPrice(invoice.amount)}
+                  {formatPrice(invoice.amount, t("common.free"))}
                 </td>
               </tr>
             </tfoot>

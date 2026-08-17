@@ -66,7 +66,7 @@ export default async function EditPage({
                   </svg>
                 }
               >
-                <span className="hidden sm:inline">Isi EPUB</span>
+                <span className="hidden sm:inline">{t("product.epubContents")}</span>
               </Button>
             )}
             <Button

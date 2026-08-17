@@ -1245,6 +1245,19 @@ export const en: Record<keyof typeof id, string> = {
   "panel.backToProfile": "Back to profile",
   "sites.hostName": "Host / Name",
 
+  "panel.deleteProductConfirm": "Delete this product?",
+  "panel.deletePageConfirm": "Delete the page “{title}”? This cannot be undone.",
+  "panel.zipUploaded": "{count} files uploaded • preview: {path}",
+  "panel.tabOtherIntro":
+    "Your other sites — another shop, a portfolio, a newsletter. They appear behind the link icon next to the social icons.",
+  "panel.rolesIntro":
+    "Choose which admin features each role can reach. A user inherits access from their role — change a user's role on the Users page.",
+  "panel.userList": "User list",
+  "panel.customJsIntro":
+    "This script is injected into every page of the site (public ones included). Use it for analytics, tracking, or extra code.",
+  "content.publisherTermsIntro":
+    "Shown on the publisher application form (Profile → Become a publisher). Applicants must tick to accept before they can submit, and the time they accepted is recorded.",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

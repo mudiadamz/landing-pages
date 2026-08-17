@@ -6,7 +6,7 @@ import { useT } from "@/lib/i18n/client";
 export function DeleteButton({ id, size = "sm" }: { id: string; size?: "sm" | "lg" }) {
   const t = useT();
   async function handleDelete() {
-    if (!confirm("Hapus produk ini?")) return;
+    if (!confirm(t("panel.deleteProductConfirm"))) return;
     await deleteLandingPage(id);
   }
 

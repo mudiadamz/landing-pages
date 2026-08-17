@@ -24,7 +24,7 @@ export default async function CustomJsPage() {
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
         <p className="text-sm text-[var(--muted)] mb-4">
-          Skrip ini diinjeksi ke setiap halaman situs (termasuk publik). Gunakan untuk analytics, tracking, atau kode tambahan.
+          {t("panel.customJsIntro")}
         </p>
         <CustomJsForm key={site.id} initialScript={initialScript} siteId={site.id} />
       </div>

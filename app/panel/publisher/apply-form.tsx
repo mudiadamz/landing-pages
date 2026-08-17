@@ -301,7 +301,7 @@ export function PublisherApplyForm({
               onClick={() => setForm(true)}
               className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
             >
-              {status === "rejected" ? "Ajukan lagi" : "Ajukan jadi publisher"}
+              {status === "rejected" ? t("panel.applyAgain") : t("panel.applyPublisher")}
             </button>
           )}
 

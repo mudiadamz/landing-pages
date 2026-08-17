@@ -18,8 +18,7 @@ export default async function RolesPage() {
       <PanelPageHeader backHref="/panel" title={t("panel.titleRoles")} />
 
       <p className="text-sm text-[var(--muted)]">
-        Atur fitur admin mana yang bisa diakses tiap role. User mewarisi akses dari role-nya —
-        ubah role user di halaman Users.
+        {t("panel.rolesIntro")}
       </p>
 
       <RolesForm initial={perms} />

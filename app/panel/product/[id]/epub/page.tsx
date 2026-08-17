@@ -6,7 +6,9 @@ import { EpubChapterEditor } from "./epub-chapter-editor";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
-export const metadata = { title: "Edit isi EPUB" };
+export async function generateMetadata() {
+  return { title: translator(await requestLocale())("editor.epubTitle") };
+}
 
 export default async function EpubChaptersPage({
   params,

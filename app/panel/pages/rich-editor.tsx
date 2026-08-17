@@ -143,7 +143,7 @@ export function RichEditor({
             onClick={() => setLinkOpen(false)}
             className="rounded-lg px-3 py-2 text-sm text-[var(--muted)] hover:text-foreground"
           >
-            Batal
+            {t("common.cancel")}
           </button>
         </div>
       )}

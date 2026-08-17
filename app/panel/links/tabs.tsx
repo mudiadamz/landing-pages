@@ -67,8 +67,7 @@ export function LinksTabs({
             <div className="mb-5">
               <h2 className="text-base font-semibold text-foreground">{t("panel.tabOther")}</h2>
               <p className="text-sm text-[var(--muted)]">
-                Situs lain milik Anda — toko lain, portfolio, newsletter. Muncul lewat
-                ikon link di samping ikon media sosial.
+                {t("panel.tabOtherIntro")}
               </p>
             </div>
             <LinksForm initial={otherLinks} />

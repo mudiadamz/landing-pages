@@ -45,7 +45,7 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
   }
 
   async function remove() {
-    if (!confirm(`Hapus halaman "${page.title}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+    if (!confirm(t("panel.deletePageConfirm", { title: page.title }))) return;
     const res = await deletePage(page.id);
     if (res.ok) router.push("/panel/pages");
     else setError(res.error ?? t("common.failed"));

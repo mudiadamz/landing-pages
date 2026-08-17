@@ -11,7 +11,9 @@ import { LOCALE_OPTIONS } from "@/lib/i18n/locales";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
 import { SiteProfileForm } from "./site-profile-form";
 
-export const metadata = { title: "Identitas situs" };
+export async function generateMetadata() {
+  return { title: translator(await requestLocale())("sites.identity") };
+}
 
 /**
  * The CONTENT half of a storefront: what it is called, what it looks like, and which

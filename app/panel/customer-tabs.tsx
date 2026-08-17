@@ -28,8 +28,9 @@ function formatDate(s: string) {
   });
 }
 
-function formatPrice(value: number): string {
-  if (value === 0) return "Gratis";
+/** `free` is passed in: this is module scope, with no translator of its own. */
+function formatPrice(value: number, free: string): string {
+  if (value === 0) return free;
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -289,7 +290,7 @@ function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
                   </td>
                   <td className="px-4 py-3 text-[var(--muted)]">{formatDate(inv.purchased_at)}</td>
                   <td className="px-4 py-3 text-right font-medium text-foreground">
-                    {formatPrice(inv.amount)}
+                    {formatPrice(inv.amount, t("common.free"))}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-[var(--accent-subtle)] text-[var(--muted)]">
@@ -325,7 +326,7 @@ function InvoicesTab({ invoices }: { invoices: InvoiceRow[] }) {
                 {inv.revoked_at && <RevokedTag />}
               </span>
               <span className="text-sm font-medium text-foreground">
-                {formatPrice(inv.amount)}
+                {formatPrice(inv.amount, t("common.free"))}
               </span>
             </div>
             <div className="flex items-center justify-between">

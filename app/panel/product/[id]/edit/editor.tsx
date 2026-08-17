@@ -9,13 +9,20 @@ import { AssetUpload } from "./asset-upload";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 
+// A component, so the placeholder can use the hook — dynamic()'s `loading` is
+// rendered like any other component.
+function EditorLoading() {
+  const t = useT();
+  return (
+    <div className="w-full h-[60vh] min-h-[280px] rounded-lg border border-[var(--border)] bg-[var(--background)] flex items-center justify-center text-[var(--muted)]">
+      {t("editor.loading")}
+    </div>
+  );
+}
+
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-[60vh] min-h-[280px] rounded-lg border border-[var(--border)] bg-[var(--background)] flex items-center justify-center text-[var(--muted)]">
-      Loading editor…
-    </div>
-  ),
+  loading: () => <EditorLoading />,
 });
 
 type Tab = "html" | "css" | "js";
