@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { Markdown } from "./markdown";
 import { CopyButton } from "./copy-button";
 import { humanSize, type PendingFile } from "./upload";
@@ -124,6 +125,7 @@ function ThinkingPanel({
   thoughtMs?: number | null;
   live: boolean;
 }) {
+  const t = useT();
   const [seconds, setSeconds] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -144,10 +146,10 @@ function ThinkingPanel({
 
   const label =
     thoughtMs != null
-      ? `Berpikir ${(thoughtMs / 1000).toFixed(1)} detik`
+      ? t("chat.thoughtFor", { seconds: (thoughtMs / 1000).toFixed(1) })
       : live
-        ? `Berpikir… ${seconds}s`
-        : "Proses berpikir";
+        ? t("chat.thinking", { seconds })
+        : t("chat.reasoning");
 
   return (
     <details className="mb-3 border-l-2 border-[var(--border)] pl-3 open:border-[var(--primary)]">
@@ -163,10 +165,13 @@ function ThinkingPanel({
 }
 
 function SourcesList({ sources }: { sources: Source[] }) {
+  // Hooks run before the early return: a component that bails out first would
+  // change its hook count between renders the moment a search returns nothing.
+  const t = useT();
   if (!sources.length) return null;
   return (
     <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--code-bg)] px-3.5 py-2.5 text-sm">
-      <div className="mb-1 font-mono text-[0.66rem] tracking-[0.06em] text-[var(--muted)] uppercase">Sumber</div>
+      <div className="mb-1 font-mono text-[0.66rem] tracking-[0.06em] text-[var(--muted)] uppercase">{t("chat.sources")}</div>
       <ol className="list-decimal space-y-0.5 pl-5">
         {sources.map((source) => (
           <li key={source.url}>
@@ -197,13 +202,18 @@ function hostname(url: string): string {
 const CHIP =
   "mb-2 inline-block rounded-full border border-[var(--border)] bg-[var(--code-bg)] px-2.5 py-0.5 text-[0.7rem] text-[var(--muted)]";
 
-function webChipText(live: LiveReply): string {
-  if (live.webFailed) return "🌐 Pencarian gagal, dijawab tanpa web";
-  if (!live.reply) return live.query ? `🌐 Dicari: “${live.query}”` : "🌐 Mencari di web…";
-  return live.citations.length
-    ? `🌐 Dijawab dari ${live.citations.length} sumber web`
-    : "🌐 Pencarian tidak menemukan apa pun";
+/** The emoji stays in code, not in the dictionary: it is the same in every language. */
+function webChipText(live: LiveReply, t: Translate): string {
+  if (live.webFailed) return `🌐 ${t("chat.webFailed")}`;
+  if (!live.reply) {
+    return `🌐 ${live.query ? t("chat.webSearched", { query: live.query }) : t("chat.webSearching")}`;
+  }
+  return `🌐 ${
+    live.citations.length ? t("chat.webAnswered", { count: live.citations.length }) : t("chat.webNothing")
+  }`;
 }
+
+type Translate = ReturnType<typeof useT>;
 
 export function Transcript({
   messages,
@@ -218,6 +228,7 @@ export function Transcript({
   onRetry: (text: string, files: PendingFile[]) => void;
   onEdit: (text: string) => void;
 }) {
+  const t = useT();
   const empty = !messages.length && !live && !failure;
 
   if (empty) {
@@ -226,10 +237,8 @@ export function Transcript({
         <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-subtle)] text-xl text-[var(--primary)]">
           ✦
         </div>
-        <p className="m-0 text-base font-semibold text-foreground">Mulai percakapan</p>
-        <p className="m-0 max-w-sm text-sm">
-          Ketik pesan di bawah. Awali dengan <code className="font-mono">/web</code> untuk memaksa pencarian.
-        </p>
+        <p className="m-0 text-base font-semibold text-foreground">{t("chat.emptyTitle")}</p>
+        <p className="m-0 max-w-sm text-sm">{t("chat.emptyBody")}</p>
       </div>
     );
   }
@@ -253,7 +262,7 @@ export function Transcript({
               <div className="mt-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 max-[900px]:opacity-80">
                 {/* The MARKDOWN SOURCE, not the rendered text: pasting elsewhere
                     should keep the headings, bold and code fences. */}
-                <CopyButton getText={() => message.content} label="Salin jawaban" />
+                <CopyButton getText={() => message.content} label={t("chat.copyAnswer")} />
               </div>
             )}
           </AssistantFrame>
@@ -269,11 +278,15 @@ export function Transcript({
           )}
           <AssistantFrame>
             {live.savedMemories > 0 && (
-              <div className={CHIP} title="Kelola di Preferensi & memori">
-                {live.savedMemories === 1 ? "🧠 Disimpan ke memori" : `🧠 Disimpan ${live.savedMemories} memori`}
+              <div className={CHIP} title={t("chat.memoryHint")}>
+                {`🧠 ${
+                  live.savedMemories === 1
+                    ? t("chat.memorySavedOne")
+                    : t("chat.memorySaved", { count: live.savedMemories })
+                }`}
               </div>
             )}
-            {live.webSearch && <div className={CHIP}>{webChipText(live)}</div>}
+            {live.webSearch && <div className={CHIP}>{webChipText(live, t)}</div>}
             {live.reasoning && (
               <ThinkingPanel
                 reasoning={live.reasoning}
@@ -287,7 +300,7 @@ export function Transcript({
               {/* A blinking block while nothing has arrived yet, so the empty
                   answer still reads as "in progress" rather than as broken. */}
               {!live.reply && (
-                <span className="animate-pulse text-[var(--primary)]" aria-label="Menunggu jawaban">
+                <span className="animate-pulse text-[var(--primary)]" aria-label={t("chat.waitingAnswer")}>
                   ▍
                 </span>
               )}
@@ -299,7 +312,7 @@ export function Transcript({
 
       {failure && (
         <div className="mb-6 border-l-[3px] border-red-500 pl-3">
-          <div className={ROLE_LABEL}>Kesalahan</div>
+          <div className={ROLE_LABEL}>{t("chat.errorLabel")}</div>
           <p className="m-0 text-red-600 dark:text-red-400">{failure.message}</p>
           {/* Retyping a long prompt because the server blipped is pure friction, so
               the failed message stays one click from being sent again. */}
@@ -309,15 +322,15 @@ export function Transcript({
               onClick={() => onRetry(failure.text, failure.files)}
               className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs transition-colors hover:border-[var(--primary)]"
             >
-              ↻ Coba lagi
+              ↻ {t("chat.retry")}
             </button>
             <button
               type="button"
               onClick={() => onEdit(failure.text)}
-              title="Kembalikan teks ke kolom ketik"
+              title={t("chat.editMessageHint")}
               className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs text-[var(--muted)] transition-colors hover:border-[var(--primary)]"
             >
-              Ubah pesan
+              {t("chat.editMessage")}
             </button>
           </div>
         </div>

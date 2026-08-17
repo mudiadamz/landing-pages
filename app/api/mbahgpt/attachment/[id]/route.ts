@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { IMAGE_TYPES } from "@/lib/mbahgpt/messages";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * Serve one chat attachment.
@@ -17,18 +19,19 @@ import { IMAGE_TYPES } from "@/lib/mbahgpt/messages";
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const [supabase, locale] = await Promise.all([createClient(), requestLocale()]);
+  const t = translator(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Masuk dulu." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: t("chat.signInShort") }, { status: 401 });
 
   const { data: attachment } = await supabase
     .from("lp_chat_attachments")
     .select("name, mime, storage_path")
     .eq("id", id)
     .maybeSingle();
-  if (!attachment) return NextResponse.json({ error: "Lampiran tidak ditemukan." }, { status: 404 });
+  if (!attachment) return NextResponse.json({ error: t("chat.attachmentNotFound") }, { status: 404 });
 
   const inline = IMAGE_TYPES.has(attachment.mime);
   const { data, error } = await supabase.storage
@@ -40,7 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
   if (error || !data?.signedUrl) {
-    return NextResponse.json({ error: "Berkas tidak tersedia." }, { status: 404 });
+    return NextResponse.json({ error: t("chat.attachmentGone") }, { status: 404 });
   }
   return NextResponse.redirect(data.signedUrl);
 }

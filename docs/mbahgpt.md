@@ -101,7 +101,25 @@ dari skema SQLite lama, dan alasannya, ditulis di kepala file migration.
 Peran `system` **tidak pernah** disimpan — selalu diturunkan dari prefs + memori +
 konteks search, jadi mengubah instruksi langsung berlaku ke chat lama.
 
-## 5. Keputusan yang dibawa utuh dari aplikasi asli
+## 5. Bahasa
+
+Seluruh teks antarmuka ada di kamus, prefix **`chat.*`** (`lib/i18n/id.ts` +
+`en.ts`). Komponen klien memakai `useT()`, komponen server `translator(locale)`,
+route dan action `t(key, vars, locale)` dengan locale hasil `requestLocale()`.
+
+Dua hal yang sengaja **tidak** ikut kamus:
+
+- **Nama produk** ("MbahGPT") — itu merek, bukan teks yang diterjemahkan.
+- **Teks prompt** di `lib/mbahgpt/*` — instruksi search, penanda isi berkas,
+  petunjuk follow-up. Semua itu dibaca **model**, bukan pembaca, dan seluruhnya
+  ditulis dalam bahasa Inggris supaya konsisten. Model tetap menjawab dalam bahasa
+  penanya karena itu ditentukan oleh pesan penggunanya sendiri.
+
+Pemilih bahasa duduk di **header sidebar**, bukan di footer seperti tema lain:
+halaman depan tema ini tidak punya footer sama sekali (komposer yang memegang tepi
+bawah layar), jadi tanpa itu pengunjung tidak punya jalan untuk mengganti bahasa.
+
+## 6. Keputusan yang dibawa utuh dari aplikasi asli
 
 Ini yang lahir dari pengukuran, bukan selera. Jangan "disederhanakan" tanpa
 mengukur ulang.
@@ -136,7 +154,7 @@ mengukur ulang.
   terukur diam 95 detik; diam tanpa kabar terasa seperti hang, tapi menampilkan
   seluruh isi pikirannya mengganggu.
 
-## 6. Yang berubah karena pindah platform
+## 7. Yang berubah karena pindah platform
 
 | Versi Python | Di sini | Alasan |
 |---|---|---|
@@ -147,7 +165,7 @@ mengukur ulang.
 | CSRF/Host pinning, token UI, CSP nonce sendiri | auth Supabase + cookie SameSite + header aplikasi | ancamannya beda: ini bukan lagi port di `127.0.0.1` |
 | `prefs (key, value)` | satu baris per user, kolom bernama | migration di sini normal; key salah ketik = no-op senyap |
 
-## 7. Batasan yang diketahui
+## 8. Batasan yang diketahui
 
 1. **Tidak ada resume stream.** `server.py` memproduksi jawaban di thread pekerja
    yang menulis ke buffer memori, jadi halaman bisa reload di tengah jawaban lalu
@@ -173,13 +191,15 @@ mengukur ulang.
    URI. Ini menjaga perilaku asli (follow-up soal gambar tetap terjawab) dengan
    ongkos latensi pada chat panjang berlampiran banyak.
 
-## 8. Menguji perubahan
+## 9. Menguji perubahan
 
 Belum ada test runner di repo ini. Yang dipakai saat port:
 
 ```bash
 npx tsc --noEmit -p tsconfig.json        # tipe
 npx eslint lib/mbahgpt lib/templates/mbahgpt lib/actions/chat.ts app/api/mbahgpt
+npx vitest run tests/i18n.test.ts tests/i18n-en.test.ts   # kamus: key mati, duplikat
+npm run i18n:scan                        # string yang masih hardcode
 npm run build; echo $?                   # cek EXIT CODE, bukan teks "Compiled"
 curl -s -X POST localhost:3000/api/mbahgpt/chat -d '{"content":"halo"}' \
   -H 'Content-Type: application/json'    # tanpa sesi → 401

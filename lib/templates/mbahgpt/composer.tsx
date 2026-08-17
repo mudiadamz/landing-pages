@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, type RefObject } from "react";
+import { useT } from "@/lib/i18n/client";
 import { humanSize, type PendingFile } from "./upload";
 
 /** Height the box grows to before it starts scrolling instead. */
@@ -54,6 +55,7 @@ export function Composer({
   hint: string;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
 }) {
+  const t = useT();
   const filePicker = useRef<HTMLInputElement>(null);
 
   // Grow with the content up to a ceiling, then scroll. Driven from here rather
@@ -89,7 +91,7 @@ export function Composer({
           rows={1}
           value={value}
           disabled={disabled || busy}
-          placeholder={disabled ? (disabledReason ?? "Chat tidak tersedia") : "Ketik pesan…"}
+          placeholder={disabled ? (disabledReason ?? t("chat.unavailable")) : t("chat.placeholder")}
           enterKeyHint="send"
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
@@ -119,8 +121,8 @@ export function Composer({
                 <button
                   type="button"
                   onClick={() => onRemoveFile(i)}
-                  title="Hapus lampiran"
-                  aria-label={`Hapus ${file.name}`}
+                  title={t("chat.removeAttachment")}
+                  aria-label={t("chat.removeNamed", { name: file.name })}
                   className="rounded px-1 text-[var(--muted)] transition-colors hover:text-red-500"
                 >
                   ×
@@ -147,8 +149,8 @@ export function Composer({
             type="button"
             onClick={() => filePicker.current?.click()}
             disabled={disabled || busy}
-            title="Lampirkan gambar atau dokumen"
-            aria-label="Lampirkan berkas"
+            title={t("chat.attachTitle")}
+            aria-label={t("chat.attachLabel")}
             className="mr-auto grid h-11 w-11 place-items-center rounded-full text-2xl leading-none text-[var(--muted)] transition-colors hover:text-[var(--primary)] disabled:opacity-40"
           >
             +
@@ -158,7 +160,7 @@ export function Composer({
             <button
               type="button"
               onClick={onStop}
-              aria-label="Hentikan jawaban"
+              aria-label={t("chat.stop")}
               className="grid h-11 w-11 place-items-center rounded-full bg-red-600 text-white transition-opacity hover:opacity-90"
             >
               ■
@@ -167,7 +169,7 @@ export function Composer({
             <button
               type="submit"
               disabled={!canSend}
-              aria-label="Kirim pesan"
+              aria-label={t("contact.sendMessage")}
               className="grid h-11 w-11 place-items-center rounded-full bg-[var(--primary)] text-lg text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               ↑

@@ -129,7 +129,7 @@ export async function buildMessages(
           });
         } else {
           const body = new TextDecoder("utf-8", { fatal: false }).decode(bytes).slice(0, MAX_TEXT_FILE);
-          text += `\n\n--- isi berkas: ${att.name} ---\n${body}`;
+          text += `\n\n--- file contents: ${att.name} ---\n${body}`;
         }
       }
     }
@@ -137,9 +137,13 @@ export async function buildMessages(
     if (parts.length) {
       // The text part comes first, and is never empty: a parts array with no text
       // reads to the model as an image with no question attached.
+      //
+      // English, like the rest of the prompt scaffolding in this feature — it is
+      // addressed to the model, not to the reader, and mixing the storefront's
+      // language into instructions the model follows only adds noise.
       messages.push({
         role: message.role,
-        content: [{ type: "text", text: text || "(lihat lampiran)" }, ...parts],
+        content: [{ type: "text", text: text || "(see attachment)" }, ...parts],
       });
     } else if (text) {
       messages.push({ role: message.role, content: text });

@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useLocale, useT } from "@/lib/i18n/client";
 import {
   addChatMemory,
   deleteChatMemory,
@@ -39,6 +40,8 @@ export function PrefsDialog({ open, onClose }: { open: boolean; onClose: () => v
 }
 
 function PrefsPanel({ onClose }: { onClose: () => void }) {
+  const t = useT();
+  const locale = useLocale();
   const [instructions, setInstructions] = useState("");
   const [memories, setMemories] = useState<ChatMemoryRow[]>([]);
   const [status, setStatus] = useState("");
@@ -85,29 +88,29 @@ function PrefsPanel({ onClose }: { onClose: () => void }) {
         ref={panel}
         role="dialog"
         aria-modal="true"
-        aria-label="Preferensi dan memori"
+        aria-label={t("chat.prefs")}
         className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-2xl bg-[var(--background)] shadow-2xl sm:rounded-2xl"
       >
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
-          <h2 className="m-0 text-sm font-semibold">Preferensi &amp; memori</h2>
+          <h2 className="m-0 text-sm font-semibold">{t("chat.prefs")}</h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg px-2 py-1 text-sm text-[var(--muted)] transition-colors hover:text-foreground"
           >
-            Tutup
+            {t("common.close")}
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <h3 className="mt-0 mb-1.5 font-mono text-[0.72rem] tracking-[0.06em] text-[var(--muted)] uppercase">
-            Instruksi jawaban
+            {t("chat.instructions")}
           </h3>
           <textarea
             value={instructions}
             disabled={loading}
             onChange={(e) => setInstructions(e.target.value)}
-            placeholder="mis. Jawab ringkas. Utamakan poin. Selalu sertakan satuan."
+            placeholder={t("chat.instructionsPlaceholder")}
             className="min-h-24 w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-2 text-sm outline-none focus:border-[var(--primary)]"
           />
           <div className="mt-2 flex items-center gap-2">
@@ -115,20 +118,18 @@ function PrefsPanel({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={async () => {
                 const result = await saveChatPrefs(instructions);
-                flash(result.error ?? "Tersimpan.");
+                flash(result.error ?? t("common.saved"));
               }}
               className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
             >
-              Simpan
+              {t("common.save")}
             </button>
             <span className="text-xs text-[var(--muted)]">{status}</span>
           </div>
-          <p className="mt-1.5 text-xs text-[var(--muted)]">
-            Dikirim sebagai system message pada setiap permintaan, di semua chat.
-          </p>
+          <p className="mt-1.5 text-xs text-[var(--muted)]">{t("chat.instructionsNote")}</p>
 
           <h3 className="mt-6 mb-1.5 font-mono text-[0.72rem] tracking-[0.06em] text-[var(--muted)] uppercase">
-            Memori
+            {t("chat.memory")}
           </h3>
           <div className="flex gap-2">
             <input
@@ -141,7 +142,7 @@ function PrefsPanel({ onClose }: { onClose: () => void }) {
                 setMemories(await addChatMemory(newMemory));
                 setNewMemory("");
               }}
-              placeholder="Tambahkan hal yang perlu diingat…"
+              placeholder={t("chat.memoryPlaceholder")}
               className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-2 text-sm outline-none focus:border-[var(--primary)]"
             />
             <button
@@ -153,19 +154,14 @@ function PrefsPanel({ onClose }: { onClose: () => void }) {
               }}
               className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs transition-colors hover:border-[var(--primary)]"
             >
-              Tambah
+              {t("common.add")}
             </button>
           </div>
-          <p className="mt-1.5 text-xs text-[var(--muted)]">
-            Tersimpan otomatis kalau pesan dibuka dengan <strong>remember…</strong>, <strong>note to self…</strong>,{" "}
-            <strong>keep in mind…</strong>, <strong>don&apos;t forget…</strong>, atau{" "}
-            <strong>for future reference…</strong>. Memori yang dipin selalu disertakan; sisanya dipilih berdasarkan
-            kemiripan kata — jadi pin fakta yang harus selalu berlaku.
-          </p>
+          <p className="mt-1.5 text-xs text-[var(--muted)]">{t("chat.memoryNote")}</p>
 
           <div className="mt-3 space-y-1">
             {memories.length === 0 && !loading && (
-              <p className="text-xs text-[var(--muted)]">Belum ada yang diingat.</p>
+              <p className="text-xs text-[var(--muted)]">{t("chat.memoryEmpty")}</p>
             )}
             {memories.map((memory) => (
               <div
@@ -177,13 +173,13 @@ function PrefsPanel({ onClose }: { onClose: () => void }) {
                 <div className="flex-1 text-sm [overflow-wrap:anywhere]">
                   {memory.text}
                   <span className="block text-[0.68rem] text-[var(--muted)]">
-                    {new Date(memory.created_at).toLocaleString("id-ID")}
+                    {new Date(memory.created_at).toLocaleString(locale === "en" ? "en-GB" : "id-ID")}
                   </span>
                 </div>
                 <button
                   type="button"
-                  title={memory.pinned ? "Selalu disertakan — klik untuk melepas" : "Pin: selalu sertakan"}
-                  aria-label={memory.pinned ? "Lepas pin" : "Pin memori"}
+                  title={memory.pinned ? t("chat.pinned") : t("chat.pin")}
+                  aria-label={memory.pinned ? t("panel.unpin") : t("chat.pinLabel")}
                   onClick={async () => setMemories(await updateChatMemory(memory.id, { pinned: !memory.pinned }))}
                   className={`rounded px-1 ${memory.pinned ? "text-[var(--primary)]" : "text-[var(--muted)] hover:text-foreground"}`}
                 >
@@ -191,8 +187,8 @@ function PrefsPanel({ onClose }: { onClose: () => void }) {
                 </button>
                 <button
                   type="button"
-                  title="Lupakan ini"
-                  aria-label={`Lupakan: ${memory.text}`}
+                  title={t("chat.forget")}
+                  aria-label={t("chat.forgetNamed", { text: memory.text })}
                   onClick={async () => setMemories(await deleteChatMemory(memory.id))}
                   className="rounded px-1 text-[var(--muted)] transition-colors hover:text-red-500"
                 >

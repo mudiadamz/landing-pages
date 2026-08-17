@@ -21,6 +21,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { currentSiteId } from "@/lib/site-resolve";
 import { ANSWER_LOCK_STALE_MS } from "@/lib/mbahgpt/config";
+import { t } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 export type ChatSessionRow = {
   id: string;
@@ -57,13 +59,19 @@ export type ChatMemoryRow = {
   created_at: string;
 };
 
+/**
+ * The caller, plus the language to answer them in.
+ *
+ * The locale is resolved per call and passed to `t` explicitly — never held in a
+ * module-level "current locale", because one server renders every tenant at once
+ * and a mutable global would leak one visitor's language into another's response.
+ */
 async function requireUser() {
-  const supabase = await createClient();
+  const [supabase, locale] = await Promise.all([createClient(), requestLocale()]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { supabase, userId: null as string | null };
-  return { supabase, userId: user.id };
+  return { supabase, locale, userId: user?.id ?? null };
 }
 
 /** Collapse runs of whitespace — the form a memory is stored and deduped in. */
@@ -148,8 +156,8 @@ export async function getChatSession(
  * where a session has to exist before a message does (e.g. attaching files first).
  */
 export async function createChatSession(): Promise<{ id: string } | { error: string }> {
-  const { supabase, userId } = await requireUser();
-  if (!userId) return { error: "Masuk dulu untuk mulai chat." };
+  const { supabase, userId, locale } = await requireUser();
+  if (!userId) return { error: t("chat.signInRequired", undefined, locale) };
 
   const siteId = await currentSiteId();
   const { data, error } = await supabase
@@ -157,23 +165,23 @@ export async function createChatSession(): Promise<{ id: string } | { error: str
     .insert({ user_id: userId, site_id: siteId || null })
     .select("id")
     .single();
-  if (error || !data) return { error: error?.message || "Gagal membuat chat." };
+  if (error || !data) return { error: error?.message || t("chat.createFailed", undefined, locale) };
   return { id: data.id };
 }
 
 export async function renameChatSession(sessionId: string, title: string): Promise<{ error?: string }> {
-  const { supabase, userId } = await requireUser();
-  if (!userId) return { error: "Masuk dulu." };
+  const { supabase, userId, locale } = await requireUser();
+  if (!userId) return { error: t("chat.signInShort", undefined, locale) };
   const clean = normalise(title).slice(0, 120);
-  if (!clean) return { error: "Judul tidak boleh kosong." };
+  if (!clean) return { error: t("chat.titleRequired", undefined, locale) };
 
   const { error } = await supabase.from("lp_chat_sessions").update({ title: clean }).eq("id", sessionId);
   return error ? { error: error.message } : {};
 }
 
 export async function deleteChatSession(sessionId: string): Promise<{ error?: string }> {
-  const { supabase, userId } = await requireUser();
-  if (!userId) return { error: "Masuk dulu." };
+  const { supabase, userId, locale } = await requireUser();
+  if (!userId) return { error: t("chat.signInShort", undefined, locale) };
 
   // Messages and attachment ROWS go with it (ON DELETE CASCADE). The stored files
   // are removed first, because once the rows are gone their paths are unknown and
@@ -206,8 +214,8 @@ export async function getChatPrefs(): Promise<{ responseInstructions: string }> 
 }
 
 export async function saveChatPrefs(responseInstructions: string): Promise<{ error?: string }> {
-  const { supabase, userId } = await requireUser();
-  if (!userId) return { error: "Masuk dulu." };
+  const { supabase, userId, locale } = await requireUser();
+  if (!userId) return { error: t("chat.signInShort", undefined, locale) };
 
   const { error } = await supabase.from("lp_chat_prefs").upsert(
     {

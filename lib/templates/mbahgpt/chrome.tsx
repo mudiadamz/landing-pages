@@ -2,6 +2,9 @@ import Link from "next/link";
 import { currentSite } from "@/lib/site-resolve";
 import { SiteLogo } from "@/components/site-logo";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 import type { ChromeProps } from "../registry";
 
 /**
@@ -18,6 +21,8 @@ import type { ChromeProps } from "../registry";
  * and the cycle would only show up at runtime.
  */
 export function MbahgptHeader({ user, brand }: ChromeProps) {
+  // The brand carries the storefront's locale, so the header stays synchronous.
+  const t = translator(brand.locale);
   return (
     <header className="border-b border-[var(--border)] bg-[var(--card)]">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
@@ -30,7 +35,7 @@ export function MbahgptHeader({ user, brand }: ChromeProps) {
             href={user ? "/panel" : "/login"}
             className="text-xs text-[var(--muted)] transition-colors hover:text-foreground"
           >
-            {user ? "Panel" : "Masuk"}
+            {user ? t("nav.panel") : t("nav.signIn")}
           </Link>
         </div>
       </div>
@@ -40,7 +45,8 @@ export function MbahgptHeader({ user, brand }: ChromeProps) {
 
 /** One line. A tool has a colophon, not a sitemap. */
 export async function MbahgptFooter() {
-  const site = await currentSite();
+  const [site, locale] = await Promise.all([currentSite(), requestLocale()]);
+  const t = translator(locale);
   return (
     <footer className="mt-10 shrink-0 border-t border-[var(--border)]">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-4 py-7 text-xs text-[var(--muted)]">
@@ -48,17 +54,18 @@ export async function MbahgptFooter() {
           © {new Date().getFullYear()} {site.name}
         </span>
         <Link href="/" className="transition-colors hover:text-foreground">
-          Chat
+          {t("chat.nav")}
         </Link>
         <Link href="/privacy" className="transition-colors hover:text-foreground">
-          Privasi
+          {t("nav.privacy")}
         </Link>
         <Link href="/terms" className="transition-colors hover:text-foreground">
-          Ketentuan
+          {t("nav.terms")}
         </Link>
         <Link href="/refund" className="transition-colors hover:text-foreground">
-          Pengembalian dana
+          {t("nav.refund")}
         </Link>
+        <LanguageSwitcher current={locale} label={t("nav.language")} />
       </div>
     </footer>
   );

@@ -7,6 +7,7 @@
  * the app has ever needed.
  */
 import { BASE_URL, TIMEOUT_MS, apiKey } from "./config";
+import type { MessageKey } from "@/lib/i18n";
 
 /** A part of a multimodal user message. */
 export type ContentPart =
@@ -24,10 +25,23 @@ export type Plugin = Record<string, unknown>;
 
 export class UpstreamError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /**
+   * The message as a dictionary key, when this module wrote it.
+   *
+   * This module has no request context — no cookies, no site — so it cannot know
+   * the reader's language. Errors it AUTHORS carry a key for the route to
+   * translate; errors that are the provider's own text (an HTTP body) carry none,
+   * because relaying an upstream message verbatim is the honest thing to do with it.
+   */
+  key?: MessageKey;
+  vars?: Record<string, string | number>;
+
+  constructor(message: string, status: number, key?: MessageKey, vars?: Record<string, string | number>) {
     super(message);
     this.name = "UpstreamError";
     this.status = status;
+    this.key = key;
+    this.vars = vars;
   }
 }
 
@@ -57,7 +71,9 @@ async function post(path: string, payload: Payload, signal?: AbortSignal, timeou
     // A timeout and a dead network look the same from here, and both mean the
     // same thing to the reader: we could not reach the model.
     const reason = err instanceof Error ? err.message : String(err);
-    throw new UpstreamError(`tidak bisa menghubungi OpenRouter: ${reason}`, 502);
+    throw new UpstreamError(`could not reach OpenRouter: ${reason}`, 502, "chat.upstreamUnreachable", {
+      reason,
+    });
   }
 
   if (!res.ok) {
@@ -140,7 +156,9 @@ export function parseDelta(line: string): Delta | null {
       choices?: { delta?: Delta }[];
       error?: { message?: string };
     };
-    if (chunk.error) throw new UpstreamError(chunk.error.message || "model menolak permintaan", 502);
+    if (chunk.error) {
+      throw new UpstreamError(chunk.error.message || "the model refused the request", 502, "chat.modelRefused");
+    }
     return chunk.choices?.[0]?.delta ?? null;
   } catch (err) {
     if (err instanceof UpstreamError) throw err;

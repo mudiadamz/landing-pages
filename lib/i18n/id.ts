@@ -1628,6 +1628,122 @@ export const id = {
     "Data lama (sebelum tiap domain dicatat) ikut dihitung di sini, karena dulu memang cuma ada domain ini.",
   "scope.startsAtZero":
     "Angkanya mulai dari nol: {what} sebelum pencatatan per-domain tidak bisa diatribusikan ke belakang, jadi yang tampil hanya yang tercatat sejak fitur ini aktif.",
+
+  /* ---- template chat (MbahGPT) ---- */
+  /* Nama produknya sendiri ("MbahGPT") tidak ada di sini: itu merek, bukan teks. */
+  "chat.nav": "Chat",
+  "chat.newChat": "Chat baru",
+  "chat.openList": "Buka daftar chat",
+  "chat.closeList": "Tutup daftar chat",
+  "chat.signInToSave": "Masuk untuk menyimpan riwayat chat.",
+  "chat.inactiveHere": "Chat belum aktif di situs ini.",
+  "chat.prefs": "Preferensi & memori",
+
+  /* status di bawah komposer — kosong saat idle, jadi tiap string di sini
+     hanya muncul kalau memang ada kabar yang perlu disampaikan */
+  "chat.uploading": "Mengunggah lampiran…",
+  "chat.waitingHere":
+    "Menunggu jawaban di chat ini… buka atau buat chat lain kalau ingin bertanya sekarang.",
+  "chat.maxConcurrent": "Maksimal {count} chat berjalan bersamaan — tunggu salah satunya selesai.",
+  "chat.othersRunning": "{count} chat lain sedang berjalan di latar.",
+  "chat.maxFiles": "Maksimal {count} berkas per pesan.",
+  "chat.maxUpload": "Total lampiran melebihi {size}.",
+
+  "chat.emptyTitle": "Mulai percakapan",
+  "chat.emptyBody": "Ketik pesan di bawah. Awali dengan /web untuk memaksa pencarian.",
+  "chat.signInTitle": "Masuk untuk mulai chat",
+  "chat.signInBody":
+    "Riwayat percakapan tersimpan di akun Anda, jadi bisa dilanjutkan dari perangkat lain.",
+  "chat.inactiveTitle": "Chat belum aktif",
+  "chat.inactiveBody": "Situs ini belum dihubungkan ke penyedia model. Coba lagi nanti.",
+
+  /* komposer */
+  "chat.placeholder": "Ketik pesan…",
+  "chat.unavailable": "Chat tidak tersedia",
+  "chat.attachTitle": "Lampirkan gambar atau dokumen",
+  "chat.attachLabel": "Lampirkan berkas",
+  "chat.removeAttachment": "Hapus lampiran",
+  "chat.removeNamed": "Hapus {name}",
+  "chat.stop": "Hentikan jawaban",
+
+  /* transkrip */
+  "chat.thinking": "Berpikir… {seconds}s",
+  "chat.thoughtFor": "Berpikir {seconds} detik",
+  "chat.reasoning": "Proses berpikir",
+  "chat.waitingAnswer": "Menunggu jawaban",
+  "chat.sources": "Sumber",
+  "chat.copyAnswer": "Salin jawaban",
+  "chat.copyCode": "Salin kode",
+  "chat.copied": "Tersalin",
+  "chat.copyFailed": "Gagal menyalin",
+  "chat.errorLabel": "Kesalahan",
+  "chat.retry": "Coba lagi",
+  "chat.editMessage": "Ubah pesan",
+  "chat.editMessageHint": "Kembalikan teks ke kolom ketik",
+  "chat.memorySavedOne": "Disimpan ke memori",
+  "chat.memorySaved": "Disimpan {count} memori",
+  "chat.memoryHint": "Kelola di Preferensi & memori",
+  "chat.webSearching": "Mencari di web…",
+  "chat.webSearched": "Dicari: “{query}”",
+  "chat.webAnswered": "Dijawab dari {count} sumber web",
+  "chat.webNothing": "Pencarian tidak menemukan apa pun",
+  "chat.webFailed": "Pencarian gagal, dijawab tanpa web",
+
+  /* daftar sesi */
+  "chat.noSessions": "Belum ada chat tersimpan.",
+  "chat.untitled": "Tanpa judul",
+  "chat.answering": "menjawab…",
+  "chat.sessionMeta": "{count} pesan · {when}",
+  "chat.answeringTitle": "Sedang menjawab",
+  "chat.unreadTitle": "Jawaban baru belum dibaca",
+  "chat.rowActions": "Tindakan chat",
+  "chat.rename": "Ubah judul",
+  "chat.deleteChat": "Hapus chat",
+
+  /* preferensi & memori */
+  "chat.instructions": "Instruksi jawaban",
+  "chat.instructionsPlaceholder": "mis. Jawab ringkas. Utamakan poin. Selalu sertakan satuan.",
+  "chat.instructionsNote": "Dikirim sebagai system message pada setiap permintaan, di semua chat.",
+  "chat.memory": "Memori",
+  "chat.memoryPlaceholder": "Tambahkan hal yang perlu diingat…",
+  "chat.memoryNote":
+    "Tersimpan otomatis kalau pesan dibuka dengan “remember…”, “note to self…”, “keep in mind…”, “don’t forget…”, atau “for future reference…”. Memori yang dipin selalu disertakan; sisanya dipilih berdasarkan kemiripan kata — jadi pin fakta yang harus selalu berlaku.",
+  "chat.memoryEmpty": "Belum ada yang diingat.",
+  "chat.pin": "Pin: selalu sertakan",
+  "chat.pinned": "Selalu disertakan — klik untuk melepas",
+  "chat.pinLabel": "Pin memori",
+  "chat.forget": "Lupakan ini",
+  "chat.forgetNamed": "Lupakan: {text}",
+
+  /* katalog, untuk storefront chat yang juga menjual sesuatu */
+  "chat.categoryEmpty": "Belum ada produk di kategori ini.",
+  "chat.backToChat": "Kembali ke chat",
+
+  /* pesan kegagalan — dipakai route, action, dan klien */
+  "chat.signInRequired": "Masuk dulu untuk mulai chat.",
+  "chat.signInShort": "Masuk dulu.",
+  "chat.notConfigured": "Chat belum dikonfigurasi di server ini.",
+  "chat.badRequest": "Permintaan tidak terbaca.",
+  "chat.emptyMessage": "Pesan tidak boleh kosong.",
+  "chat.unknownAttachment": "Lampiran tidak dikenal.",
+  "chat.unsupportedType": "Jenis berkas {type} tidak didukung.",
+  "chat.uploadTooBig": "Total lampiran terlalu besar.",
+  "chat.rateLimited": "Terlalu banyak permintaan, tunggu sebentar.",
+  "chat.notFound": "Chat tidak ditemukan.",
+  "chat.createFailed": "Gagal membuat chat.",
+  "chat.busy": "Chat ini sedang menjawab; tunggu sampai selesai.",
+  "chat.startFailed": "Gagal memulai jawaban.",
+  "chat.titleRequired": "Judul tidak boleh kosong.",
+  "chat.sessionGone": "Chat itu sudah tidak ada.",
+  "chat.sendFailed": "Gagal mengirim pesan.",
+  "chat.modelRefused": "Model menolak permintaan.",
+  "chat.unexpected": "Kesalahan tak terduga.",
+  "chat.upstreamEmpty": "Penyedia model tidak mengirim isi jawaban.",
+  "chat.upstreamUnreachable": "Tidak bisa menghubungi penyedia model: {reason}",
+  "chat.attachmentNotFound": "Lampiran tidak ditemukan.",
+  "chat.attachmentGone": "Berkas tidak tersedia.",
+  "chat.sessionExpired": "Sesi berakhir — masuk lagi untuk melampirkan berkas.",
+  "chat.uploadFailed": "Gagal mengunggah {name}: {reason}",
 } as const;
 
 export type MessageKey = keyof typeof id;

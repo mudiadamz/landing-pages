@@ -14,14 +14,17 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useLocale, useT } from "@/lib/i18n/client";
+import type { Locale } from "@/lib/i18n";
 import type { ChatSessionRow } from "@/lib/actions/chat";
 
-function timestamp(iso: string): string {
+function timestamp(iso: string, locale: Locale): string {
   // Local time, minute precision. Seconds on a chat list is noise, and the ISO
-  // string the server sends is UTC.
+  // string the server sends is UTC. The month name follows the reader's language
+  // — "17 Agu" and "17 Aug" are the same row in two languages.
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString("id-ID", {
+  return date.toLocaleString(locale === "en" ? "en-GB" : "id-ID", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -47,6 +50,8 @@ export function SessionList({
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const t = useT();
+  const locale = useLocale();
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const container = useRef<HTMLDivElement>(null);
@@ -71,7 +76,7 @@ export function SessionList({
   }, [menuFor]);
 
   if (!sessions.length) {
-    return <p className="px-2 py-2.5 text-xs text-[var(--muted)]">Belum ada chat tersimpan.</p>;
+    return <p className="px-2 py-2.5 text-xs text-[var(--muted)]">{t("chat.noSessions")}</p>;
   }
 
   return (
@@ -106,10 +111,15 @@ export function SessionList({
                   className="block w-full text-left"
                 >
                   <span className={`block truncate text-sm ${active ? "font-semibold" : ""}`}>
-                    {session.title || "Tanpa judul"}
+                    {session.title || t("chat.untitled")}
                   </span>
                   <span className="mt-0.5 block font-mono text-[0.64rem] text-[var(--muted)]">
-                    {running ? "menjawab…" : `${session.messages} msg · ${timestamp(session.updated_at)}`}
+                    {running
+                      ? t("chat.answering")
+                      : t("chat.sessionMeta", {
+                          count: session.messages,
+                          when: timestamp(session.updated_at, locale),
+                        })}
                   </span>
                 </button>
               )}
@@ -120,14 +130,14 @@ export function SessionList({
             {(running || unread.has(session.id)) && (
               <span
                 aria-hidden
-                title={running ? "Sedang menjawab" : "Jawaban baru belum dibaca"}
+                title={running ? t("chat.answeringTitle") : t("chat.unreadTitle")}
                 className={`h-2 w-2 shrink-0 rounded-full bg-[var(--primary)] ${running ? "animate-pulse" : ""}`}
               />
             )}
 
             <button
               type="button"
-              aria-label="Tindakan chat"
+              aria-label={t("chat.rowActions")}
               onClick={(e) => {
                 e.stopPropagation();
                 setMenuFor(menuFor === session.id ? null : session.id);
@@ -154,7 +164,7 @@ export function SessionList({
                   }}
                   className="rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-[var(--accent-subtle)]"
                 >
-                  Ubah judul
+                  {t("chat.rename")}
                 </button>
                 <button
                   type="button"
@@ -165,7 +175,7 @@ export function SessionList({
                   }}
                   className="rounded-lg px-2.5 py-2 text-left text-sm text-red-600 transition-colors hover:bg-[var(--accent-subtle)] dark:text-red-400"
                 >
-                  Hapus chat
+                  {t("chat.deleteChat")}
                 </button>
               </div>
             )}

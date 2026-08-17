@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 async function writeClipboard(text: string): Promise<boolean> {
   try {
@@ -52,6 +53,7 @@ export function CopyButton({
   label: string;
   className?: string;
 }) {
+  const t = useT();
   const [state, setState] = useState<State>("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -62,7 +64,7 @@ export function CopyButton({
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  const title = state === "done" ? "Tersalin" : state === "failed" ? "Gagal menyalin" : label;
+  const title = state === "done" ? t("chat.copied") : state === "failed" ? t("chat.copyFailed") : label;
 
   return (
     <button
@@ -87,6 +89,19 @@ export function CopyButton({
       {state === "done" ? <CheckIcon /> : state === "failed" ? <CrossIcon /> : <CopyIcon />}
     </button>
   );
+}
+
+/**
+ * The code-block variant, which knows its own label.
+ *
+ * Markdown blocks are assembled by plain functions (see markdown.tsx), and a
+ * plain function cannot call a hook — so the one string that variant needs is
+ * resolved here, in a component, rather than threaded through every level of the
+ * block parser as an argument.
+ */
+export function CopyCodeButton({ getText, className }: { getText: () => string; className?: string }) {
+  const t = useT();
+  return <CopyButton getText={getText} label={t("chat.copyCode")} className={className} />;
 }
 
 const stroke = {

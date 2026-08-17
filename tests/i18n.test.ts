@@ -159,6 +159,16 @@ describe("dictionary integrity", () => {
     Teks: ["editor.richText", "panel.text"],
     // Storage's "open this file" vs the setup guide's "open this section".
     Buka: ["panel.open", "sites.open"],
+    // A domain copied to the clipboard vs a chat answer copied to it. Same verb,
+    // and two surfaces that have no reason to be edited together.
+    Tersalin: ["sites.copied", "chat.copied"],
+    // A product's title vs a chat's — English already wants different articles.
+    "Judul tidak boleh kosong.": ["product.errTitleEmpty", "chat.titleRequired"],
+    // Where traffic came from, vs the pages a web search cited. English already
+    // splits them: "Source" for the analytics column, "Sources" for the list.
+    Sumber: ["analytics.source", "chat.sources"],
+    // Re-check a domain's DNS vs re-send a chat message that failed.
+    "Coba lagi": ["sites.tryAgain", "chat.retry"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

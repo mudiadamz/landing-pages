@@ -31,6 +31,7 @@ import {
   type ChatSessionRow,
 } from "@/lib/actions/chat";
 import { uploadChatFiles, type PendingFile } from "./upload";
+import { useT } from "@/lib/i18n/client";
 
 export const MAX_CONCURRENT = 3;
 
@@ -72,8 +73,12 @@ export type ChatFailure = {
 
 type Rec = LiveReply & { controller: AbortController };
 
+/** The bound translator, threaded into the plain functions below. */
+type Translate = ReturnType<typeof useT>;
+
 export function useChat(options: { canChat: boolean }) {
   const { canChat } = options;
+  const t = useT();
 
   const [sessions, setSessions] = useState<ChatSessionRow[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -136,7 +141,7 @@ export function useChat(options: { canChat: boolean }) {
       try {
         const { session, messages: rows } = await getChatSession(id);
         if (!session) {
-          setNotice("Chat itu sudah tidak ada.");
+          setNotice(t("chat.sessionGone"));
           await refreshSessions();
           return;
         }
@@ -158,7 +163,7 @@ export function useChat(options: { canChat: boolean }) {
         setLoadingThread(false);
       }
     },
-    [refreshSessions],
+    [refreshSessions, t],
   );
 
   const newChat = useCallback(() => {
@@ -227,7 +232,7 @@ export function useChat(options: { canChat: boolean }) {
     async (text: string, files: PendingFile[], opts: { retry?: boolean } = {}) => {
       if (!canChat) return;
       if (recs.current.size >= MAX_CONCURRENT) {
-        setNotice(`Maksimal ${MAX_CONCURRENT} chat berjalan bersamaan — tunggu salah satunya selesai.`);
+        setNotice(t("chat.maxConcurrent", { count: MAX_CONCURRENT }));
         return;
       }
       if (liveForOpenSession()) return; // one reply at a time within a session
@@ -275,7 +280,7 @@ export function useChat(options: { canChat: boolean }) {
       try {
         let refs: { path: string; name: string; mime: string; size: number }[] = [];
         if (files.length) {
-          const uploaded = await uploadChatFiles(files);
+          const uploaded = await uploadChatFiles(files, t);
           if ("error" in uploaded) {
             await fail(uploaded.error);
             return;
@@ -303,7 +308,7 @@ export function useChat(options: { canChat: boolean }) {
 
         if (!res.ok || !res.body) {
           const body = (await res.json().catch(() => ({}))) as { error?: string };
-          await fail(body.error || res.statusText || "Gagal mengirim pesan.");
+          await fail(body.error || res.statusText || t("chat.sendFailed"));
           return;
         }
 
@@ -327,7 +332,7 @@ export function useChat(options: { canChat: boolean }) {
           await refreshSessions();
         }
 
-        await consume(rec, res.body, flush);
+        await consume(rec, res.body, flush, t);
 
         // Reload from the database rather than promoting the local text: the stored
         // row carries the ids the attachment links need, and it is the copy every
@@ -355,10 +360,10 @@ export function useChat(options: { canChat: boolean }) {
           await refreshSessions();
           return;
         }
-        await fail(err instanceof Error ? err.message : "Gagal mengirim pesan.");
+        await fail(err instanceof Error ? err.message : t("chat.sendFailed"));
       }
     },
-    [canChat, flush, liveForOpenSession, refreshSessions],
+    [canChat, flush, liveForOpenSession, refreshSessions, t],
   );
 
   const stop = useCallback(() => {
@@ -401,7 +406,7 @@ export function useChat(options: { canChat: boolean }) {
  * That ordering bug — a two-message chat displaying "1 msg" — is the reason this
  * loop is written the way it is.
  */
-async function consume(rec: Rec, body: ReadableStream<Uint8Array>, flush: () => void) {
+async function consume(rec: Rec, body: ReadableStream<Uint8Array>, flush: () => void, t: Translate) {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffered = "";
@@ -427,7 +432,7 @@ async function consume(rec: Rec, body: ReadableStream<Uint8Array>, flush: () => 
 
       if (chunk.error) {
         const error = chunk.error as { message?: string };
-        throw new Error(error.message || "Model menolak permintaan.");
+        throw new Error(error.message || t("chat.modelRefused"));
       }
 
       if (chunk.status) {

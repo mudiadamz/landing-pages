@@ -21,6 +21,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { Composer } from "./composer";
 import { PrefsDialog } from "./prefs-dialog";
 import { SessionList } from "./session-list";
@@ -43,6 +45,8 @@ export function ChatApp({
   configured: boolean;
   limits: { maxFiles: number; maxUpload: number };
 }) {
+  const t = useT();
+  const locale = useLocale();
   const canChat = !!user && configured;
   const chat = useChat({ canChat });
 
@@ -106,12 +110,12 @@ export function ChatApp({
     const next = [...files];
     for (const file of picked) {
       if (next.length >= limits.maxFiles) {
-        chat.setNotice(`Maksimal ${limits.maxFiles} berkas per pesan.`);
+        chat.setNotice(t("chat.maxFiles", { count: limits.maxFiles }));
         break;
       }
       const total = next.reduce((n, f) => n + f.size, 0) + file.size;
       if (total > limits.maxUpload) {
-        chat.setNotice(`Total lampiran melebihi ${humanSize(limits.maxUpload)}.`);
+        chat.setNotice(t("chat.maxUpload", { size: humanSize(limits.maxUpload) }));
         break;
       }
       next.push(toPendingFile(file));
@@ -147,12 +151,12 @@ export function ChatApp({
 
   const hint = (() => {
     if (chat.notice) return chat.notice;
-    if (chat.openLive?.uploading) return "Mengunggah lampiran…";
-    if (streaming) return "Menunggu jawaban di chat ini… buka atau buat chat lain kalau ingin bertanya sekarang.";
+    if (chat.openLive?.uploading) return t("chat.uploading");
+    if (streaming) return t("chat.waitingHere");
     if (chat.running > 0) {
       return chat.running >= MAX_CONCURRENT
-        ? `Maksimal ${MAX_CONCURRENT} chat berjalan bersamaan — tunggu salah satunya selesai.`
-        : `${chat.running} chat lain sedang berjalan di latar.`;
+        ? t("chat.maxConcurrent", { count: MAX_CONCURRENT })
+        : t("chat.othersRunning", { count: chat.running });
     }
     return "";
   })();
@@ -168,7 +172,7 @@ export function ChatApp({
       {drawer && (
         <button
           type="button"
-          aria-label="Tutup daftar chat"
+          aria-label={t("chat.closeList")}
           onClick={() => setDrawer(false)}
           className="fixed inset-0 z-30 bg-black/40 md:hidden"
         />
@@ -183,11 +187,16 @@ export function ChatApp({
             {siteName}
           </Link>
           <div className="flex shrink-0 items-center gap-1">
+            {/* The homepage renders no footer — the composer owns the bottom edge —
+                and the footer is where every other template keeps this control. Without
+                it here, a visitor on a storefront set to another language would have no
+                way to switch. */}
+            <LanguageSwitcher current={locale} label={t("nav.language")} />
             <ThemeSwitch />
             <button
               type="button"
               onClick={() => setDrawer(false)}
-              aria-label="Tutup daftar chat"
+              aria-label={t("chat.closeList")}
               className="rounded-lg px-2 py-1 text-[var(--muted)] md:hidden"
             >
               ×
@@ -202,7 +211,7 @@ export function ChatApp({
             disabled={!canChat}
             className="w-full rounded-xl border border-[var(--border)] px-3 py-2 text-sm transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:opacity-40"
           >
-            + Chat baru
+            + {t("chat.newChat")}
           </button>
         </div>
 
@@ -219,7 +228,7 @@ export function ChatApp({
             />
           ) : (
             <p className="px-3 py-2.5 text-xs text-[var(--muted)]">
-              {configured ? "Masuk untuk menyimpan riwayat chat." : "Chat belum aktif di situs ini."}
+              {configured ? t("chat.signInToSave") : t("chat.inactiveHere")}
             </p>
           )}
         </div>
@@ -231,14 +240,14 @@ export function ChatApp({
               onClick={() => setPrefsOpen(true)}
               className="w-full rounded-xl px-3 py-2 text-left text-sm text-[var(--muted)] transition-colors hover:bg-[var(--accent-subtle)] hover:text-foreground"
             >
-              ⚙ Preferensi &amp; memori
+              ⚙ {t("chat.prefs")}
             </button>
           ) : (
             <Link
               href="/login"
               className="block w-full rounded-xl bg-[var(--primary)] px-3 py-2 text-center text-sm text-[var(--primary-foreground)]"
             >
-              Masuk
+              {t("nav.signIn")}
             </Link>
           )}
         </div>
@@ -252,7 +261,7 @@ export function ChatApp({
           <button
             type="button"
             onClick={() => setDrawer(true)}
-            aria-label="Buka daftar chat"
+            aria-label={t("chat.openList")}
             className="absolute top-2.5 left-2.5 z-10 grid h-9 w-9 place-items-center rounded-full border border-[var(--border)] bg-[var(--card)] shadow-sm md:hidden"
           >
             ☰
@@ -304,7 +313,7 @@ export function ChatApp({
               className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs text-[var(--muted)] shadow-lg transition-colors hover:border-[var(--primary)] hover:text-foreground"
             >
               {streaming && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />}
-              <span aria-hidden>↓</span> Terbaru
+              <span aria-hidden>↓</span> {t("panel.sortRecent")}
             </button>
           )}
         </div>
@@ -316,7 +325,7 @@ export function ChatApp({
           onStop={chat.stop}
           busy={streaming}
           disabled={!canChat}
-          disabledReason={configured ? "Masuk untuk mulai chat" : "Chat belum aktif"}
+          disabledReason={configured ? t("chat.signInTitle") : t("chat.inactiveTitle")}
           files={files}
           onAddFiles={addFiles}
           onRemoveFile={removeFile}
@@ -331,20 +340,19 @@ export function ChatApp({
 }
 
 function SignedOutNotice() {
+  const t = useT();
   return (
     <div className="mt-[14vh] flex flex-col items-center gap-2 text-center">
       <div className="grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-subtle)] text-xl text-[var(--primary)]">
         ✦
       </div>
-      <p className="m-0 text-base font-semibold">Masuk untuk mulai chat</p>
-      <p className="m-0 max-w-sm text-sm text-[var(--muted)]">
-        Riwayat percakapan tersimpan di akun Anda, jadi bisa dilanjutkan dari perangkat lain.
-      </p>
+      <p className="m-0 text-base font-semibold">{t("chat.signInTitle")}</p>
+      <p className="m-0 max-w-sm text-sm text-[var(--muted)]">{t("chat.signInBody")}</p>
       <Link
         href="/login"
         className="mt-2 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
       >
-        Masuk
+        {t("nav.signIn")}
       </Link>
     </div>
   );
@@ -355,12 +363,11 @@ function SignedOutNotice() {
  * deployment state, and a visitor cannot do anything about it.
  */
 function UnavailableNotice() {
+  const t = useT();
   return (
     <div className="mt-[14vh] flex flex-col items-center gap-2 text-center">
-      <p className="m-0 text-base font-semibold">Chat belum aktif</p>
-      <p className="m-0 max-w-sm text-sm text-[var(--muted)]">
-        Situs ini belum dihubungkan ke penyedia model. Coba lagi nanti.
-      </p>
+      <p className="m-0 text-base font-semibold">{t("chat.inactiveTitle")}</p>
+      <p className="m-0 max-w-sm text-sm text-[var(--muted)]">{t("chat.inactiveBody")}</p>
     </div>
   );
 }

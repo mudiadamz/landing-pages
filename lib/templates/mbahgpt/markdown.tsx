@@ -26,7 +26,7 @@
  */
 
 import type { ReactNode } from "react";
-import { CopyButton } from "./copy-button";
+import { CopyCodeButton } from "./copy-button";
 
 const FENCE = /^\s*```(.*)$/;
 const HEADING = /^(#{1,6})\s+(.*)$/;
@@ -293,9 +293,8 @@ function parseBlocks(text: string, platform: Platform | null): ReactNode[] {
           <pre className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--code-bg)] p-4 text-[0.86em] whitespace-pre">
             <code className={`font-mono ${lang ? `language-${lang.replace(/[^\w+-]/g, "")}` : ""}`}>{code}</code>
           </pre>
-          <CopyButton
+          <CopyCodeButton
             getText={() => code}
-            label="Salin kode"
             className="absolute top-2 right-2 opacity-0 transition-opacity group-hover/code:opacity-100 focus-visible:opacity-100 max-[900px]:opacity-80"
           />
         </div>,

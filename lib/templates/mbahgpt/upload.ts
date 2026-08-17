@@ -14,6 +14,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
+import type { MessageKey } from "@/lib/i18n";
 
 export type PendingFile = {
   file: File;
@@ -25,6 +26,15 @@ export type PendingFile = {
 };
 
 export type UploadedRef = { path: string; name: string; mime: string; size: number };
+
+/**
+ * The caller's translator, passed in rather than reached for.
+ *
+ * These are plain functions, not components, so `useT()` is not available — and a
+ * module-level locale would be wrong for the usual reason: one server renders
+ * every tenant at once.
+ */
+type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
 const MIME_BY_SUFFIX: Record<string, string> = {
   ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
@@ -64,14 +74,17 @@ export function toPendingFile(file: File): PendingFile {
 const safeName = (name: string) => name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
 
 /** Upload everything staged for one message. All or nothing, by design. */
-export async function uploadChatFiles(files: PendingFile[]): Promise<{ refs: UploadedRef[] } | { error: string }> {
+export async function uploadChatFiles(
+  files: PendingFile[],
+  t: Translate,
+): Promise<{ refs: UploadedRef[] } | { error: string }> {
   if (!files.length) return { refs: [] };
 
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Sesi berakhir — masuk lagi untuk melampirkan berkas." };
+  if (!user) return { error: t("chat.sessionExpired") };
 
   const refs: UploadedRef[] = [];
   for (const pending of files) {
@@ -81,7 +94,7 @@ export async function uploadChatFiles(files: PendingFile[]): Promise<{ refs: Upl
     const { error } = await supabase.storage
       .from("chat-attachments")
       .upload(path, pending.file, { contentType: pending.mime, upsert: false });
-    if (error) return { error: `Gagal mengunggah ${pending.name}: ${error.message}` };
+    if (error) return { error: t("chat.uploadFailed", { name: pending.name, reason: error.message }) };
     refs.push({ path, name: pending.name, mime: pending.mime, size: pending.size });
   }
   return { refs };

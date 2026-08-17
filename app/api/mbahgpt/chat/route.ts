@@ -22,6 +22,8 @@ import {
 } from "@/lib/mbahgpt/messages";
 import { UpstreamError, parseDelta, streamChat, toSources, type ChatMessage, type Source } from "@/lib/mbahgpt/openrouter";
 import { contextBlock, expandQuery, runSearch, shouldSearch, stripWebPrefix } from "@/lib/mbahgpt/web-search";
+import { translator } from "@/lib/i18n";
+import { requestLocale } from "@/lib/i18n/request";
 
 /**
  * One chat turn: store the user's message, then stream the model's reply.
@@ -81,30 +83,37 @@ function fail(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
+/** A bound translator, for the messages this route sends back. */
+type Translate = ReturnType<typeof translator>;
+
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
+  // The reader's language, resolved once per request and threaded down. Every
+  // message this route can produce is read by a person, including the ones that
+  // travel inside the stream.
+  const [supabase, locale] = await Promise.all([createClient(), requestLocale()]);
+  const t = translator(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return fail("Masuk dulu untuk mulai chat.", 401);
+  if (!user) return fail(t("chat.signInRequired"), 401);
 
   // Said plainly rather than surfaced as a 500 from the first upstream call: an
   // unset key is a deployment state, not a bug in the request.
-  if (!chatConfigured()) return fail("Chat belum dikonfigurasi di server ini.", 503);
+  if (!chatConfigured()) return fail(t("chat.notConfigured"), 503);
 
   let body: Body;
   try {
     body = (await req.json()) as Body;
   } catch {
-    return fail("Permintaan tidak terbaca.", 400);
+    return fail(t("chat.badRequest"), 400);
   }
 
   const { text: content, forced } = stripWebPrefix((body.content ?? "").trim());
   const mode = body.web === "on" || body.web === "off" ? body.web : "auto";
   const uploads = Array.isArray(body.attachments) ? body.attachments : [];
 
-  if (!content && !uploads.length) return fail("Pesan tidak boleh kosong.", 400);
-  if (uploads.length > MAX_FILES) return fail(`Maksimal ${MAX_FILES} berkas per pesan.`, 400);
+  if (!content && !uploads.length) return fail(t("chat.emptyMessage"), 400);
+  if (uploads.length > MAX_FILES) return fail(t("chat.maxFiles", { count: MAX_FILES }), 400);
 
   // Files were uploaded straight to Storage by the browser (Server Actions and
   // route bodies are capped at ~4.5 MB on Vercel), so what arrives here is a set
@@ -114,14 +123,14 @@ export async function POST(req: NextRequest) {
   // browser claimed, and it is used for the running total and the UI only.
   for (const file of uploads) {
     if (!file?.path || !file.path.startsWith(`${user.id}/`)) {
-      return fail("Lampiran tidak dikenal.", 400);
+      return fail(t("chat.unknownAttachment"), 400);
     }
     if (!classify(file.name ?? "", file.mime ?? "")) {
-      return fail(`Jenis berkas ${file.mime || file.name} tidak didukung.`, 400);
+      return fail(t("chat.unsupportedType", { type: file.mime || file.name }), 400);
     }
   }
   const claimed = uploads.reduce((n, f) => n + (Number(f.size) || 0), 0);
-  if (claimed > MAX_UPLOAD) return fail("Total lampiran terlalu besar.", 413);
+  if (claimed > MAX_UPLOAD) return fail(t("chat.uploadTooBig"), 413);
 
   // Rate limit: this user's own messages in the last minute, counted in Postgres.
   // Per user rather than per IP — instances here are ephemeral so an in-process
@@ -134,7 +143,7 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user.id)
       .eq("role", "user")
       .gte("created_at", since);
-    if ((count ?? 0) >= RATE_LIMIT) return fail("Terlalu banyak permintaan, tunggu sebentar.", 429);
+    if ((count ?? 0) >= RATE_LIMIT) return fail(t("chat.rateLimited"), 429);
   }
 
   // -- session ---------------------------------------------------------------
@@ -144,7 +153,7 @@ export async function POST(req: NextRequest) {
     // RLS scopes this read to the caller, so "not found" covers both a bad id and
     // somebody else's chat — and says the same thing either way.
     const { data } = await supabase.from("lp_chat_sessions").select("id").eq("id", requested).maybeSingle();
-    if (!data) return fail("Chat tidak ditemukan.", 404);
+    if (!data) return fail(t("chat.notFound"), 404);
     sessionId = requested;
   } else {
     const siteId = await currentSiteId();
@@ -153,7 +162,7 @@ export async function POST(req: NextRequest) {
       .insert({ user_id: user.id, site_id: siteId || null, model: MODEL })
       .select("id")
       .single();
-    if (error || !data) return fail("Gagal membuat chat.", 500);
+    if (error || !data) return fail(t("chat.createFailed"), 500);
     sessionId = data.id;
   }
 
@@ -169,7 +178,7 @@ export async function POST(req: NextRequest) {
     .or(`answering_at.is.null,answering_at.lt.${staleBefore}`)
     .select("id")
     .maybeSingle();
-  if (!locked) return fail("Chat ini sedang menjawab; tunggu sampai selesai.", 409);
+  if (!locked) return fail(t("chat.busy"), 409);
 
   const release = async () => {
     await supabase.from("lp_chat_sessions").update({ answering_at: null }).eq("id", sessionId);
@@ -186,11 +195,12 @@ export async function POST(req: NextRequest) {
       mode,
       retry: !!body.retry,
       release,
+      t,
     });
   } catch (err) {
     await release();
     console.error("[mbahgpt] chat gagal:", err);
-    return fail("Gagal memulai jawaban.", 500);
+    return fail(t("chat.startFailed"), 500);
   }
 }
 
@@ -204,6 +214,7 @@ type Ctx = {
   mode: "auto" | "on" | "off";
   retry: boolean;
   release: () => Promise<void>;
+  t: Translate;
 };
 
 async function runTurn(ctx: Ctx): Promise<Response> {
@@ -232,14 +243,14 @@ async function runTurn(ctx: Ctx): Promise<Response> {
       .insert({ session_id: sessionId, user_id: userId, role: "user", content })
       .select("id")
       .single();
-    if (insertError || !inserted) throw new Error(insertError?.message || "gagal menyimpan pesan");
+    if (insertError || !inserted) throw new Error(insertError?.message || "could not store the message");
 
     if (uploads.length) {
       await supabase.from("lp_chat_attachments").insert(
         uploads.map((file) => ({
           message_id: inserted.id,
           user_id: userId,
-          name: (file.name || "berkas").slice(0, 120),
+          name: (file.name || "file").slice(0, 120),
           mime: (file.mime || "application/octet-stream").split(";")[0].trim().toLowerCase(),
           kind: storageKind(classify(file.name ?? "", file.mime ?? "") ?? "text"),
           size: Math.max(0, Number(file.size) || 0),
@@ -337,7 +348,7 @@ function streamTurn(
   ctx: Ctx,
   turn: { system: string; searching: boolean; resolved: string; captured: number },
 ): Response {
-  const { supabase, userId, sessionId, release } = ctx;
+  const { supabase, userId, sessionId, release, t } = ctx;
 
   // What the reply accumulates to. Held out here so the disconnect path can
   // persist exactly what had arrived.
@@ -411,6 +422,8 @@ function streamTurn(
           } catch (err) {
             // A failed search must not be fatal: answering without the web beats
             // not answering. The chip in the UI says so rather than staying silent.
+            // The client shows its own translated chip; this carries the reason
+            // for anyone reading the network tab.
             write(sse({ web_error: String(err instanceof Error ? err.message : err).slice(0, 200) }));
           }
           write(sse({ sources: state.found, query: turn.resolved }));
@@ -438,7 +451,7 @@ function streamTurn(
         });
 
         const body = upstream.body;
-        if (!body) throw new UpstreamError("OpenRouter tidak mengirim isi jawaban", 502);
+        if (!body) throw new UpstreamError("OpenRouter sent no reply body", 502, "chat.upstreamEmpty");
 
         const reader = body.getReader();
         const decoder = new TextDecoder();
@@ -460,12 +473,17 @@ function streamTurn(
         // was reversed — a two-message chat displayed "1 msg".
         await finalize();
       } catch (err) {
+        // An UpstreamError we wrote carries a key; one built from the provider's
+        // own HTTP body does not, and relaying that verbatim beats replacing it
+        // with a vaguer sentence in the right language.
         const message =
           err instanceof UpstreamError
-            ? err.message.slice(0, 400)
+            ? err.key
+              ? t(err.key, err.vars)
+              : err.message.slice(0, 400)
             : err instanceof Error
               ? err.message
-              : "kesalahan tak terduga";
+              : t("chat.unexpected");
         // The error goes down the stream rather than as a status code: by now the
         // response has already started, and the UI knows how to offer a retry from
         // an in-band error event.
