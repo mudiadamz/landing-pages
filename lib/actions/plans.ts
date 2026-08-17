@@ -11,7 +11,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
-import { effectivePlan, normalizePlan, planLimits, type PlanKey, type PlanLimits } from "@/lib/plans";
+import { effectivePlan, normalizePlan, planLimits, resolvePlanLimits, type PlanKey, type PlanLimits } from "@/lib/plans";
+import { getPlanLimits } from "@/lib/actions/site-settings";
 
 export type MyPlan = {
   plan: PlanKey;
@@ -39,11 +40,10 @@ export async function getMyPlan(): Promise<MyPlan> {
   };
   if (!user) return free;
 
-  const { data } = await supabase
-    .from("lp_profiles")
-    .select("plan, plan_expires_at")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data }, overrides] = await Promise.all([
+    supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
+    getPlanLimits(),
+  ]);
 
   const stored = normalizePlan(data?.plan);
   const plan = effectivePlan(data?.plan, data?.plan_expires_at ?? null);
@@ -51,7 +51,7 @@ export async function getMyPlan(): Promise<MyPlan> {
     plan,
     stored,
     expiresAt: data?.plan_expires_at ?? null,
-    limits: planLimits(plan),
+    limits: resolvePlanLimits(plan, overrides),
     used: await chatMessagesUsed(supabase, user.id),
   };
 }

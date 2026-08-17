@@ -1,8 +1,9 @@
 "use server";
 
+import { getPlanLimits } from "@/lib/actions/site-settings";
 import { t } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import { effectivePlan, planLimits, withinLimit, PLANS } from "@/lib/plans";
+import { effectivePlan, resolvePlanLimits, withinLimit, PLANS } from "@/lib/plans";
 import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
@@ -298,12 +299,13 @@ export async function createLandingPage(
    * already published — taking a live product off sale because a subscription
    * lapsed would punish the buyer, not the seller.
    */
-  const [{ data: profile }, { count }] = await Promise.all([
+  const [{ data: profile }, { count }, overrides] = await Promise.all([
     supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
     supabase.from("lp_landing_pages").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    getPlanLimits(),
   ]);
   const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
-  const { maxProducts } = planLimits(plan);
+  const { maxProducts } = resolvePlanLimits(plan, overrides);
   if (!withinLimit(count ?? 0, maxProducts)) {
     throw new Error(
       t("plan.productLimit", { plan: PLANS[plan].label, limit: maxProducts ?? 0 }, await requestLocale()),

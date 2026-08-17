@@ -159,10 +159,12 @@ GET /api/download/[slug]
   ke model OpenRouter. Tabel `lp_chat_*`, inti di `lib/mbahgpt/`, streaming lewat
   `app/api/mbahgpt/chat`. Mati sendiri (halaman bilang "belum aktif") kalau
   `OPENROUTER_API_KEY` kosong. Detail & batasannya di [`docs/mbahgpt.md`](docs/mbahgpt.md).
-- **Paket pengguna** (Free/Pro/Business/Enterprise): batas ada di `lib/plans.ts`
-  (kode, bukan DB — lihat I12), paket & masa aktif di `lp_profiles.plan` +
+- **Paket pengguna** (Free/Pro/Business/Enterprise): bawaan batasnya di
+  `lib/plans.ts`, bisa ditimpa per-situs di `/panel/plans` (`lp_site_settings` key
+  `plan_limits`) — baca lewat `resolvePlanLimits()`, jangan `PLANS[x].limits`.
+  Paket & masa aktif di `lp_profiles.plan` +
   `plan_expires_at`, harga per bulan per-situs di `lp_site_settings` key
-  `plan_prices` (diedit di `/panel/plans`). Beli di `/upgrade` → `POST
+  `plan_prices` (layar yang sama). Beli di `/upgrade` → `POST
   /api/plans/create-invoice` (order `PL_…` di `lp_plan_orders`) → callback Duitku
   yang sama dengan produk, dibedakan lewat prefix merchantOrderId. Ditegakkan di
   route chat (kuota harian, pencarian web, lampiran, riwayat) dan di

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getPlanPrices } from "@/lib/actions/site-settings";
+import { getPlanLimits, getPlanPrices } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import { effectivePlan } from "@/lib/plans";
+import { effectivePlan, resolveAllPlanLimits } from "@/lib/plans";
 import { UpgradeView } from "./upgrade-view";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,10 +29,14 @@ export default async function UpgradePage({
 }: {
   searchParams: Promise<{ order?: string }>;
 }) {
-  const [supabase, locale, prices, params] = await Promise.all([
+  const [supabase, locale, prices, overrides, params] = await Promise.all([
     createClient(),
     requestLocale(),
     getPlanPrices(),
+    // The limits this storefront actually enforces, not the shipped defaults —
+    // a pricing page that advertises numbers the chat route does not honour is
+    // worse than no pricing page.
+    getPlanLimits(),
     searchParams,
   ]);
   const {
@@ -71,6 +75,7 @@ export default async function UpgradePage({
           plan={plan}
           expiresAt={expiresAt}
           prices={prices}
+          limits={resolveAllPlanLimits(overrides)}
           signedIn={!!user}
           pending={pending}
           locale={locale}

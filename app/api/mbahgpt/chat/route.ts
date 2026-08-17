@@ -24,7 +24,8 @@ import { UpstreamError, parseDelta, streamChat, toSources, type ChatMessage, typ
 import { contextBlock, expandQuery, runSearch, shouldSearch, stripWebPrefix } from "@/lib/mbahgpt/web-search";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import { effectivePlan, planLimits, withinLimit, PLANS, type PlanLimits } from "@/lib/plans";
+import { effectivePlan, resolvePlanLimits, withinLimit, PLANS, type PlanLimits } from "@/lib/plans";
+import { getPlanLimits } from "@/lib/actions/site-settings";
 import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
 
 /**
@@ -122,13 +123,14 @@ export async function POST(req: NextRequest) {
    * Read once, here, and threaded down — not read again inside the stream, where a
    * second lookup could disagree with the one the quota was checked against.
    */
-  const { data: profile } = await supabase
-    .from("lp_profiles")
-    .select("plan, plan_expires_at")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, overrides] = await Promise.all([
+    supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
+    // Per storefront: what Pro is worth is decided by the domain the visitor is
+    // on, because that is whose model bill it lands on.
+    getPlanLimits(),
+  ]);
   const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
-  const limits = planLimits(plan);
+  const limits = resolvePlanLimits(plan, overrides);
 
   // The tighter of the two ceilings. The plan may narrow what the deployment
   // allows; it may never widen it.

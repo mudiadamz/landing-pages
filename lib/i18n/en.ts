@@ -1663,6 +1663,11 @@ export const en: Record<keyof typeof id, string> = {
   "plan.colWeb": "Web search",
   "plan.colPrice": "Price/month",
   "plan.notForSale": "Not on sale",
+  "plan.colFiles": "Attachments/message",
+  "plan.colHistory": "History sent",
+  "plan.unlimitedHint": "Empty = no limit",
+  "plan.limitsNote":
+    "These limits apply to this domain only. The server keeps its own ceilings (OPENROUTER_MAX_FILES and OPENROUTER_MAX_HISTORY) — a bigger number typed here will not get past them.",
   "plan.contactOnly": "By enquiry",
   "plan.yes": "Yes",
   "plan.no": "No",

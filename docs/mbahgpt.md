@@ -114,10 +114,28 @@ paket: **Free / Pro / Business / Enterprise**.
 | Riwayat dikirim | 20 | 40 | 80 | 160 |
 | Produk (marketplace) | 1 | 20 | 100 | ∞ |
 
+Angka di atas adalah **bawaan**, bukan hukumnya. Semuanya — termasuk saklar
+pencarian web — bisa diubah per storefront di `/panel/plans`
+(`lp_site_settings` key `plan_limits`), tanpa deploy. Yang tetap di
+`lib/plans.ts` adalah **defaultnya**, dan itu penting: setting yang belum ada,
+yang rusak formatnya, dan storefront yang belum pernah membuka layar itu semuanya
+jatuh ke sana, jadi aplikasi tidak pernah kehabisan jawaban untuk "orang ini boleh
+kirim berapa pesan".
+
 Yang perlu diketahui sebelum mengubahnya:
 
-- **Batasnya di `lib/plans.ts`, bukan di database** (I12). Kolom `lp_profiles.plan`
-  hanya menyimpan kuncinya, dan kunci tak dikenal dibaca sebagai `free`.
+- **Kunci paketnya tetap kode** (I12): `lp_profiles.plan` cuma menyimpan kuncinya,
+  dan kunci tak dikenal dibaca sebagai `free`. Yang jadi data adalah batasnya,
+  bukan daftar paketnya.
+- **Batas per-situs, paket per-akun.** Pro-nya seseorang berlaku di semua
+  storefront, tapi apa isi Pro ditentukan storefront yang sedang dipakai — karena
+  tagihan modelnya jatuh ke pemilik domain itu.
+- **Semua penegakan lewat `resolvePlanLimits()`**, tidak pernah `PLANS[x].limits`
+  langsung. Pemanggil yang membaca registry mentah akan diam-diam mengabaikan apa
+  yang diketik pemiliknya di panel.
+- **Langit-langit deployment tetap menang.** `OPENROUTER_MAX_FILES` dan
+  `OPENROUTER_MAX_HISTORY` adalah batas server terhadap dirinya sendiri; angka
+  lebih besar di panel tidak melewatinya.
 - **Kuota memakai jendela 24 jam berjalan**, bukan reset tengah malam — tengah
   malam itu pertanyaan zona waktu yang deployment multi-domain ini tidak punya
   jawabannya.

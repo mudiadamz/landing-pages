@@ -1,30 +1,34 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/actions/profiles";
-import { getPlanPrices } from "@/lib/actions/site-settings";
+import { getPlanLimits, getPlanPrices } from "@/lib/actions/site-settings";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import { PlanPricesForm } from "./prices-form";
+import { resolveAllPlanLimits } from "@/lib/plans";
+import { PlansForm } from "./plans-form";
 
 /**
- * What each plan costs on this storefront.
+ * What each plan costs on this storefront, and what it actually allows.
  *
- * Only the PRICE is editable here. The limits beside it are read-only, rendered
- * straight from lib/plans.ts, because they are code: an admin who could raise
- * Free's message quota from a form would be changing what the deployment spends
- * on OpenRouter without a review. Showing them anyway is the point of the screen —
- * a price with no idea what it buys is not a decision anyone can make.
+ * Both halves are editable, and deliberately on ONE screen: a price without the
+ * limits beside it is a number nobody can judge, and a limit without the price is
+ * a cost nobody can weigh. The owner pays the model bill for their own domain, so
+ * the owner sets both — no deploy, no repository access.
+ *
+ * The one thing this screen cannot do is exceed the deployment's own ceilings
+ * (OPENROUTER_MAX_FILES, OPENROUTER_MAX_HISTORY). Those are the server's limits on
+ * itself, and the chat route keeps the tighter of the two.
  */
 export default async function PlansPage() {
   const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
 
-  const prices = await getPlanPrices();
+  const [prices, overrides] = await Promise.all([getPlanPrices(), getPlanLimits()]);
 
   return (
     <div className="space-y-6">
       <PanelPageHeader backHref="/panel" title={t("panel.navPlans")} />
-      <PlanPricesForm initial={prices} />
+      <PlansForm initialPrices={prices} initialLimits={resolveAllPlanLimits(overrides)} />
     </div>
   );
 }

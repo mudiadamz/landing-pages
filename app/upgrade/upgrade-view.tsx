@@ -10,6 +10,7 @@ import {
   isPurchasable,
   type PaidPlanKey,
   type PlanKey,
+  type PlanLimits,
   type PlanPrices,
 } from "@/lib/plans";
 
@@ -24,6 +25,7 @@ export function UpgradeView({
   plan,
   expiresAt,
   prices,
+  limits,
   signedIn,
   pending,
   locale,
@@ -31,6 +33,8 @@ export function UpgradeView({
   plan: PlanKey;
   expiresAt: string | null;
   prices: PlanPrices;
+  /** Resolved per storefront, so the card and the chat route agree. */
+  limits: Record<PlanKey, PlanLimits>;
   signedIn: boolean;
   /** An order came back from Duitku and the callback has not landed yet. */
   pending: boolean;
@@ -91,6 +95,7 @@ export function UpgradeView({
           const isCurrent = def.key === plan;
           const price = def.key === "free" ? 0 : prices[def.key as PaidPlanKey];
           const canBuy = isPurchasable(def.key, prices) && !isCurrent;
+          const l = limits[def.key];
 
           return (
             <div
@@ -117,13 +122,13 @@ export function UpgradeView({
 
               <ul className="mt-3 flex-1 space-y-1 text-xs text-[var(--muted)]">
                 <li>
-                  {t("plan.colMessages")}: {def.limits.chatMessagesPerDay ?? "∞"}
+                  {t("plan.colMessages")}: {l.chatMessagesPerDay ?? "∞"}
                 </li>
                 <li>
-                  {t("plan.colWeb")}: {def.limits.chatWebSearch ? t("plan.yes") : t("plan.no")}
+                  {t("plan.colWeb")}: {l.chatWebSearch ? t("plan.yes") : t("plan.no")}
                 </li>
                 <li>
-                  {t("plan.colProducts")}: {def.limits.maxProducts ?? "∞"}
+                  {t("plan.colProducts")}: {l.maxProducts ?? "∞"}
                 </li>
               </ul>
 

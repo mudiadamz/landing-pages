@@ -1,17 +1,26 @@
-/* User plans and what each one is allowed to do.
+/* User plans: the keys, the DEFAULTS, and how a storefront overrides them.
  *
- * The registry is the authority; `lp_profiles.plan` only stores the key, and an
- * unknown one reads as `free` (invariant I12). So changing what Pro includes is
- * this file plus a review — no migration, and no storefront left broken by a plan
- * that was renamed.
+ * `lp_profiles.plan` stores only the key, and an unknown one reads as `free`
+ * (invariant I12) — that part has not changed and should not.
+ *
+ * What the numbers below are is DEFAULTS, not the law. Both the price and the
+ * limits are editable per storefront at /panel/plans (lp_site_settings
+ * `plan_prices` and `plan_limits`), because the person paying the OpenRouter bill
+ * is the person who should be able to decide what Free costs them — without a
+ * deploy, and without asking whoever holds the repository.
+ *
+ * They stay here as the fallback, and that is load-bearing: an absent setting, a
+ * malformed one, and a storefront that has never opened the screen all resolve to
+ * these, so the app is never left without an answer to "how many messages may
+ * this person send".
+ *
+ * The deployment's own ceilings (OPENROUTER_MAX_FILES, OPENROUTER_MAX_HISTORY)
+ * still win over anything typed into the panel: a plan may narrow what the server
+ * is willing to spend, never widen it. That comparison lives in the chat route.
  *
  * Framework-free on purpose, like lib/features.ts: the chat route, the panel, a
  * client component and the pricing page all need these numbers, and anything
- * imported here would be pulled into all four.
- *
- * PRICES ARE NOT HERE. They are per-storefront and editable at /panel/plans (see
- * lp_site_settings `plan_prices`) — a limit is a product decision, a price is a
- * business one, and they change on completely different clocks. */
+ * imported here would be pulled into all four. */
 
 export const PLAN_KEYS = ["free", "pro", "business", "enterprise"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
@@ -61,9 +70,11 @@ export type PlanDef = {
 };
 
 /**
- * The chat numbers below were agreed on 2026-08-18. The PRODUCT numbers are a
- * starting proposal from the same session and have not been through the same
- * conversation — change `maxProducts` before this matters to a real seller.
+ * The shipped defaults. A storefront that has never opened /panel/plans runs on
+ * exactly these.
+ *
+ * The chat numbers were agreed on 2026-08-18; the product numbers are a proposal
+ * from the same session that has not been through the same conversation.
  */
 export const PLANS: Record<PlanKey, PlanDef> = {
   free: {
@@ -145,6 +156,7 @@ export function effectivePlan(raw: unknown, expiresAt: string | null | undefined
   return ends > now ? plan : DEFAULT_PLAN;
 }
 
+/** The shipped default for a plan, before any storefront override. */
 export function planLimits(plan: PlanKey): PlanLimits {
   return PLANS[plan].limits;
 }
@@ -206,4 +218,78 @@ export function isPurchasable(plan: PlanKey, prices: PlanPrices): boolean {
 /** Rupiah, the way the rest of the site writes it. */
 export function formatRupiah(amount: number): string {
   return `Rp${amount.toLocaleString("id-ID")}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Per-storefront limits                                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What a storefront has changed about its plans, as stored in lp_site_settings
+ * `plan_limits`.
+ *
+ * A partial map on purpose: only what was actually edited is written, so a plan
+ * the owner never touched keeps following the shipped default even when that
+ * default later changes. Storing a full copy would freeze today's numbers into
+ * every site the first time somebody opened the screen.
+ */
+export type PlanLimitsOverrides = Partial<Record<PlanKey, Partial<PlanLimits>>>;
+
+/** Whole numbers only, and never negative. `null` is a deliberate "no ceiling". */
+function limitNumber(value: unknown, fallback: number | Unlimited): number | Unlimited {
+  if (value === null) return null;
+  if (value === undefined || value === "") return fallback;
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return n;
+}
+
+/** A fixed number: used where "unlimited" makes no sense (files, history depth). */
+function limitFixed(value: unknown, fallback: number, max: number): number {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return Math.min(n, max);
+}
+
+/** Sanity ceilings on what the panel may store — not the deployment's own caps. */
+const MAX_FILES_SETTING = 20;
+const MAX_HISTORY_SETTING = 400;
+
+export function normalizePlanLimitsOverrides(raw: unknown): PlanLimitsOverrides {
+  const v = (raw ?? {}) as Record<string, unknown>;
+  const out: PlanLimitsOverrides = {};
+
+  for (const key of PLAN_KEYS) {
+    const entry = v[key];
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as Record<string, unknown>;
+    const base = PLANS[key].limits;
+    out[key] = {
+      chatMessagesPerDay: limitNumber(e.chatMessagesPerDay, base.chatMessagesPerDay),
+      chatWebSearch:
+        typeof e.chatWebSearch === "boolean" ? e.chatWebSearch : base.chatWebSearch,
+      chatMaxFiles: limitFixed(e.chatMaxFiles, base.chatMaxFiles, MAX_FILES_SETTING),
+      chatHistory: limitFixed(e.chatHistory, base.chatHistory, MAX_HISTORY_SETTING),
+      maxProducts: limitNumber(e.maxProducts, base.maxProducts),
+    };
+  }
+  return out;
+}
+
+/**
+ * The limits actually in force for a plan on one storefront.
+ *
+ * Every enforcement point calls THIS, never `PLANS[x].limits` directly — the
+ * registry is the fallback, not the answer, and a caller that reads it straight
+ * would quietly ignore what the owner typed into the panel.
+ */
+export function resolvePlanLimits(plan: PlanKey, overrides: PlanLimitsOverrides): PlanLimits {
+  return { ...PLANS[plan].limits, ...(overrides[plan] ?? {}) };
+}
+
+/** All four plans resolved at once, for the pricing table and the panel form. */
+export function resolveAllPlanLimits(overrides: PlanLimitsOverrides): Record<PlanKey, PlanLimits> {
+  return Object.fromEntries(
+    PLAN_KEYS.map((key) => [key, resolvePlanLimits(key, overrides)]),
+  ) as Record<PlanKey, PlanLimits>;
 }

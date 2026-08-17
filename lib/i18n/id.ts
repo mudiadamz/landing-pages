@@ -1653,6 +1653,11 @@ export const id = {
   "plan.colWeb": "Pencarian web",
   "plan.colPrice": "Harga/bulan",
   "plan.notForSale": "Belum dijual",
+  "plan.colFiles": "Lampiran/pesan",
+  "plan.colHistory": "Riwayat dikirim",
+  "plan.unlimitedHint": "Kosongkan = tanpa batas",
+  "plan.limitsNote":
+    "Batas ini berlaku untuk domain ini saja. Server tetap punya langit-langitnya sendiri (OPENROUTER_MAX_FILES dan OPENROUTER_MAX_HISTORY) — mengisi angka yang lebih besar di sini tidak akan melewatinya.",
   "plan.contactOnly": "Lewat kontak",
   "plan.yes": "Ya",
   "plan.no": "Tidak",

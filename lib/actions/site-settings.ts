@@ -12,7 +12,13 @@ import { DEFAULT_LEGAL, normalizeLegal, type LegalContent } from "@/lib/legal-co
 import { DEFAULT_HIRING, normalizeHiring, type HiringContent } from "@/lib/hiring-config";
 import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
 import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
-import { DEFAULT_PLAN_PRICES, normalizePlanPrices, type PlanPrices } from "@/lib/plans";
+import {
+  DEFAULT_PLAN_PRICES,
+  normalizePlanPrices,
+  normalizePlanLimitsOverrides,
+  type PlanLimitsOverrides,
+  type PlanPrices,
+} from "@/lib/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   DEFAULT_POPUP,
@@ -35,6 +41,7 @@ const PALETTE_KEY = "panel_palette";
 const OTHER_LINKS_KEY = "other_links";
 const SOCIAL_KEY = "social_links";
 const PLAN_PRICES_KEY = "plan_prices";
+const PLAN_LIMITS_KEY = "plan_limits";
 
 /* Role-based feature access (edited at /panel/roles). The cached reader lives in
  * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
@@ -891,6 +898,79 @@ export async function updatePlanPrices(
     return { ok: false, error: "Gagal menyimpan." };
   }
   revalidateTag("plan-prices", "max");
+  revalidatePath("/upgrade");
+  return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Plan limits                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What this storefront has changed about its plans' limits.
+ *
+ * Per-site like the price, and for the same reason: the owner pays the model bill
+ * for the visitors on THEIR domain. A visitor's plan is global (one account, one
+ * plan) but what that plan is worth is decided by the storefront they are using —
+ * so somebody's Pro can include web search on one domain and not on another, and
+ * both storefronts are telling the truth about their own costs.
+ *
+ * An empty object is the normal state: unedited plans follow lib/plans.ts, so a
+ * later change to the shipped defaults still reaches every site that never
+ * overrode them.
+ */
+const readPlanLimits = unstable_cache(
+  async (siteId: string): Promise<PlanLimitsOverrides> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", PLAN_LIMITS_KEY)
+        .maybeSingle();
+      if (!data?.value) return {};
+      return normalizePlanLimitsOverrides(JSON.parse(data.value as string));
+    } catch {
+      // The shipped defaults, not an open door: a failed read must not hand
+      // anybody a bigger quota than the plan they are on.
+      return {};
+    }
+  },
+  ["plan-limits"],
+  { revalidate: 120, tags: ["plan-limits"] },
+);
+
+export async function getPlanLimits(siteId?: string): Promise<PlanLimitsOverrides> {
+  return readPlanLimits(siteId ?? (await currentSiteId()));
+}
+
+export async function updatePlanLimits(
+  overrides: PlanLimitsOverrides,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizePlanLimitsOverrides(overrides);
+  const supabase = await createClient();
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: PLAN_LIMITS_KEY,
+      value: JSON.stringify(clean),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
+
+  if (error) {
+    console.error("updatePlanLimits error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  revalidateTag("plan-limits", "max");
   revalidatePath("/upgrade");
   return { ok: true };
 }
