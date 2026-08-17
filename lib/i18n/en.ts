@@ -923,6 +923,43 @@ export const en: Record<keyof typeof id, string> = {
   "panel.kycMissing": "No {label} (older application)",
   "panel.openFullSize": "Open {label} full size",
 
+  "panel.iconShield": "Shield (guarantee)",
+  "panel.iconQr": "QR / payment",
+  "panel.iconInfinity": "Unlimited",
+  "panel.iconUser": "Person",
+  "panel.iconStar": "Star",
+  "panel.iconDownload": "Download",
+  "panel.iconClock": "Clock",
+  "panel.iconCheck": "Tick",
+  "panel.heroPreviewAlt": "Hero preview",
+  "panel.uploading": "Uploading…",
+  "panel.uploadImage": "Upload image",
+  "panel.uploadFailed": "Upload failed.",
+  "panel.changePhoto": "Change profile photo",
+  "panel.addPhoto": "Add a profile photo",
+  "panel.photoIntro": "Shown in the panel sidebar and on this page.",
+  "panel.photoSet": "Photo set",
+  "panel.noPhoto": "No photo yet",
+  "panel.photoHint":
+    "Square works best. PNG · WebP · JPEG, max 512 KB. Without a photo, your initial is used.",
+
+  "panel.text": "Text",
+  "panel.popupUploaded": "Uploaded — {width}×{height}px. Remember to Save.",
+  "panel.popupImageHint":
+    "Optional — without an image the popup uses the built-in rain + flowers illustration (zero requests). If you do set one: real WebP, {max} KB max.",
+  "panel.imageReady": "Image ready",
+  "panel.popupEmailNoteBefore": "Addresses are stored in",
+  "panel.popupEmailNoteAfter": "Turned off, the button uses the “Target link” above.",
+
+  "product.errSlugFormat": "A slug may only contain lowercase letters, numbers and hyphens.",
+  "product.errCreateFailed": "Could not create the product.",
+  "product.slugLabel": "Slug (URL)",
+  "product.slugAuto": "from the title",
+  "product.slugPlaceholder": "product-title",
+  "product.slugHint": "Filled in from the title — you can edit it. Product address:",
+  "product.changeableNextStep": "You can change this in the next step.",
+  "product.createAndContinue": "Create & continue to step 2",
+
   /* ---- panel: categories ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

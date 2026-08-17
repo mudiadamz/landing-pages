@@ -913,6 +913,43 @@ export const id = {
   "panel.kycMissing": "{label} tidak ada (pengajuan lama)",
   "panel.openFullSize": "Buka {label} ukuran penuh",
 
+  "panel.iconShield": "Perisai (garansi)",
+  "panel.iconQr": "QR / pembayaran",
+  "panel.iconInfinity": "Tak terbatas",
+  "panel.iconUser": "Orang",
+  "panel.iconStar": "Bintang",
+  "panel.iconDownload": "Unduh",
+  "panel.iconClock": "Jam",
+  "panel.iconCheck": "Centang",
+  "panel.heroPreviewAlt": "Preview hero",
+  "panel.uploading": "Mengunggah…",
+  "panel.uploadImage": "Unggah gambar",
+  "panel.uploadFailed": "Gagal mengunggah.",
+  "panel.changePhoto": "Ganti foto profil",
+  "panel.addPhoto": "Tambah foto profil",
+  "panel.photoIntro": "Muncul di sidebar panel dan di halaman ini.",
+  "panel.photoSet": "Foto terpasang",
+  "panel.noPhoto": "Belum ada foto",
+  "panel.photoHint":
+    "Persegi paling bagus. PNG · WebP · JPEG, maks 512 KB. Tanpa foto, inisial nama yang dipakai.",
+
+  "panel.text": "Teks",
+  "panel.popupUploaded": "Terunggah — {width}×{height}px. Jangan lupa Simpan.",
+  "panel.popupImageHint":
+    "Opsional — tanpa gambar, popup memakai ilustrasi hujan + bunga bawaan (nol request). Kalau diisi: wajib WebP asli, maksimal {max} KB.",
+  "panel.imageReady": "Gambar siap",
+  "panel.popupEmailNoteBefore": "Alamat disimpan di",
+  "panel.popupEmailNoteAfter": "Kalau dimatikan, tombol memakai “Link tujuan” di atas.",
+
+  "product.errSlugFormat": "Slug hanya boleh huruf kecil, angka, dan tanda hubung.",
+  "product.errCreateFailed": "Gagal membuat produk.",
+  "product.slugLabel": "Slug (URL)",
+  "product.slugAuto": "otomatis dari judul",
+  "product.slugPlaceholder": "judul-produk",
+  "product.slugHint": "Terisi sendiri dari judul — boleh diubah manual. Alamat produk:",
+  "product.changeableNextStep": "Bisa diubah nanti di langkah berikutnya.",
+  "product.createAndContinue": "Buat & lanjut ke langkah 2",
+
   /* ---- panel: kategori ---- */
   "panel.slug": "Slug",
   "panel.icon": "Icon",

@@ -48,11 +48,11 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
     const finalSlug = (effectiveSlug || "").trim().toLowerCase();
 
     if (!trimmedTitle) {
-      setError("Judul tidak boleh kosong.");
+      setError(t("product.errTitleEmpty"));
       return;
     }
     if (!isValidSlug(finalSlug)) {
-      setError("Slug hanya boleh huruf kecil, angka, dan tanda hubung.");
+      setError(t("product.errSlugFormat"));
       return;
     }
 
@@ -62,7 +62,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
       router.push(`/panel/product/${id}/edit`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal membuat produk.");
+      setError(err instanceof Error ? err.message : t("product.errCreateFailed"));
       setLoading(false);
     }
   }
@@ -92,17 +92,17 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
       <div>
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <label htmlFor="slug" className="block text-sm font-medium text-foreground">
-            Slug (URL)
+            {t("product.slugLabel")}
           </label>
           <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--primary)]">
-            otomatis dari judul
+            {t("product.slugAuto")}
           </span>
         </div>
         <input
           id="slug"
           name="slug"
           type="text"
-          placeholder="judul-produk"
+          placeholder={t("product.slugPlaceholder")}
           value={effectiveSlug}
           onChange={(e) => {
             setSlugEdited(true);
@@ -111,13 +111,13 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
           className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground font-mono text-base sm:text-sm focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Terisi sendiri dari judul — boleh diubah manual. Alamat produk:{" "}
+          {t("product.slugHint")}{" "}
           <span className="font-mono text-foreground">/preview/{effectiveSlug || "…"}</span>
         </p>
       </div>
       <div>
         <label htmlFor="category" className="block text-sm font-medium text-foreground mb-1.5">
-          Kategori <span className="text-[var(--muted)] font-normal">{t("panel.optional")}</span>
+          {t("panel.navCategories")} <span className="text-[var(--muted)] font-normal">{t("panel.optional")}</span>
         </label>
         <select
           id="category"
@@ -139,7 +139,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
               }
               return (
                 <optgroup key={parent.id} label={parent.name}>
-                  <option value={parent.id}>{parent.name} — semua</option>
+                  <option value={parent.id}>{t("product.categoryAllOf", { name: parent.name })}</option>
                   {children.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -150,7 +150,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
             })}
         </select>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Bisa diubah nanti di langkah berikutnya.
+          {t("product.changeableNextStep")}
         </p>
       </div>
       <Button
@@ -167,7 +167,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
           ) : undefined
         }
       >
-        {loading ? "Membuat…" : "Buat & lanjut ke langkah 2"}
+        {loading ? t("panel.creating") : t("product.createAndContinue")}
       </Button>
     </form>
   );

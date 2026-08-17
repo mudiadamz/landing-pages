@@ -70,7 +70,7 @@ export function AvatarForm({
       // The sidebar card renders the same picture from a server component.
       router.refresh();
     } else {
-      setError(res.error ?? "Gagal mengunggah.");
+      setError(res.error ?? t("panel.uploadFailed"));
     }
   }
 
@@ -84,7 +84,7 @@ export function AvatarForm({
       setMeta(null);
       router.refresh();
     } else {
-      setError(res.error ?? "Gagal menghapus.");
+      setError(res.error ?? t("common.deleteFailed"));
     }
   }
 
@@ -106,8 +106,8 @@ export function AvatarForm({
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={url ? "Ganti foto profil" : "Tambah foto profil"}
-        title={url ? "Ganti foto profil" : "Tambah foto profil"}
+        aria-label={url ? t("panel.changePhoto") : t("panel.addPhoto")}
+        title={url ? t("panel.changePhoto") : t("panel.addPhoto")}
         className="group relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-subtle)] text-2xl font-semibold uppercase text-[var(--primary)] transition-transform duration-150 hover:scale-[1.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] active:scale-[0.98]"
       >
         {picture}
@@ -139,7 +139,7 @@ export function AvatarForm({
                 <div>
                   <h2 className="text-base font-semibold text-foreground">{t("panel.profilePhoto")}</h2>
                   <p className="mt-0.5 text-sm text-[var(--muted)]">
-                    Muncul di sidebar panel dan di halaman ini.
+                    {t("panel.photoIntro")}
                   </p>
                 </div>
                 <button
@@ -168,8 +168,8 @@ export function AvatarForm({
                 meta={meta}
                 uploading={uploading}
                 error={error}
-                statusText={url ? "Foto terpasang" : "Belum ada foto"}
-                hint="Persegi paling bagus. PNG · WebP · JPEG, maks 512 KB. Tanpa foto, inisial nama yang dipakai."
+                statusText={url ? t("panel.photoSet") : t("panel.noPhoto")}
+                hint={t("panel.photoHint")}
                 preview={
                   <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-subtle)] text-2xl font-semibold uppercase text-[var(--primary)]">
                     {picture}

@@ -40,9 +40,12 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
           height: res.height ?? 0,
         }));
         setMeta({ name: file.name, size: file.size });
-        setMsg({ ok: true, text: `Terunggah — ${res.width}×${res.height}px. Jangan lupa Simpan.` });
+        setMsg({
+          ok: true,
+          text: t("panel.popupUploaded", { width: res.width ?? 0, height: res.height ?? 0 }),
+        });
       } else {
-        setUploadError(res.error ?? "Gagal mengunggah.");
+        setUploadError(res.error ?? t("panel.uploadFailed"));
       }
     } finally {
       setUploading(false);
@@ -56,8 +59,8 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
       const res = await updatePopupBanner(cfg, siteId);
       setMsg(
         res.ok
-          ? { ok: true, text: "Tersimpan." }
-          : { ok: false, text: res.error ?? "Gagal menyimpan." },
+          ? { ok: true, text: t("common.saved") }
+          : { ok: false, text: res.error ?? t("common.failed") },
       );
     });
   }
@@ -81,7 +84,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
 
       <FileUploadCard
         label={t("panel.popupImage")}
-        hint={`Opsional — tanpa gambar, popup memakai ilustrasi hujan + bunga bawaan (nol request). Kalau diisi: wajib WebP asli, maksimal ${Math.round(POPUP_MAX_BYTES / 1024)} KB.`}
+        hint={t("panel.popupImageHint", { max: Math.round(POPUP_MAX_BYTES / 1024) })}
         accept="image/webp"
         badge="WEBP"
         badgeClass="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
@@ -89,7 +92,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
         meta={meta}
         uploading={uploading}
         error={uploadError}
-        statusText={cfg.width ? `${cfg.width}×${cfg.height} px` : "Gambar siap"}
+        statusText={cfg.width ? `${cfg.width}×${cfg.height} px` : t("panel.imageReady")}
         preview={
           cfg.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -176,14 +179,14 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
               onChange={(e) => set("eyebrow", e.target.value)} />
           </label>
           <label className="block">
-            <span className="text-xs text-[var(--muted)]">Judul</span>
+            <span className="text-xs text-[var(--muted)]">{t("panel.title")}</span>
             <input className={`mt-1 ${input}`} value={cfg.title}
               onChange={(e) => set("title", e.target.value)} />
           </label>
         </div>
 
         <label className="block">
-          <span className="text-xs text-[var(--muted)]">Teks</span>
+          <span className="text-xs text-[var(--muted)]">{t("panel.text")}</span>
           <textarea rows={3} className={`mt-1 resize-y ${input}`} value={cfg.body}
             onChange={(e) => set("body", e.target.value)} />
         </label>
@@ -195,8 +198,8 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
           <span className="text-sm">
             <span className="font-medium text-foreground">{t("panel.popupAskEmail")}</span>
             <span className="mt-0.5 block text-xs text-[var(--muted)]">
-              Alamat disimpan di <code>lp_promo_subscribers</code>. Kalau dimatikan, tombol
-              memakai &quot;Link tujuan&quot; di atas.
+              {t("panel.popupEmailNoteBefore")} <code>lp_promo_subscribers</code>{" "}
+              {t("panel.popupEmailNoteAfter")}
             </span>
           </span>
         </label>
@@ -242,7 +245,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
           disabled={pending}
           className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Menyimpan…" : "Simpan"}
+          {pending ? t("common.saving") : t("common.save")}
         </button>
         {msg && (
           <span className={`text-sm ${msg.ok ? "text-emerald-600" : "text-red-600"}`}>

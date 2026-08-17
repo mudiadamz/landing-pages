@@ -7,16 +7,17 @@ import { uploadLibraryAsset } from "@/lib/actions/assets";
 import { updateHero } from "@/lib/actions/site-settings";
 import { DEFAULT_HERO, type HeroConfig, type HeroFeature, type HeroIcon } from "@/lib/hero-config";
 import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n";
 
-const ICON_OPTIONS: { value: HeroIcon; label: string }[] = [
-  { value: "shield", label: "Perisai (garansi)" },
-  { value: "qr", label: "QR / pembayaran" },
-  { value: "infinity", label: "Tak terbatas" },
-  { value: "user", label: "Orang" },
-  { value: "star", label: "Bintang" },
-  { value: "download", label: "Unduh" },
-  { value: "clock", label: "Jam" },
-  { value: "check", label: "Centang" },
+const ICON_OPTIONS: { value: HeroIcon; labelKey: MessageKey }[] = [
+  { value: "shield", labelKey: "panel.iconShield" },
+  { value: "qr", labelKey: "panel.iconQr" },
+  { value: "infinity", labelKey: "panel.iconInfinity" },
+  { value: "user", labelKey: "panel.iconUser" },
+  { value: "star", labelKey: "panel.iconStar" },
+  { value: "download", labelKey: "panel.iconDownload" },
+  { value: "clock", labelKey: "panel.iconClock" },
+  { value: "check", labelKey: "panel.iconCheck" },
 ];
 
 const labelCls = "block text-xs font-medium text-[var(--muted)] mb-1.5";
@@ -136,7 +137,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
               >
                 {ICON_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.label}
+                    {t(o.labelKey)}
                   </option>
                 ))}
               </select>
@@ -154,7 +155,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
           <div className="w-40 h-28 rounded-lg border border-[var(--border)] bg-[var(--background)] flex items-center justify-center overflow-hidden shrink-0">
             {hero.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={hero.imageUrl} alt="Preview hero" className="w-full h-full object-contain" />
+              <img src={hero.imageUrl} alt={t("panel.heroPreviewAlt")} className="w-full h-full object-contain" />
             ) : (
               <span className="text-xs text-[var(--muted)] px-2 text-center">{t("panel.heroDefaultMockup")}</span>
             )}
@@ -169,7 +170,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
             <div className="flex items-center gap-3">
               <label className="inline-flex items-center gap-2 text-sm text-[var(--primary)] cursor-pointer hover:opacity-80">
                 <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-                {uploading ? "Mengunggah…" : "Unggah gambar"}
+                {uploading ? t("panel.uploading") : t("panel.uploadImage")}
               </label>
               {hero.imageUrl && (
                 <button type="button" className="text-sm text-red-600 hover:opacity-80" onClick={() => set("imageUrl", "")}>
@@ -184,7 +185,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
       {/* Actions */}
       <div className="flex items-center gap-3 pt-2 border-t border-[var(--border)]">
         <Button size="md" onClick={handleSave} loading={pending} disabled={pending || uploading}>
-          {pending ? "Menyimpan…" : "Simpan"}
+          {pending ? t("common.saving") : t("common.save")}
         </Button>
         <button
           type="button"
@@ -200,7 +201,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
           {t("content.viewHomepage")}
         </Link>
         {status?.error && <span className="text-sm text-red-600">{status.error}</span>}
-        {status?.ok && <span className="text-sm text-green-600">Tersimpan.</span>}
+        {status?.ok && <span className="text-sm text-green-600">{t("common.saved")}</span>}
       </div>
     </div>
   );
