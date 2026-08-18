@@ -31,7 +31,7 @@ lib/templates/mbahgpt/           frontend (port index.html)
   transcript.tsx  gelembung pesan, panel "Berpikir", sumber, lampiran
   composer.tsx    kotak ketik + lampiran + tombol kirim/stop
   session-list.tsx  daftar sesi + menu ⋮ (ubah judul / hapus)
-  prefs-dialog.tsx  akun, tampilan & bahasa, instruksi jawaban, memori
+  prefs-dialog.tsx  4 tab: akun, tampilan & bahasa, instruksi jawaban, memori
   markdown.tsx    renderer keluaran model (tanpa HTML mentah)
   copy-button.tsx tombol salin (kode & jawaban)
   upload.ts       unggah lampiran langsung ke Storage
