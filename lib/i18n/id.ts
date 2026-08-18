@@ -1670,7 +1670,7 @@ export const id = {
   "chat.closeList": "Tutup daftar chat",
   "chat.signInToSave": "Masuk untuk menyimpan riwayat chat.",
   "chat.inactiveHere": "Chat belum aktif di situs ini.",
-  "chat.prefs": "Preferensi & memori",
+  "chat.prefs": "Preferensi",
 
   /* akun & tampilan, di dalam dialog yang sama — halaman depan tema ini tidak
      punya header maupun footer untuk menaruhnya */
@@ -1751,10 +1751,12 @@ export const id = {
   "chat.deleteChat": "Hapus chat",
 
   /* preferensi & memori */
-  "chat.instructions": "Instruksi jawaban",
+  // Label tab, bukan judul seksi: barisnya harus muat di layar HP.
+  "chat.tabInstructions": "Instruksi",
   "chat.instructionsPlaceholder": "mis. Jawab ringkas. Utamakan poin. Selalu sertakan satuan.",
   "chat.instructionsNote": "Dikirim sebagai system message pada setiap permintaan, di semua chat.",
   "chat.memory": "Memori",
+  "chat.memoryHow": "Cara kerja memori",
   "chat.memoryPlaceholder": "Tambahkan hal yang perlu diingat…",
   "chat.memoryNote":
     "Tersimpan otomatis kalau pesan dibuka dengan “remember…”, “note to self…”, “keep in mind…”, “don’t forget…”, atau “for future reference…”. Memori yang dipin selalu disertakan; sisanya dipilih berdasarkan kemiripan kata — jadi pin fakta yang harus selalu berlaku.",

@@ -3,25 +3,25 @@
 /**
  * Everything about this chat that is not the conversation.
  *
- * Four things, one tab each: who they are signed in as, how the page looks and
- * speaks, the standing instructions every answer obeys, and the facts the model
- * is told to remember.
+ * Three things, one tab each: the account and the two page-level switches that
+ * belong to it, the standing instructions every answer obeys, and the facts the
+ * model is told to remember.
  *
- * They used to be four blocks on ONE scroll, which is how they were written and
- * why they became unreadable. The memory list is the only part that grows, and it
- * grew underneath everything else — so the settings a visitor came for kept
- * sliding further off the bottom the longer they used the chat. The account row
- * had the matching problem across: avatar, name, address, plan, quota, a profile
- * link and a sign-out button in ONE `flex` line with no wrap, which on a phone
- * left the name a few truncated letters. Tabs give each of the four the width and
- * the vertical room it actually needs, and the list can grow without pushing
- * anything.
+ * They were once four blocks on ONE scroll, which is why they became unreadable:
+ * the memory list is the only part that grows, and it grew underneath everything
+ * else, so the settings a visitor came for kept sliding off the bottom the longer
+ * they used the chat. Tabs fixed that. Four tabs then over-corrected — "Tampilan
+ * & bahasa" and "Instruksi jawaban" are section headings, and as tab labels they
+ * pushed the bar into a horizontal scroll on a phone, for two tabs holding two
+ * rows between them. Language and theme now sit under Account, which is where a
+ * visitor already goes to change something about themselves, and every tab label
+ * is one word.
  *
  * Account and appearance live HERE rather than in the chrome because this theme
  * has no chrome to put them in: the homepage renders no header and no footer, so
  * a control that is not in this dialog is a control the visitor cannot reach.
  * That is also why the dialog opens for signed-out visitors — with only the
- * appearance block, which is the part that does not need an account, and no tab
+ * appearance rows, which are the part that does not need an account, and no tab
  * bar, because one tab is not a choice.
  *
  * The legal links sit OUTSIDE the tabs, in a footer that every tab keeps on
@@ -66,7 +66,7 @@ export function PrefsDialog({
   onClose,
 }: {
   open: boolean;
-  /** Null for a signed-out visitor: they get the appearance block and nothing else. */
+  /** Null for a signed-out visitor: they get the appearance rows and nothing else. */
   account: ChatAccount | null;
   onClose: () => void;
 }) {
@@ -74,11 +74,10 @@ export function PrefsDialog({
   return <PrefsPanel account={account} onClose={onClose} />;
 }
 
-type Tab = "account" | "appearance" | "instructions" | "memory";
+type Tab = "account" | "instructions" | "memory";
 
 function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose: () => void }) {
   const t = useT();
-  const locale = useLocale();
   const signedIn = !!account;
   const [instructions, setInstructions] = useState("");
   const [memories, setMemories] = useState<ChatMemoryRow[]>([]);
@@ -121,8 +120,8 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
   }, [onClose]);
 
   // The heading names what the dialog actually holds: a signed-out visitor sees
-  // the appearance block alone, and calling that "Preferences & memory" would
-  // promise two sections that are not there.
+  // the appearance rows alone, and calling that "Preferences" would promise
+  // settings that are not there.
   const heading = signedIn ? t("chat.prefs") : t("chat.appearance");
 
   const flash = (message: string) => {
@@ -136,10 +135,11 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
     setNewMemory("");
   };
 
+  // One word each. These are labels on a bar that has to fit a phone, not
+  // headings — the section headings they replaced are what made the bar scroll.
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "account", label: t("chat.account") },
-    { key: "appearance", label: t("chat.appearance") },
-    { key: "instructions", label: t("chat.instructions") },
+    { key: "instructions", label: t("chat.tabInstructions") },
     { key: "memory", label: t("chat.memory"), count: memories.length },
   ];
 
@@ -159,12 +159,15 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
       >
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
           <h2 className="m-0 text-sm font-semibold">{heading}</h2>
+          {/* The glyph, not the word: "Tutup" is the widest thing in this row and
+              it says what every dialog's top-right corner already says. */}
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-2 py-1 text-sm text-[var(--muted)] transition-colors hover:text-foreground"
+            aria-label={t("common.close")}
+            className="-mr-1.5 rounded-lg px-2 py-0.5 text-xl leading-none text-[var(--muted)] transition-colors hover:text-foreground"
           >
-            {t("common.close")}
+            ×
           </button>
         </div>
 
@@ -172,7 +175,7 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
           <div
             role="tablist"
             aria-label={heading}
-            className="flex gap-1 overflow-x-auto border-b border-[var(--border)] px-3"
+            className="flex gap-1 border-b border-[var(--border)] px-3"
           >
             {tabs.map(({ key, label, count }) => {
               const active = key === tab;
@@ -195,7 +198,7 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
                     // ring behind on a tab that is no longer the open one.
                     document.getElementById(`prefs-tab-${next.key}`)?.focus();
                   }}
-                  className={`-mb-px shrink-0 border-b-2 px-2.5 py-2.5 text-sm whitespace-nowrap transition-colors ${
+                  className={`-mb-px border-b-2 px-2.5 py-2.5 text-sm whitespace-nowrap transition-colors ${
                     active
                       ? "border-[var(--primary)] text-foreground"
                       : "border-transparent text-[var(--muted)] hover:text-foreground"
@@ -231,8 +234,6 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
               </>
             ) : tab === "account" ? (
               <Account account={account} />
-            ) : tab === "appearance" ? (
-              <Appearance />
             ) : tab === "instructions" ? (
               <>
                 <textarea
@@ -242,7 +243,7 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
                   placeholder={t("chat.instructionsPlaceholder")}
                   className="min-h-40 w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]"
                 />
-                <div className="mt-2.5 flex items-center gap-2">
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                   <button
                     type="button"
                     onClick={async () => {
@@ -253,9 +254,17 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
                   >
                     {t("common.save")}
                   </button>
-                  <span className="text-xs text-[var(--muted)]">{status}</span>
+                  {/* One slot, two jobs. What this box is for is worth saying once,
+                      and the answer to "did that save" belongs where the eye already
+                      is — beside the button just pressed. Two separate lines meant a
+                      permanently empty one, waiting on a click that lasts 2s. */}
+                  <span
+                    aria-live="polite"
+                    className={`text-xs ${status ? "text-foreground" : "text-[var(--muted)]"}`}
+                  >
+                    {status || t("chat.instructionsNote")}
+                  </span>
                 </div>
-                <p className="mt-3 text-xs text-[var(--muted)]">{t("chat.instructionsNote")}</p>
               </>
             ) : (
               <>
@@ -279,54 +288,25 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
                     {t("common.add")}
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-[var(--muted)]">{t("chat.memoryNote")}</p>
+
+                {/* Folded, not deleted. The paragraph explains the two things about
+                    this list nobody can infer — that a message opening with
+                    "remember…" writes to it by itself, and what pinning buys — but
+                    it is four lines of prose above the list it describes, read once
+                    and then in the way forever. */}
+                <details className="mt-2.5 text-xs text-[var(--muted)]">
+                  <summary className="cursor-pointer transition-colors hover:text-foreground">
+                    {t("chat.memoryHow")}
+                  </summary>
+                  <p className="mt-1.5 mb-0">{t("chat.memoryNote")}</p>
+                </details>
 
                 <div className="mt-4 space-y-0.5">
                   {memories.length === 0 && !loading && (
                     <p className="text-xs text-[var(--muted)]">{t("chat.memoryEmpty")}</p>
                   )}
                   {memories.map((memory) => (
-                    <div
-                      key={memory.id}
-                      className={`flex items-start gap-2 rounded-lg px-2.5 py-2 ${
-                        memory.pinned ? "bg-[var(--accent-subtle)]" : "hover:bg-[var(--accent-subtle)]/50"
-                      }`}
-                    >
-                      <span
-                        className="flex-1 text-sm [overflow-wrap:anywhere]"
-                        // The date is context, not content: one line of it under every
-                        // memory turned the list into a wall. Still there on hover.
-                        title={new Date(memory.created_at).toLocaleString(locale === "en" ? "en-GB" : "id-ID")}
-                      >
-                        {memory.text}
-                      </span>
-                      <button
-                        type="button"
-                        title={memory.pinned ? t("chat.pinned") : t("chat.pin")}
-                        aria-label={memory.pinned ? t("panel.unpin") : t("chat.pinLabel")}
-                        onClick={async () => setMemories(await updateChatMemory(memory.id, { pinned: !memory.pinned }))}
-                        // Quiet, not hidden. Hiding these behind `group-hover` would
-                        // put them out of reach on every touch screen: Tailwind v4
-                        // gates `hover:` behind `@media (hover: hover)`, so on a phone
-                        // the class that reveals them never applies at all.
-                        className={`rounded px-1 transition-colors ${
-                          memory.pinned
-                            ? "text-[var(--primary)]"
-                            : "text-[var(--muted)]/50 hover:text-foreground"
-                        }`}
-                      >
-                        {memory.pinned ? "★" : "☆"}
-                      </button>
-                      <button
-                        type="button"
-                        title={t("chat.forget")}
-                        aria-label={t("chat.forgetNamed", { text: memory.text })}
-                        onClick={async () => setMemories(await deleteChatMemory(memory.id))}
-                        className="rounded px-1 text-[var(--muted)]/50 transition-colors hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </div>
+                    <MemoryRow key={memory.id} memory={memory} onChange={setMemories} />
                   ))}
                 </div>
               </>
@@ -339,13 +319,15 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
             bottom edge — so without this row the legal pages exist on the
             domain and are reachable from nowhere on it. Shown signed out too:
             the obligation does not depend on having an account. */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--border)] px-5 py-3 text-xs text-[var(--muted)]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[var(--border)] px-5 py-2.5 text-xs text-[var(--muted)]">
           <Link href="/privacy" className="transition-colors hover:text-foreground">
             {t("nav.privacy")}
           </Link>
+          <span aria-hidden>·</span>
           <Link href="/terms" className="transition-colors hover:text-foreground">
             {t("nav.terms")}
           </Link>
+          <span aria-hidden>·</span>
           <Link href="/refund" className="transition-colors hover:text-foreground">
             {t("nav.refund")}
           </Link>
@@ -355,12 +337,73 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
   );
 }
 
+/** One memory: the text, and the two things that can be done to it. */
+function MemoryRow({
+  memory,
+  onChange,
+}: {
+  memory: ChatMemoryRow;
+  onChange: (rows: ChatMemoryRow[]) => void;
+}) {
+  const t = useT();
+  const locale = useLocale();
+  return (
+    <div
+      className={`flex items-start gap-2 rounded-lg px-2.5 py-2 ${
+        memory.pinned ? "bg-[var(--accent-subtle)]" : "hover:bg-[var(--accent-subtle)]/50"
+      }`}
+    >
+      <span
+        className="flex-1 text-sm [overflow-wrap:anywhere]"
+        // The date is context, not content: one line of it under every memory
+        // turned the list into a wall. Still there on hover.
+        title={new Date(memory.created_at).toLocaleString(locale === "en" ? "en-GB" : "id-ID")}
+      >
+        {memory.text}
+      </span>
+      <button
+        type="button"
+        title={memory.pinned ? t("chat.pinned") : t("chat.pin")}
+        aria-label={memory.pinned ? t("panel.unpin") : t("chat.pinLabel")}
+        onClick={async () => onChange(await updateChatMemory(memory.id, { pinned: !memory.pinned }))}
+        // Quiet, not hidden. Hiding these behind `group-hover` would put them out
+        // of reach on every touch screen: Tailwind v4 gates `hover:` behind
+        // `@media (hover: hover)`, so on a phone the class that reveals them
+        // never applies at all.
+        className={`rounded px-1 transition-colors ${
+          memory.pinned ? "text-[var(--primary)]" : "text-[var(--muted)]/50 hover:text-foreground"
+        }`}
+      >
+        {memory.pinned ? "★" : "☆"}
+      </button>
+      <button
+        type="button"
+        title={t("chat.forget")}
+        aria-label={t("chat.forgetNamed", { text: memory.text })}
+        onClick={async () => onChange(await deleteChatMemory(memory.id))}
+        className="rounded px-1 text-[var(--muted)]/50 transition-colors hover:text-red-500"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 /**
- * Who is signed in, on what plan, and the two things they can do about it.
+ * Who is signed in, on what plan, what the page looks like, and the two things
+ * they can do about the account.
  *
- * Three rows down the tab rather than one row across: identity, then the plan and
- * what is left of it, then the actions. The single row this replaced fitted on a
- * desktop and nowhere else.
+ * TWO bands, one hairline: everything the visitor IS — face, name, address, plan,
+ * what is left of it — reads as one block beside the avatar, and below the rule
+ * are the things they can CHANGE. It was four bands with three rules through it,
+ * which is more scaffolding than a half-screen of content can carry: the plan had
+ * a band to itself to hold one badge and one count, and the two buttons had
+ * another to hold two buttons. Neither line was dividing anything the spacing was
+ * not already dividing.
+ *
+ * No boxes, in either band. The boxes this replaced drew a border around single
+ * rows inside a dialog that is already a bordered surface — three nested frames
+ * to show one dropdown.
  */
 function Account({ account }: { account: ChatAccount | null }) {
   const t = useT();
@@ -368,40 +411,40 @@ function Account({ account }: { account: ChatAccount | null }) {
   if (!account) return null;
 
   const limit = account.limits.chatMessagesPerDay;
+  // The plan reads one click from the composer that refused a message, because
+  // "why was that refused" is asked here and nowhere else — so the quota and the
+  // date it resets against sit on one line, in the order they are asked about.
+  const quota =
+    limit === null
+      ? t("chat.quotaUnlimited")
+      : t("chat.quotaLeft", { used: Math.min(account.used, limit), limit });
+  const until =
+    account.planExpiresAt &&
+    t("plan.activeUntil", {
+      date: new Date(account.planExpiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "id-ID"),
+    });
   return (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <Avatar account={account} size="h-12 w-12" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="m-0 truncate text-sm font-medium">{account.fullName || account.email || "…"}</p>
           {/* The name falls back to the address, so only print the address
               twice-over when there is a real name above it. */}
           {account.fullName && account.email && (
             <p className="m-0 truncate text-xs text-[var(--muted)]">{account.email}</p>
           )}
+          <p className="m-0 mt-0.5 text-xs text-[var(--muted)]">
+            {until ? `${quota} · ${until}` : quota}
+          </p>
         </div>
+        <span className="shrink-0 rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">
+          {PLANS[account.plan].label}
+        </span>
       </div>
 
-      {/* The plan sits one click from the composer that refused a message, because
-          "why was that refused" is asked here and nowhere else. */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3.5 py-3">
-        <div>
-          <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">
-            {PLANS[account.plan].label}
-          </span>
-          {account.planExpiresAt && (
-            <span className="mt-1.5 block text-xs text-[var(--muted)]">
-              {t("plan.activeUntil", {
-                date: new Date(account.planExpiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "id-ID"),
-              })}
-            </span>
-          )}
-        </div>
-        <span className="text-xs text-[var(--muted)]">
-          {limit === null
-            ? t("chat.quotaUnlimited")
-            : t("chat.quotaLeft", { used: Math.min(account.used, limit), limit })}
-        </span>
+      <div className="mt-4 border-t border-[var(--border)] pt-1">
+        <Appearance />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -427,20 +470,37 @@ function Account({ account }: { account: ChatAccount | null }) {
   );
 }
 
-/** Language and theme — the two controls that need no account. */
+/**
+ * Language and theme — the two controls that need no account.
+ *
+ * Rendered inside the Account tab for a signed-in visitor and on its own for a
+ * signed-out one, so it carries no outer border of its own: whoever places it
+ * decides what separates it from what is above.
+ */
 function Appearance() {
   const t = useT();
   const locale = useLocale();
+  // No rule between the two rows. A label on the left and its control on the
+  // right is already a row; a hairline through two of them is decoration that
+  // reads as structure.
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3.5 py-3">
-        <span className="text-sm">{t("nav.language")}</span>
+    <div>
+      <Setting label={t("nav.language")}>
         <LanguageSwitcher current={locale} label={t("nav.language")} />
-      </div>
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3.5 py-3">
-        <span className="text-sm">{t("chat.theme")}</span>
+      </Setting>
+      <Setting label={t("chat.theme")}>
         <ThemeSwitch />
-      </div>
+      </Setting>
+    </div>
+  );
+}
+
+/** Label on the left, the control that changes it on the right. */
+function Setting({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <span className="text-sm">{label}</span>
+      {children}
     </div>
   );
 }

@@ -1679,7 +1679,7 @@ export const en: Record<keyof typeof id, string> = {
   "chat.closeList": "Close the chat list",
   "chat.signInToSave": "Sign in to keep your chat history.",
   "chat.inactiveHere": "Chat is switched off on this site.",
-  "chat.prefs": "Preferences & memory",
+  "chat.prefs": "Preferences",
 
   "chat.account": "Account",
   "chat.manageProfile": "Manage profile",
@@ -1751,10 +1751,12 @@ export const en: Record<keyof typeof id, string> = {
   "chat.rename": "Rename",
   "chat.deleteChat": "Delete chat",
 
-  "chat.instructions": "Response instructions",
+  // A tab label, not a section heading: the bar has to fit a phone.
+  "chat.tabInstructions": "Instructions",
   "chat.instructionsPlaceholder": "e.g. Answer briefly. Prefer bullets. Always include units.",
   "chat.instructionsNote": "Sent as the system message on every request, in every chat.",
   "chat.memory": "Memory",
+  "chat.memoryHow": "How memory works",
   "chat.memoryPlaceholder": "Add something worth remembering…",
   "chat.memoryNote":
     "Saved automatically when a message opens with “remember…”, “note to self…”, “keep in mind…”, “don’t forget…”, or “for future reference…”. Pinned memories are always included; the rest are picked by word overlap — so pin the facts that must always apply.",
