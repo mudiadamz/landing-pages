@@ -145,7 +145,11 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6"
+      // The scrim every other modal in this codebase uses: half-black AND blurred.
+      // This one had 40% and no blur, so a chat transcript stayed sharp and legible
+      // straight through the dialog sitting on top of it — the panel read as a
+      // sheet of glass laid over live text rather than as the thing to look at.
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-6"
       onMouseDown={(e) => {
         if (!panel.current?.contains(e.target as Node)) onClose();
       }}
@@ -155,7 +159,11 @@ function PrefsPanel({ account, onClose }: { account: ChatAccount | null; onClose
         role="dialog"
         aria-modal="true"
         aria-label={heading}
-        className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-2xl bg-[var(--background)] shadow-2xl sm:rounded-2xl"
+        // Wider than a reading column on purpose: nothing in here is prose. The
+        // widest rows are a label with its control pushed to the far side, and at
+        // 2xl the memory list wrapped early while the settings rows held a gap of
+        // dead space in the middle.
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-t-2xl bg-[var(--background)] shadow-2xl sm:rounded-2xl"
       >
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
           <h2 className="m-0 text-sm font-semibold">{heading}</h2>
