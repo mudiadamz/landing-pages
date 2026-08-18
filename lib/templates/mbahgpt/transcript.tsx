@@ -9,6 +9,7 @@
  * reading "Anda" / "MbahGPT" on every turn never were.
  */
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { Markdown } from "./markdown";
@@ -287,7 +288,14 @@ export function Transcript({
               </div>
             )}
             {live.webSearch && <div className={CHIP}>{webChipText(live, t)}</div>}
-            {live.webLocked && <div className={CHIP}>{`🔒 ${t("chat.webLocked")}`}</div>}
+            {/* The one chip that names something the reader can DO something
+                about, so it is the one chip that is a link. The rest report what
+                happened; this reports what did not, and why. */}
+            {live.webLocked && (
+              <Link href="/upgrade" className={`${CHIP} transition-colors hover:border-[var(--primary)] hover:text-foreground`}>
+                {`🔒 ${t("chat.webLocked")} →`}
+              </Link>
+            )}
             {live.reasoning && (
               <ThinkingPanel
                 reasoning={live.reasoning}
@@ -317,7 +325,20 @@ export function Transcript({
           <p className="m-0 text-red-600 dark:text-red-400">{failure.message}</p>
           {/* Retyping a long prompt because the server blipped is pure friction, so
               the failed message stays one click from being sent again. */}
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
+            {/* Only when the server said a bigger plan would have taken the
+                message. This is the wall /upgrade was written for — the reader is
+                stopped, holding a prompt, and the fix is one click rather than a
+                page they have to know exists. It leads the row, ahead of Retry,
+                because retrying is exactly what will not work. */}
+            {failure.upgrade && (
+              <Link
+                href="/upgrade"
+                className="rounded-lg bg-[var(--primary)] px-2.5 py-1 text-xs text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
+              >
+                {t("plan.upgrade")}
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => onRetry(failure.text, failure.files)}

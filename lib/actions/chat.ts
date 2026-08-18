@@ -22,8 +22,15 @@ import { createClient } from "@/lib/supabase/server";
 import { currentSiteId } from "@/lib/site-resolve";
 import { ANSWER_LOCK_STALE_MS } from "@/lib/mbahgpt/config";
 import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
-import { getPlanLimits } from "@/lib/actions/site-settings";
-import { effectivePlan, resolvePlanLimits, type PlanKey, type PlanLimits } from "@/lib/plans";
+import { getPlanLimits, getPlanPrices } from "@/lib/actions/site-settings";
+import {
+  PLAN_KEYS,
+  effectivePlan,
+  isPurchasable,
+  resolvePlanLimits,
+  type PlanKey,
+  type PlanLimits,
+} from "@/lib/plans";
 import { t } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -213,6 +220,16 @@ export type ChatAccount = {
   limits: PlanLimits;
   /** Chat turns spent in the rolling window. */
   used: number;
+  /**
+   * Whether a HIGHER plan is actually on sale on THIS storefront right now.
+   *
+   * Resolved here rather than in the dialog because the answer needs the
+   * storefront's `plan_prices`, and a zero price means "not for sale" — so a
+   * client that only knew the current plan would offer an upgrade button that
+   * lands on a page with nothing to buy. False on the top plan, and false on a
+   * fresh deployment where no admin has typed a price yet.
+   */
+  canUpgrade: boolean;
 };
 
 /**
@@ -230,13 +247,17 @@ export async function getChatAccount(): Promise<ChatAccount | null> {
   const { supabase, userId } = await requireUser();
   if (!userId) return null;
 
-  const [{ data: auth }, { data: profile }, overrides] = await Promise.all([
+  const [{ data: auth }, { data: profile }, overrides, prices] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from("lp_profiles").select("full_name, avatar_url, plan, plan_expires_at").eq("id", userId).maybeSingle(),
     getPlanLimits(),
+    getPlanPrices(),
   ]);
 
   const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
+  // Only what is ABOVE the current plan counts. PLAN_KEYS is ordered, so the
+  // slice is the set of plans an upgrade could mean.
+  const canUpgrade = PLAN_KEYS.slice(PLAN_KEYS.indexOf(plan) + 1).some((p) => isPurchasable(p, prices));
   return {
     fullName: profile?.full_name ?? (auth.user?.user_metadata?.full_name as string) ?? null,
     email: auth.user?.email ?? null,
@@ -245,6 +266,7 @@ export async function getChatAccount(): Promise<ChatAccount | null> {
     planExpiresAt: profile?.plan_expires_at ?? null,
     limits: resolvePlanLimits(plan, overrides),
     used: await chatMessagesUsed(supabase, userId),
+    canUpgrade,
   };
 }
 

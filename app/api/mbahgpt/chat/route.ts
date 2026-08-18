@@ -83,8 +83,13 @@ function sse(obj: unknown): Uint8Array {
   return encoder.encode(`data: ${JSON.stringify(obj)}\n\n`);
 }
 
-function fail(message: string, status: number) {
-  return NextResponse.json({ error: message }, { status });
+/**
+ * `upgrade` marks the refusals a bigger plan would have allowed, so the client
+ * can offer the way out beside the message instead of leaving the reader to
+ * work out that "quota spent" is something they can do anything about.
+ */
+function fail(message: string, status: number, opts: { upgrade?: boolean } = {}) {
+  return NextResponse.json({ error: message, ...(opts.upgrade ? { upgrade: true } : {}) }, { status });
 }
 
 /** A bound translator, for the messages this route sends back. */
@@ -176,6 +181,7 @@ export async function POST(req: NextRequest) {
     return fail(
       t("chat.quotaSpent", { plan: PLANS[plan].label, limit: limits.chatMessagesPerDay ?? 0 }),
       429,
+      { upgrade: true },
     );
   }
 

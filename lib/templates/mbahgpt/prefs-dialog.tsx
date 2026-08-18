@@ -446,9 +446,24 @@ function Account({ account }: { account: ChatAccount | null }) {
             {until ? `${quota} · ${until}` : quota}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">
-          {PLANS[account.plan].label}
-        </span>
+        {/* Badge and, when there is something above it to buy, the way up —
+            side by side, because the badge is the question ("which plan am I
+            on") and the button is its only useful answer. Absent on the top plan
+            and on a storefront that has priced nothing, so it never leads
+            anyone to a page with no buy button on it. */}
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">
+            {PLANS[account.plan].label}
+          </span>
+          {account.canUpgrade && (
+            <Link
+              href="/upgrade"
+              className="rounded-lg bg-[var(--primary)] px-2.5 py-1 text-xs text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
+            >
+              {t("plan.upgrade")}
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 border-t border-[var(--border)] pt-1">

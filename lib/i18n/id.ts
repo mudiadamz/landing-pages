@@ -1646,6 +1646,7 @@ export const id = {
   "plan.contactUs": "Hubungi kami",
   "plan.perMonth": "/bulan",
   "plan.activeUntil": "Aktif sampai {date}",
+  "plan.upgrade": "Upgrade",
   "plan.pending": "Pembayaran sedang diproses. Paketnya aktif otomatis begitu terkonfirmasi.",
   "plan.colPlan": "Paket",
   "plan.colMessages": "Pesan/hari",

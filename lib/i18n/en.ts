@@ -1656,6 +1656,7 @@ export const en: Record<keyof typeof id, string> = {
   "plan.contactUs": "Contact us",
   "plan.perMonth": "/month",
   "plan.activeUntil": "Active until {date}",
+  "plan.upgrade": "Upgrade",
   "plan.pending": "Payment is being processed. The plan starts on its own once it clears.",
   "plan.colPlan": "Plan",
   "plan.colMessages": "Messages/day",

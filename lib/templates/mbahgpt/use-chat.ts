@@ -80,6 +80,8 @@ export type ChatFailure = {
   message: string;
   text: string;
   files: PendingFile[];
+  /** The server said a bigger plan would have allowed this. */
+  upgrade: boolean;
 };
 
 type Rec = LiveReply & { controller: AbortController };
@@ -312,9 +314,9 @@ export function useChat(options: { canChat: boolean }) {
       setNotice("");
       flush();
 
-      const fail = async (message: string) => {
+      const fail = async (message: string, upgrade = false) => {
         finishRec(rec);
-        setFailure({ sessionId: rec.sessionId, message, text, files });
+        setFailure({ sessionId: rec.sessionId, message, text, files, upgrade });
         // The user's message may already be stored — the server writes it before
         // it calls the model — so reload the thread rather than guessing.
         if (rec.sessionId && rec.sessionId === openRef.current) {
@@ -354,8 +356,8 @@ export function useChat(options: { canChat: boolean }) {
         });
 
         if (!res.ok || !res.body) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          await fail(body.error || res.statusText || t("chat.sendFailed"));
+          const body = (await res.json().catch(() => ({}))) as { error?: string; upgrade?: boolean };
+          await fail(body.error || res.statusText || t("chat.sendFailed"), !!body.upgrade);
           return;
         }
 
