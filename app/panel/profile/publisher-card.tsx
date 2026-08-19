@@ -101,7 +101,7 @@ export async function PublisherCard({
                   }`}
                 />
                 <span
-                  className={`text-[11px] ${done || failed ? "text-foreground" : "text-[var(--muted)]"}`}
+                  className={`text-[0.6875rem] ${done || failed ? "text-foreground" : "text-[var(--muted)]"}`}
                 >
                   {failed ? t("panel.rejected") : t(s)}
                 </span>
@@ -212,7 +212,7 @@ function Item({
       >
         {value || "—"}
       </dd>
-      {note && <p className="mt-0.5 text-[11px] text-[var(--muted)]">{note}</p>}
+      {note && <p className="mt-0.5 text-[0.6875rem] text-[var(--muted)]">{note}</p>}
     </div>
   );
 }

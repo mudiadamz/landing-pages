@@ -17,13 +17,13 @@ const BOX =
 function Record({ label, rows }: { label: string; rows: [string, string][] }) {
   return (
     <div className="space-y-1 rounded-lg bg-[var(--card)] p-2">
-      <p className="text-[11px] font-medium text-foreground">{label}</p>
+      <p className="text-[0.6875rem] font-medium text-foreground">{label}</p>
       <dl className="space-y-1">
         {rows.map(([k, v]) => (
           <div key={k} className="flex items-center gap-2">
-            <dt className="w-24 shrink-0 text-[11px] text-[var(--muted)]">{k}</dt>
+            <dt className="w-24 shrink-0 text-[0.6875rem] text-[var(--muted)]">{k}</dt>
             <dd className="flex min-w-0 flex-1 items-center gap-2">
-              <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground">
+              <code className="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-foreground">
                 {v}
               </code>
               <CopyValue value={v} />
@@ -49,7 +49,7 @@ function CopyValue({ value }: { value: string }) {
           setDone(false);
         }
       }}
-      className="shrink-0 rounded-md border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--muted)] transition-colors hover:text-foreground"
+      className="shrink-0 rounded-md border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 text-[0.625rem] font-medium text-[var(--muted)] transition-colors hover:text-foreground"
     >
       {done ? "✓" : "Copy"}
     </button>
@@ -121,7 +121,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
   return (
     <div className={BOX}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${badge.cls}`}>
+        <span className={`rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${badge.cls}`}>
           {badge.text}
         </span>
         {state && !state.added && (
@@ -255,7 +255,7 @@ export function VercelDomainStatus({ host }: { host: string }) {
           {state.challenges.map((c, i) => (
             <div
               key={`${c.type}-${c.domain}-${i}`}
-              className="space-y-1 rounded-lg bg-[var(--card)] px-2.5 py-2 text-[11px]"
+              className="space-y-1 rounded-lg bg-[var(--card)] px-2.5 py-2 text-[0.6875rem]"
             >
               <p className="font-medium text-foreground">
                 {c.type} · {c.domain}

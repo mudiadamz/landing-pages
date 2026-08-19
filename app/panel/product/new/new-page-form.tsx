@@ -94,7 +94,7 @@ export function NewPageForm({ categories }: { categories: LandingPageCategory[] 
           <label htmlFor="slug" className="block text-sm font-medium text-foreground">
             {t("product.slugLabel")}
           </label>
-          <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--primary)]">
+          <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[0.6875rem] font-medium text-[var(--primary)]">
             {t("product.slugAuto")}
           </span>
         </div>

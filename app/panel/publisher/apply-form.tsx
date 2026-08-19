@@ -34,7 +34,7 @@ function Field({
   return (
     <label className="block">
       <span className="text-xs font-medium text-foreground">{label}</span>
-      {hint && <span className="mt-0.5 block text-[11px] text-[var(--muted)]">{hint}</span>}
+      {hint && <span className="mt-0.5 block text-[0.6875rem] text-[var(--muted)]">{hint}</span>}
       <input
         type="text"
         value={value}
@@ -63,7 +63,7 @@ function AreaField({
   return (
     <label className="block">
       <span className="text-xs font-medium text-foreground">{label}</span>
-      {hint && <span className="mt-0.5 block text-[11px] text-[var(--muted)]">{hint}</span>}
+      {hint && <span className="mt-0.5 block text-[0.6875rem] text-[var(--muted)]">{hint}</span>}
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -221,7 +221,7 @@ export function PublisherApplyForm({
 
               <div className="rounded-lg border border-[var(--border)] p-3">
                 <p className="text-xs font-medium text-foreground">{t("panel.payoutAccount")}</p>
-                <p className="mt-0.5 text-[11px] text-[var(--muted)]">
+                <p className="mt-0.5 text-[0.6875rem] text-[var(--muted)]">
                   {t("panel.payoutAccountHint")}
                 </p>
                 <div className="mt-2 grid gap-3 sm:grid-cols-3">
@@ -236,7 +236,7 @@ export function PublisherApplyForm({
                   <p className="border-b border-[var(--border)] px-3 py-2 text-xs font-medium text-foreground">
                     {termsHeading}
                   </p>
-                  <ul className="max-h-48 space-y-2 overflow-y-auto px-3 py-2 text-[11px] leading-relaxed text-[var(--muted)]">
+                  <ul className="max-h-48 space-y-2 overflow-y-auto px-3 py-2 text-[0.6875rem] leading-relaxed text-[var(--muted)]">
                     {terms.map((t, i) => (
                       <li key={i} className="flex gap-2">
                         <span aria-hidden>{i + 1}.</span>

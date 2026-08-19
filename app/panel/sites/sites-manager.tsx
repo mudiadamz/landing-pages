@@ -216,12 +216,12 @@ export function SitesManager({
                       {site.host}
                     </span>
                     {site.is_canonical && (
-                      <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--primary)]">
+                      <span className="rounded-full bg-[var(--primary)]/10 px-2 py-0.5 text-[0.6875rem] font-medium text-[var(--primary)]">
                         {t("sites.canonicalBadge")}
                       </span>
                     )}
                     {!site.active && (
-                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[0.6875rem] font-medium text-amber-600 dark:text-amber-400">
                         {t("sites.inactive")}
                       </span>
                     )}

@@ -56,7 +56,7 @@ export default async function FavoritesPage() {
                     {p.thumbnail_url ? (
                       <Image src={p.thumbnail_url} alt={p.title} fill sizes="80px" className="object-cover" />
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] text-[var(--muted)]">
+                      <span className="flex h-full w-full items-center justify-center px-1 text-center text-[0.625rem] text-[var(--muted)]">
                         {p.title}
                       </span>
                     )}

@@ -177,7 +177,7 @@ export function LinkbioHome({
                   {on && (
                     <span
                       aria-hidden
-                      className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-[var(--background)]"
+                      className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[0.625rem] font-bold leading-none text-white shadow-sm ring-2 ring-[var(--background)]"
                     >
                       ×
                     </span>

@@ -157,7 +157,7 @@ function Dialog({
                   {" · "}
                   {t("sales.purchaseCount", { count: rows.length })}
                   {revokedCount > 0 && (
-                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[0.6875rem] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
                       {t("sales.revokedCount", { count: revokedCount })}
                     </span>
                   )}

@@ -62,7 +62,7 @@ export function LanguageSwitcher({
 
   return (
     <span
-      className={`relative inline-flex items-center rounded-lg border border-[var(--border)] text-[11px] font-semibold leading-none tracking-wide transition-colors focus-within:ring-2 focus-within:ring-[var(--ring)] hover:bg-[var(--accent-subtle)] ${className}`}
+      className={`relative inline-flex items-center rounded-lg border border-[var(--border)] text-[0.6875rem] font-semibold leading-none tracking-wide transition-colors focus-within:ring-2 focus-within:ring-[var(--ring)] hover:bg-[var(--accent-subtle)] ${className}`}
     >
       {/* Transparent and stretched over the whole control. The native select
           draws its own arrow, padding and font on every platform; the visible
@@ -85,7 +85,7 @@ export function LanguageSwitcher({
       </select>
 
       <span aria-hidden className={`flex items-center gap-1.5 px-2 py-1 ${pending ? "opacity-50" : ""}`}>
-        <span className="text-[13px] leading-none">{shown.flag}</span>
+        <span className="text-[0.8125rem] leading-none">{shown.flag}</span>
         {shown.code}
         <ChevronIcon className="h-3 w-3 opacity-60" />
       </span>

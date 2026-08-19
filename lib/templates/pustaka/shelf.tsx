@@ -49,7 +49,7 @@ export function Shelf({ page, priority }: { page: LandingPagePublic; priority: b
             </span>
           )}
           {upcoming && (
-            <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur">
+            <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[0.625rem] font-medium text-white backdrop-blur">
               Segera
             </span>
           )}

@@ -96,7 +96,7 @@ function SortTh({
         className="inline-flex items-center gap-1 transition-colors hover:text-[var(--primary)]"
       >
         {label}
-        <span className={`text-[10px] ${active ? "text-[var(--primary)]" : "text-[var(--muted)]/40"}`}>
+        <span className={`text-[0.625rem] ${active ? "text-[var(--primary)]" : "text-[var(--muted)]/40"}`}>
           {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
         </span>
       </button>
@@ -107,7 +107,7 @@ function SortTh({
 function HiddenBadge() {
   const t = useT();
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)] ring-1 ring-[var(--border)]">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--background)] px-2 py-0.5 text-[0.625rem] font-medium text-[var(--muted)] ring-1 ring-[var(--border)]">
       {t("panel.hidden")}
     </span>
   );

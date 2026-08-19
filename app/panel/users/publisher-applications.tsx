@@ -90,7 +90,7 @@ export function PublisherApplications({ initial }: { initial: PublisherApplicati
                   <Row label={t("panel.address")} value={a.address} />
                   <Row label={t("panel.accountHolder")} value={a.bank_holder} />
                 </dl>
-                <p className="mt-1.5 text-[11px]">
+                <p className="mt-1.5 text-[0.6875rem]">
                   {a.terms_accepted_at ? (
                     <span className="text-emerald-700 dark:text-emerald-400">
                       {t("panel.termsAcceptedOn", {

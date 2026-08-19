@@ -163,7 +163,7 @@ function PurchasesTab({
                     <div className="min-w-0">
                       <p className="font-medium text-foreground truncate">{p.title}</p>
                       {p.bundle_parent_title && (
-                        <span className="mt-1 inline-block rounded bg-[var(--accent-subtle)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--primary)]">
+                        <span className="mt-1 inline-block rounded bg-[var(--accent-subtle)] px-1.5 py-0.5 text-[0.6875rem] font-medium text-[var(--primary)]">
                           {t("panel.fromBundle", { title: p.bundle_parent_title })}
                         </span>
                       )}
@@ -245,7 +245,7 @@ function RevokedTag() {
   return (
     <span
       title={t("panel.accessRevokedHint")}
-      className="ml-2 inline-block rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+      className="ml-2 inline-block rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[0.6875rem] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
     >
       {t("panel.accessRevoked")}
     </span>

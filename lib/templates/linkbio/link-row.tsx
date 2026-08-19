@@ -91,7 +91,7 @@ export function LinkRow({
                     : formatPrice(display)}
             </span>
             {category && (
-              <span className="min-w-0 truncate rounded-full bg-[var(--tag-bg)] px-1.5 py-px text-[11px] font-medium leading-normal text-[var(--tag-fg)]">
+              <span className="min-w-0 truncate rounded-full bg-[var(--tag-bg)] px-1.5 py-px text-[0.6875rem] font-medium leading-normal text-[var(--tag-fg)]">
                 {category}
               </span>
             )}

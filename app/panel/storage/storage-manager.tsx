@@ -345,7 +345,7 @@ function TreeFolder({
         <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground" title={node.name}>
           {node.name}
         </span>
-        <span className="shrink-0 text-[11px] text-[var(--muted)]">
+        <span className="shrink-0 text-[0.6875rem] text-[var(--muted)]">
           {t("panel.fileCount", { count: node.count, size: formatBytes(node.size) })}
         </span>
       </button>
@@ -389,7 +389,7 @@ function FileRow({ file: f, depth, ctx }: { file: StorageFile; depth: number; ct
         <p className="truncate font-mono text-xs text-foreground" title={f.path}>
           {splitPath(f.path).name}
         </p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--muted)]">
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.6875rem] text-[var(--muted)]">
           <span>{formatBytes(f.size)}</span>
           <span>{formatDate(f.updatedAt)}</span>
           {f.publicUrl && (
@@ -458,7 +458,7 @@ function FileGlyph({ mimetype }: { mimetype: string | null }) {
         : t.startsWith("video/")
           ? "VID"
           : (t.split("/")[1] || "FILE").slice(0, 4).toUpperCase();
-  return <span className="text-[9px] font-bold text-[var(--muted)]">{label}</span>;
+  return <span className="text-[0.5625rem] font-bold text-[var(--muted)]">{label}</span>;
 }
 
 function FolderIcon({ className }: { className?: string }) {

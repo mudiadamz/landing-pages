@@ -356,7 +356,7 @@ function NavContent({
 
           return (
             <div key={group.labelKey}>
-              <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]/70">
+              <p className="mb-1 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70">
                 {t(group.labelKey)}
               </p>
               <div className="flex flex-col gap-0.5">
@@ -372,7 +372,7 @@ function NavContent({
                   const Icon = item.icon;
                   // Roomier rows on touch, where the drawer has space to spare and
                   // a thumb is a blunter instrument than a cursor.
-                  const linkClass = `flex items-center gap-3 rounded-lg px-3 py-3 text-[15px] transition-colors md:py-2.5 md:text-sm ${
+                  const linkClass = `flex items-center gap-3 rounded-lg px-3 py-3 text-[0.9375rem] transition-colors md:py-2.5 md:text-sm ${
                     active
                       ? "bg-[var(--accent-subtle)] font-medium text-[var(--primary)]"
                       : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
@@ -442,7 +442,7 @@ function NavContent({
         <Link
           href="/"
           onClick={onItemClick}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-3 text-[15px] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-3 text-[0.9375rem] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
         >
           <HomeIcon className="h-5 w-5 shrink-0" />
           <span>{t("panel.viewSite")}</span>
@@ -450,7 +450,7 @@ function NavContent({
         <form action={signOut} className="flex-1">
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-[15px] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
+            className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-[0.9375rem] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
           >
             <LogoutIcon className="h-5 w-5 shrink-0" />
             <span>Keluar</span>
@@ -587,7 +587,7 @@ export function PanelSidebar({
                 <span className="block truncate text-sm font-medium leading-tight text-foreground">
                   {displayName}
                 </span>
-                <span className="block truncate text-[11px] leading-tight text-[var(--muted)]">
+                <span className="block truncate text-[0.6875rem] leading-tight text-[var(--muted)]">
                   {role === "admin"
                     ? t("panel.roleAdmin")
                     : role === "publisher"

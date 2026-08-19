@@ -109,7 +109,7 @@ export function ProductStatsView({
           onClick={() => setLive((v) => !v)}
           title={live ? t("stats.pauseLive") : t("stats.resumeLive")}
           aria-pressed={live}
-          className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--accent-subtle)] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)] transition-colors hover:text-foreground"
+          className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--accent-subtle)] px-2.5 py-1 text-[0.6875rem] font-medium text-[var(--muted)] transition-colors hover:text-foreground"
         >
           {live ? (
             <>
@@ -218,7 +218,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
     <div className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
       <p className="text-xs font-medium text-[var(--muted)]">{label}</p>
       <p className="mt-1 truncate text-xl font-bold text-foreground sm:text-2xl">{value}</p>
-      {sub && <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">{sub}</p>}
+      {sub && <p className="mt-0.5 truncate text-[0.6875rem] text-[var(--muted)]">{sub}</p>}
     </div>
   );
 }
@@ -305,7 +305,7 @@ function HourlyChart({ hourly }: { hourly: number[] }) {
         ))}
       </div>
       {/* Sparse hour axis: 00, 06, 12, 18, 23 */}
-      <div className="mt-1 flex justify-between text-[10px] text-[var(--muted)]">
+      <div className="mt-1 flex justify-between text-[0.625rem] text-[var(--muted)]">
         {["00", "06", "12", "18", "23"].map((l) => (
           <span key={l}>{l}</span>
         ))}

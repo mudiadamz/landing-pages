@@ -72,7 +72,7 @@ export function FileUploadCard({
   return (
     <div className="min-w-0 rounded-xl border border-[var(--border)] p-3">
       <p className="mb-0.5 text-xs font-medium text-[var(--muted)]">{label}</p>
-      {hint && <p className="mb-2 text-[11px] text-[var(--muted)]">{hint}</p>}
+      {hint && <p className="mb-2 text-[0.6875rem] text-[var(--muted)]">{hint}</p>}
       <input
         ref={inputRef}
         type="file"
@@ -87,7 +87,7 @@ export function FileUploadCard({
           {preview}
           <div className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2">
             <span
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${badgeClass}`}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[0.625rem] font-bold ${badgeClass}`}
             >
               {badge}
             </span>

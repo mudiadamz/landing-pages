@@ -227,7 +227,7 @@ export function SiteProfileForm({
                     {tpl.coverage.map((c) => (
                       <span
                         key={c.label}
-                        className={`rounded px-1.5 py-0.5 text-[10px] ${
+                        className={`rounded px-1.5 py-0.5 text-[0.625rem] ${
                           c.own
                             ? "bg-[var(--primary)]/10 text-[var(--primary)]"
                             : "bg-[var(--background)] text-[var(--muted)]"
@@ -239,7 +239,7 @@ export function SiteProfileForm({
                     ))}
                   </span>
                   {tpl.defaultPalette && (
-                    <span className="mt-1.5 block text-[10px] text-[var(--muted)]">
+                    <span className="mt-1.5 block text-[0.625rem] text-[var(--muted)]">
                       {t("sites.suggestedPalette")}{" "}
                       {palettes.find((p) => p.key === tpl.defaultPalette)?.label ??
                         tpl.defaultPalette}

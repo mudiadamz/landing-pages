@@ -67,7 +67,7 @@ export function Countdown({ target }: { target: string }) {
           <span className="text-2xl font-bold tabular-nums text-foreground sm:text-3xl">
             {String(c.value).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[10px] font-medium uppercase tracking-wide text-[var(--muted)] sm:text-xs">
+          <span className="mt-1 text-[0.625rem] font-medium uppercase tracking-wide text-[var(--muted)] sm:text-xs">
             {c.label}
           </span>
         </div>

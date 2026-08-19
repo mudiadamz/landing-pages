@@ -69,7 +69,7 @@ export function PanelSiteSwitcher({
     <div className="mx-3 mt-2.5 shrink-0">
       <label
         htmlFor="panel-site-scope"
-        className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-[var(--muted)]"
+        className="mb-1 block text-[0.625rem] font-medium uppercase tracking-wider text-[var(--muted)]"
       >
         {t("scope.manageSite")}
       </label>

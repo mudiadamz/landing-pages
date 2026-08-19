@@ -64,7 +64,7 @@ export async function PaymentMethodsRow({ className = "" }: { className?: string
         {PAYMENT_METHODS.map((m) => (
           <span
             key={m}
-            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-[var(--muted)] bg-[var(--accent-subtle)] border border-[var(--border)]"
+            className="px-1.5 py-0.5 rounded text-[0.625rem] font-medium text-[var(--muted)] bg-[var(--accent-subtle)] border border-[var(--border)]"
           >
             {m}
           </span>

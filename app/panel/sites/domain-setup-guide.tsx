@@ -28,7 +28,7 @@ function Copy({ value }: { value: string }) {
           setDone(false);
         }
       }}
-      className="shrink-0 rounded-md border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-[11px] font-medium text-[var(--muted)] transition-colors hover:border-[var(--primary)] hover:text-foreground"
+      className="shrink-0 rounded-md border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-[0.6875rem] font-medium text-[var(--muted)] transition-colors hover:border-[var(--primary)] hover:text-foreground"
     >
       {done ? t("sites.copied") : t("sites.copy")}
     </button>
@@ -38,7 +38,7 @@ function Copy({ value }: { value: string }) {
 function Value({ children }: { children: string }) {
   return (
     <span className="flex min-w-0 items-center gap-2 rounded-md bg-[var(--card)] px-2 py-1">
-      <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground">
+      <code className="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-foreground">
         {children}
       </code>
       <Copy value={children} />
@@ -59,7 +59,7 @@ function Step({
 }) {
   return (
     <li className="flex gap-3">
-      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[11px] font-semibold text-[var(--primary)]">
+      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[0.6875rem] font-semibold text-[var(--primary)]">
         {n}
       </span>
       <div className="min-w-0 flex-1 space-y-1.5">

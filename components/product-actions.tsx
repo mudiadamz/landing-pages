@@ -334,7 +334,7 @@ export function ProductActionsMenu({
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium text-foreground">{userName}</span>
-                <span className="block text-[11px] text-[var(--muted)]">Profile</span>
+                <span className="block text-[0.6875rem] text-[var(--muted)]">Profile</span>
               </span>
             </button>
             <form action={signOut} className="shrink-0">
@@ -542,7 +542,7 @@ export function ProductActionsMenu({
 
       <div className="my-1 h-px bg-[var(--border)]" />
 
-      <p className="px-3 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--muted)]">
+      <p className="px-3 pb-1 pt-1.5 text-[0.6875rem] font-medium uppercase tracking-wide text-[var(--muted)]">
         {t("reader.share")}
       </p>
       {SHARE_TARGETS.map(({ key, label, Icon }) => (
@@ -681,7 +681,7 @@ export function ProductActionsMenu({
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <li className="flex gap-2">
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[11px] font-semibold text-[var(--primary)]">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[0.6875rem] font-semibold text-[var(--primary)]">
         {n}
       </span>
       <span>{children}</span>

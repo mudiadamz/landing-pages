@@ -48,7 +48,7 @@ function ItemRow({ item, label }: { item: NextItem; label: string }) {
         <span className="h-16 w-12 shrink-0 rounded-lg bg-[var(--background)]" aria-hidden />
       )}
       <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">
+        <span className="block text-[0.6875rem] font-medium uppercase tracking-wider text-[var(--muted)]">
           {label}
         </span>
         <span className="mt-0.5 block truncate font-semibold text-foreground">{item.title}</span>
@@ -136,7 +136,7 @@ export async function ReaderEndPanel({
 
           {hasContinuation && (
             <div className="mt-8 space-y-2">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">
+              <p className="text-[0.6875rem] font-medium uppercase tracking-wider text-[var(--muted)]">
                 {t("reader.ifYouWantAnother")}
               </p>
               {next && <ItemRow item={next} label={t("panel.dashKeepReading")} />}

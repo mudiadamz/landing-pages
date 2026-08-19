@@ -48,9 +48,9 @@ function FunnelLight({ label, level }: { label: string; level: Light }) {
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div>
-      <p className="text-[11px] text-[var(--muted)]">{label}</p>
+      <p className="text-[0.6875rem] text-[var(--muted)]">{label}</p>
       <p className="text-sm font-semibold tabular-nums">{value}</p>
-      {hint && <p className="text-[10px] text-[var(--muted)]">{hint}</p>}
+      {hint && <p className="text-[0.625rem] text-[var(--muted)]">{hint}</p>}
     </div>
   );
 }
@@ -126,7 +126,7 @@ export function ProductSummaryCard({ s, href }: { s: ProductSummary; href?: stri
       {s.previews > 0 && (
         <div className="space-y-1">
           <EngagementBar read={s.read} curious={s.curious} left={s.left} />
-          <div className="flex justify-between text-[10px] text-[var(--muted)]">
+          <div className="flex justify-between text-[0.625rem] text-[var(--muted)]">
             <span className="text-emerald-600 dark:text-emerald-400">Baca {s.read}</span>
             <span className="text-amber-600 dark:text-amber-400">Penasaran {s.curious}</span>
             <span className="text-rose-600 dark:text-rose-400">Pergi {s.left}</span>

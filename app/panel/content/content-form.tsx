@@ -393,7 +393,7 @@ async function sampleTopColor(url: string): Promise<string> {
                 placeholder="#1b2a4a"
               />
             </div>
-            <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+            <p className="mt-1.5 text-[0.6875rem] text-[var(--muted)]">
               {t("content.toolbarColorHint")}
             </p>
           </div>
@@ -413,7 +413,7 @@ async function sampleTopColor(url: string): Promise<string> {
               }}
               placeholder={t("content.photoUrlPlaceholder")}
             />
-            <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+            <p className="mt-1.5 text-[0.6875rem] text-[var(--muted)]">
               {t("content.photoUrlHint")}
             </p>
             {!content.founder.photoUrl && (
@@ -542,7 +542,7 @@ async function sampleTopColor(url: string): Promise<string> {
             value={content.aboutAuthorHeading}
             onChange={(e) => set("aboutAuthorHeading", e.target.value)}
           />
-          <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+          <p className="mt-1.5 text-[0.6875rem] text-[var(--muted)]">
             {t("content.authorBlockHintBefore")}{" "}
             <strong>{t("content.founderCard")}</strong> {t("content.authorBlockHintAfter")}
           </p>

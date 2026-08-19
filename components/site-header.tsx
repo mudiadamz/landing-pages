@@ -128,7 +128,7 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
   }, [currentCategorySlug]);
 
   const chip = (active: boolean) =>
-    `snap-start shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] ` +
+    `snap-start shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] ` +
     `font-medium whitespace-nowrap transition-colors duration-150 active:scale-[0.97] ` +
     (active
       ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm"
@@ -243,7 +243,7 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
               })}
               <Link
                 href="/categories"
-                className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium whitespace-nowrap text-[var(--muted)] hover:text-foreground transition-colors"
+                className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium whitespace-nowrap text-[var(--muted)] hover:text-foreground transition-colors"
               >
                 {t("home.allArrow")}
               </Link>
@@ -256,7 +256,7 @@ export function SiteHeader({ user, brand, categories = [], currentCategorySlug =
                 <Link
                   key={href}
                   href={href}
-                  className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[13px] text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] transition-colors whitespace-nowrap"
+                  className="snap-start shrink-0 rounded-full px-3 py-1.5 text-[0.8125rem] text-[var(--muted)] hover:text-foreground hover:bg-[var(--accent-subtle)] transition-colors whitespace-nowrap"
                 >
                   {t(labelKey)}
                 </Link>

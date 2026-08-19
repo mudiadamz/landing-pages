@@ -235,7 +235,7 @@ function ExcludedIpsDialog({
                       type="button"
                       onClick={() => purge(r.ip)}
                       disabled={pending}
-                      className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 hover:bg-amber-500/25 disabled:opacity-50 dark:text-amber-400"
+                      className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-amber-600 hover:bg-amber-500/25 disabled:opacity-50 dark:text-amber-400"
                       title={t("analytics.staleSession")}
                     >
                       {t("analytics.staleSessionCount", { count: r.sessions })}
