@@ -1695,8 +1695,6 @@ export const en: Record<keyof typeof id, string> = {
   "chat.webLocked": "This needed a web search — available from Pro",
 
   "chat.uploading": "Uploading attachments…",
-  "chat.waitingHere":
-    "Waiting on this chat's reply — open or start another chat if you want to ask something now.",
   "chat.answeringElsewhere":
     "This chat is being answered elsewhere — the screen catches up on its own once the reply lands.",
   "chat.maxConcurrent": "At most {count} chats at once — wait for one to finish.",

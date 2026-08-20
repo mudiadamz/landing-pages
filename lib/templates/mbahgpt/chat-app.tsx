@@ -184,7 +184,12 @@ export function ChatApp({
   const hint = (() => {
     if (chat.notice) return chat.notice;
     if (chat.openLive?.uploading) return t("chat.uploading");
-    if (streaming) return t("chat.waitingHere");
+    // Nothing while the answer is arriving in front of you. The line that used
+    // to be here narrated what the reader could already see — and it has to be an
+    // early return rather than a deleted branch, because the `running` count
+    // below includes THIS reply: falling through would report the chat you are
+    // watching as one running "in the background".
+    if (streaming) return "";
     if (waiting) return t("chat.answeringElsewhere");
     if (chat.running > 0) {
       return chat.running >= MAX_CONCURRENT
