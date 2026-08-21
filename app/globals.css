@@ -21,6 +21,12 @@
   --secondary: #c2410c;
   --muted: #5c5c61;
   --border: #e5e5e7;
+  /* An ORNAMENTAL rule, as opposed to --border, which is structural.
+     Same value here so nothing changes for the templates that never think about
+     it; a template with a decorative identity (mbahgpt) overrides it and gets a
+     line that reads as a flourish without also repainting every input, card and
+     divider on the page. */
+  --rule: #e5e5e7;
   --ring: #1a5f4a;
   --primary: #1a5f4a;
   --primary-foreground: #ffffff;
@@ -45,6 +51,7 @@ html.dark {
   --secondary: #fb923c;
   --muted: #86868b;
   --border: #2d2d2f;
+  --rule: #2d2d2f;
   --ring: #3d8b6e;
   --primary: #3d8b6e;
   --primary-foreground: #ffffff;

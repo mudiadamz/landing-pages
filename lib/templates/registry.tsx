@@ -254,13 +254,14 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     // things fighting for that strip on a phone means one of them wins by accident.
     hasBottomNav: false,
     fullscreenHome: true,
-    // Warm paper page, white cards — the palette the standalone app was designed
-    // in. A long transcript is long-form reading, and a tinted ground fights it.
-    surfaces: { background: "#faf8f5", card: "#ffffff" },
-    // Jade & Mango: the accent is the closest preset to the original's amber, and
-    // the accent here is load-bearing (the assistant's mark, the active session,
-    // the send button) rather than decorative.
-    defaultPalette: "jade",
+    // Aged paper, and a card a shade nearer white so a bubble still lifts off it.
+    //
+    // This is the one place the poster's parchment is allowed to be literal, and
+    // it is deliberately WEAKER than the poster: at full strength the ground
+    // starts competing with a long transcript, which is long-form reading. The
+    // ornament carries the theme; the paper only has to agree with it.
+    surfaces: { background: "#f5edda", card: "#fffaf0", rule: "#cbb583" },
+    defaultPalette: "wayang",
   },
 };
 

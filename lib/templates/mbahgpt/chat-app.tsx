@@ -220,8 +220,14 @@ export function ChatApp({
           drawer ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-3">
-          <Link href="/" className="truncate text-sm font-semibold tracking-tight hover:opacity-70">
+        {/* Brass under the wordmark, not grey: this is the one rule in the app
+            that is ornament rather than structure, and it is the whole reason
+            `--rule` exists as its own token. */}
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--rule)] px-3 py-3">
+          <Link
+            href="/"
+            className="truncate font-[family-name:var(--font-auman)] text-lg tracking-tight text-[var(--primary)] transition-opacity hover:opacity-70"
+          >
             {siteName}
           </Link>
           <div className="flex shrink-0 items-center gap-1">

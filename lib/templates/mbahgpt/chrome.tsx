@@ -24,7 +24,7 @@ export function MbahgptHeader({ user, brand }: ChromeProps) {
   // The brand carries the storefront's locale, so the header stays synchronous.
   const t = translator(brand.locale);
   return (
-    <header className="border-b border-[var(--border)] bg-[var(--card)]">
+    <header className="border-b border-[var(--rule)] bg-[var(--card)]">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" aria-label={brand.name} className="truncate transition-opacity hover:opacity-70">
           <SiteLogo brand={brand} imgClassName="h-6 w-auto max-w-[140px]" markClassName="h-5 w-5" />

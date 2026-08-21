@@ -235,10 +235,22 @@ export function Transcript({
   if (empty) {
     return (
       <div className="mt-[16vh] flex flex-col items-center gap-1 text-center text-[var(--muted)]">
-        <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-[var(--accent-subtle)] text-xl text-[var(--primary)]">
+        {/* A ring of brass rather than a filled disc: the poster's marks are all
+            outline and rule work, and a solid blob of accent is the one shape it
+            never uses. */}
+        <div className="mb-3 grid h-14 w-14 place-items-center rounded-full border border-[var(--rule)] bg-[var(--accent-subtle)] text-xl text-[var(--accent)]">
           ✦
         </div>
-        <p className="m-0 text-base font-semibold text-foreground">{t("chat.emptyTitle")}</p>
+        <p className="m-0 font-[family-name:var(--font-auman)] text-2xl text-foreground">
+          {t("chat.emptyTitle")}
+        </p>
+        {/* The flourish between title and instruction — the poster puts one under
+            every heading, and it is the cheapest part of the identity to carry. */}
+        <div aria-hidden className="my-1 flex items-center gap-2 text-[var(--accent)]">
+          <span className="h-px w-8 bg-[var(--rule)]" />
+          <span className="text-[0.6rem]">❖</span>
+          <span className="h-px w-8 bg-[var(--rule)]" />
+        </div>
         <p className="m-0 max-w-sm text-sm">{t("chat.emptyBody")}</p>
       </div>
     );

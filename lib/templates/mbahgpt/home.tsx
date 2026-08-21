@@ -23,10 +23,14 @@ export function MbahgptHome({ site, user }: TemplateProps) {
         Two tokens the global palette does not have, scoped to this template.
 
         `--code-bg` is the ground for code blocks and quiet chips; `--sidebar-bg` is
-        the session list's slightly recessed panel. Both are warm neutrals rather
-        than the palette's accent tint: a chat transcript is long-form reading, and
-        a tinted page fights it. They live here instead of in globals.css because
+        the session list's slightly recessed panel. Warm PAPER tones rather than
+        the palette's accent tint: a chat transcript is long-form reading, and a
+        tinted page fights it. They live here instead of in globals.css because
         nothing outside this template has any use for them.
+
+        The brass hairline is NOT here — `--rule` comes from the registry's
+        `surfaces`, because the header and footer on this storefront's secondary
+        pages draw it too and they render outside this wrapper.
 
         In the body, not the head: Next hoists stylesheets with `data-precedence`,
         and a <style> in the head loses to them (docs/architecture.md §5).
@@ -34,7 +38,7 @@ export function MbahgptHome({ site, user }: TemplateProps) {
       <style
         dangerouslySetInnerHTML={{
           __html:
-            '[data-template="mbahgpt"]{--code-bg:#f6f3ee;--sidebar-bg:#f5f2ec}' +
+            '[data-template="mbahgpt"]{--code-bg:#f2e7cf;--sidebar-bg:#efe4ca}' +
             '.dark [data-template="mbahgpt"]{--code-bg:#100f0c;--sidebar-bg:#191712}',
         }}
       />

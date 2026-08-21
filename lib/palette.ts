@@ -144,6 +144,25 @@ export const PALETTE_PRESETS: PalettePreset[] = [
     },
   },
   {
+    key: "wayang",
+    label: "Wayang",
+    note: "Hijau tua, emas & kertas tua — Jawa klasik. Palet MbahGPT.",
+    tokens: {
+      // 8.9:1 on the light background. Lifted off the poster's near-black green
+      // on purpose: at #14382c a link reads as body text that happens to be
+      // underlined, and the whole theme's one action colour cannot be a colour
+      // nobody sees as a colour.
+      primary: "#1a4a37", primaryDark: "#7ab894",
+      // Warm, not neutral: a grey-green wash on a paper ground reads as a stain.
+      subtle: "#e9dfc6", subtleDark: "#16241d",
+      // Brass rather than yellow gold. It is for marks, rules and ornament —
+      // never body text, where 3.6:1 on paper would be a promise it cannot keep.
+      accent: "#a8801f", accentDark: "#d9b74e",
+      // The batik brown that keeps green-and-gold from reading as two metals.
+      secondary: "#7a4f2a", secondaryDark: "#c9955f",
+    },
+  },
+  {
     key: "violet",
     label: "Violet",
     note: "Ungu modern dengan aksen koral — bersih, agak 'tool'.",
@@ -230,13 +249,35 @@ export function paletteCss(config: PaletteConfig): string {
  * is light-only in practice, and globals.css keeps `html.dark` more specific, so
  * dark mode is unaffected either way.
  */
-export type Surfaces = { background: string; card: string };
+export type Surfaces = {
+  background: string;
+  card: string;
+  /**
+   * The ORNAMENTAL hairline, when a template has an identity that draws them.
+   * Optional because most templates do not: left out, `--rule` keeps the
+   * globals.css default, which is `--border`, and nothing looks different.
+   *
+   * It belongs to the template rather than the palette for the same reason the
+   * surfaces do — it is a fixed choice by whoever designed the theme, not a mood
+   * an admin picks per domain. Emitted at :root so the storefront's OTHER pages
+   * (header, footer, checkout, legal) get it too; a token defined only inside
+   * the template's own wrapper would leave every one of those drawing a
+   * decorative border in currentColor.
+   */
+  rule?: string;
+};
 
 /** What the panel re-asserts, so a storefront's surfaces never reach the admin UI. */
 export const PANEL_SURFACES: Surfaces = { background: "#fdfcfb", card: "#ffffff" };
 
 export function surfaceCss(s: Surfaces): string {
-  return `:root{--background:${hex(s.background, PANEL_SURFACES.background)};--card:${hex(s.card, PANEL_SURFACES.card)}}`;
+  return (
+    `:root{--background:${hex(s.background, PANEL_SURFACES.background)};` +
+    `--card:${hex(s.card, PANEL_SURFACES.card)}` +
+    // Only when the template asked for one: an absent rule must leave the
+    // globals.css default standing, not overwrite it with a fallback.
+    `${s.rule ? `;--rule:${hex(s.rule, PANEL_SURFACES.card)}` : ""}}`
+  );
 }
 
 /**

@@ -220,7 +220,13 @@ export default async function RootLayout({
           id="site-palette"
           dangerouslySetInnerHTML={{
             __html:
-              paletteCss(paletteFromKey(site.palette)) +
+              // A storefront that has never picked one gets its TEMPLATE's palette,
+              // not the global default. `defaultPalette` used to be decoration —
+              // a hint drawn next to the template in the panel picker and read
+              // nowhere else — so a domain switched to a template designed around
+              // one palette still rendered in Forest until somebody also changed
+              // the dropdown underneath. An explicit pick still wins.
+              paletteCss(paletteFromKey(site.palette || template.defaultPalette)) +
               // The template's own page/card colours, after the palette so they
               // win. The panel re-asserts its own inside this one.
               (template.surfaces ? surfaceCss(template.surfaces) : ""),
