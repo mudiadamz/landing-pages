@@ -220,12 +220,20 @@ export function Transcript({
   messages,
   live,
   failure,
+  canUpgrade,
   onRetry,
   onEdit,
 }: {
   messages: ChatMessageRow[];
   live: LiveReply | null;
   failure: ChatFailure | null;
+  /**
+   * Whether this storefront has a tier to sell this visitor. False turns the two
+   * upgrade offers below back into plain statements — a locked feature is worth
+   * naming even where nothing can be done about it, but a button that leads to a
+   * 404 is not.
+   */
+  canUpgrade: boolean;
   onRetry: (text: string, files: PendingFile[]) => void;
   onEdit: (text: string) => void;
 }) {
@@ -303,11 +311,17 @@ export function Transcript({
             {/* The one chip that names something the reader can DO something
                 about, so it is the one chip that is a link. The rest report what
                 happened; this reports what did not, and why. */}
-            {live.webLocked && (
-              <Link href="/upgrade" className={`${CHIP} transition-colors hover:border-[var(--primary)] hover:text-foreground`}>
-                {`🔒 ${t("chat.webLocked")} →`}
-              </Link>
-            )}
+            {live.webLocked &&
+              (canUpgrade ? (
+                <Link
+                  href="/upgrade"
+                  className={`${CHIP} transition-colors hover:border-[var(--primary)] hover:text-foreground`}
+                >
+                  {`🔒 ${t("chat.webLocked")} →`}
+                </Link>
+              ) : (
+                <div className={CHIP}>{`🔒 ${t("chat.webLocked")}`}</div>
+              ))}
             {live.reasoning && (
               <ThinkingPanel
                 reasoning={live.reasoning}
@@ -343,7 +357,7 @@ export function Transcript({
                 stopped, holding a prompt, and the fix is one click rather than a
                 page they have to know exists. It leads the row, ahead of Retry,
                 because retrying is exactly what will not work. */}
-            {failure.upgrade && (
+            {failure.upgrade && canUpgrade && (
               <Link
                 href="/upgrade"
                 className="rounded-lg bg-[var(--primary)] px-2.5 py-1 text-xs text-[var(--primary-foreground)] transition-opacity hover:opacity-90"

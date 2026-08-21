@@ -13,10 +13,13 @@ import { DEFAULT_HIRING, normalizeHiring, type HiringContent } from "@/lib/hirin
 import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
 import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
 import {
+  DEFAULT_PLAN_META,
   DEFAULT_PLAN_PRICES,
+  normalizePlanMeta,
   normalizePlanPrices,
   normalizePlanLimitsOverrides,
   type PlanLimitsOverrides,
+  type PlanMeta,
   type PlanPrices,
 } from "@/lib/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -42,6 +45,7 @@ const OTHER_LINKS_KEY = "other_links";
 const SOCIAL_KEY = "social_links";
 const PLAN_PRICES_KEY = "plan_prices";
 const PLAN_LIMITS_KEY = "plan_limits";
+const PLAN_META_KEY = "plan_meta";
 
 /* Role-based feature access (edited at /panel/roles). The cached reader lives in
  * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
@@ -971,6 +975,74 @@ export async function updatePlanLimits(
     return { ok: false, error: "Gagal menyimpan." };
   }
   revalidateTag("plan-limits", "max");
+  revalidatePath("/upgrade");
+  return { ok: true };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Plan metadata: what the tiers are CALLED, and which ones a visitor sees     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Names, one-liners and visibility per tier, plus the master switch.
+ *
+ * Separate from the limits and the prices because it answers a different
+ * question — those two say what a tier IS WORTH, this one says what it is CALLED
+ * and whether anyone is shown it at all. A storefront can rename Pro to "Sakti"
+ * without touching a single number.
+ */
+const readPlanMeta = unstable_cache(
+  async (siteId: string): Promise<PlanMeta> => {
+    try {
+      const supabase = createSupabaseJS(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      const { data } = await supabase
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", PLAN_META_KEY)
+        .maybeSingle();
+      if (!data?.value) return DEFAULT_PLAN_META;
+      return normalizePlanMeta(JSON.parse(data.value as string));
+    } catch {
+      // The shipped names and the shipped visibility. A failed read must not
+      // silently take a storefront's pricing page off the air.
+      return DEFAULT_PLAN_META;
+    }
+  },
+  ["plan-meta"],
+  { revalidate: 120, tags: ["plan-meta"] },
+);
+
+export async function getPlanMeta(siteId?: string): Promise<PlanMeta> {
+  return readPlanMeta(siteId ?? (await currentSiteId()));
+}
+
+export async function updatePlanMeta(
+  meta: PlanMeta,
+  siteId?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const clean = normalizePlanMeta(meta);
+  const supabase = await createClient();
+  const { error } = await supabase.from("lp_site_settings").upsert(
+    {
+      site_id: siteId ?? (await currentSiteId()),
+      key: PLAN_META_KEY,
+      value: JSON.stringify(clean),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id,key" },
+  );
+
+  if (error) {
+    console.error("updatePlanMeta error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  revalidateTag("plan-meta", "max");
   revalidatePath("/upgrade");
   return { ok: true };
 }

@@ -22,12 +22,14 @@ import { createClient } from "@/lib/supabase/server";
 import { currentSiteId } from "@/lib/site-resolve";
 import { ANSWER_LOCK_STALE_MS } from "@/lib/mbahgpt/config";
 import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
-import { getPlanLimits, getPlanPrices } from "@/lib/actions/site-settings";
+import { getPlanLimits, getPlanMeta, getPlanPrices } from "@/lib/actions/site-settings";
 import {
   PLAN_KEYS,
   effectivePlan,
   isPurchasable,
   resolvePlanLimits,
+  resolvePlanMeta,
+  visiblePlanKeys,
   type PlanKey,
   type PlanLimits,
 } from "@/lib/plans";
@@ -216,6 +218,8 @@ export type ChatAccount = {
   email: string | null;
   avatarUrl: string | null;
   plan: PlanKey;
+  /** What THIS storefront calls the tier — it may have been renamed. */
+  planLabel: string;
   planExpiresAt: string | null;
   limits: PlanLimits;
   /** Chat turns spent in the rolling window. */
@@ -247,22 +251,28 @@ export async function getChatAccount(): Promise<ChatAccount | null> {
   const { supabase, userId } = await requireUser();
   if (!userId) return null;
 
-  const [{ data: auth }, { data: profile }, overrides, prices] = await Promise.all([
+  const [{ data: auth }, { data: profile }, overrides, prices, meta] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from("lp_profiles").select("full_name, avatar_url, plan, plan_expires_at").eq("id", userId).maybeSingle(),
     getPlanLimits(),
     getPlanPrices(),
+    getPlanMeta(),
   ]);
 
   const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
   // Only what is ABOVE the current plan counts. PLAN_KEYS is ordered, so the
-  // slice is the set of plans an upgrade could mean.
-  const canUpgrade = PLAN_KEYS.slice(PLAN_KEYS.indexOf(plan) + 1).some((p) => isPurchasable(p, prices));
+  // slice is the set of plans an upgrade could mean — narrowed to the ones this
+  // storefront actually shows, which is empty when the master switch is off.
+  const shown = new Set(visiblePlanKeys(meta));
+  const canUpgrade = PLAN_KEYS.slice(PLAN_KEYS.indexOf(plan) + 1).some(
+    (p) => shown.has(p) && isPurchasable(p, prices),
+  );
   return {
     fullName: profile?.full_name ?? (auth.user?.user_metadata?.full_name as string) ?? null,
     email: auth.user?.email ?? null,
     avatarUrl: profile?.avatar_url ?? null,
     plan,
+    planLabel: resolvePlanMeta(plan, meta).label,
     planExpiresAt: profile?.plan_expires_at ?? null,
     limits: resolvePlanLimits(plan, overrides),
     used: await chatMessagesUsed(supabase, userId),

@@ -105,7 +105,8 @@ konteks search, jadi mengubah instruksi langsung berlaku ke chat lama.
 ## 5. Paket pengguna
 
 Chat ini tidak gratis untuk dijalankan, jadi apa yang boleh dipakai ditentukan
-paket: **Free / Pro / Business / Enterprise**.
+paket: **Free / Pro / Business / Enterprise**, plus dua **slot cadangan**
+(`tier5`, `tier6`) yang dikirim tersembunyi dan tanpa nama.
 
 | | Free | Pro | Business | Enterprise |
 |---|---:|---:|---:|---:|
@@ -127,7 +128,14 @@ Yang perlu diketahui sebelum mengubahnya:
 
 - **Kunci paketnya tetap kode** (I12): `lp_profiles.plan` cuma menyimpan kuncinya,
   dan kunci tak dikenal dibaca sebagai `free`. Yang jadi data adalah batasnya,
-  bukan daftar paketnya.
+  **namanya**, dan **apakah ditampilkan** — bukan daftar kuncinya.
+- **Menambah paket = menyalakan slot, bukan membuat baris.** Ada enam slot; empat
+  terpakai, `tier5`/`tier6` menunggu. Beri nama di `/panel/plans`, centang Tampil,
+  isi harga & batasnya. Sengaja slot dan bukan baris bebas: kunci yang bisa
+  dikarang admin adalah kunci yang bisa berhenti ada sementara masih ada orang
+  memakainya — dan orang itu akan terbaca `free`. Slot tidak bisa hilang.
+- **Urutan `PLAN_KEYS` itu urutan upgrade.** "Upgrade" berarti "lebih ke bawah di
+  daftar itu", jadi slot baru selalu di UJUNG meski harganya di tengah.
 - **Batas per-situs, paket per-akun.** Pro-nya seseorang berlaku di semua
   storefront, tapi apa isi Pro ditentukan storefront yang sedang dipakai — karena
   tagihan modelnya jatuh ke pemilik domain itu.
@@ -151,6 +159,33 @@ Yang perlu diketahui sebelum mengubahnya:
 - **Batas produk dicek saat BUAT saja.** Akun yang turun paket tetap memegang yang
   sudah terbit — menurunkan produk dari peredaran karena langganan habis menghukum
   pembelinya, bukan penjualnya.
+
+### Nama tier & saklar tampil
+
+Kunci ketiga, `lp_site_settings` key **`plan_meta`**, diedit di layar yang sama:
+
+```jsonc
+{
+  "enabled": true,          // saklar induk untuk seluruh storefront
+  "plans": {
+    "pro": { "label": "Sakti", "note": "…", "visible": true }
+  }
+}
+```
+
+- **`enabled: false`** = storefront ini tidak menjual tier sama sekali.
+  `/upgrade` jadi **404** (bukan halaman kosong), `canUpgrade` selalu false, chip
+  web-locked kembali jadi teks biasa, tembok kuota tidak lagi menawarkan jalan
+  keluar, dan `/api/plans/create-invoice` menolak — endpoint itu menerima kunci
+  paket dari body request, jadi menyembunyikan tier harus ikut menutup checkout-nya
+  atau tier itu cuma jadi sulit ditemukan.
+- **Ganti nama itu kosmetik.** Yang berubah cuma `label`; kuncinya tidak, jadi
+  orang yang sudah memakai tier itu tidak terlantar. Nama ini yang dipakai halaman
+  harga, badge di dialog preferensi, pesan kuota habis, dan label invoice Duitku.
+- Absen dibaca sebagai **menyala** — storefront yang belum pernah membuka layarnya
+  tetap menjual, sama seperti sebelum setting ini ada.
+
+### Harga
 
 Harga **per bulan** dan **per storefront**: `lp_site_settings` key `plan_prices`,
 diedit di `/panel/plans`. Nol berarti belum dijual (tombol beli tidak muncul),

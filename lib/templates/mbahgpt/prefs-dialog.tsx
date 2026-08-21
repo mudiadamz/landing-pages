@@ -38,7 +38,6 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { signOut } from "@/lib/actions/auth";
-import { PLANS } from "@/lib/plans";
 import {
   addChatMemory,
   deleteChatMemory,
@@ -453,7 +452,7 @@ function Account({ account }: { account: ChatAccount | null }) {
             anyone to a page with no buy button on it. */}
         <div className="flex shrink-0 items-center gap-2">
           <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-xs font-semibold text-[var(--primary)]">
-            {PLANS[account.plan].label}
+            {account.planLabel}
           </span>
           {account.canUpgrade && (
             <Link

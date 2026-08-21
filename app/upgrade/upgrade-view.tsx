@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useT } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n";
 import {
-  PLAN_LIST,
   formatRupiah,
   isPurchasable,
   type PaidPlanKey,
@@ -25,6 +24,7 @@ export function UpgradeView({
   plan,
   expiresAt,
   prices,
+  tiers,
   limits,
   signedIn,
   pending,
@@ -33,6 +33,8 @@ export function UpgradeView({
   plan: PlanKey;
   expiresAt: string | null;
   prices: PlanPrices;
+  /** The tiers this storefront shows, already named and already in sell order. */
+  tiers: { key: PlanKey; label: string; note: string }[];
   /** Resolved per storefront, so the card and the chat route agree. */
   limits: Record<PlanKey, PlanLimits>;
   signedIn: boolean;
@@ -90,8 +92,15 @@ export function UpgradeView({
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {PLAN_LIST.map((def) => {
+      {/* Column count follows the number of tiers actually shown — a fixed
+          lg:grid-cols-4 left a storefront selling two of them with two columns
+          of air, and one selling six with a widowed row. */}
+      <div
+        className={`grid gap-4 sm:grid-cols-2 ${
+          tiers.length >= 4 ? "lg:grid-cols-4" : tiers.length === 3 ? "lg:grid-cols-3" : ""
+        }`}
+      >
+        {tiers.map((def) => {
           const isCurrent = def.key === plan;
           const price = def.key === "free" ? 0 : prices[def.key as PaidPlanKey];
           const canBuy = isPurchasable(def.key, prices) && !isCurrent;

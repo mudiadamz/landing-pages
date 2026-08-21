@@ -1657,6 +1657,16 @@ export const en: Record<keyof typeof id, string> = {
   "plan.perMonth": "/month",
   "plan.activeUntil": "Active until {date}",
   "plan.upgrade": "Upgrade",
+  "plan.showToVisitors": "Show plans to visitors",
+  "plan.showToVisitorsNote":
+    "Off: /upgrade stops existing on this domain, and every Upgrade button disappears with it \u2014 in the preferences dialog, at the daily-quota wall, and on the web-search chip. Plans already bought keep working.",
+  "plan.noneVisible": "No tier is shown, so the pricing page is still unreachable.",
+  "plan.tierName": "Tier name",
+  "plan.tierNote": "One line for the pricing page",
+  "plan.tierVisible": "Shown",
+  "plan.spareSlot": "Spare slot \u2014 name it and tick Shown to start using it.",
+  "plan.renameNote":
+    "Renaming is cosmetic: the key stored on an account never changes, so nobody already on a tier is stranded by it.",
   "plan.pending": "Payment is being processed. The plan starts on its own once it clears.",
   "plan.colPlan": "Plan",
   "plan.colMessages": "Messages/day",

@@ -22,7 +22,20 @@
  * client component and the pricing page all need these numbers, and anything
  * imported here would be pulled into all four. */
 
-export const PLAN_KEYS = ["free", "pro", "business", "enterprise"] as const;
+/**
+ * The tier SLOTS this deployment ships. Six, not four.
+ *
+ * `tier5`/`tier6` are spare capacity: shipped hidden and unnamed, so a storefront
+ * that wants a fifth tier turns one on and names it at /panel/plans instead of
+ * waiting for a deploy. They are slots and not free-form rows on purpose —
+ * `lp_profiles.plan` stores a key, an unknown key reads as `free` (invariant
+ * I12), and a key an admin could invent is a key that can stop existing while
+ * somebody is still on it. A slot cannot.
+ *
+ * ORDER IS MEANINGFUL: "upgrade" means "further down this list", so a new slot
+ * belongs at the END even when its price sits between two existing ones.
+ */
+export const PLAN_KEYS = ["free", "pro", "business", "enterprise", "tier5", "tier6"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
 export const DEFAULT_PLAN: PlanKey = "free";
@@ -67,6 +80,12 @@ export type PlanDef = {
    * not a checkout — the panel can still grant it.
    */
   selfServe: boolean;
+  /**
+   * Whether a visitor is shown this tier by default. The spare slots ship false:
+   * an unnamed "Tier 5" column on a pricing table is worse than four columns.
+   * A storefront overrides this per tier at /panel/plans.
+   */
+  visible: boolean;
 };
 
 /**
@@ -89,6 +108,7 @@ export const PLANS: Record<PlanKey, PlanDef> = {
       maxProducts: 1,
     },
     selfServe: false,
+    visible: true,
   },
   pro: {
     key: "pro",
@@ -102,6 +122,7 @@ export const PLANS: Record<PlanKey, PlanDef> = {
       maxProducts: 20,
     },
     selfServe: true,
+    visible: true,
   },
   business: {
     key: "business",
@@ -115,6 +136,7 @@ export const PLANS: Record<PlanKey, PlanDef> = {
       maxProducts: 100,
     },
     selfServe: true,
+    visible: true,
   },
   enterprise: {
     key: "enterprise",
@@ -128,6 +150,39 @@ export const PLANS: Record<PlanKey, PlanDef> = {
       maxProducts: null,
     },
     selfServe: false,
+    visible: true,
+  },
+  // The spare slots. Their numbers are a copy of Business rather than something
+  // invented: a slot nobody has configured should behave like a plan that exists,
+  // not like one with a quota of zero, in case it is switched on before it is
+  // filled in.
+  tier5: {
+    key: "tier5",
+    label: "Tier 5",
+    note: "",
+    limits: {
+      chatMessagesPerDay: 2000,
+      chatWebSearch: true,
+      chatMaxFiles: 6,
+      chatHistory: 80,
+      maxProducts: 100,
+    },
+    selfServe: true,
+    visible: false,
+  },
+  tier6: {
+    key: "tier6",
+    label: "Tier 6",
+    note: "",
+    limits: {
+      chatMessagesPerDay: 2000,
+      chatWebSearch: true,
+      chatMaxFiles: 6,
+      chatHistory: 80,
+      maxProducts: 100,
+    },
+    selfServe: true,
+    visible: false,
   },
 };
 
@@ -192,9 +247,9 @@ export type PaidPlanKey = Exclude<PlanKey, "free">;
 
 export type PlanPrices = Record<PaidPlanKey, number>;
 
-export const PAID_PLAN_KEYS: PaidPlanKey[] = ["pro", "business", "enterprise"];
+export const PAID_PLAN_KEYS: PaidPlanKey[] = ["pro", "business", "enterprise", "tier5", "tier6"];
 
-export const DEFAULT_PLAN_PRICES: PlanPrices = { pro: 0, business: 0, enterprise: 0 };
+export const DEFAULT_PLAN_PRICES: PlanPrices = { pro: 0, business: 0, enterprise: 0, tier5: 0, tier6: 0 };
 
 /** A price nobody typed by accident: ~100 juta is far past any plausible plan. */
 const MAX_PLAN_PRICE = 100_000_000;
@@ -206,7 +261,13 @@ export function normalizePlanPrices(raw: unknown): PlanPrices {
     if (!Number.isFinite(n) || n <= 0) return 0;
     return Math.min(n, MAX_PLAN_PRICE);
   };
-  return { pro: one(v.pro), business: one(v.business), enterprise: one(v.enterprise) };
+  return {
+    pro: one(v.pro),
+    business: one(v.business),
+    enterprise: one(v.enterprise),
+    tier5: one(v.tier5),
+    tier6: one(v.tier6),
+  };
 }
 
 /** Whether this plan can actually be bought right now on this storefront. */
@@ -274,6 +335,87 @@ export function normalizePlanLimitsOverrides(raw: unknown): PlanLimitsOverrides 
     };
   }
   return out;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Per-storefront tier metadata (name, note, visibility)                      */
+/* -------------------------------------------------------------------------- */
+
+/** What a storefront may rewrite about ONE tier. */
+export type PlanMetaOverride = { label: string; note: string; visible: boolean };
+
+/**
+ * Everything a storefront decides about its tiers other than the numbers.
+ *
+ * `enabled` is the master switch and lives here rather than in its own settings
+ * key so the pricing page answers "do we sell tiers at all" and "which ones" in
+ * a single read. Off means /upgrade does not exist on this domain and no button
+ * anywhere offers it — not merely that the table renders empty.
+ */
+export type PlanMeta = {
+  enabled: boolean;
+  plans: Partial<Record<PlanKey, PlanMetaOverride>>;
+};
+
+export const DEFAULT_PLAN_META: PlanMeta = { enabled: true, plans: {} };
+
+/** A label an admin typed. Trimmed, length-capped, and never allowed to be blank —
+ *  an empty name would render a column with no heading. */
+function planText(value: unknown, fallback: string, max: number): string {
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim().slice(0, max);
+  return trimmed || fallback;
+}
+
+const MAX_PLAN_LABEL = 40;
+const MAX_PLAN_NOTE = 160;
+
+export function normalizePlanMeta(raw: unknown): PlanMeta {
+  const v = (raw ?? {}) as Record<string, unknown>;
+  const plans = (v.plans ?? {}) as Record<string, unknown>;
+  const out: PlanMeta["plans"] = {};
+
+  for (const key of PLAN_KEYS) {
+    const entry = plans[key];
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as Record<string, unknown>;
+    const base = PLANS[key];
+    out[key] = {
+      label: planText(e.label, base.label, MAX_PLAN_LABEL),
+      // A note MAY be blank — the spare slots ship with none, and forcing the
+      // shipped fallback back in would make an emptied field un-emptiable.
+      note: typeof e.note === "string" ? e.note.trim().slice(0, MAX_PLAN_NOTE) : base.note,
+      visible: typeof e.visible === "boolean" ? e.visible : base.visible,
+    };
+  }
+  // Absent reads as ON: a storefront that has never opened the screen still
+  // sells, which is what it did before this setting existed.
+  return { enabled: v.enabled !== false, plans: out };
+}
+
+/** Name, note and visibility in force for one tier on one storefront. */
+export function resolvePlanMeta(plan: PlanKey, meta: PlanMeta): PlanMetaOverride {
+  const base = PLANS[plan];
+  return { label: base.label, note: base.note, visible: base.visible, ...(meta.plans[plan] ?? {}) };
+}
+
+/** Every tier's name/note/visibility resolved at once, for the panel form. */
+export function resolveAllPlanMeta(meta: PlanMeta): Record<PlanKey, PlanMetaOverride> {
+  return Object.fromEntries(
+    PLAN_KEYS.map((key) => [key, resolvePlanMeta(key, meta)]),
+  ) as Record<PlanKey, PlanMetaOverride>;
+}
+
+/**
+ * The tiers this storefront actually shows, in upgrade order.
+ *
+ * Empty when the master switch is off — every caller that lists tiers goes
+ * through here, so one `enabled: false` closes the pricing page, the upgrade
+ * buttons and the invoice route together rather than one at a time.
+ */
+export function visiblePlanKeys(meta: PlanMeta): PlanKey[] {
+  if (!meta.enabled) return [];
+  return PLAN_KEYS.filter((key) => resolvePlanMeta(key, meta).visible);
 }
 
 /**

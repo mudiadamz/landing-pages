@@ -25,8 +25,15 @@ import { UpstreamError, parseDelta, streamChat, toSources, type ChatMessage, typ
 import { contextBlock, expandQuery, runSearch, shouldSearch, stripWebPrefix } from "@/lib/mbahgpt/web-search";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import { effectivePlan, resolvePlanLimits, withinLimit, PLANS, type PlanLimits } from "@/lib/plans";
-import { getPlanLimits } from "@/lib/actions/site-settings";
+import {
+  effectivePlan,
+  resolvePlanLimits,
+  resolvePlanMeta,
+  visiblePlanKeys,
+  withinLimit,
+  type PlanLimits,
+} from "@/lib/plans";
+import { getPlanLimits, getPlanMeta } from "@/lib/actions/site-settings";
 import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
 
 /**
@@ -129,11 +136,13 @@ export async function POST(req: NextRequest) {
    * Read once, here, and threaded down — not read again inside the stream, where a
    * second lookup could disagree with the one the quota was checked against.
    */
-  const [{ data: profile }, overrides] = await Promise.all([
+  const [{ data: profile }, overrides, meta] = await Promise.all([
     supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
     // Per storefront: what Pro is worth is decided by the domain the visitor is
     // on, because that is whose model bill it lands on.
     getPlanLimits(),
+    // What the tiers are CALLED here, and whether this domain offers any.
+    getPlanMeta(),
   ]);
   const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
   const limits = resolvePlanLimits(plan, overrides);
@@ -179,9 +188,15 @@ export async function POST(req: NextRequest) {
   const spent = await chatMessagesUsed(supabase, user.id);
   if (!withinLimit(spent, limits.chatMessagesPerDay)) {
     return fail(
-      t("chat.quotaSpent", { plan: PLANS[plan].label, limit: limits.chatMessagesPerDay ?? 0 }),
+      t("chat.quotaSpent", {
+        plan: resolvePlanMeta(plan, meta).label,
+        limit: limits.chatMessagesPerDay ?? 0,
+      }),
       429,
-      { upgrade: true },
+      // Only where there is something to upgrade TO. On a storefront that shows
+      // no tiers the wall is still a wall, but pointing at a page that 404s
+      // would make it a worse one.
+      { upgrade: visiblePlanKeys(meta).length > 0 },
     );
   }
 

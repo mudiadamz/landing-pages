@@ -24,7 +24,6 @@ import { useT } from "@/lib/i18n/client";
 import { getChatAccount, type ChatAccount } from "@/lib/actions/chat";
 import { Composer } from "./composer";
 import { Avatar, PrefsDialog } from "./prefs-dialog";
-import { PLANS } from "@/lib/plans";
 import { SessionList } from "./session-list";
 import { Transcript } from "./transcript";
 import { useChat, MAX_CONCURRENT } from "./use-chat";
@@ -297,7 +296,7 @@ export function ChatApp({
                     {account?.fullName || account?.email || "…"}
                   </span>
                   <span className="block truncate text-xs text-[var(--muted)]">
-                    {account ? PLANS[account.plan].label : ""}
+                    {account?.planLabel ?? ""}
                   </span>
                 </span>
               </>
@@ -353,6 +352,7 @@ export function ChatApp({
                   messages={chat.messages}
                   live={chat.openLive}
                   failure={chat.failure}
+                  canUpgrade={!!account?.canUpgrade}
                   onRetry={(retryText, retryFiles) => {
                     chat.clearFailure();
                     void chat.send(retryText, retryFiles, { retry: true });

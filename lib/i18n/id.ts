@@ -1647,6 +1647,16 @@ export const id = {
   "plan.perMonth": "/bulan",
   "plan.activeUntil": "Aktif sampai {date}",
   "plan.upgrade": "Upgrade",
+  "plan.showToVisitors": "Tampilkan paket ke pengunjung",
+  "plan.showToVisitorsNote":
+    "Mati: /upgrade tidak ada lagi di domain ini, dan semua tombol Upgrade ikut hilang \u2014 di dialog preferensi, di tembok kuota harian, dan di chip pencarian web. Paket yang sudah dibeli tetap berlaku.",
+  "plan.noneVisible": "Belum ada tier yang ditampilkan, jadi halaman harga tetap tidak bisa dibuka.",
+  "plan.tierName": "Nama tier",
+  "plan.tierNote": "Satu baris untuk halaman harga",
+  "plan.tierVisible": "Tampil",
+  "plan.spareSlot": "Slot cadangan \u2014 beri nama lalu centang Tampil untuk memakainya.",
+  "plan.renameNote":
+    "Mengganti nama sifatnya kosmetik: key yang tersimpan di akun tidak pernah berubah, jadi yang sudah memakai tier itu tidak terlantar.",
   "plan.pending": "Pembayaran sedang diproses. Paketnya aktif otomatis begitu terkonfirmasi.",
   "plan.colPlan": "Paket",
   "plan.colMessages": "Pesan/hari",

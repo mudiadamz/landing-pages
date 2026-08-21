@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/actions/profiles";
-import { getPlanLimits, getPlanPrices } from "@/lib/actions/site-settings";
+import { getPlanLimits, getPlanMeta, getPlanPrices } from "@/lib/actions/site-settings";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import { resolveAllPlanLimits } from "@/lib/plans";
+import { resolveAllPlanLimits, resolveAllPlanMeta } from "@/lib/plans";
 import { PlansForm } from "./plans-form";
 
 /**
@@ -23,12 +23,20 @@ export default async function PlansPage() {
   const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
 
-  const [prices, overrides] = await Promise.all([getPlanPrices(), getPlanLimits()]);
+  const [prices, overrides, meta] = await Promise.all([
+    getPlanPrices(),
+    getPlanLimits(),
+    getPlanMeta(),
+  ]);
 
   return (
     <div className="space-y-6">
       <PanelPageHeader backHref="/panel" title={t("panel.navPlans")} />
-      <PlansForm initialPrices={prices} initialLimits={resolveAllPlanLimits(overrides)} />
+      <PlansForm
+        initialPrices={prices}
+        initialLimits={resolveAllPlanLimits(overrides)}
+        initialMeta={{ enabled: meta.enabled, plans: resolveAllPlanMeta(meta) }}
+      />
     </div>
   );
 }

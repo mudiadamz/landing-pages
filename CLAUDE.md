@@ -159,9 +159,14 @@ GET /api/download/[slug]
   ke model OpenRouter. Tabel `lp_chat_*`, inti di `lib/mbahgpt/`, streaming lewat
   `app/api/mbahgpt/chat`. Mati sendiri (halaman bilang "belum aktif") kalau
   `OPENROUTER_API_KEY` kosong. Detail & batasannya di [`docs/mbahgpt.md`](docs/mbahgpt.md).
-- **Paket pengguna** (Free/Pro/Business/Enterprise): bawaan batasnya di
+- **Paket pengguna** (Free/Pro/Business/Enterprise + dua slot cadangan
+  `tier5`/`tier6` yang dikirim tersembunyi): bawaan batasnya di
   `lib/plans.ts`, bisa ditimpa per-situs di `/panel/plans` (`lp_site_settings` key
   `plan_limits`) — baca lewat `resolvePlanLimits()`, jangan `PLANS[x].limits`.
+  Nama tier, keterangannya, dan apakah ditampilkan ada di key `plan_meta` — baca
+  lewat `resolvePlanMeta()`/`visiblePlanKeys()`, jangan `PLANS[x].label`.
+  `plan_meta.enabled: false` mematikan seluruh penjualan tier di situs itu:
+  `/upgrade` jadi 404 dan create-invoice menolak.
   Paket & masa aktif di `lp_profiles.plan` +
   `plan_expires_at`, harga per bulan per-situs di `lp_site_settings` key
   `plan_prices` (layar yang sama). Beli di `/upgrade` → `POST

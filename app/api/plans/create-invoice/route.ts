@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createDuitkuInvoice } from "@/lib/duitku";
-import { getPlanPrices } from "@/lib/actions/site-settings";
+import { getPlanMeta, getPlanPrices } from "@/lib/actions/site-settings";
 import { canonicalOrigin, currentOrigin, currentSiteId } from "@/lib/site-resolve";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import { PLANS, isPurchasable, normalizePlan, type PaidPlanKey } from "@/lib/plans";
+import { isPurchasable, normalizePlan, resolvePlanMeta, visiblePlanKeys, type PaidPlanKey } from "@/lib/plans";
 
 /**
  * Buy a plan for a month (or several).
@@ -52,7 +52,12 @@ export async function POST(req: NextRequest) {
   const months = Math.min(Math.max(Math.floor(Number(body.months) || 1), 1), MAX_MONTHS);
 
   const prices = await getPlanPrices();
-  if (!isPurchasable(plan, prices)) {
+  // Priced AND shown. Hiding a tier has to close the checkout too, or it is a
+  // tier that is merely hard to find: this endpoint takes a plan key straight
+  // from the request body, so a stale tab or a hand-written POST would otherwise
+  // still buy something this storefront has stopped offering.
+  const meta = await getPlanMeta();
+  if (!isPurchasable(plan, prices) || !visiblePlanKeys(meta).includes(plan)) {
     return NextResponse.json({ error: t("plan.notPurchasable") }, { status: 400 });
   }
 
@@ -88,7 +93,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: t("plan.orderFailed") }, { status: 500 });
   }
 
-  const label = `${PLANS[plan].label} — ${months} bulan`;
+  // The storefront's name for the tier, not the shipped one: this string is
+  // what the buyer sees on the Duitku page and on their invoice.
+  const label = `${resolvePlanMeta(plan, meta).label} — ${months} bulan`;
   const fullName = (user.user_metadata?.full_name as string) ?? email;
   const firstName = fullName.split(" ")[0] || "Customer";
   const lastName = fullName.split(" ").slice(1).join(" ") || "";
