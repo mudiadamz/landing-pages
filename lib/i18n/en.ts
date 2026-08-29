@@ -841,6 +841,10 @@ export const en: Record<keyof typeof id, string> = {
   "panel.verifiedOn": "Verified {date}",
   "panel.neverVerified": "Never opened the verification link",
   "panel.notYet": "Not yet",
+  "panel.deleteUser": "Delete user",
+  "panel.deleteUserConfirm": "Permanently delete {name}? Their purchases and invoices stay on the books without a name, but the account, its reviews and its chat history are gone. This cannot be undone.",
+  "panel.deleteUserFailed": "Could not delete the user",
+  "panel.deleteUserAdminHint": "Change their role from admin first",
   "panel.banned": "Banned",
 
   "panel.sortRecent": "Newest",

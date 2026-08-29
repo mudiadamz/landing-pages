@@ -109,6 +109,18 @@ Ringkasan yang paling sering dilanggar:
   `lib/actions/sales.ts` (satu read yang sudah di-scope per-role), **bukan** di
   halaman — supaya angka global tidak bisa diraih dengan merender komponen lain.
 - Customer melihat pembelian, invoice, review.
+- **Hapus user** (`DELETE /api/admin/users`, tombol di `/panel/users`): admin penuh
+  saja — ban itu kontrol yang bisa dibatalkan dan boleh didelegasikan, hapus tidak.
+  Ditolak untuk: diri sendiri, akun ber-role admin (turunkan dulu), dan akun yang
+  **masih punya produk** — `lp_landing_pages.user_id` cascade, jadi menghapus
+  pemiliknya ikut menghapus katalog beserta filenya. Foto KTP/selfie di bucket
+  `publisher-kyc` dihapus eksplisit (Storage tidak punya FK yang bisa cascade).
+- **Menghapus user tidak menghapus uangnya.** `lp_purchases.user_id` dan
+  `lp_plan_orders.user_id` sekarang **nullable + `ON DELETE SET NULL`**
+  (migration `20260829000000`): baris penjualannya tetap ada tanpa nama, jadi omzet,
+  jumlah penjualan, dan jejak invoice tidak berubah karena satu akun dihapus. Setiap
+  pembaca `user_id` di dua tabel itu **wajib** tahan NULL — `lib/actions/sales.ts`
+  dan `getStats`/`getCustomers` di `lib/actions/admin.ts` sudah.
 
 > Flow buat & edit landing page (admin) ada di `app/panel/CLAUDE.md` — kebaca otomatis
 > saat kerja di dalam `app/panel/`.
@@ -160,7 +172,7 @@ GET /api/download/[slug]
 ```
 
 ### Tabel `lp_purchases`
-`id, user_id (FK auth.users), landing_page_id (FK lp_landing_pages), purchased_at, amount, payment_method, invoice_number (UNIQUE), UNIQUE(user_id, landing_page_id)`.
+`id, user_id (FK auth.users, **nullable** — NULL = akunnya sudah dihapus), landing_page_id (FK lp_landing_pages), purchased_at, amount, payment_method, invoice_number (UNIQUE), UNIQUE(user_id, landing_page_id)`.
 
 ## Tracking & analytics
 

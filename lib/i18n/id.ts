@@ -831,6 +831,10 @@ export const id = {
   "panel.verifiedOn": "Terverifikasi {date}",
   "panel.neverVerified": "Belum pernah membuka link verifikasi",
   "panel.notYet": "Belum",
+  "panel.deleteUser": "Hapus user",
+  "panel.deleteUserConfirm": "Hapus akun {name} secara permanen? Riwayat pembelian & invoice-nya tetap tersimpan tanpa nama, tapi akun, ulasan, dan riwayat chat-nya hilang. Tidak bisa dibatalkan.",
+  "panel.deleteUserFailed": "Gagal menghapus user",
+  "panel.deleteUserAdminHint": "Turunkan role-nya dari admin dulu",
   "panel.banned": "Banned",
 
   "panel.sortRecent": "Terbaru",

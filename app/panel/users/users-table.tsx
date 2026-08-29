@@ -140,6 +140,30 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
     }
   }
 
+  async function removeUser(user: UserRow) {
+    if (!confirm(t("panel.deleteUserConfirm", { name: user.full_name || user.email || "user" }))) {
+      return;
+    }
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Dropped from the list rather than re-fetched: the row is gone at the
+        // source, and a refetch would only redraw the same table more slowly.
+        setUsers((list) => list.filter((u) => u.id !== user.id));
+      } else {
+        alert(data.error ?? t("panel.deleteUserFailed"));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
   const unverifiedCount = users.filter((u) => !u.email_verified_at).length;
 
   const filtered = users.filter((u) => {
@@ -234,6 +258,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <VerifyBadge verifiedAt={u.email_verified_at} />
                 <StatusBadge active={u.is_active} />
                 <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
+                {isAdmin && (
+                  <DeleteUserButton user={u} disabled={updating === u.id} onClick={() => removeUser(u)} />
+                )}
               </div>
             </div>
             <div className="mt-3 flex flex-wrap items-start gap-2">
@@ -312,6 +339,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                   <td className="px-4 py-3">
                     <div className="flex justify-end">
                       <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
+                      {isAdmin && (
+                        <DeleteUserButton user={u} disabled={updating === u.id} onClick={() => removeUser(u)} />
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -433,6 +463,47 @@ function BanButton({ user, disabled, onClick }: { user: UserRow; disabled: boole
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       )}
+    </button>
+  );
+}
+
+/**
+ * Permanent delete, next to the reversible one.
+ *
+ * Disabled rather than hidden for an admin — which covers your own row, since
+ * only a full admin sees this button at all. The server refuses both cases
+ * anyway; a control that silently isn't there teaches nothing, so it stays
+ * visible and the tooltip says what to do instead.
+ */
+function DeleteUserButton({
+  user,
+  disabled,
+  onClick,
+}: {
+  user: UserRow;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const t = useT();
+  const blocked = user.role === "admin";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || blocked}
+      title={blocked ? t("panel.deleteUserAdminHint") : t("panel.deleteUser")}
+      aria-label={t("panel.deleteUser")}
+      className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[var(--muted)] dark:hover:bg-red-900/20"
+    >
+      {/* Trash */}
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+        />
+      </svg>
     </button>
   );
 }

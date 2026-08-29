@@ -40,7 +40,11 @@ export async function getStats(): Promise<Stats | null> {
     supabase.from("lp_purchases").select("user_id"),
   ]);
 
-  const uniqueBuyers = new Set((buyersRes.data ?? []).map((r) => r.user_id));
+  // Deleted accounts leave their purchases behind with a NULL user_id. Counting
+  // those would report every deleted buyer as one shared customer.
+  const uniqueBuyers = new Set(
+    (buyersRes.data ?? []).map((r) => r.user_id).filter((id): id is string => !!id),
+  );
 
   return {
     totalLandingPages: pagesRes.count ?? 0,
@@ -69,6 +73,9 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   const lastPurchaseMap = new Map<string, string>();
 
   purchases.forEach((p) => {
+    // A sale whose buyer was deleted has no customer row to show — it still
+    // counts as revenue in getStats, but this list is people.
+    if (!p.user_id) return;
     countMap.set(p.user_id, (countMap.get(p.user_id) ?? 0) + 1);
     if (p.revoked_at) revokedMap.set(p.user_id, (revokedMap.get(p.user_id) ?? 0) + 1);
     if (!lastPurchaseMap.has(p.user_id)) lastPurchaseMap.set(p.user_id, p.purchased_at);

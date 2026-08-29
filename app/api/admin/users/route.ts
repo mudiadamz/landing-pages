@@ -144,3 +144,107 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ error: "Invalid data" }, { status: 400 });
 }
+
+/**
+ * Delete an account for good.
+ *
+ * Full admin only, and deliberately NOT delegatable through the Users feature:
+ * ban is the reversible control a delegate gets, this one is not reversible at
+ * all. Same line /panel/roles draws for role and plan changes.
+ *
+ * What survives, and why:
+ *
+ *   lp_purchases / lp_plan_orders  kept, with user_id set to NULL by the FK
+ *       (migration 20260829000000). Deleting a person is a decision about their
+ *       personal data; it is not a refund, and the money was still taken. Sales
+ *       totals and the invoice trail must not move because an account went away.
+ *   lp_landing_pages  cascades — which is why an owner of products is REFUSED
+ *       here instead. Losing a catalogue as a side effect of tidying up a user
+ *       list is not something to discover afterwards.
+ *   reviews, likes, chat history, sessions  cascade, and should: they are the
+ *       person, not the transaction.
+ *   publisher-kyc photos  removed explicitly. An ID card and a selfie are the
+ *       most sensitive thing this app stores, and Storage has no foreign key to
+ *       cascade them.
+ */
+export async function DELETE(req: Request) {
+  const { user, isAdmin } = await getCaller();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmin) {
+    return NextResponse.json(
+      { error: "Hanya admin penuh yang bisa menghapus user." },
+      { status: 403 },
+    );
+  }
+
+  const { userId } = (await req.json()) as { userId?: string };
+  if (!userId) return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  if (userId === user.id) {
+    return NextResponse.json({ error: "Tidak bisa menghapus akun sendiri." }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+
+  const { data: target } = await admin
+    .from("lp_profiles")
+    .select("role, full_name, email, publisher_ktp_path, publisher_selfie_path")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!target) return NextResponse.json({ error: "User tidak ditemukan." }, { status: 404 });
+
+  // Another admin has to be demoted first. Not paranoia about malice — it is one
+  // extra deliberate step in front of the account that can undo everything else.
+  if (target.role === "admin") {
+    return NextResponse.json(
+      { error: "Turunkan role-nya dari admin dulu sebelum menghapus." },
+      { status: 400 },
+    );
+  }
+
+  // Products cascade with their owner. Count them and refuse, naming the number,
+  // so the admin decides what happens to the catalogue rather than finding out.
+  const { count: productCount } = await admin
+    .from("lp_landing_pages")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  if (productCount && productCount > 0) {
+    return NextResponse.json(
+      {
+        error:
+          `Akun ini masih memiliki ${productCount} produk. Hapus atau pindahkan produknya dulu — ` +
+          `menghapus akunnya akan ikut menghapus produk itu beserta filenya.`,
+      },
+      { status: 409 },
+    );
+  }
+
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) {
+    console.error("deleteUser error:", error);
+    return NextResponse.json({ error: "Gagal menghapus user." }, { status: 500 });
+  }
+
+  // After the account is gone, not before: if this ran first and the delete then
+  // failed, an existing publisher would have lost the documents an admin still
+  // needs to review. Best effort — a leftover file is worth logging, not worth
+  // resurrecting an account for.
+  await removeKycFiles(admin, userId);
+
+  return NextResponse.json({ success: true });
+}
+
+async function removeKycFiles(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+): Promise<void> {
+  try {
+    // Uploads are timestamped (see applyAsPublisher), so a re-application leaves
+    // older pairs behind — list the folder rather than deleting the two paths
+    // the profile happened to point at last.
+    const { data: files } = await admin.storage.from("publisher-kyc").list(userId);
+    if (!files?.length) return;
+    await admin.storage.from("publisher-kyc").remove(files.map((f) => `${userId}/${f.name}`));
+  } catch (e) {
+    console.error("removeKycFiles error:", e);
+  }
+}

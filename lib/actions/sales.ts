@@ -94,7 +94,10 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
   // 1000 sessions forever (see lib/paginate.ts).
   const { rows: purchases } = await fetchAllRows<{
     id: string;
-    user_id: string;
+    // NULL once the buyer's account is deleted — the sale stays on the books
+    // without them (migration 20260829000000). Every read below has to survive
+    // that, or one deleted account takes a revenue figure down with it.
+    user_id: string | null;
     landing_page_id: string;
     purchased_at: string;
     amount: number | null;
@@ -128,7 +131,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
     revenueTotal += amount;
     if (recent) { revenue30 += amount; sales30 += 1; }
     if (p.revoked_at) salesRevoked += 1;
-    buyers.add(p.user_id);
+    if (p.user_id) buyers.add(p.user_id);
 
     const row = byProduct.get(p.landing_page_id) ?? {
       id: p.landing_page_id,
@@ -150,7 +153,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
 
   // Buyer identities, for the recent list only.
   const head = purchases.slice(0, RECENT_LIMIT);
-  const buyerIds = [...new Set(head.map((p) => p.user_id))];
+  const buyerIds = [...new Set(head.map((p) => p.user_id).filter((id): id is string => !!id))];
   const profileById = new Map<string, { full_name: string | null; email: string | null }>();
   if (buyerIds.length) {
     const { data: profs } = await supabase
@@ -177,8 +180,8 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
       method: p.payment_method,
       revoked: !!p.revoked_at,
       productTitle: titleById.get(p.landing_page_id) ?? "(produk dihapus)",
-      buyerName: profileById.get(p.user_id)?.full_name ?? null,
-      buyerEmail: profileById.get(p.user_id)?.email ?? null,
+      buyerName: p.user_id ? (profileById.get(p.user_id)?.full_name ?? null) : null,
+      buyerEmail: p.user_id ? (profileById.get(p.user_id)?.email ?? null) : null,
     })),
   };
 }
