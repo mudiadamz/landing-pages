@@ -79,9 +79,36 @@ Ringkasan yang paling sering dilanggar:
   Signup Google langsung terverifikasi (lihat trigger `lp_handle_new_user`). Selama belum
   verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +
   filter "Belum verifikasi" di `/panel/users`.
-- **Profiles** (`lp_profiles`: `id`, `full_name`, `role`): `role ∈ {admin, customer}`. `getProfile()` cached; profil dibuat otomatis sebagai `customer` saat pertama diakses. `requireAdmin()` menjaga route admin.
-- **Hanya admin** boleh buat/edit landing page & akses Dashboard/Users/Categories/Contacts/Inbox/Custom JS. Customer melihat pembelian, invoice, review.
-- Role dinormalisasi case-insensitive via `lib/profile-utils.ts: normalizeRole()`.
+- **Profiles** (`lp_profiles`: `id`, `full_name`, `role`, `publisher_status`,
+  `email_verified_at`, `avatar_url`, `plan`, kolom `publisher_*`):
+  `role ∈ {admin, customer, publisher}`. `getProfile()` cached; profil dibuat
+  otomatis sebagai `customer` saat pertama diakses. Role dinormalisasi
+  case-insensitive via `lib/profile-utils.ts: normalizeRole()`.
+- **Tiga gate, jangan tertukar** (`lib/actions/profiles.ts`):
+  - `requireAdmin()` — hanya `role === "admin"`. Untuk aksi superuser yang **tidak
+    boleh didelegasikan** (mis. `/panel/roles`, kelola domain).
+  - `canSellProducts()` — admin **atau** publisher (`canSell()`): boleh buat & jual
+    produk.
+  - `requireFeature(key)` — admin selalu lolos; selain itu fitur harus diberikan ke
+    role-nya. Nav panel digambar dari `getAccessibleFeatures()`.
+- **Delegasi fitur admin**: daftar fitur yang bisa diberikan ada di `lib/features.ts`
+  (`ADMIN_FEATURES`: stats, users, categories, contacts, inbox, hero, content, legal,
+  hiring, custom-js). Peta role→fitur disimpan di `lp_site_settings` key
+  `role_permissions` (`lib/role-permissions.ts`), diedit admin di `/panel/roles`,
+  dibaca lewat `getRolePermissions()` yang ter-cache (tag `role-permissions`) dan
+  **sengaja tidak di-scope per-situs** — panel cuma dilayani domain kanonik, jadi
+  kuncinya tepat satu baris.
+- **Publisher (KYC)**: user melamar di `/panel/publisher` — nama legal, foto KTP +
+  selfie, alamat, rekening bank, persetujuan syarat — lalu `publisher_status`
+  jadi `pending`. Status ditulis dengan service-role karena user tidak boleh menaikkan
+  statusnya sendiri. Admin menyetujui/menolak (`lib/actions/admin.ts`); `approved`
+  sekaligus menaikkan `role` jadi `publisher`. Status ∈ `{none, pending, approved,
+  rejected}`. Skemanya di migration `20260729020000_publisher_kyc`,
+  `20260730000000_publisher_identity_payout`, `20260730010000_publisher_address`.
+- **Publisher hanya melihat miliknya sendiri**: pemisahan penjualan ada di
+  `lib/actions/sales.ts` (satu read yang sudah di-scope per-role), **bukan** di
+  halaman — supaya angka global tidak bisa diraih dengan merender komponen lain.
+- Customer melihat pembelian, invoice, review.
 
 > Flow buat & edit landing page (admin) ada di `app/panel/CLAUDE.md` — kebaca otomatis
 > saat kerja di dalam `app/panel/`.
@@ -187,5 +214,7 @@ wajib tidak tercatat sama sekali).
 
 ## Catatan migration
 
-- Migration berurutan timestamp di `supabase/migrations/`. Yang terbaru per Jun 2026: `category_parent`, `landing_assets_site_zip`, `pp_presence_owner`.
+- Migration berurutan timestamp di `supabase/migrations/`. **Jangan menyalin daftar
+  "yang terbaru" ke dokumen ini** — salinannya pasti basi (pernah tertinggal dua
+  bulan); `ls supabase/migrations | tail` yang benar.
 - Rangkaian `2026062100xx` adalah rename/merge tabel lama — perhatikan saat menyentuh nama tabel/kolom.
