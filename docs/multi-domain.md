@@ -249,7 +249,7 @@ Dua upload di `/panel/branding`, bukan satu, karena bentuk dan tugasnya berbeda:
 | Bentuk | lebar / wordmark | **persegi**, min. 192×192 |
 | Format | PNG · WebP · JPEG · SVG | PNG · WebP · SVG (**tanpa JPEG**) |
 | Maks | 300 KB | 200 KB |
-| Dipakai di | header semua template, JSON-LD `logo` | tab browser, PWA/install, apple-touch, avatar Link in bio |
+| Dipakai di | header semua template, JSON-LD `logo` | tab browser, PWA/install, apple-touch, splash iOS, kartu OG, avatar Link in bio |
 
 Kalau satu kolom dipakai untuk keduanya, hasilnya: wordmark terpotong di tab browser,
 atau lambang seukuran stempel di header. JPEG ditolak untuk ikon karena tidak punya
@@ -286,8 +286,50 @@ installability, sama seperti untuk ikon SVG.
 **Ikon baru tidak langsung terlihat di tab.** Browser meng-cache favicon lebih
 agresif daripada halaman; hard reload atau tab baru.
 
-**Satu permukaan yang masih ADM.UIUX di semua domain:** `app/opengraph-image.tsx`
-— kartu OG default, gambar dengan teks yang di-bake. Belum per-domain.
+## PWA: ikon, warna, dan splash screen
+
+Yang dibaca **OS**, bukan browser — dan karena itu tidak bisa ikut CSS. Manifest
+`background_color`, `theme-color`, ikon home-screen, dan launch image iOS semuanya
+dipakai *sebelum* satu byte CSS ada, jadi nilainya harus dikirim terpisah. Satu
+sumber: **`lib/site-appearance.ts`** (`siteAppearance(site, template)`), dipakai
+empat permukaan — `app/manifest.ts`, `app/layout.tsx`, `/api/splash`,
+`/api/site-icon`.
+
+| Permukaan | Dari mana | Catatan |
+|---|---|---|
+| `theme_color` / `background_color` | `template.surfaces.background` | Dulu `#fdfcfb` mati — di template hangat (linkbio, mbahgpt) install-nya berkedip putih dulu |
+| `<meta name="theme-color">` | sama | Cover color halaman depan tetap menang (`data-locked`) |
+| Ikon tab | `lp_sites.icon_url` apa adanya | File asli, tanpa diproses |
+| `apple-touch-icon` | **`/api/site-icon/apple-180.png`** | iOS tidak menerima SVG dan merender PNG transparan di atas hitam |
+| Manifest `maskable` | **`/api/site-icon/maskable-{192,512}.png`** | Launcher Android memotong jadi lingkaran; mark digambar 60% biar sudutnya selamat |
+| Launch image iOS | **`/api/splash/{w}x{h}-{light,dark}.png`** | 17 ukuran layar × 2 skema |
+
+**Splash-nya dirender per request, bukan file.** Dulu 34 PNG di `public/splash`
+yang di-generate dari `public/icon-512.png` — aset build-time, dan aset build-time
+tidak bisa berbeda per host (alasan yang sama persis dengan `app/icon.svg` di atas),
+jadi tiap domain niche booting dengan lambang ADM.UIUX di atas warna ADM.UIUX.
+`scripts/gen-ios-splash.mjs` dan `npm run gen:splash` ikut dihapus.
+
+Dua hal yang menjaga route itu tetap murah dan aman:
+
+- **URL-nya bawa `?v=`**, sidik jari dari nama+ikon+warna. Isinya `immutable` satu
+  tahun di CDN, tapi berubah URL begitu situsnya ganti identitas.
+- **Ukurannya allow-list** (`parseSplashSpec`, `parseIconSpec`). Route yang mau
+  menggambar ukuran apa pun dari URL itu generator gambar terbuka — satu request
+  20000×20000 sudah cukup untuk menghabiskan memori server, dan tidak perlu login.
+
+**Ikon WebP tidak muncul di splash.** `next/og` merender lewat satori → resvg, yang
+bisa PNG, JPEG, dan SVG — bukan WebP. Ikon WebP tetap benar di tab browser dan di
+manifest; di splash & ikon home-screen ia jatuh ke **inisial situs** di atas warna
+situs (`brandInitials()`, sama seperti avatar Link in bio). Salah lambang, tapi
+masih storefront yang benar — lebih baik daripada kotak kosong. Pakai PNG atau SVG
+kalau ingin lambangnya ikut.
+
+**Kartu OG juga per-domain sekarang** (`app/opengraph-image.tsx`): nama situs,
+tagline, deskripsi, ikon, dan garis atas dari `primary` palet domain itu — di atas
+warna halaman template-nya. Sebelumnya satu gambar dengan teks "ADM.UIUX" dan
+"admuiux.com" yang di-bake, jadi link ke storefront niche tampil sebagai merek
+orang lain di WhatsApp.
 
 ## Yang perlu diketahui
 

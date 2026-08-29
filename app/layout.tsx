@@ -15,14 +15,16 @@ import { TawkChat } from "@/components/tawk-chat";
 import { PwaRegister } from "@/components/pwa-register";
 import { SessionTracker } from "@/components/session-tracker";
 import { GtmScripts } from "@/components/gtm-scripts";
-import { IOS_SPLASH_TARGETS, splashFile, splashMedia } from "@/lib/ios-splash";
+import { IOS_SPLASH_TARGETS, splashMedia, splashUrl } from "@/lib/ios-splash";
 import { currentOrigin, currentSite, type Site } from "@/lib/site-resolve";
 import { requestLocale } from "@/lib/i18n/request";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { paletteCss, paletteFromKey, surfaceCss } from "@/lib/palette";
-import { DEFAULT_APPLE_ICON, DEFAULT_ICON } from "@/lib/site-brand";
+import { DEFAULT_ICON } from "@/lib/site-brand";
+import { siteAppearance, type SiteAppearance } from "@/lib/site-appearance";
+import { APPLE_ICON_SPEC, iconUrl } from "@/lib/pwa-icons";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,7 +58,8 @@ const DEFAULT_DESCRIPTION =
  */
 export async function generateMetadata(): Promise<Metadata> {
   const [site, origin] = await Promise.all([currentSite(), currentOrigin()]);
-  const name = site.name || "ADM.UIUX";
+  const look = siteAppearance(site, resolveTemplate(site.template));
+  const name = look.name;
   const title = site.tagline ? `${name} — ${site.tagline}` : name;
   // The site's own snippet, never one synthesised from the tagline: a tagline is a
   // headline and makes a uselessly short search result.
@@ -87,7 +90,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: { card: "summary_large_image", title, description },
     robots: { index: true, follow: true },
-    icons: siteIcons(site),
+    icons: siteIcons(site, look),
   };
 }
 
@@ -102,16 +105,21 @@ export async function generateMetadata(): Promise<Metadata> {
  * static files, referenced below as the fallback and still served at /favicon.ico
  * for browsers that ask for it without being told to.
  */
-function siteIcons(site: Site): Metadata["icons"] {
+function siteIcons(site: Site, look: SiteAppearance): Metadata["icons"] {
+  // Always the generated PNG, never the upload: iOS will not take an SVG here,
+  // and it composites nothing behind a transparent PNG — it renders it on black.
+  // The route draws the same mark on the storefront's own background, so this is
+  // the one icon that is correct for every kind of upload.
+  const apple = iconUrl(APPLE_ICON_SPEC, look.version);
   if (site.icon_url) {
     // One entry, not the site's plus the default: two <link rel="icon"> tags let the
     // browser choose, and it sometimes chooses the wrong one.
-    return { icon: site.icon_url, shortcut: site.icon_url, apple: site.icon_url };
+    return { icon: site.icon_url, shortcut: site.icon_url, apple };
   }
   return {
     icon: DEFAULT_ICON,
     shortcut: "/favicon.ico",
-    apple: DEFAULT_APPLE_ICON,
+    apple,
   };
 }
 
@@ -151,6 +159,11 @@ export default async function RootLayout({
   // another domain would arrive here to a half-dark page with no way back.
   const template = resolveTemplate(site.template);
   const lightOnly = !!template.lightOnly;
+  // The colours the OS paints before any CSS exists: the toolbar tint, and the
+  // launch image behind the app while it boots. Per storefront, because a
+  // template that isn't painted on #fdfcfb would otherwise flash the wrong
+  // colour on every cold start. See lib/site-appearance.ts.
+  const look = siteAppearance(site, template);
 
   // The homepage may tint the browser toolbar to match its cover. Read only for
   // "/" — every other route would pay for a lookup it never uses, and the header
@@ -175,7 +188,7 @@ export default async function RootLayout({
             frame and then snap back to the page background. */}
         <meta
           name="theme-color"
-          content={coverTheme || (isDark ? "#0d0d0f" : "#fdfcfb")}
+          content={coverTheme || (isDark ? look.backgroundDark : look.background)}
           {...(coverTheme ? { "data-locked": "true" } : {})}
         />
         {/* Add-to-home-screen support: manifest (auto-linked by app/manifest.ts)
@@ -185,24 +198,25 @@ export default async function RootLayout({
             is where it has to live to follow the storefront's own icon. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content={site.name || "ADM.UIUX"} />
+        <meta name="apple-mobile-web-app-title" content={look.name} />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         {/* Launch images for an iOS home-screen install. iOS ignores the web
             manifest here, so without an exactly-matching startup image it shows
-            a blank white screen while the app boots. */}
+            a blank white screen while the app boots. Rendered per storefront by
+            /api/splash — see lib/ios-splash.ts for why they aren't files. */}
         {IOS_SPLASH_TARGETS.map((t) =>
           (["light", "dark"] as const).map((scheme) => (
             <link
               key={`${t.w}x${t.h}@${t.r}-${scheme}`}
               rel="apple-touch-startup-image"
               media={splashMedia(t, scheme)}
-              href={splashFile(t, scheme)}
+              href={splashUrl(t, scheme, look.version)}
             />
           )),
         )}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var lightOnly=${lightOnly ? "true" : "false"};var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=!lightOnly&&t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc&&!mc.hasAttribute('data-locked')){mc.setAttribute('content',dark?'#0d0d0f':'#fdfcfb');}})()`,
+            __html: `(function(){var lightOnly=${lightOnly ? "true" : "false"};var t=localStorage.getItem('theme');if(!t){var m=document.cookie.match(/theme=([^;]+)/);if(m){t=m[1].trim();try{localStorage.setItem('theme',t);}catch(e){}}}t=t||'light';var dark=!lightOnly&&t==='dark';if(document.documentElement.classList.contains('dark')!==dark){document.documentElement.classList.toggle('dark',dark);}var mc=document.querySelector('meta[name="theme-color"]');if(mc&&!mc.hasAttribute('data-locked')){mc.setAttribute('content',dark?${JSON.stringify(look.backgroundDark)}:${JSON.stringify(look.background)});}})()`,
           }}
         />
       </head>

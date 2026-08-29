@@ -14,7 +14,6 @@
     "db:push": "supabase db push",
     "db:migrate": "supabase migration up",
     "pdf:epub": "node scripts/pdf-to-epub.mjs",
-    "gen:splash": "node scripts/gen-ios-splash.mjs",
     "i18n:scan": "node scripts/find-hardcoded-strings.mjs",
     "test": "vitest run",
     "test:watch": "vitest"

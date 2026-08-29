@@ -39,8 +39,16 @@ export function setTheme(dark: boolean) {
   }
   document.cookie = `theme=${value};path=/;max-age=${COOKIE_MAX_AGE};sameSite=Lax`;
   // Keep the iOS Safari toolbar tint in sync with the theme (matches --background).
+  // Read back from the cascade rather than hardcoding the pair: a template may
+  // paint itself on its own page colour (lib/palette Surfaces), and this runs
+  // after the class toggle above, so the value is already the new theme's.
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", dark ? "#0d0d0f" : "#fdfcfb");
+  if (meta && !meta.hasAttribute("data-locked")) {
+    const bg = getComputedStyle(document.documentElement)
+      .getPropertyValue("--background")
+      .trim();
+    meta.setAttribute("content", bg || (dark ? "#0d0d0f" : "#fdfcfb"));
+  }
   listeners.forEach((l) => l());
 }
 

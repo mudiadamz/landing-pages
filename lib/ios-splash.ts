@@ -5,10 +5,17 @@
  * shows a blank white page while the app boots unless an exactly-matching
  * apple-touch-startup-image is declared. The media query has to match the
  * device's CSS size and pixel ratio precisely, so every supported screen needs
- * its own entry (and its own generated PNG).
+ * its own entry (and its own image).
+ *
+ * The images are RENDERED PER REQUEST by /api/splash rather than shipped as
+ * files in public/. They used to be 34 PNGs baked from public/icon-512.png at
+ * build time — which is a build-time asset, and a build-time asset cannot vary
+ * by host, so every niche domain launched under the ADM.UIUX mark on the
+ * ADM.UIUX background. Same reason app/icon.svg had to move to public/ for the
+ * favicon to follow the storefront (see docs/multi-domain.md).
  *
  * Portrait only: the app's manifest locks orientation to portrait.
- * Sizes are `cssWidth x cssHeight @ratio`; the PNG is the pixel size.
+ * Sizes are `cssWidth x cssHeight @ratio`; the rendered PNG is the pixel size.
  */
 export type SplashTarget = {
   /** CSS pixels */
@@ -17,6 +24,8 @@ export type SplashTarget = {
   /** devicePixelRatio */
   r: number;
 };
+
+export type SplashScheme = "light" | "dark";
 
 export const IOS_SPLASH_TARGETS: SplashTarget[] = [
   // iPhone
@@ -40,11 +49,31 @@ export const IOS_SPLASH_TARGETS: SplashTarget[] = [
   { w: 1024, h: 1366, r: 2 }, // Pro 12.9"
 ];
 
-/** Background matches the app's --background so the boot is seamless. */
-export const SPLASH_BG = { light: "#fdfcfb", dark: "#0d0d0f" } as const;
+/** The share of the shorter edge the mark occupies. Matches the old baked images. */
+export const SPLASH_MARK_RATIO = 0.34;
 
-export function splashFile(t: SplashTarget, scheme: "light" | "dark"): string {
-  return `/splash/apple-splash-${t.w * t.r}-${t.h * t.r}${scheme === "dark" ? "-dark" : ""}.png`;
+export function splashUrl(t: SplashTarget, scheme: SplashScheme, version: string): string {
+  return `/api/splash/${t.w * t.r}x${t.h * t.r}-${scheme}.png?v=${version}`;
+}
+
+/**
+ * Parse `1170x2532-dark.png` back into a render request — and refuse anything
+ * that isn't one of OUR sizes.
+ *
+ * The allow-list is the point. A route that renders whatever dimensions the URL
+ * asks for is an open image generator: one request for 20000×20000 is a server
+ * out of memory, and it needs no session to send.
+ */
+export function parseSplashSpec(
+  spec: string,
+): { width: number; height: number; scheme: SplashScheme } | null {
+  const m = /^(\d{2,5})x(\d{2,5})-(light|dark)\.png$/.exec(spec);
+  if (!m) return null;
+  const width = Number(m[1]);
+  const height = Number(m[2]);
+  const known = IOS_SPLASH_TARGETS.some((t) => t.w * t.r === width && t.h * t.r === height);
+  if (!known) return null;
+  return { width, height, scheme: m[3] as SplashScheme };
 }
 
 /**
@@ -52,7 +81,7 @@ export function splashFile(t: SplashTarget, scheme: "light" | "dark"): string {
  * dark must each pin prefers-color-scheme — otherwise both match and the
  * choice is arbitrary.
  */
-export function splashMedia(t: SplashTarget, scheme: "light" | "dark"): string {
+export function splashMedia(t: SplashTarget, scheme: SplashScheme): string {
   return (
     `(device-width: ${t.w}px) and (device-height: ${t.h}px) and ` +
     `(-webkit-device-pixel-ratio: ${t.r}) and (orientation: portrait) and ` +

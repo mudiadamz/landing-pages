@@ -31,7 +31,7 @@ Ringkasan yang paling sering dilanggar:
 | Mau apa | Ke mana |
 |---|---|
 | Aturan & pola arsitektur | [`docs/architecture.md`](docs/architecture.md) |
-| Multi-domain, tema, palet | [`docs/multi-domain.md`](docs/multi-domain.md) + README |
+| Multi-domain, tema, palet, PWA per-domain | [`docs/multi-domain.md`](docs/multi-domain.md) + README |
 | Template chat MbahGPT (+ backend-nya) | [`docs/mbahgpt.md`](docs/mbahgpt.md) |
 | Setup, script, env | [`README.md`](README.md), [`.env.example`](.env.example) |
 | Menjalankan & menguji di mesin lokal | skill [`run-local`](.claude/skills/run-local/SKILL.md) |
