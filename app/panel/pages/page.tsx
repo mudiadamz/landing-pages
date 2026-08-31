@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { listPages } from "@/lib/actions/pages";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { NewPageButton } from "./new-page-button";
@@ -16,7 +16,7 @@ import { requestLocale } from "@/lib/i18n/request";
  */
 export default async function PagesIndex() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect("/panel");
   const pages = await listPages();
 
   return (

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getOtherLinks, getSocialUrls } from "@/lib/actions/site-settings";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { LinksTabs } from "./tabs";
@@ -16,7 +16,7 @@ import { requestLocale } from "@/lib/i18n/request";
  */
 export default async function LinksPage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect("/panel");
 
   const [links, socialUrls] = await Promise.all([getOtherLinks(), getSocialUrls()]);
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getPlanLimits, getPlanMeta, getPlanPrices } from "@/lib/actions/site-settings";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
@@ -21,7 +21,7 @@ import { PlansForm } from "./plans-form";
  */
 export default async function PlansPage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect("/panel");
 
   const [prices, overrides, meta] = await Promise.all([
     getPlanPrices(),

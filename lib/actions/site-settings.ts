@@ -4,7 +4,7 @@ import { unstable_cache, updateTag, revalidateTag, revalidatePath } from "next/c
 import { DEFAULT_SOCIAL_URLS, normalizeSocialUrls, type SocialUrls } from "@/lib/social";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { requireFeature, requireAdmin } from "./profiles";
+import { requireFeature, requireAdmin, requireSiteAdmin } from "./profiles";
 import { normalizeRolePermissions, type RolePermissions } from "@/lib/role-permissions";
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
@@ -421,7 +421,9 @@ export async function updateOtherLinks(
   links: OtherLink[],
   siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  // Situs yang dikirim pemanggil, bukan yang sedang dilihat: siteId datang dari
+  // klien, jadi gate-nya harus menjaga situs ITU (fase 3).
+  if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeOtherLinks(links);
   const supabase = await createClient();
@@ -494,7 +496,9 @@ export async function updateSocialUrls(
   urls: SocialUrls,
   siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  // Situs yang dikirim pemanggil, bukan yang sedang dilihat: siteId datang dari
+  // klien, jadi gate-nya harus menjaga situs ITU (fase 3).
+  if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeSocialUrls(urls);
   const supabase = await createClient();
@@ -627,8 +631,9 @@ export async function updateTracking(
   config: TrackingConfig,
   siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+  // Situs yang dikirim pemanggil, bukan yang sedang dilihat: siteId datang dari
+  // klien, jadi gate-nya harus menjaga situs ITU (fase 3).
+  if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   // Reject a non-empty id that doesn't look like a GTM container.
   const gtmId = normalizeGtmId(config.gtmId);
@@ -786,7 +791,9 @@ export async function updatePopupBanner(
   config: PopupBanner,
   siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  // Situs yang dikirim pemanggil, bukan yang sedang dilihat: siteId datang dari
+  // klien, jadi gate-nya harus menjaga situs ITU (fase 3).
+  if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePopup(config);
   const supabase = await createClient();
@@ -931,7 +938,9 @@ export async function updatePlanPrices(
   prices: PlanPrices,
   siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  // Situs yang dikirim pemanggil, bukan yang sedang dilihat: siteId datang dari
+  // klien, jadi gate-nya harus menjaga situs ITU (fase 3).
+  if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePlanPrices(prices);
   const supabase = await createClient();
@@ -1004,7 +1013,9 @@ export async function updatePlanLimits(
   overrides: PlanLimitsOverrides,
   siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  // Situs yang dikirim pemanggil, bukan yang sedang dilihat: siteId datang dari
+  // klien, jadi gate-nya harus menjaga situs ITU (fase 3).
+  if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePlanLimitsOverrides(overrides);
   const supabase = await createClient();
@@ -1072,7 +1083,9 @@ export async function updatePlanMeta(
   meta: PlanMeta,
   siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  // Situs yang dikirim pemanggil, bukan yang sedang dilihat: siteId datang dari
+  // klien, jadi gate-nya harus menjaga situs ITU (fase 3).
+  if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePlanMeta(meta);
   const supabase = await createClient();

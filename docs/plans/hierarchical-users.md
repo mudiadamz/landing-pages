@@ -59,7 +59,7 @@ platform admin        lp_profiles.role = 'admin'
 | 0 | Rencana ini | ✅ | — |
 | 1 | Tabel `lp_site_members` + backfill + RLS | ✅ | `20260901000000_site_members.sql` |
 | 2 | Resolver izin efektif (belum mengubah perilaku) | ✅ | `lib/site-membership.ts` |
-| 3 | Cakupan panel ikut keanggotaan | ⬜ | |
+| 3 | Cakupan panel ikut keanggotaan | ✅ | `editingSite()` + gate per-situs |
 | 4 | `/panel/users` jadi per-situs + kelola anggota | ⬜ | |
 | 5 | Keanggotaan ditulis otomatis (signup, checkout) | ⬜ | |
 | 6 | Delegasi fitur per-situs | ⬜ | |
@@ -194,6 +194,17 @@ bukan menampilkan data situs A.
 **Risiko.** Ini fase pertama yang bisa mengunci orang. Backfill fase 1 adalah
 pengamannya; kalau ragu, jalankan hitungan verifikasi fase 1 lagi sebelum
 deploy.
+
+**Hasil (2026-09-01).** Penjagaannya ternyata **tiga lapis**, bukan satu:
+`editingSite()` (cookie), gate halaman (`requireAdmin()` → `requireSiteAdmin()`
+di 8 layar per-situs), dan gate action yang menerima `siteId` dari klien
+(7 fungsi di `site-settings.ts`). Melewatkan lapis mana pun membuat dua lapis
+lain jadi hiasan.
+
+Diuji dengan dua sesi dan cookie `panel_site` yang **sama** menunjuk situs
+kanonik: admin situs (anggota `localhost` saja) mendapat `GTM-LOCALHOST`,
+platform admin mendapat `GTM-KANONIK`. Nilai berbeda per situs sengaja dipasang
+supaya hasilnya tidak bisa dibaca dua arti.
 
 ---
 

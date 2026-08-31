@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getTracking } from "@/lib/actions/site-settings";
 import { editingSite, listSites } from "@/lib/site-resolve";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
@@ -12,7 +12,7 @@ export const metadata = { title: "Tracking" };
 
 export default async function TrackingPage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect("/panel");
 
   const [site, sites] = await Promise.all([editingSite(), listSites()]);
   const tracking = await getTracking(site.id);

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getPopupBanner } from "@/lib/actions/site-settings";
 import { editingSite, listSites } from "@/lib/site-resolve";
 import { SiteScopeNotice } from "@/components/site-scope-notice";
@@ -14,7 +14,7 @@ export async function generateMetadata() {
 
 export default async function PopupPage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect("/panel");
 
   const [site, sites] = await Promise.all([editingSite(), listSites()]);
   const popup = await getPopupBanner(site.id);

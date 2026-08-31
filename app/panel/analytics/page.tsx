@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getAnalytics, type Range } from "@/lib/actions/analytics";
 import { getProductSummaries } from "@/lib/actions/product-insights";
 import { AnalyticsDashboard } from "./analytics-dashboard";
@@ -22,7 +22,7 @@ export default async function AnalyticsPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect("/panel");
 
   const sp = await searchParams;
   const parsed = Number(sp.range) as Range;

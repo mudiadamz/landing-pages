@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { editingSite, listSites, isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
@@ -27,7 +27,7 @@ export async function generateMetadata() {
  */
 export default async function BrandingPage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect("/panel");
 
   // Same belt-and-braces guard as /panel/sites: this screen rewrites a site row, and
   // app/panel/layout.tsx already keeps admin routes on the canonical origin.

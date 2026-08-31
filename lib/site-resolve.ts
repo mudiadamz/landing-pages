@@ -2,6 +2,8 @@ import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { createClient as createSupabaseJS } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
 import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
 
@@ -220,17 +222,51 @@ export function canonicalOrigin(): string {
  * that doesn't exist. Anything unknown falls back to the canonical site, which is
  * what the screens did before they could target anything else.
  */
-export async function editingSite(): Promise<Site> {
-  const all = await listSites();
+export const editingSite = cache(async (): Promise<Site> => {
+  const allowed = await listMemberSites();
   const wanted = (await cookies()).get(PANEL_SITE_COOKIE)?.value?.trim();
-  const match = wanted ? all.find((s) => s.id === wanted) : undefined;
-  return (
-    match ??
-    all.find((s) => s.is_canonical) ??
-    all[0] ??
-    FALLBACK_SITE
-  );
-}
+  // Dicocokkan dengan situs yang BOLEH dibuka, bukan dengan semua situs. Cookie
+  // ini dikirim browser: tanpa pencocokan itu, mengganti satu nilai di devtools
+  // adalah pintu masuk ke storefront orang lain. Situs yang tidak boleh
+  // dibuka jatuh ke situs pertama yang boleh — bukan ke kanonik, yang justru
+  // situs yang paling mungkin bukan miliknya.
+  const match = wanted ? allowed.find((s) => s.id === wanted) : undefined;
+  if (match) return match;
+  if (allowed.length) return allowed.find((s) => s.is_canonical) ?? allowed[0];
+  // Bukan anggota situs mana pun (dan bukan platform admin). Panel tetap harus
+  // merender sesuatu — layar-layarnya punya gate sendiri.
+  const all = await listSites();
+  return all.find((s) => s.is_canonical) ?? all[0] ?? FALLBACK_SITE;
+});
+
+/**
+ * Situs yang boleh dibuka orang yang sedang login.
+ *
+ * Platform admin: semuanya. Selain itu: yang ada baris keanggotaannya
+ * (fase 1 & 2 dari docs/plans/hierarchical-users.md).
+ *
+ * Sengaja di sini, bukan di lib/actions/profiles.ts: profiles.ts memanggil
+ * editingSite(), jadi menaruhnya di sana membuat impor melingkar. Itu juga
+ * alasan user & role dibaca langsung di bawah alih-alih lewat getProfile().
+ */
+export const listMemberSites = cache(async (): Promise<Site[]> => {
+  const all = await listSites();
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const admin = createAdminClient();
+  const [{ data: profile }, { data: rows }] = await Promise.all([
+    admin.from("lp_profiles").select("role").eq("id", user.id).maybeSingle(),
+    admin.from("lp_site_members").select("site_id").eq("user_id", user.id),
+  ]);
+  if (String(profile?.role ?? "").trim().toLowerCase() === "admin") return all;
+
+  const mine = new Set((rows ?? []).map((r) => r.site_id as string));
+  return all.filter((s) => mine.has(s.id));
+});
 
 /**
  * Admin-facing list for the panel. NOT cached across requests — admins have to see
