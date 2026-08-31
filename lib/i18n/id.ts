@@ -1256,6 +1256,16 @@ export const id = {
     "Situs lain milik Anda — toko lain, portfolio, newsletter. Muncul lewat ikon link di samping ikon media sosial.",
   "panel.rolesIntro":
     "Atur fitur admin mana yang bisa diakses tiap role. User mewarisi akses dari role-nya — ubah role user di halaman Users.",
+  "panel.usersScopeHint": "Anggota situs {host}. Menghapus dari situs tidak menghapus akunnya.",
+  "panel.siteRole": "Role di situs",
+  "panel.removeFromSite": "Keluarkan dari situs",
+  "panel.removeFromSiteConfirm": "Keluarkan {name} dari situs ini? Akunnya tetap ada beserta pembeliannya — dia hanya kehilangan akses ke situs ini.",
+  "panel.removeFromSiteFailed": "Gagal mengeluarkan dari situs",
+  "panel.addMember": "Tambah anggota",
+  "panel.addMemberEmail": "Email akun yang sudah terdaftar",
+  "panel.addMemberFailed": "Gagal menambahkan anggota",
+  "panel.scopeThisSite": "Situs ini",
+  "panel.scopeAllSites": "Semua situs",
   "panel.userList": "Daftar User",
   "panel.customJsIntro":
     "Skrip ini diinjeksi ke setiap halaman situs (termasuk publik). Gunakan untuk analytics, tracking, atau kode tambahan.",

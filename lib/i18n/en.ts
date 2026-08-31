@@ -1266,6 +1266,16 @@ export const en: Record<keyof typeof id, string> = {
     "Your other sites — another shop, a portfolio, a newsletter. They appear behind the link icon next to the social icons.",
   "panel.rolesIntro":
     "Choose which admin features each role can reach. A user inherits access from their role — change a user's role on the Users page.",
+  "panel.usersScopeHint": "Members of {host}. Removing someone from the site does not delete their account.",
+  "panel.siteRole": "Site role",
+  "panel.removeFromSite": "Remove from site",
+  "panel.removeFromSiteConfirm": "Remove {name} from this site? Their account and purchases stay — they only lose access to this site.",
+  "panel.removeFromSiteFailed": "Could not remove them from the site",
+  "panel.addMember": "Add member",
+  "panel.addMemberEmail": "Email of an existing account",
+  "panel.addMemberFailed": "Could not add the member",
+  "panel.scopeThisSite": "This site",
+  "panel.scopeAllSites": "All sites",
   "panel.userList": "User list",
   "panel.customJsIntro":
     "This script is injected into every page of the site (public ones included). Use it for analytics, tracking, or extra code.",

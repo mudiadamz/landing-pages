@@ -60,7 +60,7 @@ platform admin        lp_profiles.role = 'admin'
 | 1 | Tabel `lp_site_members` + backfill + RLS | ✅ | `20260901000000_site_members.sql` |
 | 2 | Resolver izin efektif (belum mengubah perilaku) | ✅ | `lib/site-membership.ts` |
 | 3 | Cakupan panel ikut keanggotaan | ✅ | `editingSite()` + gate per-situs |
-| 4 | `/panel/users` jadi per-situs + kelola anggota | ⬜ | |
+| 4 | `/panel/users` jadi per-situs + kelola anggota | ✅ | `api/admin/users` + `users-table` |
 | 5 | Keanggotaan ditulis otomatis (signup, checkout) | ⬜ | |
 | 6 | Delegasi fitur per-situs | ⬜ | |
 | 7 | Pembersihan: arti `lp_profiles.role` dipersempit | ⬜ | |
@@ -225,9 +225,24 @@ supaya hasilnya tidak bisa dibaca dua arti.
 - Admin situs tidak boleh memberi role yang lebih tinggi dari miliknya, dan
   tidak boleh menyentuh `lp_profiles.role`.
 
-**Verifikasi.** Lewat HTTP dengan tiga sesi: platform admin, admin situs A, dan
-anggota biasa. Yang harus ditolak: admin situs A mengelola anggota situs B,
-menaikkan seseorang jadi platform admin, dan menghapus akun.
+**Verifikasi (2026-09-01).** Lewat HTTP dengan sesi platform admin dan sesi
+admin situs (anggota `localhost` saja, role platform-nya cuma `customer` —
+jadi seluruh kewenangannya benar-benar datang dari keanggotaan).
+
+Boleh: menaikkan anggota jadi publisher di situsnya (200), mengundang akun
+terdaftar (200). Ditolak: ubah role platform (403), ban akun (403), ubah role
+situs milik platform admin (403), ubah role situs diri sendiri (400),
+hapus akun (403), keluarkan platform admin dari situs (403), undang email yang
+belum punya akun (404).
+
+Daftar user-nya diuji dengan satu akun yang sengaja **bukan** anggota situs itu,
+karena tanpa itu jumlahnya kebetulan sama dan hasilnya bisa dibaca dua arti:
+admin situs melihat 3 (anggota `localhost`) bahkan saat meminta `?scope=all`,
+platform admin melihat 4.
+
+Dan yang paling penting dibedakan: sesudah "keluarkan dari situs", akunnya
+**masih ada**, keanggotaannya di situs lain **tetap**, hanya baris situs ini
+yang hilang.
 
 ---
 

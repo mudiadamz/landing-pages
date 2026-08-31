@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 
 type Role = "admin" | "customer" | "publisher";
+/** Role DI SITUS yang sedang dilihat — beda dari `role`, yang tingkat platform. */
+type SiteRole = Role;
 type RoleFilter = "all" | Role;
 type VerifyFilter = "all" | "unverified" | "verified";
 
@@ -24,25 +26,111 @@ type UserRow = {
   /** Plan key as stored. `plan_expires_at` null means it does not lapse. */
   plan?: string | null;
   plan_expires_at?: string | null;
+  /** null saat melihat lintas situs — "tidak relevan", bukan "bukan anggota". */
+  site_role?: SiteRole | null;
 };
 
-export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
+export function UsersTable({
+  isAdmin = false,
+  isSiteAdmin = false,
+  multiSite = false,
+}: {
+  /** Platform admin: role platform, paket, ban, hapus akun. */
+  isAdmin?: boolean;
+  /** Admin situs yang sedang dilihat: keanggotaan situs itu. */
+  isSiteAdmin?: boolean;
+  /** Deployment ini melayani lebih dari satu storefront. */
+  multiSite?: boolean;
+}) {
   const t = useT();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  // "Semua situs" hanya ada untuk platform admin; API menolaknya untuk yang lain.
+  const [allSites, setAllSites] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [verifyFilter, setVerifyFilter] = useState<VerifyFilter>("all");
 
   useEffect(() => {
-    fetch("/api/admin/users")
+    setLoading(true);
+    fetch(allSites ? "/api/admin/users?scope=all" : "/api/admin/users")
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setUsers(data);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [allSites]);
+
+  async function changeSiteRole(user: UserRow, siteRole: SiteRole) {
+    if (siteRole === user.site_role) return;
+    const prev = user.site_role;
+    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, site_role: siteRole } : u)));
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, siteRole }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error ?? t("panel.roleChangeFailed"));
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, site_role: prev } : u)));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function removeFromSite(user: UserRow) {
+    if (!confirm(t("panel.removeFromSiteConfirm", { name: user.full_name || user.email || "user" }))) {
+      return;
+    }
+    setUpdating(user.id);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, fromSite: true }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUsers((list) => list.filter((u) => u.id !== user.id));
+      } else {
+        alert(data.error ?? t("panel.removeFromSiteFailed"));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function invite(e: React.FormEvent) {
+    e.preventDefault();
+    const email = inviteEmail.trim();
+    if (!email) return;
+    setUpdating("invite");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, siteRole: "customer" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setInviteEmail("");
+        // Dibaca ulang, bukan ditebak: barisnya butuh profil lengkap yang tidak
+        // dipegang form ini.
+        const rows = await fetch("/api/admin/users").then((r) => r.json());
+        if (Array.isArray(rows)) setUsers(rows);
+      } else {
+        alert(data.error ?? t("panel.addMemberFailed"));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
 
   async function changeRole(user: UserRow, role: Role) {
     if (role === user.role) return;
@@ -187,8 +275,55 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
     );
   }
 
+  const showSiteRole = multiSite && !allSites;
+
   return (
     <div className="space-y-4">
+      {(isAdmin && multiSite) || (isSiteAdmin && !allSites) ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:flex-row sm:items-center">
+          {isAdmin && multiSite && (
+            <div className="flex shrink-0 rounded-lg border border-[var(--border)] p-0.5 text-xs font-medium">
+              {[
+                { key: false, label: t("panel.scopeThisSite") },
+                { key: true, label: t("panel.scopeAllSites") },
+              ].map((opt) => (
+                <button
+                  key={String(opt.key)}
+                  type="button"
+                  onClick={() => setAllSites(opt.key)}
+                  className={`rounded-md px-3 py-1.5 transition-colors ${
+                    allSites === opt.key
+                      ? "bg-[var(--accent-subtle)] text-[var(--primary)]"
+                      : "text-[var(--muted)] hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {isSiteAdmin && !allSites && (
+            <form onSubmit={invite} className="flex flex-1 items-center gap-2">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder={t("panel.addMemberEmail")}
+                autoComplete="off"
+                className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+              />
+              <button
+                type="submit"
+                disabled={updating === "invite" || !inviteEmail.trim()}
+                className="shrink-0 rounded-lg bg-[var(--primary)] px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {t("panel.addMember")}
+              </button>
+            </form>
+          )}
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1 sm:max-w-sm">
           <svg
@@ -257,7 +392,9 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
               <div className="flex items-center gap-2">
                 <VerifyBadge verifiedAt={u.email_verified_at} />
                 <StatusBadge active={u.is_active} />
-                <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
+                {isAdmin && (
+                  <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
+                )}
                 {isAdmin && (
                   <DeleteUserButton user={u} disabled={updating === u.id} onClick={() => removeUser(u)} />
                 )}
@@ -266,6 +403,24 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
             <div className="mt-3 flex flex-wrap items-start gap-2">
               <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
               <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
+              {showSiteRole && (
+                <SiteRoleControl
+                  user={u}
+                  canEdit={isSiteAdmin}
+                  disabled={updating === u.id}
+                  onChange={changeSiteRole}
+                />
+              )}
+              {showSiteRole && isSiteAdmin && (
+                <button
+                  type="button"
+                  onClick={() => removeFromSite(u)}
+                  disabled={updating === u.id}
+                  className="rounded-lg px-2 py-1 text-xs text-[var(--muted)] hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-900/20"
+                >
+                  {t("panel.removeFromSite")}
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -285,6 +440,11 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("content.name")}</th>
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("sales.email")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.role")}</th>
+                {showSiteRole && (
+                  <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">
+                    {t("panel.siteRole")}
+                  </th>
+                )}
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("plan.colPlan")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.verification")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.status")}</th>
@@ -308,6 +468,16 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                   <td className="px-4 py-3 text-center">
                     <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
                   </td>
+                  {showSiteRole && (
+                    <td className="px-4 py-3 text-center">
+                      <SiteRoleControl
+                        user={u}
+                        canEdit={isSiteAdmin}
+                        disabled={updating === u.id}
+                        onChange={changeSiteRole}
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-center">
                     <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
                   </td>
@@ -338,7 +508,23 @@ export function UsersTable({ isAdmin = false }: { isAdmin?: boolean }) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end">
-                      <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
+                      {showSiteRole && isSiteAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => removeFromSite(u)}
+                          disabled={updating === u.id}
+                          title={t("panel.removeFromSite")}
+                          aria-label={t("panel.removeFromSite")}
+                          className="rounded-lg p-2 text-[var(--muted)] transition-colors hover:bg-amber-50 hover:text-amber-700 disabled:opacity-40 dark:hover:bg-amber-900/20"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H9m3-4l-3 4 3 4M5 4h6a2 2 0 012 2v1M5 4a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2v-1" />
+                          </svg>
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <BanButton user={u} disabled={updating === u.id} onClick={() => toggleActive(u)} />
+                      )}
                       {isAdmin && (
                         <DeleteUserButton user={u} disabled={updating === u.id} onClick={() => removeUser(u)} />
                       )}
@@ -405,6 +591,44 @@ function PlanControl({
         </span>
       )}
     </>
+  );
+}
+
+/**
+ * Role seseorang DI SITUS yang sedang dilihat.
+ *
+ * Sengaja terpisah dari RoleControl di bawahnya, meski pilihannya sama persis:
+ * yang satu keanggotaan, yang satu tingkat platform. Satu kontrol untuk keduanya
+ * berarti admin sebuah situs bisa mengangkat dirinya jadi platform admin lewat
+ * dropdown yang sama.
+ */
+function SiteRoleControl({
+  user,
+  canEdit,
+  disabled,
+  onChange,
+}: {
+  user: UserRow;
+  canEdit: boolean;
+  disabled: boolean;
+  onChange: (user: UserRow, role: SiteRole) => void;
+}) {
+  const t = useT();
+  const current = user.site_role;
+  if (!current) return <span className="text-xs text-[var(--muted)]">—</span>;
+  if (!canEdit) return <span className="text-xs font-medium">{current}</span>;
+  return (
+    <select
+      value={current}
+      disabled={disabled}
+      onChange={(e) => onChange(user, e.target.value as SiteRole)}
+      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+      aria-label={t("panel.siteRole")}
+    >
+      <option value="customer">customer</option>
+      <option value="publisher">publisher</option>
+      <option value="admin">admin</option>
+    </select>
   );
 }
 

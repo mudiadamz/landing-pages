@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin, requireFeature } from "@/lib/actions/profiles";
+import { requireAdmin, requireFeature, requireSiteAdmin } from "@/lib/actions/profiles";
+import { editingSite } from "@/lib/site-resolve";
+import { normalizeSiteRole } from "@/lib/site-membership";
 import { normalizePlan } from "@/lib/plans";
 
 /** Caller identity + access: full admin, and whether they can reach the Users feature. */
@@ -16,25 +18,125 @@ async function getCaller() {
   return { user, isAdmin, hasUsers };
 }
 
-export async function GET() {
-  const { user, hasUsers } = await getCaller();
+const PROFILE_COLUMNS =
+  "id, full_name, email, role, is_active, exclude_from_stats, email_verified_at, plan, plan_expires_at";
+
+/**
+ * Daftar user — anggota situs yang sedang dilihat, bukan seluruh database.
+ *
+ * `?scope=all` mengembalikan semuanya, dan hanya untuk platform admin: itu satu-
+ * satunya orang yang punya urusan lintas situs. Tanpa parameter itu, seorang
+ * platform admin pun melihat daftar yang sudah dipersempit — kalau tidak,
+ * "user situs ini" akan berarti dua hal berbeda tergantung siapa yang bertanya.
+ */
+export async function GET(req: Request) {
+  const { user, isAdmin, hasUsers } = await getCaller();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("lp_profiles")
-    .select(
-      "id, full_name, email, role, is_active, exclude_from_stats, email_verified_at, plan, plan_expires_at",
-    )
-    .order("role", { ascending: true })
-    .order("full_name", { ascending: true });
+  const wantsAll = new URL(req.url).searchParams.get("scope") === "all";
 
-  if (error) {
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+  if (wantsAll && isAdmin) {
+    const { data, error } = await admin
+      .from("lp_profiles")
+      .select(PROFILE_COLUMNS)
+      .order("role", { ascending: true })
+      .order("full_name", { ascending: true });
+    if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    // site_role null = "tidak relevan di tampilan lintas situs", bukan "bukan anggota".
+    return NextResponse.json((data ?? []).map((r) => ({ ...r, site_role: null })));
   }
 
-  return NextResponse.json(data ?? []);
+  const site = await editingSite();
+  const { data: members, error: memberErr } = await admin
+    .from("lp_site_members")
+    .select("user_id, role")
+    .eq("site_id", site.id);
+  if (memberErr) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+  if (!members?.length) return NextResponse.json([]);
+
+  const roleById = new Map(members.map((m) => [m.user_id as string, normalizeSiteRole(m.role)]));
+  const { data, error } = await admin
+    .from("lp_profiles")
+    .select(PROFILE_COLUMNS)
+    .in("id", [...roleById.keys()])
+    .order("role", { ascending: true })
+    .order("full_name", { ascending: true });
+  if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+
+  return NextResponse.json(
+    (data ?? []).map((r) => ({ ...r, site_role: roleById.get(r.id) ?? null })),
+  );
+}
+
+/**
+ * Admin situs tidak boleh menyentuh platform admin.
+ *
+ * Tanpa ini, admin situs bisa menurunkan atau mengeluarkan orang yang
+ * mengangkatnya — dan platform admin adalah akun yang bisa membatalkan semua
+ * keputusan lain, jadi ia harus kebal terhadap tingkat di bawahnya.
+ */
+async function guardPlatformAdminTarget(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  actorIsPlatformAdmin: boolean,
+): Promise<NextResponse | null> {
+  if (actorIsPlatformAdmin) return null;
+  const { data } = await admin.from("lp_profiles").select("role").eq("id", userId).maybeSingle();
+  if (String(data?.role ?? "").trim().toLowerCase() === "admin") {
+    return NextResponse.json({ error: "Tidak bisa mengubah admin platform." }, { status: 403 });
+  }
+  return null;
+}
+
+/**
+ * Undang akun yang SUDAH ADA ke situs ini.
+ *
+ * Sengaja tidak membuat akun baru: membuat akun berarti mengarang password atau
+ * mengirim undangan email, dan keduanya urusan yang lebih besar daripada
+ * "tambahkan orang ini ke situs saya". Email yang tidak dikenal ditolak dengan
+ * pesan yang mengatakan begitu, bukan diam-diam tidak melakukan apa-apa.
+ */
+async function addMemberByEmail(
+  email: string,
+  siteRole: string,
+  actorId: string,
+): Promise<NextResponse> {
+  const site = await editingSite();
+  if (!(await requireSiteAdmin(site.id))) {
+    return NextResponse.json({ error: "Bukan admin situs ini." }, { status: 403 });
+  }
+  if (normalizeSiteRole(siteRole) !== siteRole) {
+    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  }
+  const clean = email.trim().toLowerCase();
+  if (!clean) return NextResponse.json({ error: "Email wajib diisi." }, { status: 400 });
+
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("lp_profiles")
+    .select("id")
+    .ilike("email", clean)
+    .maybeSingle();
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Belum ada akun dengan email itu. Minta dia mendaftar dulu." },
+      { status: 404 },
+    );
+  }
+
+  const { error } = await admin
+    .from("lp_site_members")
+    .upsert(
+      { site_id: site.id, user_id: profile.id, role: siteRole, invited_by: actorId },
+      { onConflict: "site_id,user_id" },
+    );
+  if (error) {
+    console.error("addMemberByEmail error:", error);
+    return NextResponse.json({ error: "Gagal menambahkan ke situs." }, { status: 500 });
+  }
+  return NextResponse.json({ success: true, userId: profile.id });
 }
 
 export async function PATCH(req: Request) {
@@ -43,13 +145,22 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, role, excludeFromStats, plan } = body as {
-    userId: string;
+  const { userId, active, role, excludeFromStats, plan, siteRole, email } = body as {
+    userId?: string;
     active?: boolean;
     role?: string;
     excludeFromStats?: boolean;
     plan?: string;
+    /** Role DI SITUS yang sedang dilihat. Beda dari `role`, yang platform. */
+    siteRole?: string;
+    /** Undang akun yang sudah ada ke situs ini, dipasangkan dengan siteRole. */
+    email?: string;
   };
+
+  // Mengundang lewat email: satu-satunya operasi yang belum punya userId.
+  if (typeof siteRole === "string" && !userId && typeof email === "string") {
+    return addMemberByEmail(email, siteRole, user.id);
+  }
 
   if (!userId) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
@@ -63,6 +174,42 @@ export async function PATCH(req: Request) {
   }
 
   const admin = createAdminClient();
+
+  /**
+   * Ubah role seseorang DI SITUS ini. Boleh dilakukan admin situs.
+   *
+   * Ini bukan `role` di bawah: yang ini keanggotaan, yang itu tingkat platform.
+   * Mencampurnya berarti admin sebuah situs bisa mengangkat dirinya jadi
+   * platform admin lewat layar yang sama.
+   */
+  if (typeof siteRole === "string") {
+    const site = await editingSite();
+    if (!(await requireSiteAdmin(site.id))) {
+      return NextResponse.json({ error: "Bukan admin situs ini." }, { status: 403 });
+    }
+    if (normalizeSiteRole(siteRole) !== siteRole) {
+      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    }
+    if (selfEdit) {
+      // Menurunkan diri sendiri berarti mengunci diri di luar situs yang sedang
+      // Anda kelola, dan tidak ada tombol untuk membatalkannya.
+      return NextResponse.json({ error: "Tidak bisa mengubah role sendiri." }, { status: 400 });
+    }
+    const guard = await guardPlatformAdminTarget(admin, userId, isAdmin);
+    if (guard) return guard;
+
+    const { error } = await admin
+      .from("lp_site_members")
+      .upsert(
+        { site_id: site.id, user_id: userId, role: siteRole, invited_by: user.id },
+        { onConflict: "site_id,user_id" },
+      );
+    if (error) {
+      console.error("set site role error:", error);
+      return NextResponse.json({ error: "Gagal mengubah role di situs ini." }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
 
   // Change role — only a full admin may do this (esp. granting admin).
   if (typeof role === "string") {
@@ -113,6 +260,14 @@ export async function PATCH(req: Request) {
   // Ban / unban. Updates is_active and bans/unbans at the auth level so a banned
   // user's session stops working (getUser fails → middleware sends to /login).
   if (typeof active === "boolean") {
+    // Ban itu tingkat PLATFORM — orangnya tidak bisa masuk ke domain mana pun.
+    // Admin situs yang ingin mengeluarkan seseorang memakai DELETE fromSite.
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Hanya admin penuh yang bisa ban akun. Untuk mengeluarkan dari situs ini, pakai tombol keluarkan." },
+        { status: 403 },
+      );
+    }
     const { error } = await admin
       .from("lp_profiles")
       .update({ is_active: active })
@@ -170,17 +325,48 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   const { user, isAdmin } = await getCaller();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { userId, fromSite } = (await req.json()) as { userId?: string; fromSite?: boolean };
+  if (!userId) return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  if (userId === user.id) {
+    return NextResponse.json({ error: "Tidak bisa menghapus akun sendiri." }, { status: 400 });
+  }
+
+  /**
+   * Keluarkan dari situs ini — BUKAN hapus akun.
+   *
+   * Dua hal yang gampang tertukar dan hasilnya jauh berbeda: yang satu mencabut
+   * akses ke satu storefront, yang satu menghapus orangnya dari seluruh sistem.
+   * Yang ini boleh dilakukan admin situs; yang di bawah tidak.
+   */
+  if (fromSite) {
+    const site = await editingSite();
+    if (!(await requireSiteAdmin(site.id))) {
+      return NextResponse.json({ error: "Bukan admin situs ini." }, { status: 403 });
+    }
+    const adminClient = createAdminClient();
+    const guard = await guardPlatformAdminTarget(adminClient, userId, isAdmin);
+    if (guard) return guard;
+    const { error } = await adminClient
+      .from("lp_site_members")
+      .delete()
+      .eq("site_id", site.id)
+      .eq("user_id", userId);
+    if (error) {
+      console.error("remove member error:", error);
+      return NextResponse.json({ error: "Gagal mengeluarkan dari situs." }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  // Hapus akun: platform admin saja. Gate-nya di sini, SESUDAH cabang fromSite
+  // di atas — kalau di pintu masuk, admin situs tidak akan bisa mengeluarkan
+  // siapa pun dari situsnya sendiri.
   if (!isAdmin) {
     return NextResponse.json(
       { error: "Hanya admin penuh yang bisa menghapus user." },
       { status: 403 },
     );
-  }
-
-  const { userId } = (await req.json()) as { userId?: string };
-  if (!userId) return NextResponse.json({ error: "Invalid data" }, { status: 400 });
-  if (userId === user.id) {
-    return NextResponse.json({ error: "Tidak bisa menghapus akun sendiri." }, { status: 400 });
   }
 
   const admin = createAdminClient();
