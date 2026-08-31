@@ -174,7 +174,12 @@ export default async function RootLayout({
   // A template whose homepage is a full-viewport app owns the bottom edge of that
   // route, so the site-wide floating widgets stay off it — the Tawk launcher was
   // landing on top of the chat template's send button.
-  const fullscreenHome = !!template.fullscreenHome && pathname === "/";
+  //
+  // Whether the TEMPLATE has such a homepage, not whether this request is on it:
+  // `pathname` comes from a header, so it is only re-read on a full document load,
+  // and deciding here meant a client-side navigation carried the previous route's
+  // answer with it. TawkChat matches it against the live pathname itself.
+  const fullscreenHome = !!template.fullscreenHome;
   const isDark = themeCookie?.value === "dark" && !lightOnly;
 
   return (
@@ -263,7 +268,7 @@ export default async function RootLayout({
           <DeferredScripts />
         </Suspense>
         <MarketingScripts />
-        {!fullscreenHome && <TawkChat />}
+        <TawkChat fullscreenHome={fullscreenHome} />
         <PwaRegister />
         <Suspense fallback={null}>
           <RouteProgress />

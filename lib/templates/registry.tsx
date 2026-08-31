@@ -155,8 +155,10 @@ export type TemplateDef = {
   /**
    * The homepage is a full-viewport app that owns the bottom edge of the screen.
    *
-   * Read in app/layout.tsx, which then leaves the site-wide floating widgets off
-   * that one route. Declared rather than sniffed, for the same reason as
+   * Read in app/layout.tsx and handed to the site-wide floating widgets, which
+   * match it against the live pathname themselves — the layout cannot, because
+   * its own pathname comes from a header and a header is only read on a full
+   * document load. Declared rather than sniffed, for the same reason as
    * `hasBottomNav`: only the template knows what it draws, and the alternative is
    * a support bubble parked on top of a send button — which is exactly what the
    * Tawk launcher did on the chat template before this existed.

@@ -1,7 +1,9 @@
 "use client";
 
 import Script from "next/script";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { isTawkHidden } from "@/lib/tawk-visibility";
 
 /**
  * Tawk.to live chat loader.
@@ -20,17 +22,58 @@ const PROPERTY_ID =
   process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID || "69b470e17afc871c37be198a";
 const WIDGET_ID = process.env.NEXT_PUBLIC_TAWK_WIDGET_ID || "1jjkdht1t";
 
-export function TawkChat() {
+/** Set by the effect below; read by the inline script when the widget finishes loading. */
+const HIDDEN_FLAG = "__tawkHidden";
+
+type TawkApi = {
+  hideWidget?: () => void;
+  showWidget?: () => void;
+};
+
+/**
+ * @param fullscreenHome This storefront's homepage is a full-viewport app.
+ *   A property of the SITE, not of the request — which is the point: the layout
+ *   used to decide `{!fullscreenHome && <TawkChat/>}` from the x-pathname header,
+ *   and a header is only read on a full document load.
+ */
+export function TawkChat({ fullscreenHome = false }: { fullscreenHome?: boolean }) {
   const pathname = usePathname();
-  // Hide on the admin panel and on preview pages (/preview/[slug]) — the preview is a
-  // full-bleed demo where the chat bubble would overlap the content and CTA.
-  if (
-    !PROPERTY_ID ||
-    !WIDGET_ID ||
-    pathname?.startsWith("/panel") ||
-    pathname?.startsWith("/lp")
-  )
-    return null;
+  const configured = !!PROPERTY_ID && !!WIDGET_ID;
+  const hidden = isTawkHidden(pathname, fullscreenHome);
+
+  /**
+   * Unmounting does NOT remove the widget.
+   *
+   * This component rendering `null` only stops the script being INJECTED. Once it
+   * has run — on the homepage, say — Tawk owns an iframe on <body> that React
+   * never created and will never clean up, so client-side navigating into /panel
+   * left the bubble floating over the admin UI. Reloading looked fine, which is
+   * exactly what made it look like it was already handled.
+   *
+   * So the visibility is driven here instead, through Tawk's own API, on every
+   * route change.
+   */
+  useEffect(() => {
+    if (!configured) return;
+    const w = window as unknown as Record<string, unknown>;
+    w[HIDDEN_FLAG] = hidden;
+    const api = w.Tawk_API as TawkApi | undefined;
+    // No API yet means the script is still loading (or never loaded on this page).
+    // The flag above is what the inline `onLoad` reads, so a widget that finishes
+    // loading after we've already navigated away comes up hidden rather than
+    // flashing onto the panel.
+    if (!api) return;
+    try {
+      if (hidden) api.hideWidget?.();
+      else api.showWidget?.();
+    } catch {
+      /* API present but not ready — onLoad will apply the flag. */
+    }
+  }, [hidden, configured]);
+
+  // Not rendered on a hidden route: a visitor who lands straight on /panel should
+  // never pay for the script at all. The effect above covers the other direction.
+  if (!configured || hidden) return null;
 
   return (
     <Script id="tawk-to" strategy="afterInteractive">
@@ -40,7 +83,9 @@ export function TawkChat() {
 // launcher iframe element itself. The size guard (< 220px) keeps the open chat
 // window and the mobile full-screen view untouched.
 function tawkShrink(){try{document.querySelectorAll('iframe[title="chat widget"]').forEach(function(f){var r=f.getBoundingClientRect();if(r.width&&r.width<220&&r.height<220){f.style.transformOrigin='100% 100%';f.style.transform='scale(0.72)';}});}catch(e){}}
-Tawk_API.onLoad=function(){tawkShrink();setTimeout(tawkShrink,500);setTimeout(tawkShrink,1500);};
+// The route may have changed while the widget was loading. window.${HIDDEN_FLAG}
+// is the React effect's answer to "should it be on screen right now".
+Tawk_API.onLoad=function(){if(window.${HIDDEN_FLAG}){try{Tawk_API.hideWidget();}catch(e){}return;}tawkShrink();setTimeout(tawkShrink,500);setTimeout(tawkShrink,1500);};
 Tawk_API.onChatMinimized=function(){setTimeout(tawkShrink,50);};
 (function(){
 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
