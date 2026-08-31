@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { guardSignup } from "@/lib/signup-guard";
 import { sendVerificationEmail } from "@/lib/email-verify";
-import { currentOrigin } from "@/lib/site-resolve";
+import { currentOrigin, currentSiteId } from "@/lib/site-resolve";
 import { googleCallbackUrl } from "@/lib/oauth-return";
 import { safeNextPath } from "@/lib/next-path";
+import { ensureSiteMembership } from "@/lib/actions/profiles";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -71,6 +72,10 @@ export async function signup(formData: FormData) {
   // of it — the account works immediately and the panel nags until it's done.
   // Awaited so a Vercel function isn't frozen mid-send, but never fatal.
   if (data.user) {
+    // Anggota situs tempat dia MENDAFTAR, bukan situs kanonik: signup berjalan
+    // di storefront yang dia buka, dan host itulah satu-satunya jawaban yang
+    // tidak mengarang atribusi (fase 5, docs/plans/hierarchical-users.md).
+    await ensureSiteMembership(data.user.id, await currentSiteId());
     await sendVerificationEmail({ to: email, userId: data.user.id, name: fullName, origin: baseUrl });
   }
 

@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { ensureSiteMembership } from "@/lib/actions/profiles";
+import { currentSiteId } from "@/lib/site-resolve";
 import { NextResponse } from "next/server";
 import { currentOrigin, normalizeHost } from "@/lib/site-resolve";
 import { RETURN_HOST_PARAM, resolveReturnHost } from "@/lib/oauth-return";
@@ -35,8 +37,12 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Login Google pertama kali juga membuat akun, jadi keanggotaannya dicatat
+      // di sini — signup lewat form punya jalurnya sendiri di lib/actions/auth.
+      // Idempoten, jadi login kedua dan seterusnya tidak melakukan apa-apa.
+      if (data?.user) await ensureSiteMembership(data.user.id, await currentSiteId());
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

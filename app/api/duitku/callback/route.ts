@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureSiteMembership } from "@/lib/actions/profiles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { grantBundleItems } from "@/lib/bundle";
 import { validateDuitkuCallback } from "@/lib/duitku";
@@ -105,6 +106,11 @@ export async function POST(req: NextRequest) {
         invoice_number: generateInvoiceNumber(),
         site_id: siteId,
       });
+
+      // Pembeli jadi orang situs tempat dia membeli (fase 5). Ditulis di sini,
+      // bukan hanya saat insert berhasil: baris yang sudah ada berarti callback
+      // yang dikirim ulang, dan keanggotaannya tetap harus benar. Idempoten.
+      if (siteId) await ensureSiteMembership(userId, siteId);
 
       if (error) {
         if (error.code === "23505") {

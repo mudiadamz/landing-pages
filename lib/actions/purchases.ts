@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { ensureSiteMembership } from "@/lib/actions/profiles";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -118,6 +119,9 @@ export async function addPurchase(landingPageId: string) {
 
   // A free bundle still hands over everything inside it.
   if (!error) await grantBundleItems(user.id, landingPageId);
+
+  // Mengambil produk gratis pun menjadikan seseorang orang situs ini (fase 5).
+  if (!error) await ensureSiteMembership(user.id, (await currentSiteId()) || "");
 
   if (error) {
     if (error.code === "23505") {

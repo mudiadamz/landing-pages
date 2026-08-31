@@ -101,6 +101,35 @@ export async function currentSiteRole(siteId?: string): Promise<SiteRole | null>
   return effectiveRole(profile.role, await readMembership(profile.id, id));
 }
 
+/**
+ * Catat orang ini sebagai anggota situs ini, kalau belum.
+ *
+ * Idempoten dan tidak pernah MENURUNKAN: callback Duitku memang dikirim ulang,
+ * dan pembelian kedua oleh seorang admin situs tidak boleh menjadikannya
+ * pembeli biasa. Karena itu `ignoreDuplicates` — bukan upsert yang menimpa.
+ *
+ * Best-effort di semua pemanggilnya: keanggotaan yang gagal tercatat adalah
+ * baris yang hilang, sementara melempar error di sini berarti signup gagal atau
+ * callback pembayaran tidak dibalas 200 — dua kerugian yang jauh lebih besar.
+ */
+export async function ensureSiteMembership(
+  userId: string,
+  siteId: string,
+  role: SiteRole = "customer",
+): Promise<void> {
+  if (!userId || !siteId) return;
+  try {
+    await createAdminClient()
+      .from("lp_site_members")
+      .upsert({ site_id: siteId, user_id: userId, role }, {
+        onConflict: "site_id,user_id",
+        ignoreDuplicates: true,
+      });
+  } catch (e) {
+    console.error("ensureSiteMembership error:", e);
+  }
+}
+
 /** Boleh mengurus situs ini — kontennya, setelannya, anggotanya. */
 export async function requireSiteAdmin(siteId?: string): Promise<boolean> {
   return canManageSite(await currentSiteRole(siteId));

@@ -61,7 +61,7 @@ platform admin        lp_profiles.role = 'admin'
 | 2 | Resolver izin efektif (belum mengubah perilaku) | ✅ | `lib/site-membership.ts` |
 | 3 | Cakupan panel ikut keanggotaan | ✅ | `editingSite()` + gate per-situs |
 | 4 | `/panel/users` jadi per-situs + kelola anggota | ✅ | `api/admin/users` + `users-table` |
-| 5 | Keanggotaan ditulis otomatis (signup, checkout) | ⬜ | |
+| 5 | Keanggotaan ditulis otomatis (signup, checkout) | ✅ | `ensureSiteMembership()` |
 | 6 | Delegasi fitur per-situs | ⬜ | |
 | 7 | Pembersihan: arti `lp_profiles.role` dipersempit | ⬜ | |
 
@@ -255,9 +255,21 @@ yang hilang.
 `addPurchaseAction` untuk produk gratis. Idempoten (`on conflict do nothing`),
 karena callback Duitku memang dikirim ulang.
 
-**Verifikasi.** Beli produk di situs non-kanonik pada Supabase lokal, lalu
-periksa satu baris keanggotaan muncul dengan `site_id` yang benar; kirim ulang
-callback yang sama dan pastikan tetap satu baris.
+**Hasil (2026-09-01).** Empat titik tulis terpasang: signup form, callback
+Google OAuth, callback Duitku, dan pengambilan produk gratis. Semuanya
+best-effort — keanggotaan yang gagal tercatat adalah satu baris yang hilang,
+sementara melempar error di situ berarti signup gagal atau callback pembayaran
+tidak dibalas 200.
+
+`ensureSiteMembership` memakai `ignoreDuplicates`, bukan upsert yang menimpa:
+pembelian kedua oleh admin situs tidak boleh menjadikannya pembeli biasa. Sifat
+itu diuji di database — sesudah dua kali "pembelian", role-nya tetap `admin` dan
+barisnya tetap satu.
+
+**Belum diverifikasi ujung-ke-ujung**: signup dan checkout sungguhan tidak
+dijalankan di sesi ini (server action tidak bisa di-`curl` tanpa id action, dan
+callback Duitku butuh signature). Yang terbukti: sifat penulisnya, dan keempat
+titik panggilnya ada.
 
 ---
 
