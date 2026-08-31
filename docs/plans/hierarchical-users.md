@@ -32,14 +32,15 @@ Tiga tingkat, dan ini nama resminya di seluruh dokumen:
 | **Agent** | Yang menjalankan sebuah storefront: kontennya, setelannya, dan anggotanya — **situs itu saja**. | `lp_site_members.role = 'admin'` |
 | **Customer** | Pembeli. Anggota situs tempat dia mendaftar atau membeli. | `lp_site_members.role = 'customer'` |
 
-**Nama di kode sengaja belum ikut berubah.** Mengubah nilai `role` di database
-berarti migration plus setiap gate, dan itu perubahan tersendiri — bukan
-perubahan istilah. Tabel di atas adalah jembatannya; kalau Anda ingin kodenya
-menyusul, itu fase tersendiri.
+**Kode dan database sudah memakai nama ini juga** (migration `20260902000000` +
+`20260902010000`). Nilai lama `'admin'` masih *dibaca* sebagai Company/Agent oleh
+`normalizeRole`/`normalizeSiteRole` dan ditolak oleh CHECK sebagai nilai baru —
+mencegahnya masuk, sambil tetap membacanya dengan benar kalau ia terlanjur ada
+(restore backup lama, sunting manual di dashboard).
 
 Satu nilai yang belum punya nama baru: `lp_site_members.role = 'publisher'` —
-Agent yang boleh membuat & menjual produk tapi bukan pengelola situsnya. Untuk
-sekarang tetap disebut **publisher**.
+boleh membuat & menjual produk, tapi bukan pengelola situsnya. Untuk sekarang
+tetap disebut **publisher**.
 
 ## Keputusan yang sudah diambil
 

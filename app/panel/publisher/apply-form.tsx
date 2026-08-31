@@ -112,10 +112,10 @@ export function PublisherApplyForm({
   const ready = !!ktp && !!selfie && filled && agreed;
 
   // Admins and existing publishers never see the apply CTA.
-  if (role === "admin" || role === "publisher") {
+  if (role === "company" || role === "publisher") {
     return (
       <p className="text-sm text-[var(--muted)]">
-        {role === "admin" ? t("panel.adminCanSell") : t("panel.publisherCanSell")}
+        {role === "company" ? t("panel.adminCanSell") : t("panel.publisherCanSell")}
       </p>
     );
   }

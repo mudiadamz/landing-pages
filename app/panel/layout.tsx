@@ -78,7 +78,7 @@ export default async function PanelLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const canSell = profile?.role === "admin" || profile?.role === "publisher";
+  const canSell = profile?.role === "company" || profile?.role === "publisher";
   const displayName = profile?.full_name?.trim() || user?.email?.split("@")[0] || "User";
   // Our own flag, not auth's — since signup stopped waiting for confirmation,
   // auth.users.email_confirmed_at is true for everyone and says nothing about

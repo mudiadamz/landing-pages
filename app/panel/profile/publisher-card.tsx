@@ -32,7 +32,7 @@ export type PublisherInfo = {
 const STEPS = ["panel.stepApplied", "panel.stepReviewed", "panel.stepApproved"] as const;
 
 function stepIndex(status: PublisherStatus, role: Role): number {
-  if (role === "publisher" || role === "admin" || status === "approved") return 2;
+  if (role === "publisher" || role === "company" || status === "approved") return 2;
   if (status === "pending") return 1;
   if (status === "rejected") return 1;
   return -1;
@@ -57,13 +57,13 @@ export async function PublisherCard({
   info: PublisherInfo;
 }) {
   const t = translator(await requestLocale());
-  const isPublisher = role === "publisher" || role === "admin";
+  const isPublisher = role === "publisher" || role === "company";
   const applied = status !== "none" || isPublisher;
   const active = stepIndex(status, role);
   const rejected = status === "rejected";
 
   const tone = isPublisher
-    ? { chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300", label: role === "admin" ? t("panel.roleAdmin") : t("panel.publisherActive") }
+    ? { chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300", label: role === "company" ? t("panel.roleAdmin") : t("panel.publisherActive") }
     : status === "pending"
       ? { chip: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300", label: t("panel.publisherWaiting") }
       : rejected

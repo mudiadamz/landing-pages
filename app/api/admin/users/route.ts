@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireFeature, requireSiteAdmin } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
 import { normalizeSiteRole } from "@/lib/site-membership";
+import { normalizeRole } from "@/lib/profile-utils";
 import { normalizePlan } from "@/lib/plans";
 
 /** Caller identity + access: full admin, and whether they can reach the Users feature. */
@@ -45,7 +46,9 @@ export async function GET(req: Request) {
       .order("full_name", { ascending: true });
     if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
     // site_role null = "tidak relevan di tampilan lintas situs", bukan "bukan anggota".
-    return NextResponse.json((data ?? []).map((r) => ({ ...r, site_role: null })));
+    return NextResponse.json(
+      (data ?? []).map((r) => ({ ...r, role: normalizeRole(r.role), site_role: null })),
+    );
   }
 
   const site = await editingSite();
@@ -65,8 +68,20 @@ export async function GET(req: Request) {
     .order("full_name", { ascending: true });
   if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
 
+  /**
+   * Role dinormalkan DI SINI, bukan di komponen.
+   *
+   * Selama peralihan istilah sebagian baris masih berisi nilai lama, dan sebuah
+   * dropdown yang menerima nilai yang tidak ada di daftar option-nya tidak error
+   * — ia hanya menampilkan role yang salah, diam-diam. API adalah batasnya, jadi
+   * di sinilah kosakata disatukan.
+   */
   return NextResponse.json(
-    (data ?? []).map((r) => ({ ...r, site_role: roleById.get(r.id) ?? null })),
+    (data ?? []).map((r) => ({
+      ...r,
+      role: normalizeRole(r.role),
+      site_role: roleById.get(r.id) ?? null,
+    })),
   );
 }
 
@@ -84,8 +99,8 @@ async function guardPlatformAdminTarget(
 ): Promise<NextResponse | null> {
   if (actorIsPlatformAdmin) return null;
   const { data } = await admin.from("lp_profiles").select("role").eq("id", userId).maybeSingle();
-  if (String(data?.role ?? "").trim().toLowerCase() === "admin") {
-    return NextResponse.json({ error: "Tidak bisa mengubah admin platform." }, { status: 403 });
+  if (normalizeRole(data?.role) === "company") {
+    return NextResponse.json({ error: "Tidak bisa mengubah Company." }, { status: 403 });
   }
   return null;
 }
@@ -105,7 +120,7 @@ async function addMemberByEmail(
 ): Promise<NextResponse> {
   const site = await editingSite();
   if (!(await requireSiteAdmin(site.id))) {
-    return NextResponse.json({ error: "Bukan admin situs ini." }, { status: 403 });
+    return NextResponse.json({ error: "Bukan Agent situs ini." }, { status: 403 });
   }
   if (normalizeSiteRole(siteRole) !== siteRole) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
@@ -185,7 +200,7 @@ export async function PATCH(req: Request) {
   if (typeof siteRole === "string") {
     const site = await editingSite();
     if (!(await requireSiteAdmin(site.id))) {
-      return NextResponse.json({ error: "Bukan admin situs ini." }, { status: 403 });
+      return NextResponse.json({ error: "Bukan Agent situs ini." }, { status: 403 });
     }
     if (normalizeSiteRole(siteRole) !== siteRole) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
@@ -214,9 +229,9 @@ export async function PATCH(req: Request) {
   // Change role — only a full admin may do this (esp. granting admin).
   if (typeof role === "string") {
     if (!isAdmin) {
-      return NextResponse.json({ error: "Hanya admin penuh yang bisa mengubah role." }, { status: 403 });
+      return NextResponse.json({ error: "Hanya Company yang bisa mengubah role." }, { status: 403 });
     }
-    if (!["admin", "customer", "publisher"].includes(role)) {
+    if (!["company", "customer", "publisher"].includes(role)) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
     const publisher_status = role === "publisher" ? "approved" : "none";
@@ -242,7 +257,7 @@ export async function PATCH(req: Request) {
    */
   if (typeof plan === "string") {
     if (!isAdmin) {
-      return NextResponse.json({ error: "Hanya admin penuh yang bisa mengubah paket." }, { status: 403 });
+      return NextResponse.json({ error: "Hanya Company yang bisa mengubah paket." }, { status: 403 });
     }
     if (normalizePlan(plan) !== plan) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
@@ -264,7 +279,7 @@ export async function PATCH(req: Request) {
     // Admin situs yang ingin mengeluarkan seseorang memakai DELETE fromSite.
     if (!isAdmin) {
       return NextResponse.json(
-        { error: "Hanya admin penuh yang bisa ban akun. Untuk mengeluarkan dari situs ini, pakai tombol keluarkan." },
+        { error: "Hanya Company yang bisa ban akun. Untuk mengeluarkan dari situs ini, pakai tombol keluarkan." },
         { status: 403 },
       );
     }
@@ -342,7 +357,7 @@ export async function DELETE(req: Request) {
   if (fromSite) {
     const site = await editingSite();
     if (!(await requireSiteAdmin(site.id))) {
-      return NextResponse.json({ error: "Bukan admin situs ini." }, { status: 403 });
+      return NextResponse.json({ error: "Bukan Agent situs ini." }, { status: 403 });
     }
     const adminClient = createAdminClient();
     const guard = await guardPlatformAdminTarget(adminClient, userId, isAdmin);
@@ -364,7 +379,7 @@ export async function DELETE(req: Request) {
   // siapa pun dari situsnya sendiri.
   if (!isAdmin) {
     return NextResponse.json(
-      { error: "Hanya admin penuh yang bisa menghapus user." },
+      { error: "Hanya Company yang bisa menghapus user." },
       { status: 403 },
     );
   }
@@ -380,9 +395,9 @@ export async function DELETE(req: Request) {
 
   // Another admin has to be demoted first. Not paranoia about malice — it is one
   // extra deliberate step in front of the account that can undo everything else.
-  if (target.role === "admin") {
+  if (normalizeRole(target.role) === "company") {
     return NextResponse.json(
-      { error: "Turunkan role-nya dari admin dulu sebelum menghapus." },
+      { error: "Turunkan role-nya dari Company dulu sebelum menghapus." },
       { status: 400 },
     );
   }

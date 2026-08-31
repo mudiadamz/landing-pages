@@ -90,9 +90,8 @@ Ringkasan yang paling sering dilanggar:
     menjual, bukan pengelola.)
   - **Customer** = `lp_site_members.role = 'customer'`. Pembeli, anggota situs
     tempat dia mendaftar atau membeli.
-  - **Nama di kode belum ikut berubah** — nilai `role` masih `admin`, `publisher`,
-    `customer`. Istilah di atas adalah bahasa dokumen; jembatannya ada di
-    glosarium dokumen rencana.
+  - Nilai lama `'admin'` masih **dibaca** sebagai Company/Agent oleh
+    `normalizeRole`/`normalizeSiteRole`, tapi ditolak CHECK sebagai nilai baru.
   - Izin efektif = Company **atau** role keanggotaan di situs itu — satu
     resolver, `lib/site-membership.ts: effectiveRole()`. Bukan anggota =
     `null` = tidak boleh apa-apa, bukan "anggap saja Customer".

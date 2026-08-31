@@ -133,7 +133,7 @@ export type PublisherStats = {
  */
 export async function getMyProductStats(): Promise<PublisherStats | null> {
   const profile = await getProfile();
-  if (!profile || (profile.role !== "admin" && profile.role !== "publisher")) return null;
+  if (!profile || (profile.role !== "company" && profile.role !== "publisher")) return null;
 
   const supabase = createAdminClient();
   const { data: pages } = await supabase

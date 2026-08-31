@@ -44,10 +44,10 @@ export type Profile = {
   avatar_url: string | null;
 };
 
-/** Only users with profile.role === "admin" are admin. No fallback for missing profile. */
+/** Only users with profile.role === "company" are admin. No fallback for missing profile. */
 export async function requireAdmin() {
   const profile = await getProfile();
-  return profile?.role === "admin";
+  return profile?.role === "company";
 }
 
 /** Admin or approved publisher — may create & sell products. */
@@ -197,11 +197,10 @@ export async function getRolePermissions(siteId?: string): Promise<RolePermissio
 export async function requireFeature(feature: FeatureKey): Promise<boolean> {
   const profile = await getProfile();
   if (!profile) return false;
-  if (profile.role === "admin") return true;
+  if (profile.role === "company") return true;
   // Admin DI SITUS yang sedang dilihat punya seluruh fitur untuk situs itu.
-  // Hari ini tidak menambah siapa pun — backfill fase 1 hanya memberi
-  // keanggotaan 'admin' kepada platform admin, yang sudah lolos di baris atas.
-  if ((await currentSiteRole()) === "admin") return true;
+  // Agent di situs yang sedang dilihat punya seluruh fitur untuk situs itu.
+  if ((await currentSiteRole()) === "agent") return true;
   if (profile.role === "customer" || profile.role === "publisher") {
     const perms = await getRolePermissions();
     return perms[profile.role].includes(feature);
@@ -213,8 +212,8 @@ export async function requireFeature(feature: FeatureKey): Promise<boolean> {
 export async function getAccessibleFeatures(): Promise<FeatureKey[]> {
   const profile = await getProfile();
   if (!profile) return [];
-  if (profile.role === "admin") return [...ALL_FEATURE_KEYS];
-  if ((await currentSiteRole()) === "admin") return [...ALL_FEATURE_KEYS];
+  if (profile.role === "company") return [...ALL_FEATURE_KEYS];
+  if ((await currentSiteRole()) === "agent") return [...ALL_FEATURE_KEYS];
   if (profile.role === "customer" || profile.role === "publisher") {
     const perms = await getRolePermissions();
     return perms[profile.role];
@@ -346,7 +345,7 @@ export async function applyAsPublisher(
   const role = normalizeRole(current?.role);
   const status = normalizePublisherStatus(current?.publisher_status);
 
-  if (role === "admin") return { ok: false, error: "Admin tidak perlu mengajukan." };
+  if (role === "company") return { ok: false, error: "Admin tidak perlu mengajukan." };
   if (role === "publisher" || status === "approved")
     return { ok: false, error: "Anda sudah menjadi publisher." };
   if (status === "pending") return { ok: false, error: "Pengajuan Anda sedang ditinjau." };

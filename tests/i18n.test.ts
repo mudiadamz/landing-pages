@@ -144,9 +144,6 @@ describe("dictionary integrity", () => {
     Domain: ["panel.navDomains", "sites.domain"],
     "Identitas situs": ["panel.navBranding", "sites.identity"],
     Halaman: ["content.tabPages", "panel.navPages"],
-    // A dashboard stat ("how many buyers") beside a role name ("this user is a
-    // buyer"). English already splits them: "Buyers" and "Buyer".
-    Pembeli: ["panel.dashBuyers", "panel.roleCustomer"],
     // The sales section heading (plural in English) vs the invoice's label for
     // the one person being billed.
     Pelanggan: ["sales.customer", "sales.customers"],

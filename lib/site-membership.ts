@@ -12,13 +12,19 @@ import type { Role } from "@/lib/profile-utils";
  * request.
  */
 
-/** Role di dalam satu situs. Sengaja senama dengan role platform, beda arti. */
-export type SiteRole = "admin" | "publisher" | "customer";
+/** Role di dalam satu situs: **Agent**, publisher, atau **Customer**. */
+export type SiteRole = "agent" | "publisher" | "customer";
 
-const SITE_ROLES: SiteRole[] = ["admin", "publisher", "customer"];
+const SITE_ROLES: SiteRole[] = ["agent", "publisher", "customer"];
 
+/**
+ * `"admin"` masih diterima dan artinya Agent — nilai lama, dengan alasan yang
+ * sama seperti `normalizeRole`: baris yang entah bagaimana kembali berisi
+ * 'admin' harus tetap Agent, bukan turun jadi Customer.
+ */
 export function normalizeSiteRole(value: unknown): SiteRole {
   const s = String(value ?? "").trim().toLowerCase();
+  if (s === "agent" || s === "admin") return "agent";
   return (SITE_ROLES as string[]).includes(s) ? (s as SiteRole) : "customer";
 }
 
@@ -26,7 +32,7 @@ export function normalizeSiteRole(value: unknown): SiteRole {
  * Role yang berlaku untuk orang ini di situs ini, atau **null kalau dia bukan
  * anggota** — dan null berarti tidak boleh apa-apa, bukan "anggap saja pembeli".
  *
- * Platform admin menang atas segalanya dan tidak perlu jadi anggota: dia yang
+ * Company menang atas segalanya dan tidak perlu jadi anggota: dia yang
  * membuat situsnya, dan mengunci dirinya sendiri di luar domain yang baru
  * dibuat adalah cara yang bodoh untuk kehilangan akses.
  */
@@ -34,28 +40,28 @@ export function effectiveRole(
   platformRole: Role | null | undefined,
   membership: SiteRole | null | undefined,
 ): SiteRole | null {
-  if (platformRole === "admin") return "admin";
+  if (platformRole === "company") return "agent";
   return membership ?? null;
 }
 
 /** Boleh mengurus situs ini: kontennya, setelannya, dan anggotanya. */
 export function canManageSite(effective: SiteRole | null): boolean {
-  return effective === "admin";
+  return effective === "agent";
 }
 
 /** Boleh membuat & menjual produk di situs ini. */
 export function canSellOnSite(effective: SiteRole | null): boolean {
-  return effective === "admin" || effective === "publisher";
+  return effective === "agent" || effective === "publisher";
 }
 
 /**
  * Boleh menetapkan role ini kepada orang lain?
  *
  * Admin situs tidak boleh mengangkat siapa pun melampaui dirinya sendiri, dan
- * tidak ada jalan dari sini menuju platform admin — itu hanya ada di
- * `lp_profiles.role` dan hanya platform admin yang menyentuhnya.
+ * tidak ada jalan dari sini menuju Company — itu hanya ada di
+ * `lp_profiles.role` dan hanya Company yang menyentuhnya.
  */
 export function canAssignRole(actor: SiteRole | null, target: SiteRole): boolean {
-  if (actor !== "admin") return false;
+  if (actor !== "agent") return false;
   return (SITE_ROLES as string[]).includes(target);
 }

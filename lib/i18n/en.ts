@@ -141,9 +141,9 @@ export const en: Record<keyof typeof id, string> = {
   "panel.tabOtherSub": "Your other sites",
 
   /* panel: sidebar */
-  "panel.roleAdmin": "Admin",
+  "panel.roleAdmin": "Company",
   "panel.rolePublisher": "Publisher",
-  "panel.roleCustomer": "Buyer",
+  "panel.roleCustomer": "Customer",
   "panel.navGroupMain": "Main",
   "panel.navGroupSelling": "Selling",
   "panel.navGroupUsers": "People",

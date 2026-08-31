@@ -130,9 +130,9 @@ export const id = {
   "panel.tabOtherSub": "Situs lain milik Anda",
 
   /* panel: sidebar */
-  "panel.roleAdmin": "Admin",
+  "panel.roleAdmin": "Company",
   "panel.rolePublisher": "Publisher",
-  "panel.roleCustomer": "Pembeli",
+  "panel.roleCustomer": "Customer",
   "panel.navGroupMain": "Utama",
   "panel.navGroupSelling": "Jualan",
   "panel.navGroupUsers": "Pengguna",

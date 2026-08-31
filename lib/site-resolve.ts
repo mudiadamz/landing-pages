@@ -5,6 +5,7 @@ import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
+import { normalizeRole } from "@/lib/profile-utils";
 import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
 
 /**
@@ -262,7 +263,10 @@ export const listMemberSites = cache(async (): Promise<Site[]> => {
     admin.from("lp_profiles").select("role").eq("id", user.id).maybeSingle(),
     admin.from("lp_site_members").select("site_id").eq("user_id", user.id),
   ]);
-  if (String(profile?.role ?? "").trim().toLowerCase() === "admin") return all;
+  // normalizeRole, bukan perbandingan mentah: selama peralihan istilah sebagian
+  // baris masih 'admin' dan sebagian sudah 'company', dan Company yang tidak
+  // dikenali di sini kehilangan seluruh daftar situsnya.
+  if (normalizeRole(profile?.role) === "company") return all;
 
   const mine = new Set((rows ?? []).map((r) => r.site_id as string));
   return all.filter((s) => mine.has(s.id));

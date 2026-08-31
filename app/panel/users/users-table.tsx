@@ -4,7 +4,7 @@ import { PLANS, PLAN_LIST, normalizePlan } from "@/lib/plans";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 
-type Role = "admin" | "customer" | "publisher";
+type Role = "company" | "customer" | "publisher";
 /** Role DI SITUS yang sedang dilihat — beda dari `role`, yang tingkat platform. */
 type SiteRole = Role;
 type RoleFilter = "all" | Role;
@@ -348,7 +348,7 @@ export function UsersTable({
           aria-label={t("panel.filterRole")}
         >
           <option value="all">{t("panel.allRoles")}</option>
-          <option value="admin">Admin</option>
+          <option value="company">Company</option>
           <option value="publisher">Publisher</option>
           <option value="customer">Customer</option>
         </select>
@@ -626,7 +626,7 @@ function SiteRoleControl({
     >
       <option value="customer">customer</option>
       <option value="publisher">publisher</option>
-      <option value="admin">admin</option>
+      <option value="agent">agent</option>
     </select>
   );
 }
@@ -654,7 +654,7 @@ function RoleControl({
     >
       <option value="customer">customer</option>
       <option value="publisher">publisher</option>
-      <option value="admin">admin</option>
+      <option value="company">company</option>
     </select>
   );
 }
@@ -708,7 +708,7 @@ function DeleteUserButton({
   onClick: () => void;
 }) {
   const t = useT();
-  const blocked = user.role === "admin";
+  const blocked = user.role === "company";
   return (
     <button
       type="button"
@@ -733,7 +733,7 @@ function DeleteUserButton({
 
 function RoleBadge({ role }: { role: Role }) {
   const cls =
-    role === "admin"
+    role === "company"
       ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
       : role === "publisher"
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"

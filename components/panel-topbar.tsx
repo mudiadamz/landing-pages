@@ -11,7 +11,7 @@ import { useT } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n";
 import type { SiteBrand } from "@/lib/site-brand";
 
-type Role = "admin" | "customer" | "publisher";
+type Role = "company" | "customer" | "publisher";
 
 /**
  * The panel's top bar, in the content pane rather than across the whole window.
@@ -66,7 +66,7 @@ export function PanelTopbar({
   }, [menuOpen]);
 
   const roleLabel =
-    role === "admin"
+    role === "company"
       ? t("panel.roleAdmin")
       : role === "publisher"
         ? t("panel.rolePublisher")

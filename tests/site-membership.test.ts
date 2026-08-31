@@ -13,11 +13,11 @@ import {
  * kegagalan yang docs/architecture.md §6 bilang tidak akan kelihatan di layar.
  */
 describe("effectiveRole", () => {
-  it("platform admin menang, tanpa perlu jadi anggota", () => {
+  it("Company menang, tanpa perlu jadi anggota", () => {
     // Dia yang membuat situsnya; mengunci dirinya di luar domain yang baru
     // dibuat adalah cara bodoh untuk kehilangan akses.
-    expect(effectiveRole("admin", null)).toBe("admin");
-    expect(effectiveRole("admin", "customer")).toBe("admin");
+    expect(effectiveRole("company", null)).toBe("agent");
+    expect(effectiveRole("company", "customer")).toBe("agent");
   });
 
   it("bukan anggota berarti null, bukan 'anggap saja pembeli'", () => {
@@ -26,8 +26,8 @@ describe("effectiveRole", () => {
     expect(effectiveRole(undefined, null)).toBeNull();
   });
 
-  it("selain platform admin, keanggotaan yang menentukan", () => {
-    expect(effectiveRole("customer", "admin")).toBe("admin");
+  it("selain Company, keanggotaan yang menentukan", () => {
+    expect(effectiveRole("customer", "agent")).toBe("agent");
     expect(effectiveRole("publisher", "customer")).toBe("customer");
     // Publisher platform yang bukan anggota situs ini tidak membawa apa pun.
     expect(effectiveRole("publisher", null)).toBeNull();
@@ -35,40 +35,42 @@ describe("effectiveRole", () => {
 });
 
 describe("kemampuan turunan", () => {
-  it("hanya admin situs yang mengurus situs", () => {
-    expect(canManageSite("admin")).toBe(true);
+  it("hanya Agent yang mengurus situs", () => {
+    expect(canManageSite("agent")).toBe(true);
     expect(canManageSite("publisher")).toBe(false);
     expect(canManageSite("customer")).toBe(false);
     expect(canManageSite(null)).toBe(false);
   });
 
-  it("admin dan publisher boleh menjual, pembeli tidak", () => {
-    expect(canSellOnSite("admin")).toBe(true);
+  it("Agent dan publisher boleh menjual, Customer tidak", () => {
+    expect(canSellOnSite("agent")).toBe(true);
     expect(canSellOnSite("publisher")).toBe(true);
     expect(canSellOnSite("customer")).toBe(false);
     expect(canSellOnSite(null)).toBe(false);
   });
 
-  it("hanya admin situs yang boleh memberi role, dan tidak melampaui dirinya", () => {
-    expect(canAssignRole("admin", "publisher")).toBe(true);
-    expect(canAssignRole("admin", "admin")).toBe(true);
+  it("hanya Agent yang boleh memberi role, dan tidak melampaui dirinya", () => {
+    expect(canAssignRole("agent", "publisher")).toBe(true);
+    expect(canAssignRole("agent", "agent")).toBe(true);
     expect(canAssignRole("publisher", "customer")).toBe(false);
     expect(canAssignRole("customer", "customer")).toBe(false);
     expect(canAssignRole(null, "customer")).toBe(false);
-    // Tidak ada jalan dari sini menuju platform admin: itu hanya ada di
-    // lp_profiles.role dan hanya platform admin yang menyentuhnya.
-    // @ts-expect-error "owner" bukan SiteRole
-    expect(canAssignRole("admin", "owner")).toBe(false);
+    // Tidak ada jalan dari sini menuju Company: itu hanya ada di
+    // lp_profiles.role dan hanya Company yang menyentuhnya.
+    // @ts-expect-error "company" bukan SiteRole
+    expect(canAssignRole("agent", "company")).toBe(false);
   });
 });
 
 describe("normalizeSiteRole", () => {
   it("membaca yang tersimpan apa adanya, case-insensitive", () => {
-    expect(normalizeSiteRole("ADMIN")).toBe("admin");
+    expect(normalizeSiteRole("AGENT")).toBe("agent");
     expect(normalizeSiteRole(" publisher ")).toBe("publisher");
   });
 
   it("nilai asing jatuh ke role paling tidak berwenang", () => {
+    // Nilai lama: 'admin' berarti Agent, bukan turun jadi Customer.
+    expect(normalizeSiteRole("admin")).toBe("agent");
     expect(normalizeSiteRole("owner")).toBe("customer");
     expect(normalizeSiteRole(null)).toBe("customer");
     expect(normalizeSiteRole(7)).toBe("customer");

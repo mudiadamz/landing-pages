@@ -10,7 +10,7 @@ import type { FeatureKey } from "@/lib/features";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
 
-type Role = "admin" | "customer" | "publisher";
+type Role = "company" | "customer" | "publisher";
 type Props = {
   role?: Role;
   canSell?: boolean;
@@ -324,7 +324,7 @@ function NavContent({
 
   const isVisible = (item: NavItem) => {
     if (item.everyone) return true;
-    if (item.adminOnly) return role === "admin";
+    if (item.adminOnly) return role === "company";
     if (item.sellerOnly) return !!canSell;
     if (item.feature) return features.includes(item.feature) || (!!item.publisherToo && role === "publisher");
     return true;

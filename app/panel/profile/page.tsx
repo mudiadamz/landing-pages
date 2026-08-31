@@ -86,7 +86,7 @@ export default async function ProfilePage() {
   const publisherBadge = PUBLISHER_BADGE[publisherStatus];
 
   const roleClass =
-    role === "admin"
+    role === "company"
       ? "bg-[var(--primary)]/15 text-[var(--primary)]"
       : role === "publisher"
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
