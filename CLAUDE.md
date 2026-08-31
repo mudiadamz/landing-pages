@@ -37,6 +37,7 @@ Ringkasan yang paling sering dilanggar:
 | Menjalankan & menguji di mesin lokal | skill [`run-local`](.claude/skills/run-local/SKILL.md) |
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
 | Laporan kampanye iklan | `docs/campaign-reports/` |
+| Rencana berjalan (multi-fase) | `docs/plans/` — status tiap fase ada di dokumennya sendiri |
 | Sisa string hardcode (i18n) | [`docs/i18n-backlog.md`](docs/i18n-backlog.md) — regen: `npm run i18n:scan` |
 
 ## Konvensi penting
