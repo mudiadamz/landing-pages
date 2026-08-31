@@ -20,7 +20,7 @@ import {
   normalizeSiteRole,
   type SiteRole,
 } from "@/lib/site-membership";
-import { editingSite } from "@/lib/site-resolve";
+import { canonicalSiteId, editingSite } from "@/lib/site-resolve";
 import { sniffBrandImage } from "@/lib/site-brand";
 import { imageMaxBytes, imageMaxLabel } from "@/lib/upload-limit";
 import {
@@ -140,27 +140,39 @@ export async function canSellOnCurrentSite(siteId?: string): Promise<boolean> {
   return canSellOnSite(await currentSiteRole(siteId));
 }
 
-/** Feature access per role (admin = all), configured at /panel/roles. Cached. */
-export const getRolePermissions = unstable_cache(
-  async (): Promise<RolePermissions> => {
+/**
+ * Peta role→fitur untuk SATU situs, dengan baris kanonik sebagai cadangan.
+ *
+ * Dulu sengaja tidak di-scope: panel hanya dilayani domain kanonik, jadi kuncinya
+ * tepat satu baris. Dengan admin situs (fase 6) itu tidak cukup lagi — tiap situs
+ * boleh punya peta sendiri. Situs yang belum pernah mengaturnya memakai peta
+ * kanonik, jadi tidak ada domain yang tiba-tiba kehilangan delegasinya karena
+ * barisnya belum dibuat.
+ *
+ * siteId dikirim sebagai ARGUMEN, tidak pernah dibaca dari cookie di dalam sini:
+ * fungsi ter-cache tidak boleh menyentuh sumber dinamis, dan argumen itu juga
+ * yang jadi cache key per-tenant (invarian I1).
+ */
+const readRolePermissions = unstable_cache(
+  async (siteId: string, canonicalId: string): Promise<RolePermissions> => {
     try {
       const supabase = createSupabaseJS(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       );
-      // Deliberately NOT scoped by site_id. Role permissions govern the panel,
-      // which only the canonical domain serves, so exactly one row carries this
-      // key (see updateRolePermissions). limit(1) rather than single() so a
-      // stray second row degrades to "use the first" instead of throwing and
-      // locking every admin out of every feature.
+      const ids = [...new Set([siteId, canonicalId].filter(Boolean))];
+      if (!ids.length) return DEFAULT_ROLE_PERMISSIONS;
       const { data } = await supabase
         .from("lp_site_settings")
-        .select("value")
+        .select("site_id, value")
         .eq("key", "role_permissions")
-        .limit(1)
-        .maybeSingle();
-      if (!data?.value) return DEFAULT_ROLE_PERMISSIONS;
-      return normalizeRolePermissions(JSON.parse(data.value as string));
+        .in("site_id", ids);
+      const rows = data ?? [];
+      // Milik situs ini kalau ada; kalau tidak, milik kanonik.
+      const row =
+        rows.find((r) => r.site_id === siteId) ?? rows.find((r) => r.site_id === canonicalId);
+      if (!row?.value) return DEFAULT_ROLE_PERMISSIONS;
+      return normalizeRolePermissions(JSON.parse(row.value as string));
     } catch {
       return DEFAULT_ROLE_PERMISSIONS;
     }
@@ -168,6 +180,15 @@ export const getRolePermissions = unstable_cache(
   ["role-permissions"],
   { revalidate: 120, tags: ["role-permissions"] },
 );
+
+/** Peta untuk situs yang sedang dilihat panel. */
+export async function getRolePermissions(siteId?: string): Promise<RolePermissions> {
+  const [site, canonicalId] = await Promise.all([
+    siteId ? Promise.resolve({ id: siteId }) : editingSite(),
+    canonicalSiteId(),
+  ]);
+  return readRolePermissions(site.id, canonicalId);
+}
 
 /**
  * Access check for an admin feature. A full admin has everything; otherwise the

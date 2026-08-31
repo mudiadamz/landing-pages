@@ -62,7 +62,7 @@ platform admin        lp_profiles.role = 'admin'
 | 3 | Cakupan panel ikut keanggotaan | ✅ | `editingSite()` + gate per-situs |
 | 4 | `/panel/users` jadi per-situs + kelola anggota | ✅ | `api/admin/users` + `users-table` |
 | 5 | Keanggotaan ditulis otomatis (signup, checkout) | ✅ | `ensureSiteMembership()` |
-| 6 | Delegasi fitur per-situs | ⬜ | |
+| 6 | Delegasi fitur per-situs | ✅ | `readRolePermissions(siteId, canonicalId)` |
 | 7 | Pembersihan: arti `lp_profiles.role` dipersempit | ⬜ | |
 
 ---
@@ -285,8 +285,22 @@ kanonik sebagai default saat situs belum punya sendiri. Perbarui komentar di
 `lib/actions/profiles.ts` yang menjelaskan kenapa dulu tidak di-scope — komentar
 itu akan jadi salah, dan komentar yang salah lebih buruk daripada tidak ada.
 
-**Boleh dilewati.** Kalau semua situs memakai peta yang sama, fase ini tidak
-membeli apa pun. Kerjakan saat ada situs pertama yang butuh beda.
+**Hasil (2026-09-01).** Peta dibaca per-`site_id` dengan baris kanonik sebagai
+cadangan, jadi situs yang belum pernah mengaturnya tidak kehilangan delegasinya
+hanya karena barisnya belum dibuat. `/panel/roles` pindah dari `requireAdmin()`
+ke `requireSiteAdmin()` — admin situs mengatur delegasi di situsnya sendiri.
+
+Diuji dengan seorang anggota biasa (bukan admin situs — admin situs lolos lewat
+jalur lain dan tidak membuktikan apa pun soal peta ini):
+
+| Keadaan | Hasil |
+|---|---|
+| `localhost` punya baris sendiri, `customer: []` | ditolak |
+| baris `localhost` dihapus, kanonik memberi `inbox` | inbox tersaji |
+
+Catatan alat ukur: `%{http_code}` **200 pada permintaan yang ditolak** — Next
+menyelesaikan `redirect()` di server dan mengirim isi halaman tujuan. Yang
+menentukan adalah BADAN responsnya (dashboard vs inbox), bukan status kodenya.
 
 ---
 

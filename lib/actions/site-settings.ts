@@ -38,7 +38,7 @@ import {
   type PopupBanner,
 } from "@/lib/popup-config";
 import { POPUP_MAX_BYTES, readWebpHeader } from "@/lib/webp";
-import { canonicalSiteId, currentSiteId } from "@/lib/site-resolve";
+import { canonicalSiteId, currentSiteId, editingSite } from "@/lib/site-resolve";
 import { sanitizePageHtml } from "@/lib/page-html";
 
 const CUSTOM_JS_KEY = "custom_js";
@@ -59,19 +59,22 @@ const PLAN_META_KEY = "plan_meta";
  * lib/actions/profiles.ts (getRolePermissions); this is the admin-only writer. */
 export async function updateRolePermissions(
   perms: RolePermissions,
+  siteId?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireAdmin();
-  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+  // Per-situs sejak fase 6: admin sebuah situs mengatur delegasi DI SITUS ITU.
+  // Komentar lama di sini menyebut "not per-site, panel hanya di domain kanonik"
+  // — itu benar sampai ada admin situs, dan komentar yang salah lebih buruk
+  // daripada tidak ada.
+  const target = siteId ?? (await editingSite()).id;
+  if (!(await requireSiteAdmin(target))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeRolePermissions(perms);
   const supabase = await createClient();
-  // Not per-site: who may do what is a property of the panel, which only the
-  // canonical domain serves.
   const { error } = await supabase
     .from("lp_site_settings")
     .upsert(
       {
-        site_id: await canonicalSiteId(),
+        site_id: target,
         key: ROLE_PERMS_KEY,
         value: JSON.stringify(clean),
         updated_at: new Date().toISOString(),
