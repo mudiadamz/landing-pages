@@ -2,26 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { signOut } from "@/lib/actions/auth";
-import { ThemeSwitch } from "@/components/theme-switch";
-import { AssetLibraryModal } from "@/components/asset-library-modal";
 import { SiteLogo } from "@/components/site-logo";
+import { BrandMark } from "@/components/brand-mark";
+import { usePanelChrome } from "@/components/panel-chrome";
 import { PanelSiteSwitcher } from "@/components/panel-site-switcher";
 import type { PanelSiteOption } from "@/lib/panel-site";
 import type { SiteBrand } from "@/lib/site-brand";
 import type { FeatureKey } from "@/lib/features";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { useT } from "@/lib/i18n/client";
-import type { Locale, MessageKey } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n";
 
 type Role = "admin" | "customer" | "publisher";
 type Props = {
   role?: Role;
   canSell?: boolean;
-  displayName?: string;
-  /** Their picture, or empty — the initial letter is the fallback. */
-  avatarUrl?: string;
   pendingActions?: number;
   features?: FeatureKey[];
   /** Empty for non-admins: the scope only drives admin screens. */
@@ -34,8 +28,6 @@ type Props = {
    * It said ADM.UIUX everywhere, which on a niche storefront is a stranger's brand.
    */
   brand: SiteBrand;
-  /** Panel language, resolved per request; shared with the storefront. */
-  locale: Locale;
 };
 
 type NavItem = {
@@ -306,13 +298,6 @@ function ReceiptIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-function LogoutIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-    </svg>
-  );
-}
 function ImageIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,6 +311,7 @@ function NavContent({
   features = [],
   canSell,
   pendingActions = 0,
+  collapsed = false,
   onItemClick,
   onOpenAssets,
 }: {
@@ -333,6 +319,8 @@ function NavContent({
   features?: FeatureKey[];
   canSell?: boolean;
   pendingActions?: number;
+  /** Desktop rail. Every rule below is `md:`-scoped — the mobile drawer is always full. */
+  collapsed?: boolean;
   onItemClick?: () => void;
   onOpenAssets?: () => void;
 }) {
@@ -356,7 +344,13 @@ function NavContent({
 
           return (
             <div key={group.labelKey}>
-              <p className="mb-1 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70">
+              {/* A group heading in a 64px rail is a truncated word, so it goes.
+                  The gap between groups still carries the grouping. */}
+              <p
+                className={`mb-1 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70 ${
+                  collapsed ? "md:hidden" : ""
+                }`}
+              >
                 {t(group.labelKey)}
               </p>
               <div className="flex flex-col gap-0.5">
@@ -373,18 +367,34 @@ function NavContent({
                   // Roomier rows on touch, where the drawer has space to spare and
                   // a thumb is a blunter instrument than a cursor.
                   const linkClass = `flex items-center gap-3 rounded-lg px-3 py-3 text-[0.9375rem] transition-colors md:py-2.5 md:text-sm ${
+                    collapsed ? "md:justify-center md:px-0" : ""
+                  } ${
                     active
                       ? "bg-[var(--accent-subtle)] font-medium text-[var(--primary)]"
                       : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
                   }`;
                   const badgeCount = item.href === "/panel/users" ? pendingActions : 0;
+                  const label = t(item.labelKey);
                   const content = (
                     <>
-                      <Icon className="h-5 w-5 shrink-0" />
-                      <span className="truncate">{t(item.labelKey)}</span>
+                      <span className="relative flex shrink-0 items-center">
+                        <Icon className="h-5 w-5 shrink-0" />
+                        {/* In the rail the count has nowhere to sit, so it becomes a
+                            dot on the icon — still "something needs you", which is
+                            the whole job of the badge at a glance. */}
+                        {badgeCount > 0 && collapsed && (
+                          <span
+                            className="absolute -right-1 -top-1 hidden h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)] md:block"
+                            aria-hidden
+                          />
+                        )}
+                      </span>
+                      <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>{label}</span>
                       {badgeCount > 0 && (
                         <span
-                          className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white"
+                          className={`ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white ${
+                            collapsed ? "md:hidden" : ""
+                          }`}
                           title={t("panel.pendingActions", { count: badgeCount })}
                         >
                           {badgeCount}
@@ -392,6 +402,9 @@ function NavContent({
                       )}
                     </>
                   );
+                  // The label survives as a tooltip, which is the only thing left
+                  // naming the row once the text is hidden.
+                  const rowTitle = collapsed ? label : undefined;
 
                   if (item.action === "assets") {
                     return (
@@ -402,6 +415,7 @@ function NavContent({
                           onOpenAssets?.();
                           onItemClick?.();
                         }}
+                        title={rowTitle}
                         className={linkClass}
                       >
                         {content}
@@ -416,6 +430,7 @@ function NavContent({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={onItemClick}
+                      title={rowTitle}
                       className={linkClass}
                     >
                       {content}
@@ -426,6 +441,7 @@ function NavContent({
                       href={item.href}
                       onClick={onItemClick}
                       aria-current={active ? "page" : undefined}
+                      title={rowTitle}
                       className={linkClass}
                     >
                       {content}
@@ -438,24 +454,21 @@ function NavContent({
         })}
       </nav>
 
-      <div className="mt-auto flex items-center gap-2 border-t border-[var(--border)] pt-3">
+      {/* Only "view site" here now. Signing out moved to the account menu in the
+          topbar, with the identity it belongs next to — a destructive-ish action
+          sitting under the nav was easy to hit while reaching for the last row. */}
+      <div className="mt-auto border-t border-[var(--border)] pt-3">
         <Link
           href="/"
           onClick={onItemClick}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-3 text-[0.9375rem] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
+          title={collapsed ? t("panel.viewSite") : undefined}
+          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-[0.9375rem] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm ${
+            collapsed ? "md:justify-center md:px-0" : ""
+          }`}
         >
           <HomeIcon className="h-5 w-5 shrink-0" />
-          <span>{t("panel.viewSite")}</span>
+          <span className={collapsed ? "md:hidden" : ""}>{t("panel.viewSite")}</span>
         </Link>
-        <form action={signOut} className="flex-1">
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-[0.9375rem] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm"
-          >
-            <LogoutIcon className="h-5 w-5 shrink-0" />
-            <span>Keluar</span>
-          </button>
-        </form>
       </div>
     </>
   );
@@ -464,64 +477,21 @@ function NavContent({
 export function PanelSidebar({
   role,
   canSell,
-  displayName,
-  avatarUrl = "",
   pendingActions,
   features,
   sites = [],
   editingSiteId = "",
   brand,
-  locale,
 }: Props) {
   const t = useT();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [assetsOpen, setAssetsOpen] = useState(false);
-  const close = () => setMobileOpen(false);
-
-  // Escape closes the drawer, and the page behind it stops scrolling while it is
-  // open — without that, dragging the drawer scrolls the content underneath and
-  // you return to a page that has moved.
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [mobileOpen]);
+  const { collapsed, mobileOpen, closeMobile, openAssets } = usePanelChrome();
+  const close = closeMobile;
 
   return (
     <>
-      {/* Mobile: top bar with menu button */}
-      <div className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--card)] px-3 md:hidden">
-        <button
-          type="button"
-          aria-label={mobileOpen ? t("panel.closeMenu") : t("panel.openMenu")}
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="relative rounded-lg p-2.5 text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
-        >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {mobileOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-          {!mobileOpen && !!pendingActions && pendingActions > 0 && (
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)]" aria-hidden />
-          )}
-        </button>
-        <Link href="/panel" className="flex items-center text-base font-semibold text-foreground">
-          <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[150px]" markClassName="h-6 w-6" />
-        </Link>
-        <ThemeSwitch />
-      </div>
+      {/* No bar of its own any more. It used to render a `sticky top-0` header
+          here for phones, which put a second bar on the page next to the one the
+          content pane now owns — see components/panel-topbar.tsx. */}
 
       {/* Mobile overlay */}
       {mobileOpen && (
@@ -534,15 +504,41 @@ export function PanelSidebar({
 
       {/* Sidebar: desktop fixed, mobile as drawer.
           Wider on mobile — a 224px drawer left long labels truncating against a
-          strip of dimmed page nobody was going to read. */}
+          strip of dimmed page nobody was going to read.
+
+          On desktop it collapses to a 64px rail. Collapsed is a WIDTH, not a
+          hidden sidebar: the icons stay reachable, so a wide screen can give the
+          content 200 more pixels without giving up one-click navigation. */}
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-full w-[86vw] max-w-sm flex-col border-r border-[var(--border)] bg-[var(--card)] transition-transform duration-200 ease-out md:w-64 md:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed left-0 top-0 z-40 flex h-full w-[86vw] max-w-sm flex-col border-r border-[var(--border)] bg-[var(--card)] transition-transform duration-200 ease-out md:translate-x-0 md:transition-[width] ${
+          collapsed ? "md:w-16" : "md:w-64"
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border)] px-4 md:border-0">
-          <Link href="/panel" className="flex items-center text-base font-semibold text-foreground" onClick={close}>
-            <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[150px]" markClassName="h-6 w-6" />
+        <div
+          className={`flex h-14 shrink-0 items-center justify-between border-b border-[var(--border)] px-4 md:border-0 ${
+            collapsed ? "md:justify-center md:px-0" : ""
+          }`}
+        >
+          <Link
+            href="/panel"
+            className="flex items-center text-base font-semibold text-foreground"
+            onClick={close}
+            title={collapsed ? brand.name : undefined}
+          >
+            {/* A wordmark squeezed into a 64px rail is an unreadable smear, so the
+                rail wears the square mark instead — the same split the favicon and
+                the header logo already make (see lib/site-brand.ts). */}
+            <span className={collapsed ? "md:hidden" : ""}>
+              <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[150px]" markClassName="h-6 w-6" />
+            </span>
+            <span className={collapsed ? "hidden md:block" : "hidden"}>
+              {brand.iconUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.iconUrl} alt="" className="h-7 w-7 rounded-md object-cover" />
+              ) : (
+                <BrandMark className="h-7 w-7" />
+              )}
+            </span>
           </Link>
           <button
             type="button"
@@ -556,73 +552,36 @@ export function PanelSidebar({
           </button>
         </div>
 
-        {/* Identity and the two preference controls on ONE row.
-            They were three stacked blocks — a bordered profile card, a language
-            row, a theme toggle in the header — which on a short screen pushed
-            the nav itself below the fold. None of them is the reason anyone
-            opens this sidebar, so none of them gets its own line.
-
-            The avatar and name stay a single large tap target to /panel/profile;
-            the role moved under the name where the redundant "Lihat profil"
-            used to sit. */}
-        <div className="mx-3 mt-3 flex shrink-0 items-center gap-2">
-          {/* The row renders even without a display name: the theme and
-              language controls live here now, and a profile that has not been
-              filled in must not take them off the screen. */}
-          {displayName ? (
-            <Link
-              href="/panel/profile"
-              onClick={close}
-              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 transition-colors hover:opacity-80"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-subtle)] text-xs font-semibold uppercase text-[var(--primary)]">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  displayName.trim().charAt(0) || "?"
-                )}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium leading-tight text-foreground">
-                  {displayName}
-                </span>
-                <span className="block truncate text-[0.6875rem] leading-tight text-[var(--muted)]">
-                  {role === "admin"
-                    ? t("panel.roleAdmin")
-                    : role === "publisher"
-                      ? t("panel.rolePublisher")
-                      : t("panel.roleCustomer")}
-                </span>
-              </span>
-            </Link>
-          ) : (
-            <span className="flex-1" />
-          )}
-          <LanguageSwitcher current={locale} label={t("nav.language")} />
-          <ThemeSwitch />
+        {/* The one site switcher, above the nav it changes the meaning of. Hidden
+            in the rail: it is a select full of hostnames, and there is no honest
+            64px version of that. */}
+        <div className={collapsed ? "md:hidden" : ""}>
+          <PanelSiteSwitcher sites={sites} currentId={editingSiteId} onChanged={close} />
         </div>
 
-        {/* The one site switcher. Directly under the profile card so it reads as
-            "who I am / what I'm working on", above the nav it changes the meaning of. */}
-        <PanelSiteSwitcher sites={sites} currentId={editingSiteId} onChanged={close} />
-
-        <div className="flex flex-1 flex-col overflow-y-auto px-3 pb-[env(safe-area-inset-bottom)]">
+        <div
+          className={`flex flex-1 flex-col overflow-y-auto px-3 pb-[env(safe-area-inset-bottom)] ${
+            collapsed ? "md:px-2" : ""
+          }`}
+        >
           <NavContent
             role={role}
             features={features}
             canSell={canSell}
             pendingActions={pendingActions}
+            collapsed={collapsed}
             onItemClick={close}
-            onOpenAssets={() => setAssetsOpen(true)}
+            onOpenAssets={openAssets}
           />
         </div>
       </aside>
 
-      {/* Spacer for desktop: takes space so main content is beside sidebar */}
-      <div className="hidden w-64 shrink-0 md:block" aria-hidden />
+      {/* Spacer: holds the place the fixed sidebar occupies, at whichever width. */}
+      <div
+        className={`hidden shrink-0 transition-[width] md:block ${collapsed ? "w-16" : "w-64"}`}
+        aria-hidden
+      />
 
-      <AssetLibraryModal open={assetsOpen} onClose={() => setAssetsOpen(false)} />
     </>
   );
 }

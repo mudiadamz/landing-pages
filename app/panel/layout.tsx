@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isCanonicalRequest, canonicalOrigin, currentSite, editingSite, listSites } from "@/lib/site-resolve";
 import { siteBrand } from "@/lib/site-brand";
@@ -8,6 +8,9 @@ import { getPublisherApplications } from "@/lib/actions/admin";
 import { getPanelPalette } from "@/lib/actions/site-settings";
 import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
 import { PanelSidebar } from "@/components/panel-sidebar";
+import { PanelTopbar } from "@/components/panel-topbar";
+import { PanelChrome } from "@/components/panel-chrome";
+import { PANEL_SIDEBAR_COOKIE, isSidebarCollapsed } from "@/lib/panel-chrome";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
 import { LocaleProvider } from "@/lib/i18n/client";
@@ -104,9 +107,14 @@ export default async function PanelLayout({
   }));
 
   const locale = await requestLocale();
+  // Read here, not on the client: the sidebar width has to be right in the FIRST
+  // paint, or every panel page opens 256px wide and snaps to 64px on hydration.
+  const collapsed = isSidebarCollapsed((await cookies()).get(PANEL_SIDEBAR_COOKIE)?.value);
+  const brand = siteBrand(await currentSite(), locale);
 
   return (
     <LocaleProvider locale={locale}>
+    <PanelChrome defaultCollapsed={collapsed}>
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
       {/* Panel palette (/panel/appearance). Rendered here so it exists only on
           panel routes, but the selectors are :root / html.dark — dialogs portal
@@ -121,16 +129,23 @@ export default async function PanelLayout({
       <PanelSidebar
         role={profile?.role}
         canSell={!!canSell}
-        displayName={displayName}
-        avatarUrl={profile?.avatar_url ?? ""}
         pendingActions={pendingActions}
         features={features}
         sites={siteOptions}
         editingSiteId={scopedSite?.id ?? ""}
-        brand={siteBrand(await currentSite(), locale)}
-        locale={locale}
+        brand={brand}
       />
       <div className="flex flex-1 flex-col min-w-0">
+        {/* In the content pane, not across the window: the sidebar keeps its own
+            full-height column, and the bar sits above the page it belongs to. */}
+        <PanelTopbar
+          displayName={displayName}
+          email={user?.email ?? null}
+          role={profile?.role}
+          avatarUrl={profile?.avatar_url ?? ""}
+          brand={brand}
+          locale={locale}
+        />
         <EmailVerifyNotice />
         {user && !emailVerified && <EmailConfirmBanner email={user.email ?? null} />}
         <main className="flex-1 min-w-0 max-w-5xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 md:mx-0">
@@ -138,6 +153,7 @@ export default async function PanelLayout({
         </main>
       </div>
     </div>
+    </PanelChrome>
     </LocaleProvider>
   );
 }

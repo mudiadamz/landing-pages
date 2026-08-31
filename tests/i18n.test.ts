@@ -172,6 +172,10 @@ describe("dictionary integrity", () => {
     // The 404 page's way out vs the enquiry route for a plan with no price on it.
     // English is already free to split them ("Contact us" / "Get in touch").
     "Hubungi kami": ["notFound.contact", "plan.contactUs"],
+    // The panel account menu's row label vs the chat's own appearance setting.
+    // Two different preference screens; neither should move when the other is
+    // reworded.
+    Tema: ["panel.themeLabel", "chat.theme"],
   };
 
   it("has no UNDECLARED duplicate values", () => {
