@@ -13,6 +13,14 @@ import {
   type PublisherStatus,
 } from "@/lib/profile-utils";
 import { ALL_FEATURE_KEYS, type FeatureKey } from "@/lib/features";
+import {
+  canManageSite,
+  canSellOnSite,
+  effectiveRole,
+  normalizeSiteRole,
+  type SiteRole,
+} from "@/lib/site-membership";
+import { editingSite } from "@/lib/site-resolve";
 import { sniffBrandImage } from "@/lib/site-brand";
 import { imageMaxBytes, imageMaxLabel } from "@/lib/upload-limit";
 import {
@@ -46,6 +54,61 @@ export async function requireAdmin() {
 export async function canSellProducts() {
   const profile = await getProfile();
   return !!profile && canSell(profile.role);
+}
+
+/* -------------------------------------------------------------------------- *
+ * Keanggotaan per-situs (fase 2 dari docs/plans/hierarchical-users.md).
+ *
+ * Belum mengubah perilaku apa pun: setelah backfill fase 1, satu-satunya orang
+ * yang punya keanggotaan `admin` adalah platform admin — yang sudah lolos setiap
+ * gate sebelum ini ada. Yang berubah adalah SIAPA yang menjawab pertanyaannya.
+ * -------------------------------------------------------------------------- */
+
+/**
+ * Role orang yang sedang login di sebuah situs, atau null kalau bukan anggota.
+ *
+ * `cache()` = memoisasi per-request, bukan cache lintas request: ini data satu
+ * orang, tidak boleh masuk `unstable_cache` yang dibagi antar pengunjung.
+ * Layar panel memanggilnya beberapa kali dalam satu render.
+ */
+const readMembership = cache(
+  async (userId: string, siteId: string): Promise<SiteRole | null> => {
+    if (!userId || !siteId) return null;
+    // Service-role: RLS di lp_site_members hanya mengizinkan seseorang membaca
+    // barisnya sendiri, dan itu memang cukup di sini — tapi layar admin nanti
+    // membaca baris orang lain lewat helper yang sama.
+    const { data } = await createAdminClient()
+      .from("lp_site_members")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("site_id", siteId)
+      .maybeSingle();
+    return data ? normalizeSiteRole(data.role) : null;
+  },
+);
+
+/**
+ * Role efektif orang yang sedang login di situs yang sedang dilihat panel.
+ *
+ * Situsnya boleh dikirim sebagai argumen. Kalau tidak, dipakai cakupan panel —
+ * dan itu satu-satunya tempat cookie scope dibaca untuk keputusan izin, supaya
+ * tidak ada layar yang diam-diam memutuskan dari cookie sendiri.
+ */
+export async function currentSiteRole(siteId?: string): Promise<SiteRole | null> {
+  const profile = await getProfile();
+  if (!profile) return null;
+  const id = siteId ?? (await editingSite()).id;
+  return effectiveRole(profile.role, await readMembership(profile.id, id));
+}
+
+/** Boleh mengurus situs ini — kontennya, setelannya, anggotanya. */
+export async function requireSiteAdmin(siteId?: string): Promise<boolean> {
+  return canManageSite(await currentSiteRole(siteId));
+}
+
+/** Boleh membuat & menjual produk DI SITUS INI. */
+export async function canSellOnCurrentSite(siteId?: string): Promise<boolean> {
+  return canSellOnSite(await currentSiteRole(siteId));
 }
 
 /** Feature access per role (admin = all), configured at /panel/roles. Cached. */
@@ -85,6 +148,10 @@ export async function requireFeature(feature: FeatureKey): Promise<boolean> {
   const profile = await getProfile();
   if (!profile) return false;
   if (profile.role === "admin") return true;
+  // Admin DI SITUS yang sedang dilihat punya seluruh fitur untuk situs itu.
+  // Hari ini tidak menambah siapa pun — backfill fase 1 hanya memberi
+  // keanggotaan 'admin' kepada platform admin, yang sudah lolos di baris atas.
+  if ((await currentSiteRole()) === "admin") return true;
   if (profile.role === "customer" || profile.role === "publisher") {
     const perms = await getRolePermissions();
     return perms[profile.role].includes(feature);
@@ -97,6 +164,7 @@ export async function getAccessibleFeatures(): Promise<FeatureKey[]> {
   const profile = await getProfile();
   if (!profile) return [];
   if (profile.role === "admin") return [...ALL_FEATURE_KEYS];
+  if ((await currentSiteRole()) === "admin") return [...ALL_FEATURE_KEYS];
   if (profile.role === "customer" || profile.role === "publisher") {
     const perms = await getRolePermissions();
     return perms[profile.role];

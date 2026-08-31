@@ -58,7 +58,7 @@ platform admin        lp_profiles.role = 'admin'
 |---|---|---|---|
 | 0 | Rencana ini | ✅ | — |
 | 1 | Tabel `lp_site_members` + backfill + RLS | ✅ | `20260901000000_site_members.sql` |
-| 2 | Resolver izin efektif (belum mengubah perilaku) | ⬜ | |
+| 2 | Resolver izin efektif (belum mengubah perilaku) | ✅ | `lib/site-membership.ts` |
 | 3 | Cakupan panel ikut keanggotaan | ⬜ | |
 | 4 | `/panel/users` jadi per-situs + kelola anggota | ⬜ | |
 | 5 | Keanggotaan ditulis otomatis (signup, checkout) | ⬜ | |
