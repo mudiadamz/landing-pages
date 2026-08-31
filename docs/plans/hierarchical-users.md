@@ -57,7 +57,7 @@ platform admin        lp_profiles.role = 'admin'
 | # | Fase | Status | Commit |
 |---|---|---|---|
 | 0 | Rencana ini | ✅ | — |
-| 1 | Tabel `lp_site_members` + backfill + RLS | ⬜ | |
+| 1 | Tabel `lp_site_members` + backfill + RLS | ✅ | `20260901000000_site_members.sql` |
 | 2 | Resolver izin efektif (belum mengubah perilaku) | ⬜ | |
 | 3 | Cakupan panel ikut keanggotaan | ⬜ | |
 | 4 | `/panel/users` jadi per-situs + kelola anggota | ⬜ | |
@@ -102,11 +102,22 @@ beda dari `lp_purchases.user_id` yang sengaja `set null` (migration
 | `lp_profiles.role = 'publisher'` | situs kanonik | `publisher` |
 | Pembeli | tiap situs yang muncul di `lp_purchases.site_id` miliknya | `customer` |
 | Pembeli dengan `site_id IS NULL` | situs kanonik | `customer` |
+| **Sisanya** (daftar, belum pernah beli) | situs kanonik | `customer` |
 
 Admin masuk ke *semua* situs supaya fase 3 tidak mengubah apa pun bagi mereka:
 hari ini setiap admin bisa membuka setiap situs, dan backfill harus mengabadikan
 kenyataan itu, bukan kenyataan yang kita inginkan. Pembeli dengan `site_id` NULL
 jatuh ke kanonik dengan alasan yang sudah dipakai `lib/site-scope.ts`.
+
+Baris terakhir **ditambahkan saat mengerjakan fase ini**, tidak ada di rancangan
+awal: tanpa itu, akun yang mendaftar tapi belum pernah membeli tidak jadi anggota
+situs mana pun dan akan hilang dari daftar user setiap situs di fase 4. Orang
+yang menghilang gara-gara backfill adalah persis jenis kegagalan senyap yang
+fase ini ada untuk mencegahnya.
+
+Urutan insert menentukan hasil: semuanya `on conflict do nothing`, jadi role yang
+paling berwenang harus masuk lebih dulu — admin yang juga pernah membeli harus
+tetap tercatat `admin`.
 
 **RLS.** Baca: seseorang boleh melihat baris keanggotaannya sendiri. Selain itu
 service-role, dan **setiap pemakaian service-role wajib punya gate sendiri**
@@ -117,9 +128,17 @@ service-role, dan **setiap pemakaian service-role wajib punya gate sendiri**
 tiap pembeli di `lp_purchases` harus punya keanggotaan di situs yang sama;
 tidak ada `user_id` di `lp_site_members` yang tidak ada di `auth.users`.
 
-**Selesai bila.** Migration jalan bersih dari nol (`db reset`) *dan* di atas
-database yang sudah berisi. Aplikasi berperilaku persis sama — tidak ada kode
-yang membaca tabel ini.
+**Hasil verifikasi (2026-09-01).** Di Supabase lokal, dengan fixture yang
+sengaja menutup tiap aturan: admin → 3 situs `admin`; publisher → kanonik saja;
+pembeli di domain non-kanonik → **hanya** domain itu; pembelian `site_id` NULL →
+kanonik; akun tanpa pembelian → kanonik; admin yang juga membeli **tetap**
+`admin`. RLS aktif, nol policy tulis. Jalur "belum ada situs sama sekali" diuji
+di database sekali pakai berisi tabel kosong: keluar exit 0, nol baris — jadi
+`db reset` di mesin baru tidak akan gagal di sini.
+
+`supabase db reset` sendiri **tidak** dijalankan: `supabase/seed.sql` tidak
+membuat baris `lp_sites` maupun user uji, jadi reset akan mengosongkan setup
+lokal yang dipakai skill `run-local`.
 
 ---
 
