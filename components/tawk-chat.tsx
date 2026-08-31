@@ -15,12 +15,12 @@ import { isTawkHidden } from "@/lib/tawk-visibility";
  * WITHOUT the crossorigin attribute fetches it in normal (no-cors) mode and runs
  * fine. Keep this out of the custom-JS panel to avoid the broken loader.
  *
- * The property/widget IDs are public (visible in every visitor's browser), so a
- * hardcoded default is safe; override per environment if needed.
+ * The ids come from this storefront's own tracking settings (/panel/tracking,
+ * lib/tracking-config.ts) and arrive as props. They used to be hardcoded
+ * ADM.UIUX values, which meant every niche domain on this one deployment opened
+ * a support chat belonging to a different business — the same leak a shared
+ * favicon or splash screen would be, and it is fixed the same way: per site.
  */
-const PROPERTY_ID =
-  process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID || "69b470e17afc871c37be198a";
-const WIDGET_ID = process.env.NEXT_PUBLIC_TAWK_WIDGET_ID || "1jjkdht1t";
 
 /** Set by the effect below; read by the inline script when the widget finishes loading. */
 const HIDDEN_FLAG = "__tawkHidden";
@@ -31,14 +31,24 @@ type TawkApi = {
 };
 
 /**
+ * @param propertyId  Tawk property for THIS storefront; "" switches the chat off.
+ * @param widgetId    Its widget id. Both or neither — see normalizeTracking.
  * @param fullscreenHome This storefront's homepage is a full-viewport app.
  *   A property of the SITE, not of the request — which is the point: the layout
  *   used to decide `{!fullscreenHome && <TawkChat/>}` from the x-pathname header,
  *   and a header is only read on a full document load.
  */
-export function TawkChat({ fullscreenHome = false }: { fullscreenHome?: boolean }) {
+export function TawkChat({
+  propertyId,
+  widgetId,
+  fullscreenHome = false,
+}: {
+  propertyId: string;
+  widgetId: string;
+  fullscreenHome?: boolean;
+}) {
   const pathname = usePathname();
-  const configured = !!PROPERTY_ID && !!WIDGET_ID;
+  const configured = !!propertyId && !!widgetId;
   const hidden = isTawkHidden(pathname, fullscreenHome);
 
   /**
@@ -90,7 +100,7 @@ Tawk_API.onChatMinimized=function(){setTimeout(tawkShrink,50);};
 (function(){
 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
 s1.async=true;
-s1.src='https://embed.tawk.to/${PROPERTY_ID}/${WIDGET_ID}';
+s1.src='https://embed.tawk.to/${propertyId}/${widgetId}';
 s1.charset='UTF-8';
 s0.parentNode.insertBefore(s1,s0);
 })();`}

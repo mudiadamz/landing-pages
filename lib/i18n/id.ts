@@ -1200,6 +1200,11 @@ export const id = {
   "product.bundleNoteCollection": "Koleksi lengkap dalam satu paket.",
 
   "panel.gtmContainerId": "GTM Container ID",
+  "panel.tawkHeading": "Live chat (Tawk.to)",
+  "panel.tawkIntro": "Tempel URL embed dari snippet Tawk — dua kolom di bawah terisi sendiri. Kosongkan untuk mematikan chat di domain ini.",
+  "panel.tawkPropertyId": "Property ID / URL embed",
+  "panel.tawkWidgetId": "Widget ID",
+  "panel.tawkEmptyHint": "Keduanya harus terisi; salah satu kosong berarti chat mati.",
   "panel.gtmEmptyHint": "Kosongkan untuk menonaktifkan GTM.",
 
   "panel.paletteForBefore": "Palet warna untuk",

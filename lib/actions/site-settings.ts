@@ -10,7 +10,15 @@ import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config"
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
 import { DEFAULT_LEGAL, normalizeLegal, type LegalContent } from "@/lib/legal-config";
 import { DEFAULT_HIRING, normalizeHiring, type HiringContent } from "@/lib/hiring-config";
-import { normalizeTracking, normalizeGtmId, type TrackingConfig } from "@/lib/tracking-config";
+import {
+  normalizeTracking,
+  normalizeGtmId,
+  normalizeTawkPropertyId,
+  normalizeTawkWidgetId,
+  parseTawkEmbed,
+  tawkEnabled,
+  type TrackingConfig,
+} from "@/lib/tracking-config";
 import { DEFAULT_PALETTE, normalizePalette, type PaletteConfig } from "@/lib/palette";
 import {
   DEFAULT_PLAN_META,
@@ -560,13 +568,13 @@ export async function updateCustomJs(
   return { ok: true };
 }
 
-/* Tracking tags (Google Tag Manager). Stored as JSON under key "tracking";
- * falls back to the NEXT_PUBLIC_GTM_ID env var when nothing is saved so the id
+/* Tracking tags: Google Tag Manager + the Tawk.to live chat. Stored as JSON under
+ * key "tracking"; each id falls back to its env var when nothing is saved, so it
  * can be configured either in the panel or in Vercel. See lib/tracking-config.ts. */
 
 const readTracking = unstable_cache(
   async (siteId: string): Promise<TrackingConfig> => {
-    const envFallback = normalizeGtmId(process.env.NEXT_PUBLIC_GTM_ID);
+    const fromEnv = envTracking();
     try {
       const supabase = createSupabaseJS(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -578,16 +586,37 @@ const readTracking = unstable_cache(
         .eq("site_id", siteId)
         .eq("key", TRACKING_KEY)
         .maybeSingle();
-      if (!data?.value) return { gtmId: envFallback };
+      if (!data?.value) return fromEnv;
       const cfg = normalizeTracking(JSON.parse(data.value as string));
-      return { gtmId: cfg.gtmId || envFallback };
+      return {
+        gtmId: cfg.gtmId || fromEnv.gtmId,
+        // The chat falls back as a PAIR. Taking the saved property id and the
+        // env widget id would build an embed URL that belongs to neither.
+        ...(tawkEnabled(cfg)
+          ? { tawkPropertyId: cfg.tawkPropertyId, tawkWidgetId: cfg.tawkWidgetId }
+          : { tawkPropertyId: fromEnv.tawkPropertyId, tawkWidgetId: fromEnv.tawkWidgetId }),
+      };
     } catch {
-      return { gtmId: envFallback };
+      return fromEnv;
     }
   },
   ["tracking-config"],
   { revalidate: 120, tags: ["tracking-config"] },
 );
+
+/**
+ * What Vercel says, when the database says nothing.
+ *
+ * NOT exported: this module is "use server", so everything it exports has to be
+ * an async function (see docs/architecture.md I5).
+ */
+function envTracking(): TrackingConfig {
+  return normalizeTracking({
+    gtmId: process.env.NEXT_PUBLIC_GTM_ID,
+    tawkPropertyId: process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID,
+    tawkWidgetId: process.env.NEXT_PUBLIC_TAWK_WIDGET_ID,
+  });
+}
 
 /** Per-site: a niche storefront usually wants its own GTM container. */
 export async function getTracking(siteId?: string): Promise<TrackingConfig> {
@@ -607,7 +636,26 @@ export async function updateTracking(
     return { ok: false, error: "ID GTM tidak valid. Format: GTM-XXXXXXX." };
   }
 
-  const clean = normalizeTracking({ gtmId });
+  // One field, two ids: the admin may paste either the embed URL from Tawk's
+  // snippet or the property id on its own.
+  const pasted = config.tawkPropertyId?.trim() ?? "";
+  const fromUrl = parseTawkEmbed(pasted);
+  const tawkPropertyId = fromUrl ? fromUrl.propertyId : normalizeTawkPropertyId(pasted);
+  const tawkWidgetId = fromUrl
+    ? fromUrl.widgetId
+    : normalizeTawkWidgetId(config.tawkWidgetId);
+
+  if (pasted && !tawkPropertyId) {
+    return {
+      ok: false,
+      error: "Property ID Tawk tidak valid — 24 karakter hex, atau tempel URL embed-nya.",
+    };
+  }
+  if (tawkPropertyId && !tawkWidgetId) {
+    return { ok: false, error: "Widget ID Tawk wajib diisi juga." };
+  }
+
+  const clean = normalizeTracking({ gtmId, tawkPropertyId, tawkWidgetId });
   const supabase = await createClient();
   const { error } = await supabase
     .from("lp_site_settings")

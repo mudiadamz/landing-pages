@@ -178,7 +178,9 @@ GET /api/download/[slug]
 
 - `lib/analytics.ts`: helper gtag/fbq. Event: `view_item`, `begin_checkout`, `purchase`.
 - **Dedup Meta**: pixel browser & CAPI server pakai `eventId = merchantOrderId` yang sama → 1 konversi. `PurchaseTracker` cek localStorage agar tak double-fire saat refresh.
-- Script marketing diinject via `components/marketing-scripts.tsx`; chat via `components/tawk-chat.tsx`; custom JS global dari `lp_site_settings` (key `custom_js`) via panel Custom JS.
+- Script marketing diinject via `components/marketing-scripts.tsx`; custom JS global dari `lp_site_settings` (key `custom_js`) via panel Custom JS.
+- **Tracking & live chat per-situs** (`lp_site_settings` key `tracking`, `lib/tracking-config.ts`, diedit di `/panel/tracking`): GTM container id + property/widget Tawk.to, masing-masing punya fallback env (`NEXT_PUBLIC_GTM_ID`, `NEXT_PUBLIC_TAWK_*`). ID Tawk **dulu di-hardcode** — artinya tiap storefront niche membuka chat support milik bisnis lain. Dua ID-nya disimpan sebagai pasangan: satu kosong = chat mati, karena setengah pasangan menghasilkan URL embed yang 404 diam-diam.
+- `components/tawk-chat.tsx` menyembunyikan bubble di `/panel`, `/preview`, dan halaman depan template fullscreen — lewat `hideWidget()`, bukan dengan unmount: script Tawk menaruh iframe-nya sendiri di luar React, jadi unmount tidak menghapus apa pun.
 
 ## Flow sekunder
 

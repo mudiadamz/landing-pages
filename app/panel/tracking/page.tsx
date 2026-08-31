@@ -31,7 +31,13 @@ export default async function TrackingPage() {
           <code className="rounded bg-[var(--background)] px-1">GTM-XXXXXXX</code>
           {t("panel.gtmIntroAfter")}
         </p>
-        <TrackingForm key={site.id} initialGtmId={tracking.gtmId} siteId={site.id} />
+        <TrackingForm
+          key={site.id}
+          initialGtmId={tracking.gtmId}
+          initialTawkPropertyId={tracking.tawkPropertyId}
+          initialTawkWidgetId={tracking.tawkWidgetId}
+          siteId={site.id}
+        />
         {fromEnv && (
           <p className="mt-3 text-xs text-[var(--muted)]">
             {t("panel.gtmEnvBefore")}{" "}

@@ -124,14 +124,23 @@ function siteIcons(site: Site, look: SiteAppearance): Metadata["icons"] {
 }
 
 /**
- * Tag-manager + custom JS, both of which need a settings lookup. Kept out of the
- * layout body so a database round trip can't delay the document's first byte.
+ * Tag-manager, live chat and custom JS — all three need a settings lookup. Kept
+ * out of the layout body so a database round trip can't delay the document's
+ * first byte.
  */
-async function DeferredScripts() {
+async function DeferredScripts({ fullscreenHome }: { fullscreenHome: boolean }) {
   const [customJs, tracking] = await Promise.all([getCustomJs(), getTracking()]);
   return (
     <>
       <GtmScripts gtmId={tracking.gtmId} />
+      {/* Moved in here with the settings read it now depends on: the Tawk ids are
+          per-storefront (/panel/tracking), not hardcoded. A site with no chat
+          configured renders nothing at all. */}
+      <TawkChat
+        propertyId={tracking.tawkPropertyId}
+        widgetId={tracking.tawkWidgetId}
+        fullscreenHome={fullscreenHome}
+      />
       {customJs ? <CustomJsInjector script={customJs} /> : null}
     </>
   );
@@ -265,10 +274,9 @@ export default async function RootLayout({
           }}
         />
         <Suspense fallback={null}>
-          <DeferredScripts />
+          <DeferredScripts fullscreenHome={fullscreenHome} />
         </Suspense>
         <MarketingScripts />
-        <TawkChat fullscreenHome={fullscreenHome} />
         <PwaRegister />
         <Suspense fallback={null}>
           <RouteProgress />

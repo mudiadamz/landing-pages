@@ -1210,6 +1210,11 @@ export const en: Record<keyof typeof id, string> = {
   "product.bundleNoteCollection": "The full collection in one bundle.",
 
   "panel.gtmContainerId": "GTM container ID",
+  "panel.tawkHeading": "Live chat (Tawk.to)",
+  "panel.tawkIntro": "Paste the embed URL from your Tawk snippet — both fields below fill themselves in. Leave empty to switch the chat off on this domain.",
+  "panel.tawkPropertyId": "Property ID / embed URL",
+  "panel.tawkWidgetId": "Widget ID",
+  "panel.tawkEmptyHint": "Both are required; either one empty means no chat.",
   "panel.gtmEmptyHint": "Leave empty to switch GTM off.",
 
   "panel.paletteForBefore": "The colour palette for the",

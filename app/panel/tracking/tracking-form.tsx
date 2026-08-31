@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { updateTracking } from "@/lib/actions/site-settings";
 import { Button } from "@/components/ui/button";
@@ -16,20 +16,52 @@ function SubmitButton() {
   );
 }
 
-export function TrackingForm({ initialGtmId, siteId }: { initialGtmId: string; siteId: string }) {
+export function TrackingForm({
+  initialGtmId,
+  initialTawkPropertyId,
+  initialTawkWidgetId,
+  siteId,
+}: {
+  initialGtmId: string;
+  initialTawkPropertyId: string;
+  initialTawkWidgetId: string;
+  siteId: string;
+}) {
   const t = useT();
   const [state, formAction] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, formData: FormData) => {
       const gtmId = (formData.get("gtmId") as string) ?? "";
-      return updateTracking({ gtmId }, siteId);
+      const tawkPropertyId = (formData.get("tawkPropertyId") as string) ?? "";
+      const tawkWidgetId = (formData.get("tawkWidgetId") as string) ?? "";
+      return updateTracking({ gtmId, tawkPropertyId, tawkWidgetId }, siteId);
     },
     null,
   );
   const [gtmId, setGtmId] = useState(initialGtmId);
+  const [tawkPropertyId, setTawkPropertyId] = useState(initialTawkPropertyId);
+  const [tawkWidgetId, setTawkWidgetId] = useState(initialTawkWidgetId);
 
-  useEffect(() => {
-    setGtmId(initialGtmId);
-  }, [initialGtmId]);
+  // No effect syncing these back from props: the page renders this form with
+  // `key={site.id}`, so switching storefront remounts it with fresh initial
+  // state. An effect doing the same job by hand is a second, slower copy of the
+  // rule — and it is a synchronous setState inside an effect, which is a
+  // cascading render the linter is right to flag.
+
+  /**
+   * Pasting the embed URL fills both fields on the spot.
+   *
+   * The server accepts a URL in the property field too — this is only so the
+   * admin sees what it resolved to before saving, rather than after.
+   */
+  function onPropertyChange(value: string) {
+    const m = /embed\.tawk\.to\/([0-9a-fA-F]{24})\/([0-9a-zA-Z]{1,30})/.exec(value);
+    if (m) {
+      setTawkPropertyId(m[1].toLowerCase());
+      setTawkWidgetId(m[2].toLowerCase());
+      return;
+    }
+    setTawkPropertyId(value);
+  }
 
   return (
     <form action={formAction} className="space-y-4">
@@ -49,6 +81,45 @@ export function TrackingForm({ initialGtmId, siteId }: { initialGtmId: string; s
         />
         <p className="mt-1 text-xs text-[var(--muted)]">{t("panel.gtmEmptyHint")}</p>
       </div>
+
+      <div className="border-t border-[var(--border)] pt-4">
+        <h3 className="text-sm font-semibold text-foreground">{t("panel.tawkHeading")}</h3>
+        <p className="mb-3 mt-1 text-xs text-[var(--muted)]">{t("panel.tawkIntro")}</p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1">
+            <label htmlFor="tawkPropertyId" className="mb-1 block text-sm font-medium text-foreground">
+              {t("panel.tawkPropertyId")}
+            </label>
+            <input
+              id="tawkPropertyId"
+              name="tawkPropertyId"
+              value={tawkPropertyId}
+              onChange={(e) => onPropertyChange(e.target.value)}
+              placeholder="https://embed.tawk.to/…"
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            />
+          </div>
+          <div className="sm:w-48">
+            <label htmlFor="tawkWidgetId" className="mb-1 block text-sm font-medium text-foreground">
+              {t("panel.tawkWidgetId")}
+            </label>
+            <input
+              id="tawkWidgetId"
+              name="tawkWidgetId"
+              value={tawkWidgetId}
+              onChange={(e) => setTawkWidgetId(e.target.value)}
+              placeholder="1jjkdht1t"
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            />
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-[var(--muted)]">{t("panel.tawkEmptyHint")}</p>
+      </div>
+
       <div className="flex items-center gap-3">
         <SubmitButton />
         {state?.error && <span className="text-sm text-red-600">{state.error}</span>}
