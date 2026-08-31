@@ -80,32 +80,36 @@ Ringkasan yang paling sering dilanggar:
   Signup Google langsung terverifikasi (lihat trigger `lp_handle_new_user`). Selama belum
   verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +
   filter "Belum verifikasi" di `/panel/users`.
-- **Dua tingkat, jangan tertukar.** `lp_profiles.role` = role **platform**;
-  `lp_site_members.role` = role **di satu situs**. Satu akun global (email unik
+- **Tiga tingkat: Company → Agent → Customer.** Satu akun global (email unik
   se-project Supabase), keanggotaan per-situs. Detail & riwayat keputusannya di
   [`docs/plans/hierarchical-users.md`](docs/plans/hierarchical-users.md).
-  - **Platform admin** (`lp_profiles.role = 'admin'`): lintas situs, dan
-    satu-satunya yang boleh buat/hapus situs, mengangkat platform admin, dan
-    menghapus akun.
-  - **Anggota situs** (`lp_site_members`, role `admin|publisher|customer`):
-    admin situs mengurus konten, setelan, dan anggota **situs itu saja**.
-  - Izin efektif = platform admin **atau** role keanggotaan di situs itu —
-    satu resolver, `lib/site-membership.ts: effectiveRole()`. Bukan anggota =
-    `null` = tidak boleh apa-apa, bukan "anggap saja pembeli".
+  - **Company** = `lp_profiles.role = 'admin'`. Lintas situs, dan satu-satunya
+    yang boleh buat/hapus situs, mengangkat Company lain, dan menghapus akun.
+  - **Agent** = `lp_site_members.role = 'admin'`. Mengurus konten, setelan, dan
+    anggota **situs itu saja**. (`role = 'publisher'` di tabel yang sama: boleh
+    menjual, bukan pengelola.)
+  - **Customer** = `lp_site_members.role = 'customer'`. Pembeli, anggota situs
+    tempat dia mendaftar atau membeli.
+  - **Nama di kode belum ikut berubah** — nilai `role` masih `admin`, `publisher`,
+    `customer`. Istilah di atas adalah bahasa dokumen; jembatannya ada di
+    glosarium dokumen rencana.
+  - Izin efektif = Company **atau** role keanggotaan di situs itu — satu
+    resolver, `lib/site-membership.ts: effectiveRole()`. Bukan anggota =
+    `null` = tidak boleh apa-apa, bukan "anggap saja Customer".
 - **Profiles** (`lp_profiles`: `id`, `full_name`, `role`, `publisher_status`,
   `email_verified_at`, `avatar_url`, `plan`, kolom `publisher_*`):
   `getProfile()` cached; profil dibuat otomatis sebagai `customer` saat pertama
   diakses. Role dinormalisasi case-insensitive via
   `lib/profile-utils.ts: normalizeRole()`.
 - **Empat gate, jangan tertukar** (`lib/actions/profiles.ts`):
-  - `requireAdmin()` — platform admin. Untuk aksi yang **tidak boleh
+  - `requireAdmin()` — Company. Untuk aksi yang **tidak boleh
     didelegasikan**: buat/hapus situs, hapus akun, ban, ubah role platform.
-  - `requireSiteAdmin(siteId?)` — admin situs itu (platform admin selalu lolos).
+  - `requireSiteAdmin(siteId?)` — Agent itu (Company selalu lolos).
     Dipakai layar & action per-situs. **Wajib menerima `siteId` yang dikirim
     klien**, bukan situs yang kebetulan sedang dilihat.
   - `canSellProducts()` — platform: admin atau publisher. `canSellOnCurrentSite()`
     versi per-situsnya.
-  - `requireFeature(key)` — platform admin dan admin situs selalu lolos; selain
+  - `requireFeature(key)` — Company dan Agent selalu lolos; selain
     itu fitur harus diberikan ke role-nya di peta situs itu. Nav panel digambar
     dari `getAccessibleFeatures()`.
 - **Delegasi fitur admin**: daftar fitur yang bisa diberikan ada di `lib/features.ts`
@@ -128,7 +132,7 @@ Ringkasan yang paling sering dilanggar:
 - Customer melihat pembelian, invoice, review.
 - **Hapus user** (`DELETE /api/admin/users`, tombol di `/panel/users`): platform
   admin saja — beda dari **keluarkan dari situs** (`fromSite: true`) yang boleh
-  dilakukan admin situs dan hanya mencabut satu baris keanggotaan — ban itu kontrol yang bisa dibatalkan dan boleh didelegasikan, hapus tidak.
+  dilakukan Agent dan hanya mencabut satu baris keanggotaan — ban itu kontrol yang bisa dibatalkan dan boleh didelegasikan, hapus tidak.
   Ditolak untuk: diri sendiri, akun ber-role admin (turunkan dulu), dan akun yang
   **masih punya produk** — `lp_landing_pages.user_id` cascade, jadi menghapus
   pemiliknya ikut menghapus katalog beserta filenya. Foto KTP/selfie di bucket

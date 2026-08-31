@@ -22,32 +22,52 @@ kedua pasti menyimpang.
 
 ---
 
+## Istilah
+
+Tiga tingkat, dan ini nama resminya di seluruh dokumen:
+
+| Istilah | Artinya | Di kode / database |
+|---|---|---|
+| **Company** | Pemilik platform. Lintas situs, dan satu-satunya yang boleh membuat/menghapus situs, mengangkat Company lain, dan menghapus akun. | `lp_profiles.role = 'admin'` |
+| **Agent** | Yang menjalankan sebuah storefront: kontennya, setelannya, dan anggotanya — **situs itu saja**. | `lp_site_members.role = 'admin'` |
+| **Customer** | Pembeli. Anggota situs tempat dia mendaftar atau membeli. | `lp_site_members.role = 'customer'` |
+
+**Nama di kode sengaja belum ikut berubah.** Mengubah nilai `role` di database
+berarti migration plus setiap gate, dan itu perubahan tersendiri — bukan
+perubahan istilah. Tabel di atas adalah jembatannya; kalau Anda ingin kodenya
+menyusul, itu fase tersendiri.
+
+Satu nilai yang belum punya nama baru: `lp_site_members.role = 'publisher'` —
+Agent yang boleh membuat & menjual produk tapi bukan pengelola situsnya. Untuk
+sekarang tetap disebut **publisher**.
+
 ## Keputusan yang sudah diambil
 
 | Pertanyaan | Jawaban | Alasan |
 |---|---|---|
 | Akun terpisah per situs? | **Tidak bisa** — satu akun global | `auth.users` punya `users_email_partial_key`: email unik untuk seluruh project Supabase. Akun benar-benar terpisah butuh project Supabase per domain. |
-| Bentuk hierarkinya | Akun global + **baris keanggotaan per-situs** | Satu orang bisa admin di situs A dan pembeli di situs B, dan pembeliannya tetap menyatu di "Pembelian saya". |
-| Wewenang admin situs | Konten **dan** user situsnya | Undang, ubah role dalam situs itu, keluarkan dari situs itu. Tidak bisa membuat/menghapus situs, tidak melihat situs lain, tidak bisa mengangkat orang jadi platform admin. |
-| Pembeli ikut dicatat? | Ya, otomatis | Baris keanggotaan dibuat saat signup/pembelian, dan data lama di-backfill. |
+| Bentuk hierarkinya | Akun global + **baris keanggotaan per-situs** | Satu orang bisa Agent di situs A dan Customer di situs B, dan pembeliannya tetap menyatu di "Pembelian saya". |
+| Wewenang Agent | Konten **dan** Customer situsnya | Undang, ubah role dalam situs itu, keluarkan dari situs itu. Tidak bisa membuat/menghapus situs, tidak melihat situs lain, tidak bisa mengangkat orang jadi Company. |
+| Customer ikut dicatat? | Ya, otomatis | Baris keanggotaan dibuat saat signup/pembelian, dan data lama di-backfill. |
 
 ## Model sasaran
 
 ```
-platform admin        lp_profiles.role = 'admin'
+COMPANY               lp_profiles.role = 'admin'
    │                  lintas situs, satu-satunya yang boleh:
-   │                  buat/hapus situs, angkat platform admin, hapus akun
+   │                  buat/hapus situs, angkat Company, hapus akun
    │
    ├─ situs A ──── lp_site_members(site_id, user_id, role)
-   │                 role = admin | publisher | customer
-   │                 admin situs: konten + anggota situs itu saja
+   │                 AGENT     = role 'admin'  (pengelola situs itu)
+   │                 publisher = role 'publisher' (boleh menjual)
+   │                 CUSTOMER  = role 'customer'  (pembeli)
    │
-   └─ situs B ──── keanggotaan terpisah; orang yang sama boleh punya
-                   role berbeda di tiap situs
+   └─ situs B ──── keanggotaan terpisah; orang yang sama boleh jadi Agent
+                   di satu situs dan Customer di situs lain
 ```
 
 **Izin efektif** untuk sebuah aksi di situs S =
-`platform admin` **atau** `role keanggotaan di S`. Satu resolver, satu tempat
+`Company` **atau** `role keanggotaan di S`. Satu resolver, satu tempat
 (fase 2) — bukan pengecekan yang disalin ke tiap layar.
 
 ---
@@ -100,8 +120,8 @@ beda dari `lp_purchases.user_id` yang sengaja `set null` (migration
 |---|---|---|
 | `lp_profiles.role = 'admin'` | **semua** situs | `admin` |
 | `lp_profiles.role = 'publisher'` | situs kanonik | `publisher` |
-| Pembeli | tiap situs yang muncul di `lp_purchases.site_id` miliknya | `customer` |
-| Pembeli dengan `site_id IS NULL` | situs kanonik | `customer` |
+| Customer | tiap situs yang muncul di `lp_purchases.site_id` miliknya | `customer` |
+| Customer dengan `site_id IS NULL` | situs kanonik | `customer` |
 | **Sisanya** (daftar, belum pernah beli) | situs kanonik | `customer` |
 
 Admin masuk ke *semua* situs supaya fase 3 tidak mengubah apa pun bagi mereka:
@@ -154,13 +174,13 @@ setiap admin adalah anggota setiap situs.
   `effectiveRole(profile, membership)`.
 - `lib/actions/profiles.ts`: `requireSiteAdmin(siteId)` baru;
   `canSellProducts()` menerima situs; `requireFeature()` memperhitungkan
-  keanggotaan. `requireAdmin()` **tetap** berarti platform admin — jangan
+  keanggotaan. `requireAdmin()` **tetap** berarti Company — jangan
   dilonggarkan, itu gate untuk aksi yang tidak boleh didelegasikan
   (buat/hapus situs, `/panel/roles`, hapus akun).
 - Cached reader menerima `siteId` sebagai argumen, tidak pernah membaca
   `headers()`/`cookies()` sendiri (invarian I1).
 
-**Verifikasi.** Unit test untuk `effectiveRole` (murni: platform admin menang,
+**Verifikasi.** Unit test untuk `effectiveRole` (murni: Company menang,
 non-anggota tidak dapat apa-apa, role situs dipakai apa adanya). Lalu `curl`
 dengan sesi admin ke beberapa layar panel — semuanya harus sama seperti sebelum
 fase ini.
@@ -202,43 +222,43 @@ di 8 layar per-situs), dan gate action yang menerima `siteId` dari klien
 lain jadi hiasan.
 
 Diuji dengan dua sesi dan cookie `panel_site` yang **sama** menunjuk situs
-kanonik: admin situs (anggota `localhost` saja) mendapat `GTM-LOCALHOST`,
-platform admin mendapat `GTM-KANONIK`. Nilai berbeda per situs sengaja dipasang
+kanonik: Agent (anggota `localhost` saja) mendapat `GTM-LOCALHOST`,
+Company mendapat `GTM-KANONIK`. Nilai berbeda per situs sengaja dipasang
 supaya hasilnya tidak bisa dibaca dua arti.
 
 ---
 
 ## Fase 4 — `/panel/users` jadi per-situs
 
-**Tujuan.** Admin situs melihat dan mengelola anggota situsnya.
+**Tujuan.** Agent melihat dan mengelola anggota situsnya.
 
 **Perubahan.**
 
 - `GET /api/admin/users` difilter keanggotaan situs yang sedang dilihat;
-  platform admin punya pilihan "semua situs".
+  Company punya pilihan "semua situs".
 - Tambah/undang anggota (berdasarkan email akun yang sudah ada), ubah role dalam
   situs, keluarkan dari situs.
 - **Batas yang tidak boleh kabur:** "keluarkan dari situs" ≠ "hapus akun".
-  Hapus akun tetap platform admin saja, dengan penjaga yang sudah ada (tidak
+  Hapus akun tetap Company saja, dengan penjaga yang sudah ada (tidak
   bisa diri sendiri, tidak bisa admin, tolak kalau masih punya produk) —
   lihat `DELETE /api/admin/users`.
-- Admin situs tidak boleh memberi role yang lebih tinggi dari miliknya, dan
+- Agent tidak boleh memberi role yang lebih tinggi dari miliknya, dan
   tidak boleh menyentuh `lp_profiles.role`.
 
-**Verifikasi (2026-09-01).** Lewat HTTP dengan sesi platform admin dan sesi
-admin situs (anggota `localhost` saja, role platform-nya cuma `customer` —
+**Verifikasi (2026-09-01).** Lewat HTTP dengan sesi Company dan sesi
+Agent (anggota `localhost` saja, role platform-nya cuma `customer` —
 jadi seluruh kewenangannya benar-benar datang dari keanggotaan).
 
 Boleh: menaikkan anggota jadi publisher di situsnya (200), mengundang akun
 terdaftar (200). Ditolak: ubah role platform (403), ban akun (403), ubah role
-situs milik platform admin (403), ubah role situs diri sendiri (400),
-hapus akun (403), keluarkan platform admin dari situs (403), undang email yang
+situs milik Company (403), ubah role situs diri sendiri (400),
+hapus akun (403), keluarkan Company dari situs (403), undang email yang
 belum punya akun (404).
 
 Daftar user-nya diuji dengan satu akun yang sengaja **bukan** anggota situs itu,
 karena tanpa itu jumlahnya kebetulan sama dan hasilnya bisa dibaca dua arti:
-admin situs melihat 3 (anggota `localhost`) bahkan saat meminta `?scope=all`,
-platform admin melihat 4.
+Agent melihat 3 (anggota `localhost`) bahkan saat meminta `?scope=all`,
+Company melihat 4.
 
 Dan yang paling penting dibedakan: sesudah "keluarkan dari situs", akunnya
 **masih ada**, keanggotaannya di situs lain **tetap**, hanya baris situs ini
@@ -262,7 +282,7 @@ sementara melempar error di situ berarti signup gagal atau callback pembayaran
 tidak dibalas 200.
 
 `ensureSiteMembership` memakai `ignoreDuplicates`, bukan upsert yang menimpa:
-pembelian kedua oleh admin situs tidak boleh menjadikannya pembeli biasa. Sifat
+pembelian kedua oleh Agent tidak boleh menjadikannya pembeli biasa. Sifat
 itu diuji di database — sesudah dua kali "pembelian", role-nya tetap `admin` dan
 barisnya tetap satu.
 
@@ -277,7 +297,7 @@ titik panggilnya ada.
 
 **Tujuan.** `role_permissions` (`lib/role-permissions.ts`) sekarang **sengaja**
 tidak di-scope per-situs: panel hanya dilayani domain kanonik, jadi kuncinya
-tepat satu baris. Dengan admin situs, itu tidak lagi cukup — tiap situs perlu
+tepat satu baris. Dengan Agent, itu tidak lagi cukup — tiap situs perlu
 peta role→fitur sendiri.
 
 **Perubahan.** Pindahkan kunci `role_permissions` ke per-`site_id`, dengan baris
@@ -288,9 +308,9 @@ itu akan jadi salah, dan komentar yang salah lebih buruk daripada tidak ada.
 **Hasil (2026-09-01).** Peta dibaca per-`site_id` dengan baris kanonik sebagai
 cadangan, jadi situs yang belum pernah mengaturnya tidak kehilangan delegasinya
 hanya karena barisnya belum dibuat. `/panel/roles` pindah dari `requireAdmin()`
-ke `requireSiteAdmin()` — admin situs mengatur delegasi di situsnya sendiri.
+ke `requireSiteAdmin()` — Agent mengatur delegasi di situsnya sendiri.
 
-Diuji dengan seorang anggota biasa (bukan admin situs — admin situs lolos lewat
+Diuji dengan seorang anggota biasa (bukan Agent — Agent lolos lewat
 jalur lain dan tidak membuktikan apa pun soal peta ini):
 
 | Keadaan | Hasil |
@@ -331,7 +351,7 @@ halaman-halaman per-situs. Dua alasan:
    angka yang berubah karenanya, dan halaman yang tidak terpengaruh pun ikut
    memajangnya.
 
-**"Manajer situs tidak perlu filter" tidak ditulis sebagai pengecekan role.**
+**"Agent tidak perlu filter" tidak ditulis sebagai pengecekan role.**
 Filternya tidak merender apa pun kalau cuma ada satu pilihan — dan manajer satu
 situs memang cuma punya satu. Manajer yang memegang dua situs tetap dapat
 filternya, dan itu benar. Satu aturan, tanpa daftar peran yang harus dijaga
@@ -352,16 +372,16 @@ memfilter apa-apa lebih buruk daripada tidak ada filter.
 
 **Produk tidak punya pemilik situs.** `lp_landing_pages` **tidak punya kolom
 `site_id`** — katalog tiap storefront cuma irisan dari `lp_sites.category_ids`.
-Jadi "admin situs mengelola produk situsnya" belum punya arti yang tegas: produk
+Jadi "Agent mengelola produk situsnya" belum punya arti yang tegas: produk
 yang dia buat bisa muncul di domain lain kalau kategorinya beririsan.
 
 Tiga pilihan, semuanya butuh keputusan Anda sebelum fase 4 menyentuh produk:
 
 1. **Tambah `lp_landing_pages.site_id`** (pemilik), katalog tetap ditentukan
    kategori. Paling jelas, dan backfill-nya bisa dari kategori yang ada.
-2. **Biarkan bersama**, admin situs hanya boleh menyunting produk yang masuk
+2. **Biarkan bersama**, Agent hanya boleh menyunting produk yang masuk
    irisan kategorinya. Tidak ada migration, tapi aturannya kabur di tepi.
-3. **Tunda** — fase 4 hanya mengurus anggota, produk tetap platform admin.
+3. **Tunda** — fase 4 hanya mengurus anggota, produk tetap Company.
 
 Rekomendasi: **3 sekarang, 1 nanti** sebagai fasenya sendiri. Menggabungkan
 kepemilikan produk ke dalam fase user akan membuat satu fase yang tidak bisa
@@ -380,7 +400,7 @@ dilanggar di pekerjaan ini:
 3. Filter yang hilang menampilkan **lebih** banyak data daripada seharusnya —
    yang terlihat seperti berhasil. Setiap layar per-situs harus diuji dengan
    sesi yang **tidak** berhak, bukan hanya dengan sesi admin.
-4. Panel hanya dilayani domain kanonik. Admin situs pun login di sana; sesi
+4. Panel hanya dilayani domain kanonik. Agent pun login di sana; sesi
    Supabase tidak lintas domain.
 5. Verifikasi dari sisi server (`psql`, `curl` dengan sesi buatan sendiri —
    resep di skill `run-local`), bukan dari layar.

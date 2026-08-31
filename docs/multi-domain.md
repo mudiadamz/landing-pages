@@ -333,18 +333,22 @@ orang lain di WhatsApp.
 
 ## Siapa boleh mengurus domain ini
 
-Sejak `lp_site_members` ada, "admin" bukan satu tingkat lagi:
+Sejak `lp_site_members` ada, "admin" bukan satu tingkat lagi. Tiga istilah,
+dijelaskan lengkap di [`plans/hierarchical-users.md`](plans/hierarchical-users.md):
 
-- **Platform admin** (`lp_profiles.role = 'admin'`) melihat semua domain dan
-  satu-satunya yang boleh menambah/menghapus domain, mengangkat platform admin,
+- **Company** (`lp_profiles.role = 'admin'`) melihat semua domain dan
+  satu-satunya yang boleh menambah/menghapus domain, mengangkat Company lain,
   dan menghapus akun.
-- **Admin situs** (`lp_site_members.role = 'admin'`) mengurus konten, setelan,
-  dan anggota **domain itu saja**. Switcher di sidebar hanya memuat domain yang
-  jadi keanggotaannya, dan cookie `panel_site` dicocokkan dengan daftar itu —
-  mengganti nilainya di devtools tidak membuka domain orang lain.
+- **Agent** (`lp_site_members.role = 'admin'`) mengurus konten, setelan, dan
+  anggota **domain itu saja**. Filter situs di tiap layar per-domain hanya
+  memuat domain yang jadi keanggotaannya, dan cookie `panel_site` dicocokkan
+  dengan daftar itu — mengganti nilainya di devtools tidak membuka domain orang
+  lain. Agent satu domain tidak melihat filternya sama sekali: tidak ada yang
+  bisa dipilih.
+- **Customer** (`lp_site_members.role = 'customer'`) pembeli di domain itu.
 
 Konsekuensi yang mudah terlewat: **panel tetap hanya dilayani domain kanonik**,
-jadi admin sebuah domain niche pun login di sana. Sesi Supabase tidak lintas
+jadi Agent sebuah domain niche pun login di sana. Sesi Supabase tidak lintas
 domain, dan itu tidak berubah.
 
 Detail, fase, dan keputusan yang masih terbuka ada di
