@@ -63,7 +63,7 @@ platform admin        lp_profiles.role = 'admin'
 | 4 | `/panel/users` jadi per-situs + kelola anggota | ✅ | `api/admin/users` + `users-table` |
 | 5 | Keanggotaan ditulis otomatis (signup, checkout) | ✅ | `ensureSiteMembership()` |
 | 6 | Delegasi fitur per-situs | ✅ | `readRolePermissions(siteId, canonicalId)` |
-| 7 | Pembersihan: arti `lp_profiles.role` dipersempit | ⬜ | |
+| 7 | Pembersihan: arti `lp_profiles.role` dipersempit | ✅ | `20260901010000_role_meaning.sql` |
 
 ---
 
@@ -306,12 +306,16 @@ menentukan adalah BADAN responsnya (dashboard vs inbox), bukan status kodenya.
 
 ## Fase 7 — Pembersihan
 
-- `lp_profiles.role` dipersempit artinya jadi **platform saja**: `admin` = platform
-  admin, sisanya akun biasa. Role per-situs hidup di `lp_site_members`.
-- `publisher_status` + KYC: putuskan apakah publisher itu status platform (satu
-  kali verifikasi identitas, berlaku di semua situs — kemungkinan besar ya, karena
-  KTP dan rekening bank itu milik orang, bukan milik situs) atau per-situs.
-- Perbarui `CLAUDE.md` bagian **Auth & roles** dan `docs/multi-domain.md`.
+**Selesai (2026-09-01).**
+
+- Arti `lp_profiles.role` dipersempit jadi **platform saja**. Tidak ada perubahan
+  bentuk — nilainya tetap sama; yang berubah janjinya. Ditulis sebagai
+  `comment on column` (migration `20260901010000`) supaya ada di tempat orang
+  berikutnya membacanya: databasenya sendiri, bukan hanya dokumen.
+- `publisher_status` + KYC diputuskan **tingkat platform**: KTP, selfie, dan
+  rekening bank itu milik orangnya, bukan milik satu storefront. Sekali disetujui,
+  berlaku di mana pun dia jadi anggota.
+- `CLAUDE.md` (**Auth & roles**) dan `docs/multi-domain.md` diperbarui.
 
 ---
 

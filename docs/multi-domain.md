@@ -331,6 +331,25 @@ warna halaman template-nya. Sebelumnya satu gambar dengan teks "ADM.UIUX" dan
 "admuiux.com" yang di-bake, jadi link ke storefront niche tampil sebagai merek
 orang lain di WhatsApp.
 
+## Siapa boleh mengurus domain ini
+
+Sejak `lp_site_members` ada, "admin" bukan satu tingkat lagi:
+
+- **Platform admin** (`lp_profiles.role = 'admin'`) melihat semua domain dan
+  satu-satunya yang boleh menambah/menghapus domain, mengangkat platform admin,
+  dan menghapus akun.
+- **Admin situs** (`lp_site_members.role = 'admin'`) mengurus konten, setelan,
+  dan anggota **domain itu saja**. Switcher di sidebar hanya memuat domain yang
+  jadi keanggotaannya, dan cookie `panel_site` dicocokkan dengan daftar itu —
+  mengganti nilainya di devtools tidak membuka domain orang lain.
+
+Konsekuensi yang mudah terlewat: **panel tetap hanya dilayani domain kanonik**,
+jadi admin sebuah domain niche pun login di sana. Sesi Supabase tidak lintas
+domain, dan itu tidak berubah.
+
+Detail, fase, dan keputusan yang masih terbuka ada di
+[`plans/hierarchical-users.md`](plans/hierarchical-users.md).
+
 ## Yang perlu diketahui
 
 **Login tidak lintas domain, dan itu disengaja.** Cookie sesi Supabase terikat per

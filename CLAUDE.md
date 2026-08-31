@@ -80,25 +80,41 @@ Ringkasan yang paling sering dilanggar:
   Signup Google langsung terverifikasi (lihat trigger `lp_handle_new_user`). Selama belum
   verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +
   filter "Belum verifikasi" di `/panel/users`.
+- **Dua tingkat, jangan tertukar.** `lp_profiles.role` = role **platform**;
+  `lp_site_members.role` = role **di satu situs**. Satu akun global (email unik
+  se-project Supabase), keanggotaan per-situs. Detail & riwayat keputusannya di
+  [`docs/plans/hierarchical-users.md`](docs/plans/hierarchical-users.md).
+  - **Platform admin** (`lp_profiles.role = 'admin'`): lintas situs, dan
+    satu-satunya yang boleh buat/hapus situs, mengangkat platform admin, dan
+    menghapus akun.
+  - **Anggota situs** (`lp_site_members`, role `admin|publisher|customer`):
+    admin situs mengurus konten, setelan, dan anggota **situs itu saja**.
+  - Izin efektif = platform admin **atau** role keanggotaan di situs itu —
+    satu resolver, `lib/site-membership.ts: effectiveRole()`. Bukan anggota =
+    `null` = tidak boleh apa-apa, bukan "anggap saja pembeli".
 - **Profiles** (`lp_profiles`: `id`, `full_name`, `role`, `publisher_status`,
   `email_verified_at`, `avatar_url`, `plan`, kolom `publisher_*`):
-  `role ∈ {admin, customer, publisher}`. `getProfile()` cached; profil dibuat
-  otomatis sebagai `customer` saat pertama diakses. Role dinormalisasi
-  case-insensitive via `lib/profile-utils.ts: normalizeRole()`.
-- **Tiga gate, jangan tertukar** (`lib/actions/profiles.ts`):
-  - `requireAdmin()` — hanya `role === "admin"`. Untuk aksi superuser yang **tidak
-    boleh didelegasikan** (mis. `/panel/roles`, kelola domain).
-  - `canSellProducts()` — admin **atau** publisher (`canSell()`): boleh buat & jual
-    produk.
-  - `requireFeature(key)` — admin selalu lolos; selain itu fitur harus diberikan ke
-    role-nya. Nav panel digambar dari `getAccessibleFeatures()`.
+  `getProfile()` cached; profil dibuat otomatis sebagai `customer` saat pertama
+  diakses. Role dinormalisasi case-insensitive via
+  `lib/profile-utils.ts: normalizeRole()`.
+- **Empat gate, jangan tertukar** (`lib/actions/profiles.ts`):
+  - `requireAdmin()` — platform admin. Untuk aksi yang **tidak boleh
+    didelegasikan**: buat/hapus situs, hapus akun, ban, ubah role platform.
+  - `requireSiteAdmin(siteId?)` — admin situs itu (platform admin selalu lolos).
+    Dipakai layar & action per-situs. **Wajib menerima `siteId` yang dikirim
+    klien**, bukan situs yang kebetulan sedang dilihat.
+  - `canSellProducts()` — platform: admin atau publisher. `canSellOnCurrentSite()`
+    versi per-situsnya.
+  - `requireFeature(key)` — platform admin dan admin situs selalu lolos; selain
+    itu fitur harus diberikan ke role-nya di peta situs itu. Nav panel digambar
+    dari `getAccessibleFeatures()`.
 - **Delegasi fitur admin**: daftar fitur yang bisa diberikan ada di `lib/features.ts`
   (`ADMIN_FEATURES`: stats, users, categories, contacts, inbox, hero, content, legal,
   hiring, custom-js). Peta role→fitur disimpan di `lp_site_settings` key
-  `role_permissions` (`lib/role-permissions.ts`), diedit admin di `/panel/roles`,
-  dibaca lewat `getRolePermissions()` yang ter-cache (tag `role-permissions`) dan
-  **sengaja tidak di-scope per-situs** — panel cuma dilayani domain kanonik, jadi
-  kuncinya tepat satu baris.
+  `role_permissions` (`lib/role-permissions.ts`), diedit di `/panel/roles`, dibaca
+  lewat `getRolePermissions(siteId)` yang ter-cache (tag `role-permissions`).
+  **Per-situs**, dengan baris kanonik sebagai cadangan — situs yang belum pernah
+  mengaturnya tidak kehilangan delegasi hanya karena barisnya belum dibuat.
 - **Publisher (KYC)**: user melamar di `/panel/publisher` — nama legal, foto KTP +
   selfie, alamat, rekening bank, persetujuan syarat — lalu `publisher_status`
   jadi `pending`. Status ditulis dengan service-role karena user tidak boleh menaikkan
@@ -110,8 +126,9 @@ Ringkasan yang paling sering dilanggar:
   `lib/actions/sales.ts` (satu read yang sudah di-scope per-role), **bukan** di
   halaman — supaya angka global tidak bisa diraih dengan merender komponen lain.
 - Customer melihat pembelian, invoice, review.
-- **Hapus user** (`DELETE /api/admin/users`, tombol di `/panel/users`): admin penuh
-  saja — ban itu kontrol yang bisa dibatalkan dan boleh didelegasikan, hapus tidak.
+- **Hapus user** (`DELETE /api/admin/users`, tombol di `/panel/users`): platform
+  admin saja — beda dari **keluarkan dari situs** (`fromSite: true`) yang boleh
+  dilakukan admin situs dan hanya mencabut satu baris keanggotaan — ban itu kontrol yang bisa dibatalkan dan boleh didelegasikan, hapus tidak.
   Ditolak untuk: diri sendiri, akun ber-role admin (turunkan dulu), dan akun yang
   **masih punya produk** — `lp_landing_pages.user_id` cascade, jadi menghapus
   pemiliknya ikut menghapus katalog beserta filenya. Foto KTP/selfie di bucket
