@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import Link from "next/link";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getAnalytics, type Range } from "@/lib/actions/analytics";
@@ -38,6 +39,7 @@ export default async function AnalyticsPage({
 
   return (
     <div className="space-y-6">
+      <PanelSiteFilter />
       <PanelPageHeader
         backHref="/panel"
         title={t("panel.navAnalytics")}

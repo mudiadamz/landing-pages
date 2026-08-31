@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import Link from "next/link";
 import { getSalesOverview, type SalesOverview, type RecentSale } from "@/lib/actions/sales";
 import { getCustomers, type CustomerRow } from "@/lib/actions/admin";
@@ -57,6 +58,7 @@ export default async function SalesPage() {
 
   return (
     <div className="space-y-6">
+      <PanelSiteFilter />
       <div>
         <h1 className="text-xl font-semibold tracking-tight">{t("panel.navSales")}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">

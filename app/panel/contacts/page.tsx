@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getContactsForAdmin } from "@/lib/actions/contacts";
 import { panelScope } from "@/lib/site-scope";
@@ -26,6 +27,7 @@ export default async function ContactsPage() {
 
   return (
     <div className="space-y-6">
+      <PanelSiteFilter />
       <PanelPageHeader backHref="/panel" title={t("panel.titleContacts")} />
 
       <SiteScopeCoverage

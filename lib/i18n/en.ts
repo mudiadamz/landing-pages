@@ -1651,8 +1651,6 @@ export const en: Record<keyof typeof id, string> = {
   "scope.appliesTo": "Per-domain screens apply to {host}",
   "scope.primarySuffix": " (primary)",
   "scope.managing": "Editing",
-  "scope.changeIn": "· switch it in",
-  "scope.inSidebar": "in the sidebar",
   "scope.onlyFrom": "Only {what} from",
   "scope.whatSales": "sales",
   "scope.whatProducts": "products",

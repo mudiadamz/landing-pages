@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
+import { editingSite } from "@/lib/site-resolve";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { getOtherLinks, getSocialUrls } from "@/lib/actions/site-settings";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { LinksTabs } from "./tabs";
@@ -18,13 +20,16 @@ export default async function LinksPage() {
   const t = translator(await requestLocale());
   if (!(await requireSiteAdmin())) redirect("/panel");
 
-  const [links, socialUrls] = await Promise.all([getOtherLinks(), getSocialUrls()]);
+  // Cakupan panel, bukan host request — sama seperti /panel/plans.
+  const site = await editingSite();
+  const [links, socialUrls] = await Promise.all([getOtherLinks(site.id), getSocialUrls(site.id)]);
 
   return (
     <div className="space-y-6">
+      <PanelSiteFilter />
       <PanelPageHeader backHref="/panel" title={t("panel.navLinks")} />
 
-      <LinksTabs socialUrls={socialUrls} otherLinks={links} />
+      <LinksTabs siteId={site.id} socialUrls={socialUrls} otherLinks={links} />
     </div>
   );
 }

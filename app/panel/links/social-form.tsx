@@ -18,7 +18,7 @@ import { useT } from "@/lib/i18n/client";
  * Clearing a field removes that icon from the site — which is the only way a
  * storefront without a TikTok stops showing one.
  */
-export function SocialForm({ initial }: { initial: SocialUrls }) {
+export function SocialForm({ initial, siteId }: { initial: SocialUrls; siteId: string }) {
   const t = useT();
   const [urls, setUrls] = useState<SocialUrls>(initial);
   const [saving, setSaving] = useState(false);
@@ -29,7 +29,7 @@ export function SocialForm({ initial }: { initial: SocialUrls }) {
     setSaving(true);
     setError(null);
     setStatus(null);
-    const res = await updateSocialUrls(urls);
+    const res = await updateSocialUrls(urls, siteId);
     setSaving(false);
     if (res.ok) setStatus(t("common.saved"));
     else setError(res.error ?? t("common.failed"));

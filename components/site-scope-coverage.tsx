@@ -57,9 +57,10 @@ export async function SiteScopeCoverage({
     <p className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs leading-relaxed text-[var(--muted)]">
       {t("scope.onlyFrom", { what: noun })}{" "}
       <strong className="font-medium text-foreground">{name}</strong>{" "}
-      <span className="font-mono text-foreground">{host}</span> {t("scope.changeIn")}{" "}
-      <strong className="font-medium text-foreground">{t("scope.manageSite")}</strong>{" "}
-      {t("scope.inSidebar")}.{" "}
+      {/* Tidak lagi menunjuk sidebar: kontrolnya sekarang <PanelSiteFilter /> di
+          atas halaman ini, dan petunjuk yang menunjuk tempat yang salah lebih
+          buruk daripada tidak ada petunjuk. */}
+      <span className="font-mono text-foreground">{host}</span>.{" "}
       {includesUnattributed
         ? t("scope.legacyIncluded")
         : t("scope.startsAtZero", { what: noun })}

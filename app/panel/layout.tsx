@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { isCanonicalRequest, canonicalOrigin, currentSite, editingSite, listMemberSites } from "@/lib/site-resolve";
+import { isCanonicalRequest, canonicalOrigin, currentSite } from "@/lib/site-resolve";
 import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
@@ -95,17 +95,6 @@ export default async function PanelLayout({
   // The panel-wide site scope, for the one switcher in the sidebar. Admins only, and
   // only the fields the switcher renders — the full row would ship template, palette and
   // both image URLs into the client bundle for nothing.
-  // Situs yang boleh dibuka orang ini, bukan semua situs — dan bukan lagi hanya
-  // untuk platform admin: admin sebuah situs juga perlu switcher-nya, meski
-  // isinya cuma satu baris (fase 3).
-  const [allSites, scopedSite] = await Promise.all([listMemberSites(), editingSite()]);
-  const siteOptions = allSites.map((s) => ({
-    id: s.id,
-    host: s.host,
-    name: s.name,
-    is_canonical: s.is_canonical,
-  }));
-
   const locale = await requestLocale();
   // Read here, not on the client: the sidebar width has to be right in the FIRST
   // paint, or every panel page opens 256px wide and snaps to 64px on hydration.
@@ -131,8 +120,6 @@ export default async function PanelLayout({
         canSell={!!canSell}
         pendingActions={pendingActions}
         features={features}
-        sites={siteOptions}
-        editingSiteId={scopedSite?.id ?? ""}
         brand={brand}
       />
       <div className="flex flex-1 flex-col min-w-0">

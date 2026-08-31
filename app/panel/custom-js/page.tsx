@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getCustomJs } from "@/lib/actions/site-settings";
-import { editingSite, listSites } from "@/lib/site-resolve";
-import { SiteScopeNotice } from "@/components/site-scope-notice";
+import { editingSite } from "@/lib/site-resolve";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { CustomJsForm } from "./custom-js-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
@@ -13,14 +13,14 @@ export default async function CustomJsPage() {
   const ok = await requireFeature("custom-js");
   if (!ok) redirect("/panel");
 
-  const [site, sites] = await Promise.all([editingSite(), listSites()]);
+  const site = await editingSite();
   const initialScript = await getCustomJs(site.id);
 
   return (
     <div className="space-y-6">
       <PanelPageHeader backHref="/panel" title={t("panel.titleCustomJs")} />
 
-      <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
+      <PanelSiteFilter />
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
         <p className="text-sm text-[var(--muted)] mb-4">

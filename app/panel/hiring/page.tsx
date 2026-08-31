@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getHiringContent } from "@/lib/actions/site-settings";
-import { editingSite, listSites } from "@/lib/site-resolve";
-import { SiteScopeNotice } from "@/components/site-scope-notice";
+import { editingSite } from "@/lib/site-resolve";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
@@ -17,7 +17,7 @@ export default async function HiringSettingsPage() {
   const ok = await requireFeature("hiring");
   if (!ok) redirect("/panel");
 
-  const [site, sites] = await Promise.all([editingSite(), listSites()]);
+  const site = await editingSite();
   const hiring = await getHiringContent(site.id);
 
   return (
@@ -26,7 +26,7 @@ export default async function HiringSettingsPage() {
 
       <p className="text-sm text-[var(--muted)]">{t("hiring.panelIntro")}</p>
 
-      <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
+      <PanelSiteFilter />
 
       <HiringForm key={site.id} initial={hiring} siteId={site.id} />
     </div>

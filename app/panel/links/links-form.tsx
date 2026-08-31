@@ -15,7 +15,7 @@ const EMPTY: OtherLink = { label: "", url: "", note: "" };
  * each is three short fields, and a table on a phone would be the horizontal
  * scroll this panel spent a session getting rid of.
  */
-export function LinksForm({ initial }: { initial: OtherLink[] }) {
+export function LinksForm({ initial, siteId }: { initial: OtherLink[]; siteId: string }) {
   const t = useT();
   const [rows, setRows] = useState<OtherLink[]>(initial.length ? initial : [EMPTY]);
   const [saving, setSaving] = useState(false);
@@ -49,7 +49,7 @@ export function LinksForm({ initial }: { initial: OtherLink[] }) {
     setSaving(true);
     setError(null);
     setStatus(null);
-    const res = await updateOtherLinks(rows);
+    const res = await updateOtherLinks(rows, siteId);
     setSaving(false);
     if (res.ok) {
       setStatus(t("common.saved"));

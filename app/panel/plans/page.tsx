@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
+import { editingSite } from "@/lib/site-resolve";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { getPlanLimits, getPlanMeta, getPlanPrices } from "@/lib/actions/site-settings";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
@@ -23,16 +25,21 @@ export default async function PlansPage() {
   const t = translator(await requestLocale());
   if (!(await requireSiteAdmin())) redirect("/panel");
 
+  // Situs yang sedang difilter, bukan host request. Tanpa ini layar ini membaca
+  // dan menulis setelan situs KANONIK apa pun pilihan filternya — filter yang
+  // tidak memfilter apa-apa lebih buruk daripada tidak ada filter.
+  const site = await editingSite();
   const [prices, overrides, meta] = await Promise.all([
-    getPlanPrices(),
-    getPlanLimits(),
-    getPlanMeta(),
+    getPlanPrices(site.id),
+    getPlanLimits(site.id),
+    getPlanMeta(site.id),
   ]);
 
   return (
     <div className="space-y-6">
+      <PanelSiteFilter />
       <PanelPageHeader backHref="/panel" title={t("panel.navPlans")} />
-      <PlansForm
+      <PlansForm siteId={site.id}
         initialPrices={prices}
         initialLimits={resolveAllPlanLimits(overrides)}
         initialMeta={{ enabled: meta.enabled, plans: resolveAllPlanMeta(meta) }}

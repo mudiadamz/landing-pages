@@ -14,9 +14,12 @@ import { useT } from "@/lib/i18n/client";
  * add rows to.
  */
 export function LinksTabs({
+  siteId,
   socialUrls,
   otherLinks,
 }: {
+  /** Situs yang sedang difilter. */
+  siteId: string;
   socialUrls: SocialUrls;
   otherLinks: OtherLink[];
 }) {
@@ -60,7 +63,7 @@ export function LinksTabs({
                 {t("panel.tabSocialIntro")}
               </p>
             </div>
-            <SocialForm initial={socialUrls} />
+            <SocialForm siteId={siteId} initial={socialUrls} />
           </>
         ) : (
           <>
@@ -70,7 +73,7 @@ export function LinksTabs({
                 {t("panel.tabOtherIntro")}
               </p>
             </div>
-            <LinksForm initial={otherLinks} />
+            <LinksForm siteId={siteId} initial={otherLinks} />
           </>
         )}
       </div>

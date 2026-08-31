@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import { SiteLogo } from "@/components/site-logo";
 import { BrandMark } from "@/components/brand-mark";
 import { usePanelChrome } from "@/components/panel-chrome";
-import { PanelSiteSwitcher } from "@/components/panel-site-switcher";
-import type { PanelSiteOption } from "@/lib/panel-site";
 import type { SiteBrand } from "@/lib/site-brand";
 import type { FeatureKey } from "@/lib/features";
 import { useT } from "@/lib/i18n/client";
@@ -18,9 +16,6 @@ type Props = {
   canSell?: boolean;
   pendingActions?: number;
   features?: FeatureKey[];
-  /** Empty for non-admins: the scope only drives admin screens. */
-  sites?: PanelSiteOption[];
-  editingSiteId?: string;
   /**
    * The storefront this panel is being SERVED on — not the one the switcher below
    * is editing. A buyer opens "Pembelian saya" on the domain they bought from
@@ -479,8 +474,6 @@ export function PanelSidebar({
   canSell,
   pendingActions,
   features,
-  sites = [],
-  editingSiteId = "",
   brand,
 }: Props) {
   const t = useT();
@@ -552,12 +545,10 @@ export function PanelSidebar({
           </button>
         </div>
 
-        {/* The one site switcher, above the nav it changes the meaning of. Hidden
-            in the rail: it is a select full of hostnames, and there is no honest
-            64px version of that. */}
-        <div className={collapsed ? "md:hidden" : ""}>
-          <PanelSiteSwitcher sites={sites} currentId={editingSiteId} onChanged={close} />
-        </div>
+        {/* Tidak ada switcher situs di sini lagi. Ia pindah ke halamannya sebagai
+            <PanelSiteFilter /> — sebuah select berisi hostname tidak punya versi
+            64px yang jujur, jadi di rail kontrolnya hilang persis saat layarnya
+            paling lebar; dan filter ada gunanya di sebelah data yang difilter. */}
 
         <div
           className={`flex flex-1 flex-col overflow-y-auto px-3 pb-[env(safe-area-inset-bottom)] ${

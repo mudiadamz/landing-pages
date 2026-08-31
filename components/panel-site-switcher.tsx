@@ -25,11 +25,14 @@ export function PanelSiteSwitcher({
   sites,
   currentId,
   onChanged,
+  inline = false,
 }: {
   sites: PanelSiteOption[];
   currentId: string;
   /** Closes the mobile drawer — switching is usually followed by looking at the page. */
   onChanged?: () => void;
+  /** Satu baris tanpa label sendiri, untuk dipasang di dalam PanelSiteFilter. */
+  inline?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -65,6 +68,26 @@ export function PanelSiteSwitcher({
    * on the screen where getting it wrong would cost something. The sidebar's job is to
    * hold the control, not to explain it.
    */
+  if (inline) {
+    return (
+      <select
+        aria-label={t("scope.manageSite")}
+        value={currentId}
+        disabled={pending}
+        title={current ? t("scope.appliesTo", { host: current.host }) : undefined}
+        onChange={(e) => pick(e.target.value)}
+        className="max-w-[14rem] truncate rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1.5 text-base sm:text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 disabled:opacity-50"
+      >
+        {sites.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+            {s.is_canonical ? t("scope.primarySuffix") : ""}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   return (
     <div className="mx-3 mt-2.5 shrink-0">
       <label

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import Link from "next/link";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { listPages } from "@/lib/actions/pages";
@@ -21,6 +22,7 @@ export default async function PagesIndex() {
 
   return (
     <div className="space-y-6">
+      <PanelSiteFilter />
       <PanelPageHeader backHref="/panel" title={t("panel.navPages")} actions={<NewPageButton />} />
 
       <p className="text-sm text-[var(--muted)]">

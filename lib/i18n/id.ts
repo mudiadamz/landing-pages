@@ -1641,8 +1641,6 @@ export const id = {
   "scope.appliesTo": "Layar per-domain berlaku untuk {host}",
   "scope.primarySuffix": " (utama)",
   "scope.managing": "Mengatur",
-  "scope.changeIn": "· ganti di",
-  "scope.inSidebar": "pada sidebar",
   "scope.onlyFrom": "Hanya {what} dari",
   "scope.whatSales": "penjualan",
   "scope.whatProducts": "produk",

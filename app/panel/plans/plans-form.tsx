@@ -37,7 +37,10 @@ export function PlansForm({
   initialPrices,
   initialLimits,
   initialMeta,
+  siteId,
 }: {
+  /** Situs yang sedang difilter — tulisan harus mendarat di situs yang sama dengan bacaan. */
+  siteId: string;
   initialPrices: PlanPrices;
   /** Resolved limits: defaults already merged with whatever this site stored. */
   initialLimits: Record<PlanKey, PlanLimits>;
@@ -85,9 +88,9 @@ export function PlansForm({
     setSaving(true);
     setError(null);
     const [priceResult, limitResult, metaResult] = await Promise.all([
-      updatePlanPrices(prices),
-      updatePlanLimits(limits),
-      updatePlanMeta({ enabled, plans: meta } as PlanMeta),
+      updatePlanPrices(prices, siteId),
+      updatePlanLimits(limits, siteId),
+      updatePlanMeta({ enabled, plans: meta } as PlanMeta, siteId),
     ]);
     setSaving(false);
     const failed = !priceResult.ok

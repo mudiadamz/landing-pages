@@ -4,11 +4,11 @@ import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { editingSite, listSites, isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
+import { editingSite, isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
 import { paletteOptions } from "@/lib/palette";
 import { LOCALE_OPTIONS } from "@/lib/i18n/locales";
-import { SiteScopeNotice } from "@/components/site-scope-notice";
+import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { SiteProfileForm } from "./site-profile-form";
 
 export async function generateMetadata() {
@@ -33,9 +33,8 @@ export default async function BrandingPage() {
   // app/panel/layout.tsx already keeps admin routes on the canonical origin.
   if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/branding`);
 
-  const [site, sites, categories] = await Promise.all([
+  const [site, categories] = await Promise.all([
     editingSite(),
-    listSites(),
     getCategories(),
   ]);
   const rootCategories = categories.filter((c) => !c.parent_id);
@@ -52,7 +51,7 @@ export default async function BrandingPage() {
         <h1 className="text-xl font-semibold tracking-tight">{t("sites.identityAndLook")}</h1>
       </div>
 
-      <SiteScopeNotice host={site.host} name={site.name} siteCount={sites.length} />
+      <PanelSiteFilter />
 
       {/* Keyed on the site so switching resets the form to that site's values instead
           of keeping the previous one's in component state — the same reason the hero

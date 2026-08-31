@@ -319,6 +319,35 @@ menentukan adalah BADAN responsnya (dashboard vs inbox), bukan status kodenya.
 
 ---
 
+## Sesudah fase 7: switcher jadi filter per-halaman (2026-09-01)
+
+Switcher situs **dikeluarkan dari sidebar** dan jadi `<PanelSiteFilter />` di
+halaman-halaman per-situs. Dua alasan:
+
+1. Sidebar kini bisa diciutkan jadi rail 64px, dan select berisi hostname tidak
+   punya versi 64px yang jujur — kontrolnya hilang persis saat layarnya paling
+   lebar.
+2. Filter ada gunanya di sebelah data yang difilter; di sidebar ia jauh dari
+   angka yang berubah karenanya, dan halaman yang tidak terpengaruh pun ikut
+   memajangnya.
+
+**"Manajer situs tidak perlu filter" tidak ditulis sebagai pengecekan role.**
+Filternya tidak merender apa pun kalau cuma ada satu pilihan — dan manajer satu
+situs memang cuma punya satu. Manajer yang memegang dua situs tetap dapat
+filternya, dan itu benar. Satu aturan, tanpa daftar peran yang harus dijaga
+sinkron.
+
+Dua lubang lama ketahuan gara-gara ini: `/panel/plans` dan `/panel/links`
+membaca **dan menulis** dengan `currentSiteId()` (host request), bukan cakupan
+panel — jadi apa pun pilihan filternya, keduanya menyentuh situs kanonik.
+Sekarang keduanya menerima `site.id` sampai ke form-nya. Filter yang tidak
+memfilter apa-apa lebih buruk daripada tidak ada filter.
+
+`/panel/products` **sengaja tidak** dapat filter: produk belum punya `site_id`
+(lihat keputusan terbuka di bawah), jadi di situ filter akan berbohong.
+
+---
+
 ## Keputusan yang masih terbuka
 
 **Produk tidak punya pemilik situs.** `lp_landing_pages` **tidak punya kolom

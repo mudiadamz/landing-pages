@@ -33,14 +33,11 @@ type UserRow = {
 export function UsersTable({
   isAdmin = false,
   isSiteAdmin = false,
-  multiSite = false,
 }: {
   /** Platform admin: role platform, paket, ban, hapus akun. */
   isAdmin?: boolean;
   /** Admin situs yang sedang dilihat: keanggotaan situs itu. */
   isSiteAdmin?: boolean;
-  /** Deployment ini melayani lebih dari satu storefront. */
-  multiSite?: boolean;
 }) {
   const t = useT();
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -275,13 +272,15 @@ export function UsersTable({
     );
   }
 
-  const showSiteRole = multiSite && !allSites;
+  // Kolom role-situs ada selama daftarnya memang daftar anggota satu situs.
+  // Dalam tampilan "semua situs" tidak ada satu role yang bisa ditampilkan.
+  const showSiteRole = !allSites;
 
   return (
     <div className="space-y-4">
-      {(isAdmin && multiSite) || (isSiteAdmin && !allSites) ? (
+      {isAdmin || (isSiteAdmin && !allSites) ? (
         <div className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:flex-row sm:items-center">
-          {isAdmin && multiSite && (
+          {isAdmin && (
             <div className="flex shrink-0 rounded-lg border border-[var(--border)] p-0.5 text-xs font-medium">
               {[
                 { key: false, label: t("panel.scopeThisSite") },
