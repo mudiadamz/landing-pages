@@ -3,8 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireFeature, requireSiteAdmin } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
-import { normalizeSiteRole } from "@/lib/site-membership";
-import { normalizeRole } from "@/lib/profile-utils";
+import { normalizeAccountType } from "@/lib/profile-utils";
 import { normalizePlan } from "@/lib/plans";
 
 /** Caller identity + access: full admin, and whether they can reach the Users feature. */
@@ -20,7 +19,7 @@ async function getCaller() {
 }
 
 const PROFILE_COLUMNS =
-  "id, full_name, email, role, is_active, exclude_from_stats, email_verified_at, plan, plan_expires_at";
+  "id, full_name, email, account_type, is_active, exclude_from_stats, email_verified_at, plan, plan_expires_at";
 
 /**
  * Daftar user — anggota situs yang sedang dilihat, bukan seluruh database.
@@ -47,23 +46,34 @@ export async function GET(req: Request) {
     if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
     // site_role null = "tidak relevan di tampilan lintas situs", bukan "bukan anggota".
     return NextResponse.json(
-      (data ?? []).map((r) => ({ ...r, role: normalizeRole(r.role), site_role: null })),
+      (data ?? []).map((r) => ({
+        ...r,
+        account_type: normalizeAccountType(r.account_type),
+        is_agent: null,
+        is_publisher: null,
+      })),
     );
   }
 
   const site = await editingSite();
-  const { data: members, error: memberErr } = await admin
-    .from("lp_site_members")
-    .select("user_id, role")
-    .eq("site_id", site.id);
+  // Dua tabel, karena sejak model account_type keduanya menjawab hal berbeda:
+  // keanggotaan = "customer di sini", keagenan = "yang mengelola sini".
+  const [{ data: members, error: memberErr }, { data: agents }] = await Promise.all([
+    admin.from("lp_site_members").select("user_id, is_publisher").eq("site_id", site.id),
+    admin.from("lp_site_agents").select("user_id").eq("site_id", site.id),
+  ]);
   if (memberErr) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
-  if (!members?.length) return NextResponse.json([]);
 
-  const roleById = new Map(members.map((m) => [m.user_id as string, normalizeSiteRole(m.role)]));
+  const publisherById = new Map(
+    (members ?? []).map((m) => [m.user_id as string, !!m.is_publisher]),
+  );
+  const agentIds = new Set((agents ?? []).map((a) => a.user_id as string));
+  const ids = [...new Set([...publisherById.keys(), ...agentIds])];
+  if (!ids.length) return NextResponse.json([]);
   const { data, error } = await admin
     .from("lp_profiles")
     .select(PROFILE_COLUMNS)
-    .in("id", [...roleById.keys()])
+    .in("id", ids)
     .order("role", { ascending: true })
     .order("full_name", { ascending: true });
   if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
@@ -79,8 +89,9 @@ export async function GET(req: Request) {
   return NextResponse.json(
     (data ?? []).map((r) => ({
       ...r,
-      role: normalizeRole(r.role),
-      site_role: roleById.get(r.id) ?? null,
+      account_type: normalizeAccountType(r.account_type),
+      is_agent: agentIds.has(r.id),
+      is_publisher: publisherById.get(r.id) ?? false,
     })),
   );
 }
@@ -98,8 +109,8 @@ async function guardPlatformAdminTarget(
   actorIsPlatformAdmin: boolean,
 ): Promise<NextResponse | null> {
   if (actorIsPlatformAdmin) return null;
-  const { data } = await admin.from("lp_profiles").select("role").eq("id", userId).maybeSingle();
-  if (normalizeRole(data?.role) === "company") {
+  const { data } = await admin.from("lp_profiles").select("account_type").eq("id", userId).maybeSingle();
+  if (normalizeAccountType(data?.account_type) === "company") {
     return NextResponse.json({ error: "Tidak bisa mengubah Company." }, { status: 403 });
   }
   return null;
@@ -113,17 +124,10 @@ async function guardPlatformAdminTarget(
  * "tambahkan orang ini ke situs saya". Email yang tidak dikenal ditolak dengan
  * pesan yang mengatakan begitu, bukan diam-diam tidak melakukan apa-apa.
  */
-async function addMemberByEmail(
-  email: string,
-  siteRole: string,
-  actorId: string,
-): Promise<NextResponse> {
+async function addMemberByEmail(email: string, actorId: string): Promise<NextResponse> {
   const site = await editingSite();
   if (!(await requireSiteAdmin(site.id))) {
     return NextResponse.json({ error: "Bukan Agent situs ini." }, { status: 403 });
-  }
-  if (normalizeSiteRole(siteRole) !== siteRole) {
-    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
   }
   const clean = email.trim().toLowerCase();
   if (!clean) return NextResponse.json({ error: "Email wajib diisi." }, { status: 400 });
@@ -144,7 +148,7 @@ async function addMemberByEmail(
   const { error } = await admin
     .from("lp_site_members")
     .upsert(
-      { site_id: site.id, user_id: profile.id, role: siteRole, invited_by: actorId },
+      { site_id: site.id, user_id: profile.id, invited_by: actorId },
       { onConflict: "site_id,user_id" },
     );
   if (error) {
@@ -160,21 +164,25 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, role, excludeFromStats, plan, siteRole, email } = body as {
-    userId?: string;
-    active?: boolean;
-    role?: string;
-    excludeFromStats?: boolean;
-    plan?: string;
-    /** Role DI SITUS yang sedang dilihat. Beda dari `role`, yang platform. */
-    siteRole?: string;
-    /** Undang akun yang sudah ada ke situs ini, dipasangkan dengan siteRole. */
-    email?: string;
-  };
+  const { userId, active, accountType, excludeFromStats, plan, isAgent, isPublisher, email } =
+    body as {
+      userId?: string;
+      active?: boolean;
+      /** Jenis akun (platform). Company saja yang boleh mengubahnya. */
+      accountType?: string;
+      excludeFromStats?: boolean;
+      plan?: string;
+      /** Mengelola situs yang sedang dilihat. */
+      isAgent?: boolean;
+      /** Boleh menjual di situs yang sedang dilihat. */
+      isPublisher?: boolean;
+      /** Undang akun yang sudah ada jadi customer situs ini. */
+      email?: string;
+    };
 
   // Mengundang lewat email: satu-satunya operasi yang belum punya userId.
-  if (typeof siteRole === "string" && !userId && typeof email === "string") {
-    return addMemberByEmail(email, siteRole, user.id);
+  if (!userId && typeof email === "string") {
+    return addMemberByEmail(email, user.id);
   }
 
   if (!userId) {
@@ -184,63 +192,106 @@ export async function PATCH(req: Request) {
   // from analytics is the common case — it's your own testing traffic — and
   // carries no privilege risk.
   const selfEdit = userId === user.id;
-  if (selfEdit && (typeof role === "string" || typeof active === "boolean")) {
+  if (selfEdit && (typeof accountType === "string" || typeof active === "boolean")) {
     return NextResponse.json({ error: "Tidak bisa mengubah akun sendiri" }, { status: 400 });
   }
 
   const admin = createAdminClient();
 
   /**
-   * Ubah role seseorang DI SITUS ini. Boleh dilakukan admin situs.
+   * Dua saklar per-situs, menggantikan satu "role situs".
    *
-   * Ini bukan `role` di bawah: yang ini keanggotaan, yang itu tingkat platform.
-   * Mencampurnya berarti admin sebuah situs bisa mengangkat dirinya jadi
-   * platform admin lewat layar yang sama.
+   *   isAgent      → baris di lp_site_agents  (mengelola situs ini)
+   *   isPublisher  → flag di lp_site_members  (boleh menjual di situs ini)
+   *
+   * Sengaja terpisah dari `accountType` di bawah: yang ini per situs, yang itu
+   * jenis akun. Satu kontrol untuk keduanya berarti Agent sebuah situs bisa
+   * mengangkat dirinya jadi Company lewat layar yang sama.
    */
-  if (typeof siteRole === "string") {
+  if (typeof isAgent === "boolean" || typeof isPublisher === "boolean") {
     const site = await editingSite();
     if (!(await requireSiteAdmin(site.id))) {
       return NextResponse.json({ error: "Bukan Agent situs ini." }, { status: 403 });
     }
-    if (normalizeSiteRole(siteRole) !== siteRole) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
-    }
     if (selfEdit) {
       // Menurunkan diri sendiri berarti mengunci diri di luar situs yang sedang
       // Anda kelola, dan tidak ada tombol untuk membatalkannya.
-      return NextResponse.json({ error: "Tidak bisa mengubah role sendiri." }, { status: 400 });
+      return NextResponse.json({ error: "Tidak bisa mengubah diri sendiri." }, { status: 400 });
     }
     const guard = await guardPlatformAdminTarget(admin, userId, isAdmin);
     if (guard) return guard;
 
-    const { error } = await admin
-      .from("lp_site_members")
-      .upsert(
-        { site_id: site.id, user_id: userId, role: siteRole, invited_by: user.id },
-        { onConflict: "site_id,user_id" },
-      );
-    if (error) {
-      console.error("set site role error:", error);
-      return NextResponse.json({ error: "Gagal mengubah role di situs ini." }, { status: 500 });
+    if (typeof isAgent === "boolean") {
+      const { error } = isAgent
+        ? await admin
+            .from("lp_site_agents")
+            .upsert({ site_id: site.id, user_id: userId, invited_by: user.id }, {
+              onConflict: "site_id,user_id",
+              ignoreDuplicates: true,
+            })
+        : await admin
+            .from("lp_site_agents")
+            .delete()
+            .eq("site_id", site.id)
+            .eq("user_id", userId);
+      if (error) {
+        console.error("set agent error:", error);
+        return NextResponse.json({ error: "Gagal mengubah status Agent." }, { status: 500 });
+      }
+      // Jadi Agent tidak menghapus keanggotaannya: dia tetap boleh membeli di
+      // situs yang dia kelola, dan pembeliannya tetap tercatat sebagai miliknya.
+      if (isAgent) {
+        await admin
+          .from("lp_site_members")
+          .upsert({ site_id: site.id, user_id: userId, invited_by: user.id }, {
+            onConflict: "site_id,user_id",
+            ignoreDuplicates: true,
+          });
+      }
+    }
+
+    if (typeof isPublisher === "boolean") {
+      const { error } = await admin
+        .from("lp_site_members")
+        .upsert(
+          {
+            site_id: site.id,
+            user_id: userId,
+            is_publisher: isPublisher,
+            // Disetujui lewat tombol ini berarti disetujui — statusnya ikut,
+            // supaya layar pengajuan tidak menampilkan "menunggu" untuk orang
+            // yang sudah boleh berjualan.
+            publisher_status: isPublisher ? "approved" : "none",
+            publisher_reviewed_at: new Date().toISOString(),
+            publisher_reviewed_by: user.id,
+          },
+          { onConflict: "site_id,user_id" },
+        );
+      if (error) {
+        console.error("set publisher error:", error);
+        return NextResponse.json({ error: "Gagal mengubah izin jual." }, { status: 500 });
+      }
     }
     return NextResponse.json({ success: true });
   }
 
-  // Change role — only a full admin may do this (esp. granting admin).
-  if (typeof role === "string") {
+  // Jenis akun — Company saja, terutama karena dari sini orang bisa jadi Company.
+  if (typeof accountType === "string") {
     if (!isAdmin) {
-      return NextResponse.json({ error: "Hanya Company yang bisa mengubah role." }, { status: 403 });
+      return NextResponse.json(
+        { error: "Hanya Company yang bisa mengubah jenis akun." },
+        { status: 403 },
+      );
     }
-    if (!["company", "customer", "publisher"].includes(role)) {
+    if (!["company", "agent", "customer"].includes(accountType)) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
-    const publisher_status = role === "publisher" ? "approved" : "none";
     const { error } = await admin
       .from("lp_profiles")
-      .update({ role, publisher_status })
+      .update({ account_type: accountType })
       .eq("id", userId);
     if (error) {
-      return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to update account type" }, { status: 500 });
     }
     return NextResponse.json({ success: true });
   }
@@ -388,16 +439,16 @@ export async function DELETE(req: Request) {
 
   const { data: target } = await admin
     .from("lp_profiles")
-    .select("role, full_name, email, publisher_ktp_path, publisher_selfie_path")
+    .select("account_type, full_name, email")
     .eq("id", userId)
     .maybeSingle();
   if (!target) return NextResponse.json({ error: "User tidak ditemukan." }, { status: 404 });
 
   // Another admin has to be demoted first. Not paranoia about malice — it is one
   // extra deliberate step in front of the account that can undo everything else.
-  if (normalizeRole(target.role) === "company") {
+  if (normalizeAccountType(target.account_type) === "company") {
     return NextResponse.json(
-      { error: "Turunkan role-nya dari Company dulu sebelum menghapus." },
+      { error: "Ubah jenis akunnya dari Company dulu sebelum menghapus." },
       { status: 400 },
     );
   }

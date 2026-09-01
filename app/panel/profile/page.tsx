@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { currentSiteId } from "@/lib/site-resolve";
 import type { MessageKey } from "@/lib/i18n";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -6,9 +8,9 @@ import { signOut } from "@/lib/actions/auth";
 import { getPurchasesForUser } from "@/lib/actions/purchases";
 import { getMyFavorites } from "@/lib/actions/likes";
 import {
-  normalizeRole,
+  normalizeAccountType,
   normalizePublisherStatus,
-  roleLabel as roleLabelFor,
+  accountTypeLabel,
   type PublisherStatus,
 } from "@/lib/profile-utils";
 import { ProfileForm } from "./profile-form";
@@ -68,7 +70,7 @@ export default async function ProfilePage() {
       // One string literal, deliberately: supabase-js infers the row type from
       // the literal, and a concatenated expression collapses it to an error type.
       .select(
-        "id, full_name, role, publisher_status, publisher_reject_note, email_verified_at, avatar_url, publisher_display_name, publisher_real_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
+        "id, full_name, account_type, email_verified_at, avatar_url",
       )
       .eq("id", user.id)
       .single(),
@@ -76,8 +78,17 @@ export default async function ProfilePage() {
     getMyFavorites(),
   ]);
 
-  const role = row ? normalizeRole(row.role) : "customer";
-  const publisherStatus = normalizePublisherStatus(row?.publisher_status);
+  const accountType = row ? normalizeAccountType(row.account_type) : "customer";
+  // Berkas & status pengajuan ada di keanggotaan situs ini sekarang.
+  const { data: membership } = await createAdminClient()
+    .from("lp_site_members")
+    .select(
+      "publisher_status, publisher_reject_note, publisher_display_name, publisher_real_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
+    )
+    .eq("user_id", user.id)
+    .eq("site_id", await currentSiteId())
+    .maybeSingle();
+  const publisherStatus = normalizePublisherStatus(membership?.publisher_status);
   const fullName =
     row?.full_name?.trim() || (user.user_metadata?.full_name as string | undefined)?.trim() || "";
   const email = user.email ?? null;
@@ -86,9 +97,9 @@ export default async function ProfilePage() {
   const publisherBadge = PUBLISHER_BADGE[publisherStatus];
 
   const roleClass =
-    role === "company"
+    accountType === "company"
       ? "bg-[var(--primary)]/15 text-[var(--primary)]"
-      : role === "publisher"
+      : accountType === "agent"
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
         : "bg-[var(--accent-subtle)] text-[var(--muted)]";
 
@@ -108,7 +119,7 @@ export default async function ProfilePage() {
             <p className="mt-0.5 break-all text-sm text-[var(--muted)]">{email || "—"}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${roleClass}`}>
-                {roleLabelFor(role)}
+                {accountTypeLabel(accountType)}
               </span>
               {publisherBadge && (
                 <span
@@ -153,18 +164,18 @@ export default async function ProfilePage() {
         </header>
         <div className="p-4 sm:p-6">
           <PublisherCard
-            role={role}
+            accountType={accountType}
             status={publisherStatus}
             info={{
-              displayName: row?.publisher_display_name ?? null,
-              realName: row?.publisher_real_name ?? null,
-              address: row?.publisher_address ?? null,
-              bankName: row?.publisher_bank_name ?? null,
-              bankHolder: row?.publisher_bank_holder ?? null,
-              bankAccount: row?.publisher_bank_account ?? null,
-              termsAcceptedAt: row?.publisher_terms_accepted_at ?? null,
-              appliedAt: row?.publisher_applied_at ?? null,
-              rejectNote: row?.publisher_reject_note ?? null,
+              displayName: membership?.publisher_display_name ?? null,
+              realName: membership?.publisher_real_name ?? null,
+              address: membership?.publisher_address ?? null,
+              bankName: membership?.publisher_bank_name ?? null,
+              bankHolder: membership?.publisher_bank_holder ?? null,
+              bankAccount: membership?.publisher_bank_account ?? null,
+              termsAcceptedAt: membership?.publisher_terms_accepted_at ?? null,
+              appliedAt: membership?.publisher_applied_at ?? null,
+              rejectNote: membership?.publisher_reject_note ?? null,
             }}
           />
         </div>

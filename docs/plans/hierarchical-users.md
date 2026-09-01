@@ -22,25 +22,30 @@ kedua pasti menyimpang.
 
 ---
 
-## Istilah
+## Istilah & bentuk data
 
-Tiga tingkat, dan ini nama resminya di seluruh dokumen:
-
-| Istilah | Artinya | Di kode / database |
+| Istilah | Artinya | Di database |
 |---|---|---|
-| **Company** | Pemilik platform. Lintas situs, dan satu-satunya yang boleh membuat/menghapus situs, mengangkat Company lain, dan menghapus akun. | `lp_profiles.role = 'admin'` |
-| **Agent** | Yang menjalankan sebuah storefront: kontennya, setelannya, dan anggotanya — **situs itu saja**. | `lp_site_members.role = 'admin'` |
-| **Customer** | Pembeli. Anggota situs tempat dia mendaftar atau membeli. | `lp_site_members.role = 'customer'` |
+| **Company** | Pemilik platform. Lintas situs; satu-satunya yang boleh buat/hapus situs, mengubah jenis akun, dan menghapus akun. | `lp_profiles.account_type = 'company'` |
+| **Agent** | Menjalankan sebuah storefront: konten, setelan, dan customer-nya — situs itu saja. | `account_type = 'agent'` **dan** baris di `lp_site_agents` |
+| **Customer** | Pembeli. | `account_type = 'customer'` + baris di `lp_site_members` |
+| **publisher** | **Bukan jenis akun** — seorang Customer yang boleh menjual **di satu situs**. | `lp_site_members.is_publisher = true` |
 
-**Kode dan database sudah memakai nama ini juga** (migration `20260902000000` +
-`20260902010000`). Nilai lama `'admin'` masih *dibaca* sebagai Company/Agent oleh
-`normalizeRole`/`normalizeSiteRole` dan ditolak oleh CHECK sebagai nilai baru —
-mencegahnya masuk, sambil tetap membacanya dengan benar kalau ia terlanjur ada
-(restore backup lama, sunting manual di dashboard).
+Tiga hal yang membuat bentuk ini beda dari model sebelumnya:
 
-Satu nilai yang belum punya nama baru: `lp_site_members.role = 'publisher'` —
-boleh membuat & menjual produk, tapi bukan pengelola situsnya. Untuk sekarang
-tetap disebut **publisher**.
+1. **Publisher jadi flag, bukan role.** Orang yang sama bisa publisher di situs A
+   dan pembeli biasa di situs B. Sebelumnya "publisher" tersimpan di dua tempat
+   (`role` dan `publisher_status`) yang bisa berbeda isi.
+2. **Berkas KYC ikut per-situs.** Konsekuensinya disengaja: tiap storefront
+   memverifikasi penjualnya sendiri, dan foto KTP orang yang sama tersimpan
+   sekali per situs tempat dia mengajukan.
+3. **Agent punya tabel sendiri.** `lp_site_members` sejak model ini hanya berisi
+   customer. Agent di `lp_site_agents`, supaya satu situs tetap bisa punya lebih
+   dari satu Agent.
+
+Jenis akun `'admin'`/`'publisher'` lama masih **dibaca** oleh
+`normalizeAccountType` (jadi Company / Customer), tapi kolomnya sudah tidak ada
+lagi di database sesudah migration `20260903010000`.
 
 ## Keputusan yang sudah diambil
 

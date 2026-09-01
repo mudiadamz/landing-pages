@@ -5,7 +5,7 @@ import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
-import { normalizeRole } from "@/lib/profile-utils";
+import { normalizeAccountType } from "@/lib/profile-utils";
 import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
 
 /**
@@ -259,14 +259,28 @@ export const listMemberSites = cache(async (): Promise<Site[]> => {
   if (!user) return [];
 
   const admin = createAdminClient();
-  const [{ data: profile }, { data: rows }] = await Promise.all([
-    admin.from("lp_profiles").select("role").eq("id", user.id).maybeSingle(),
-    admin.from("lp_site_members").select("site_id").eq("user_id", user.id),
+  /*
+   * Situs yang punya urusan kerja dengan orang ini: yang dia KELOLA (Agent) dan
+   * yang dia boleh JUALI (publisher).
+   *
+   * Keanggotaan biasa tidak masuk — "saya pernah beli di sini" bukan alasan
+   * membuka cakupan panel. Tapi izin jual iya: tanpa itu, seorang publisher di
+   * situs B akan selalu jatuh ke situs kanonik dan izin jualnya tidak pernah
+   * berlaku di panel. Ketahuan waktu mengujinya, bukan waktu menulisnya.
+   */
+  const [{ data: profile }, { data: agentRows }, { data: publisherRows }] = await Promise.all([
+    admin.from("lp_profiles").select("account_type").eq("id", user.id).maybeSingle(),
+    admin.from("lp_site_agents").select("site_id").eq("user_id", user.id),
+    admin
+      .from("lp_site_members")
+      .select("site_id")
+      .eq("user_id", user.id)
+      .eq("is_publisher", true),
   ]);
-  // normalizeRole, bukan perbandingan mentah: selama peralihan istilah sebagian
-  // baris masih 'admin' dan sebagian sudah 'company', dan Company yang tidak
-  // dikenali di sini kehilangan seluruh daftar situsnya.
-  if (normalizeRole(profile?.role) === "company") return all;
+  const rows = [...(agentRows ?? []), ...(publisherRows ?? [])];
+  // Lewat normalizer, bukan perbandingan mentah: nilai lama masih mungkin ada,
+  // dan Company yang tidak dikenali di sini kehilangan seluruh daftar situsnya.
+  if (normalizeAccountType(profile?.account_type) === "company") return all;
 
   const mine = new Set((rows ?? []).map((r) => r.site_id as string));
   return all.filter((s) => mine.has(s.id));

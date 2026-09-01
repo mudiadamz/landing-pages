@@ -131,6 +131,7 @@ export const id = {
 
   /* panel: sidebar */
   "panel.roleAdmin": "Company",
+  "panel.roleAgent": "Agent",
   "panel.rolePublisher": "Publisher",
   "panel.roleCustomer": "Customer",
   "panel.navGroupMain": "Utama",
@@ -1257,7 +1258,7 @@ export const id = {
   "panel.rolesIntro":
     "Atur fitur admin mana yang bisa diakses tiap role. User mewarisi akses dari role-nya — ubah role user di halaman Users.",
   "panel.usersScopeHint": "Anggota situs {host}. Menghapus dari situs tidak menghapus akunnya.",
-  "panel.siteRole": "Role di situs",
+  "panel.siteFlags": "Di situs ini",
   "panel.removeFromSite": "Keluarkan dari situs",
   "panel.removeFromSiteConfirm": "Keluarkan {name} dari situs ini? Akunnya tetap ada beserta pembeliannya — dia hanya kehilangan akses ke situs ini.",
   "panel.removeFromSiteFailed": "Gagal mengeluarkan dari situs",

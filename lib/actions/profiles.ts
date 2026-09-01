@@ -6,21 +6,18 @@ import { createClient as createSupabaseJS } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  normalizeRole,
+  normalizeAccountType,
   normalizePublisherStatus,
-  canSell,
-  type Role,
+  type AccountType,
   type PublisherStatus,
 } from "@/lib/profile-utils";
 import { ALL_FEATURE_KEYS, type FeatureKey } from "@/lib/features";
 import {
   canManageSite,
   canSellOnSite,
-  effectiveRole,
-  normalizeSiteRole,
-  type SiteRole,
+  type SiteStanding,
 } from "@/lib/site-membership";
-import { canonicalSiteId, editingSite } from "@/lib/site-resolve";
+import { canonicalSiteId, currentSiteId, editingSite } from "@/lib/site-resolve";
 import { sniffBrandImage } from "@/lib/site-brand";
 import { imageMaxBytes, imageMaxLabel } from "@/lib/upload-limit";
 import {
@@ -32,8 +29,8 @@ import {
 export type Profile = {
   id: string;
   full_name: string | null;
-  role: Role;
-  publisher_status: PublisherStatus;
+  /** Jenis akun. Menggantikan `role`; "publisher" bukan jenis akun lagi. */
+  account_type: AccountType;
   /**
    * When they proved they own the address, or null if they never have.
    * Not auth.users.email_confirmed_at — that only means "allowed to sign in"
@@ -44,100 +41,106 @@ export type Profile = {
   avatar_url: string | null;
 };
 
-/** Only users with profile.role === "company" are admin. No fallback for missing profile. */
+/** Company saja. Tanpa cadangan kalau profilnya tidak ada. */
 export async function requireAdmin() {
   const profile = await getProfile();
-  return profile?.role === "company";
+  return profile?.account_type === "company";
 }
 
-/** Admin or approved publisher — may create & sell products. */
+/**
+ * Boleh membuat & menjual produk **di mana pun**.
+ *
+ * Company dan Agent saja. Seorang publisher tidak lolos di sini karena izinnya
+ * terikat pada satu situs — dia lewat `canSellOnCurrentSite(siteId)`. Gate yang
+ * tidak menyebut situs tidak bisa menjawab pertanyaan yang jawabannya per situs.
+ */
 export async function canSellProducts() {
   const profile = await getProfile();
-  return !!profile && canSell(profile.role);
+  return profile?.account_type === "company" || profile?.account_type === "agent";
 }
 
 /* -------------------------------------------------------------------------- *
- * Keanggotaan per-situs (fase 2 dari docs/plans/hierarchical-users.md).
+ * Kedudukan di sebuah situs.
  *
- * Belum mengubah perilaku apa pun: setelah backfill fase 1, satu-satunya orang
- * yang punya keanggotaan `admin` adalah platform admin — yang sudah lolos setiap
- * gate sebelum ini ada. Yang berubah adalah SIAPA yang menjawab pertanyaannya.
+ * Tiga tabel menjawab tiga hal berbeda, dan sengaja tidak diringkas jadi satu
+ * "role": lp_profiles.account_type = jenis akunnya, lp_site_agents = situs yang
+ * dia kelola, lp_site_members = situs tempat dia jadi customer (dan apakah dia
+ * publisher di situ). Meringkasnya jadi satu nilai adalah persis yang dulu
+ * membuat "publisher" tersimpan di dua tempat sekaligus.
  * -------------------------------------------------------------------------- */
 
 /**
- * Role orang yang sedang login di sebuah situs, atau null kalau bukan anggota.
- *
  * `cache()` = memoisasi per-request, bukan cache lintas request: ini data satu
- * orang, tidak boleh masuk `unstable_cache` yang dibagi antar pengunjung.
- * Layar panel memanggilnya beberapa kali dalam satu render.
+ * orang, tidak boleh masuk `unstable_cache` yang dibagi antar pengunjung. Layar
+ * panel menanyakannya beberapa kali dalam satu render.
  */
-const readMembership = cache(
-  async (userId: string, siteId: string): Promise<SiteRole | null> => {
-    if (!userId || !siteId) return null;
-    // Service-role: RLS di lp_site_members hanya mengizinkan seseorang membaca
-    // barisnya sendiri, dan itu memang cukup di sini — tapi layar admin nanti
-    // membaca baris orang lain lewat helper yang sama.
-    const { data } = await createAdminClient()
-      .from("lp_site_members")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("site_id", siteId)
-      .maybeSingle();
-    return data ? normalizeSiteRole(data.role) : null;
+const readStanding = cache(
+  async (userId: string, siteId: string, accountType: AccountType): Promise<SiteStanding> => {
+    const empty = { accountType, isAgent: false, isMember: false, isPublisher: false };
+    if (!userId || !siteId) return empty;
+    const admin = createAdminClient();
+    const [{ data: agent }, { data: member }] = await Promise.all([
+      admin.from("lp_site_agents").select("user_id")
+        .eq("user_id", userId).eq("site_id", siteId).maybeSingle(),
+      admin.from("lp_site_members").select("is_publisher")
+        .eq("user_id", userId).eq("site_id", siteId).maybeSingle(),
+    ]);
+    return {
+      accountType,
+      isAgent: !!agent,
+      isMember: !!member,
+      isPublisher: !!member?.is_publisher,
+    };
   },
 );
 
 /**
- * Role efektif orang yang sedang login di situs yang sedang dilihat panel.
+ * Kedudukan orang yang sedang login di situs yang sedang dilihat panel.
  *
  * Situsnya boleh dikirim sebagai argumen. Kalau tidak, dipakai cakupan panel —
  * dan itu satu-satunya tempat cookie scope dibaca untuk keputusan izin, supaya
  * tidak ada layar yang diam-diam memutuskan dari cookie sendiri.
  */
-export async function currentSiteRole(siteId?: string): Promise<SiteRole | null> {
+export async function currentSiteStanding(siteId?: string): Promise<SiteStanding | null> {
   const profile = await getProfile();
   if (!profile) return null;
   const id = siteId ?? (await editingSite()).id;
-  return effectiveRole(profile.role, await readMembership(profile.id, id));
+  return readStanding(profile.id, id, profile.account_type);
+}
+
+/** Boleh mengurus situs ini — kontennya, setelannya, customer-nya. */
+export async function requireSiteAdmin(siteId?: string): Promise<boolean> {
+  return canManageSite(await currentSiteStanding(siteId));
+}
+
+/** Boleh membuat & menjual produk DI SITUS INI. */
+export async function canSellOnCurrentSite(siteId?: string): Promise<boolean> {
+  return canSellOnSite(await currentSiteStanding(siteId));
 }
 
 /**
- * Catat orang ini sebagai anggota situs ini, kalau belum.
+ * Catat orang ini sebagai customer situs ini, kalau belum.
  *
- * Idempoten dan tidak pernah MENURUNKAN: callback Duitku memang dikirim ulang,
- * dan pembelian kedua oleh seorang admin situs tidak boleh menjadikannya
- * pembeli biasa. Karena itu `ignoreDuplicates` — bukan upsert yang menimpa.
+ * Idempoten: callback Duitku memang dikirim ulang, dan baris yang sudah ada
+ * tidak boleh ditimpa — `is_publisher` seseorang tidak boleh direset jadi false
+ * gara-gara dia membeli lagi. Karena itu `ignoreDuplicates`, bukan upsert.
  *
- * Best-effort di semua pemanggilnya: keanggotaan yang gagal tercatat adalah
+ * Best-effort di semua pemanggilnya: keanggotaan yang gagal tercatat adalah satu
  * baris yang hilang, sementara melempar error di sini berarti signup gagal atau
  * callback pembayaran tidak dibalas 200 — dua kerugian yang jauh lebih besar.
  */
-export async function ensureSiteMembership(
-  userId: string,
-  siteId: string,
-  role: SiteRole = "customer",
-): Promise<void> {
+export async function ensureSiteMembership(userId: string, siteId: string): Promise<void> {
   if (!userId || !siteId) return;
   try {
     await createAdminClient()
       .from("lp_site_members")
-      .upsert({ site_id: siteId, user_id: userId, role }, {
+      .upsert({ site_id: siteId, user_id: userId }, {
         onConflict: "site_id,user_id",
         ignoreDuplicates: true,
       });
   } catch (e) {
     console.error("ensureSiteMembership error:", e);
   }
-}
-
-/** Boleh mengurus situs ini — kontennya, setelannya, anggotanya. */
-export async function requireSiteAdmin(siteId?: string): Promise<boolean> {
-  return canManageSite(await currentSiteRole(siteId));
-}
-
-/** Boleh membuat & menjual produk DI SITUS INI. */
-export async function canSellOnCurrentSite(siteId?: string): Promise<boolean> {
-  return canSellOnSite(await currentSiteRole(siteId));
 }
 
 /**
@@ -197,28 +200,25 @@ export async function getRolePermissions(siteId?: string): Promise<RolePermissio
 export async function requireFeature(feature: FeatureKey): Promise<boolean> {
   const profile = await getProfile();
   if (!profile) return false;
-  if (profile.role === "company") return true;
-  // Admin DI SITUS yang sedang dilihat punya seluruh fitur untuk situs itu.
+  if (profile.account_type === "company") return true;
+  const standing = await currentSiteStanding();
   // Agent di situs yang sedang dilihat punya seluruh fitur untuk situs itu.
-  if ((await currentSiteRole()) === "agent") return true;
-  if (profile.role === "customer" || profile.role === "publisher") {
-    const perms = await getRolePermissions();
-    return perms[profile.role].includes(feature);
-  }
-  return false;
+  if (standing?.isAgent) return true;
+  // Sisanya: customer, dan peta izin membedakan customer biasa dari yang sudah
+  // jadi publisher DI SITUS INI.
+  const perms = await getRolePermissions();
+  return perms[standing?.isPublisher ? "publisher" : "customer"].includes(feature);
 }
 
 /** Feature keys the current user can access (all for admins) — drives the nav. */
 export async function getAccessibleFeatures(): Promise<FeatureKey[]> {
   const profile = await getProfile();
   if (!profile) return [];
-  if (profile.role === "company") return [...ALL_FEATURE_KEYS];
-  if ((await currentSiteRole()) === "agent") return [...ALL_FEATURE_KEYS];
-  if (profile.role === "customer" || profile.role === "publisher") {
-    const perms = await getRolePermissions();
-    return perms[profile.role];
-  }
-  return [];
+  if (profile.account_type === "company") return [...ALL_FEATURE_KEYS];
+  const standing = await currentSiteStanding();
+  if (standing?.isAgent) return [...ALL_FEATURE_KEYS];
+  const perms = await getRolePermissions();
+  return perms[standing?.isPublisher ? "publisher" : "customer"];
 }
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
@@ -231,7 +231,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role, publisher_status, email_verified_at, avatar_url")
+    .select("id, full_name, account_type, email_verified_at, avatar_url")
     .eq("id", user.id)
     .single();
 
@@ -239,8 +239,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   return {
     id: data.id,
     full_name: data.full_name ?? null,
-    role: normalizeRole(data.role),
-    publisher_status: normalizePublisherStatus(data.publisher_status),
+    account_type: normalizeAccountType(data.account_type),
     email_verified_at: data.email_verified_at ?? null,
     avatar_url: data.avatar_url ?? null,
   } as Profile;
@@ -336,18 +335,28 @@ export async function applyAsPublisher(
   );
   if (tooLong) return { ok: false, error: "Isian terlalu panjang (maksimal 120 karakter)." };
 
+  // Pengajuan sekarang milik pasangan (orang, situs): dia melamar jadi publisher
+  // DI SITUS yang sedang dia buka, bukan di seluruh platform.
+  const siteId = await currentSiteId();
   const { data: current } = await supabase
     .from("lp_profiles")
-    .select("role, publisher_status")
+    .select("account_type")
     .eq("id", user.id)
     .single();
+  const { data: membership } = await createAdminClient()
+    .from("lp_site_members")
+    .select("is_publisher, publisher_status")
+    .eq("user_id", user.id)
+    .eq("site_id", siteId)
+    .maybeSingle();
 
-  const role = normalizeRole(current?.role);
-  const status = normalizePublisherStatus(current?.publisher_status);
+  const accountType = normalizeAccountType(current?.account_type);
+  const status = normalizePublisherStatus(membership?.publisher_status);
 
-  if (role === "company") return { ok: false, error: "Admin tidak perlu mengajukan." };
-  if (role === "publisher" || status === "approved")
-    return { ok: false, error: "Anda sudah menjadi publisher." };
+  if (accountType === "company") return { ok: false, error: "Company tidak perlu mengajukan." };
+  if (accountType === "agent") return { ok: false, error: "Agent tidak perlu mengajukan." };
+  if (membership?.is_publisher || status === "approved")
+    return { ok: false, error: "Anda sudah jadi publisher di situs ini." };
   if (status === "pending") return { ok: false, error: "Pengajuan Anda sedang ditinjau." };
 
   // Privileged write: authenticated users cannot update publisher_status on their
@@ -376,9 +385,14 @@ export async function applyAsPublisher(
     }
   }
 
+  // Pengajuan mendarat di KEANGGOTAAN situs ini, bukan di profil. upsert, bukan
+  // update: orang boleh mengajukan di situs yang belum pernah dia beli apa pun,
+  // dan barisnya belum tentu ada.
   const { error } = await admin
-    .from("lp_profiles")
-    .update({
+    .from("lp_site_members")
+    .upsert({
+      site_id: siteId,
+      user_id: user.id,
       publisher_status: "pending",
       publisher_applied_at: new Date().toISOString(),
       publisher_ktp_path: ktpPath,
@@ -396,8 +410,7 @@ export async function applyAsPublisher(
       publisher_reject_note: null,
       publisher_reviewed_at: null,
       publisher_reviewed_by: null,
-    })
-    .eq("id", user.id);
+    }, { onConflict: "site_id,user_id" });
 
   if (error) {
     console.error("applyAsPublisher error:", error);
@@ -410,7 +423,8 @@ export async function applyAsPublisher(
 export type ProfileWithUser = {
   id: string;
   full_name: string | null;
-  role: Role;
+  account_type: AccountType;
+  /** Status pengajuan publisher DI SITUS yang sedang dibuka. */
   publisher_status: PublisherStatus;
   email: string | null;
 };
@@ -426,7 +440,7 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
 
   let { data, error } = await supabase
     .from("lp_profiles")
-    .select("id, full_name, role, publisher_status")
+    .select("id, full_name, account_type")
     .eq("id", user.id)
     .single();
 
@@ -434,12 +448,12 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
     const { error: insertError } = await supabase.from("lp_profiles").insert({
       id: user.id,
       full_name: user.user_metadata?.full_name ?? null,
-      role: "customer",
+      account_type: "customer",
     });
     if (!insertError || insertError.code === "23505") {
       const ret = await supabase
         .from("lp_profiles")
-        .select("id, full_name, role, publisher_status")
+        .select("id, full_name, account_type")
         .eq("id", user.id)
         .single();
       data = ret.data;
@@ -451,8 +465,19 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
   return {
     id: data.id,
     full_name: data.full_name ?? null,
-    role: normalizeRole(data.role),
-    publisher_status: normalizePublisherStatus(data.publisher_status),
+    account_type: normalizeAccountType(data.account_type),
+    // Status pengajuan hidup di keanggotaan sekarang, dan keanggotaan itu
+    // per-situs — jadi yang dilaporkan adalah status di situs yang sedang dibuka.
+    publisher_status: normalizePublisherStatus(
+      (
+        await createAdminClient()
+          .from("lp_site_members")
+          .select("publisher_status")
+          .eq("user_id", data.id)
+          .eq("site_id", await currentSiteId())
+          .maybeSingle()
+      ).data?.publisher_status,
+    ),
     email: user.email ?? null,
   };
 }

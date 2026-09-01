@@ -142,6 +142,7 @@ export const en: Record<keyof typeof id, string> = {
 
   /* panel: sidebar */
   "panel.roleAdmin": "Company",
+  "panel.roleAgent": "Agent",
   "panel.rolePublisher": "Publisher",
   "panel.roleCustomer": "Customer",
   "panel.navGroupMain": "Main",
@@ -1267,7 +1268,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.rolesIntro":
     "Choose which admin features each role can reach. A user inherits access from their role — change a user's role on the Users page.",
   "panel.usersScopeHint": "Members of {host}. Removing someone from the site does not delete their account.",
-  "panel.siteRole": "Site role",
+  "panel.siteFlags": "On this site",
   "panel.removeFromSite": "Remove from site",
   "panel.removeFromSiteConfirm": "Remove {name} from this site? Their account and purchases stay — they only lose access to this site.",
   "panel.removeFromSiteFailed": "Could not remove them from the site",

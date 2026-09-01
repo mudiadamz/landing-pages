@@ -11,7 +11,7 @@ import { useT } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n";
 import type { SiteBrand } from "@/lib/site-brand";
 
-type Role = "company" | "customer" | "publisher";
+type AccountType = "company" | "agent" | "customer";
 
 /**
  * The panel's top bar, in the content pane rather than across the whole window.
@@ -29,14 +29,14 @@ type Role = "company" | "customer" | "publisher";
 export function PanelTopbar({
   displayName,
   email,
-  role,
+  accountType,
   avatarUrl = "",
   brand,
   locale,
 }: {
   displayName: string;
   email: string | null;
-  role?: Role;
+  accountType?: AccountType;
   avatarUrl?: string;
   brand: SiteBrand;
   locale: Locale;
@@ -66,10 +66,10 @@ export function PanelTopbar({
   }, [menuOpen]);
 
   const roleLabel =
-    role === "company"
+    accountType === "company"
       ? t("panel.roleAdmin")
-      : role === "publisher"
-        ? t("panel.rolePublisher")
+      : accountType === "agent"
+        ? t("panel.roleAgent")
         : t("panel.roleCustomer");
 
   return (

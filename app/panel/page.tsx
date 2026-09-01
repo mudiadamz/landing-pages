@@ -1,10 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getProfile, requireFeature } from "@/lib/actions/profiles";
+import { getProfile, requireFeature, canSellOnCurrentSite, currentSiteStanding } from "@/lib/actions/profiles";
 import { getPurchasesForUser } from "@/lib/actions/purchases";
 import { getMyFavorites } from "@/lib/actions/likes";
 import { getMyProductStats, getStats } from "@/lib/actions/admin";
-import { canSell } from "@/lib/profile-utils";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -34,11 +33,15 @@ const nf = (n: number) => n.toLocaleString("id-ID");
 export default async function PanelPage() {
   const t = translator(await requestLocale());
   const profile = await getProfile();
-  const seller = !!profile && canSell(profile.role);
+  const seller = await canSellOnCurrentSite();
 
   // Publishers get their own-products view and never the site-wide one, matching
   // the split /panel/sales already enforces.
-  const wantsGlobal = (await requireFeature("stats")) && profile?.role !== "publisher";
+  // Publisher melihat produknya sendiri, bukan angka seluruh situs — pembagian
+  // yang sama dengan /panel/sales. Izin publisher itu per situs sekarang.
+  const standing = await currentSiteStanding();
+  const wantsGlobal =
+    (await requireFeature("stats")) && !(standing?.isPublisher && !standing.isAgent);
 
   const [purchases, favorites, sellerStats, globalStats] = await Promise.all([
     getPurchasesForUser(),

@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getProfile, requireFeature } from "./profiles";
+import { getProfile, requireFeature, currentSiteStanding } from "./profiles";
 import { fetchAllRows } from "@/lib/paginate";
 import { panelScope } from "@/lib/site-scope";
 
@@ -62,9 +62,12 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
   const profile = await getProfile();
   if (!profile) return null;
 
-  const isPublisher = profile.role === "publisher";
-  const global = !isPublisher && (await requireFeature("stats"));
-  if (!global && !isPublisher) return null;
+  // "Hanya produk saya" berlaku untuk publisher DI SITUS yang sedang dilihat —
+  // izin jualnya per situs sekarang, jadi cakupan angkanya ikut.
+  const standing = await currentSiteStanding();
+  const sellerOnly = !!standing?.isPublisher && !standing.isAgent && profile.account_type !== "company";
+  const global = !sellerOnly && (await requireFeature("stats"));
+  if (!global && !sellerOnly) return null;
 
   const supabase = createAdminClient();
   // Storefront scope, from the sidebar switcher. Unattributed purchases (before the

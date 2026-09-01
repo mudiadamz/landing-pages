@@ -10,9 +10,9 @@ import type { FeatureKey } from "@/lib/features";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
 
-type Role = "company" | "customer" | "publisher";
+type AccountType = "company" | "agent" | "customer";
 type Props = {
-  role?: Role;
+  accountType?: AccountType;
   canSell?: boolean;
   pendingActions?: number;
   features?: FeatureKey[];
@@ -302,7 +302,7 @@ function ImageIcon({ className }: { className?: string }) {
 }
 
 function NavContent({
-  role,
+  accountType,
   features = [],
   canSell,
   pendingActions = 0,
@@ -310,7 +310,7 @@ function NavContent({
   onItemClick,
   onOpenAssets,
 }: {
-  role?: Role;
+  accountType?: AccountType;
   features?: FeatureKey[];
   canSell?: boolean;
   pendingActions?: number;
@@ -324,9 +324,9 @@ function NavContent({
 
   const isVisible = (item: NavItem) => {
     if (item.everyone) return true;
-    if (item.adminOnly) return role === "company";
+    if (item.adminOnly) return accountType === "company";
     if (item.sellerOnly) return !!canSell;
-    if (item.feature) return features.includes(item.feature) || (!!item.publisherToo && role === "publisher");
+    if (item.feature) return features.includes(item.feature) || (!!item.publisherToo && accountType === "agent");
     return true;
   };
 
@@ -470,7 +470,7 @@ function NavContent({
 }
 
 export function PanelSidebar({
-  role,
+  accountType,
   canSell,
   pendingActions,
   features,
@@ -556,7 +556,7 @@ export function PanelSidebar({
           }`}
         >
           <NavContent
-            role={role}
+            accountType={accountType}
             features={features}
             canSell={canSell}
             pendingActions={pendingActions}

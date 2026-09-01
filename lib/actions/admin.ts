@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { editingSite } from "@/lib/site-resolve";
+import { canSellOnSite } from "@/lib/site-membership";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireFeature, getProfile } from "./profiles";
+import { requireFeature, getProfile, currentSiteStanding } from "./profiles";
 
 export type Stats = {
   totalLandingPages: number;
@@ -83,7 +85,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
 
   const buyerIds = [...countMap.keys()];
   const { data: profiles } = await supabase
-    .from("lp_profiles")
+    .from("lp_site_members")
     .select("id, full_name, email, role")
     .in("id", buyerIds);
 
@@ -133,7 +135,9 @@ export type PublisherStats = {
  */
 export async function getMyProductStats(): Promise<PublisherStats | null> {
   const profile = await getProfile();
-  if (!profile || (profile.role !== "company" && profile.role !== "publisher")) return null;
+  // Company & Agent selalu; publisher hanya untuk situs tempat izinnya berlaku.
+  const standing = await currentSiteStanding();
+  if (!profile || !canSellOnSite(standing)) return null;
 
   const supabase = createAdminClient();
   const { data: pages } = await supabase
@@ -211,14 +215,28 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   const isAdmin = await requireFeature("users");
   if (!isAdmin) return [];
 
+  // Pengajuan situs INI saja. Sejak model account_type, pengajuan itu milik
+  // pasangan (orang, situs) — daftar lintas situs akan menampilkan orang yang
+  // bukan urusan Agent ini.
+  const site = await editingSite();
   const supabase = createAdminClient();
   const { data, error } = await supabase
-    .from("lp_profiles")
-    .select("id, full_name, email, publisher_applied_at, publisher_ktp_path, publisher_selfie_path, publisher_real_name, publisher_display_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at")
+    .from("lp_site_members")
+    .select(
+      "user_id, publisher_applied_at, publisher_ktp_path, publisher_selfie_path, publisher_real_name, publisher_display_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at",
+    )
+    .eq("site_id", site.id)
     .eq("publisher_status", "pending")
     .order("publisher_applied_at", { ascending: true });
 
-  if (error) return [];
+  if (error || !data?.length) return [];
+
+  // Nama & email tetap di profil: itu milik orangnya, bukan milik pengajuan.
+  const { data: profiles } = await supabase
+    .from("lp_profiles")
+    .select("id, full_name, email")
+    .in("id", data.map((r) => r.user_id));
+  const byId = new Map((profiles ?? []).map((p) => [p.id as string, p]));
 
   const sign = async (path: string | null) => {
     if (!path) return null;
@@ -229,10 +247,10 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   };
 
   return Promise.all(
-    (data ?? []).map(async (r) => ({
-      id: r.id,
-      full_name: r.full_name ?? null,
-      email: r.email ?? null,
+    data.map(async (r) => ({
+      id: r.user_id as string,
+      full_name: byId.get(r.user_id as string)?.full_name ?? null,
+      email: byId.get(r.user_id as string)?.email ?? null,
       publisher_applied_at: r.publisher_applied_at ?? null,
       real_name: r.publisher_real_name ?? null,
       address: r.publisher_address ?? null,
@@ -253,17 +271,22 @@ export async function approvePublisher(userId: string): Promise<{ ok: boolean; e
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
   if (!userId) return { ok: false, error: "User tidak valid." };
 
+  // Persetujuan berlaku DI SATU SITUS: pengajuan itu milik pasangan
+  // (orang, situs) sejak model account_type. Menyetujui di sini tidak membuka
+  // izin jual di storefront lain, dan memang tidak seharusnya.
+  const site = await editingSite();
   const supabase = createAdminClient();
   const { error } = await supabase
-    .from("lp_profiles")
+    .from("lp_site_members")
     .update({
-      role: "publisher",
+      is_publisher: true,
       publisher_status: "approved",
       publisher_reviewed_at: new Date().toISOString(),
       publisher_reviewed_by: (await getProfile())?.id ?? null,
       publisher_reject_note: null,
     })
-    .eq("id", userId)
+    .eq("user_id", userId)
+    .eq("site_id", site.id)
     .eq("publisher_status", "pending");
 
   if (error) {
@@ -287,14 +310,16 @@ export async function rejectPublisher(
   const reviewer = await getProfile();
 
   const { data: row, error } = await supabase
-    .from("lp_profiles")
+    .from("lp_site_members")
     .update({
+      is_publisher: false,
       publisher_status: "rejected",
       publisher_reviewed_at: new Date().toISOString(),
       publisher_reviewed_by: reviewer?.id ?? null,
       publisher_reject_note: note?.trim().slice(0, 500) || null,
     })
-    .eq("id", userId)
+    .eq("user_id", userId)
+    .eq("site_id", (await editingSite()).id)
     .eq("publisher_status", "pending")
     .select("publisher_ktp_path, publisher_selfie_path")
     .maybeSingle();

@@ -4,17 +4,15 @@ import { PLANS, PLAN_LIST, normalizePlan } from "@/lib/plans";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 
-type Role = "company" | "customer" | "publisher";
-/** Role DI SITUS yang sedang dilihat — beda dari `role`, yang tingkat platform. */
-type SiteRole = Role;
-type RoleFilter = "all" | Role;
+type AccountType = "company" | "agent" | "customer";
+type RoleFilter = "all" | AccountType;
 type VerifyFilter = "all" | "unverified" | "verified";
 
 type UserRow = {
   id: string;
   full_name: string | null;
   email: string | null;
-  role: Role;
+  account_type: AccountType;
   is_active: boolean;
   exclude_from_stats?: boolean;
   /**
@@ -26,8 +24,10 @@ type UserRow = {
   /** Plan key as stored. `plan_expires_at` null means it does not lapse. */
   plan?: string | null;
   plan_expires_at?: string | null;
-  /** null saat melihat lintas situs — "tidak relevan", bukan "bukan anggota". */
-  site_role?: SiteRole | null;
+  /** Mengelola situs yang sedang dilihat. null = tampilan lintas situs. */
+  is_agent?: boolean | null;
+  /** Boleh menjual di situs yang sedang dilihat. */
+  is_publisher?: boolean | null;
 };
 
 export function UsersTable({
@@ -60,21 +60,28 @@ export function UsersTable({
       .finally(() => setLoading(false));
   }, [allSites]);
 
-  async function changeSiteRole(user: UserRow, siteRole: SiteRole) {
-    if (siteRole === user.site_role) return;
-    const prev = user.site_role;
-    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, site_role: siteRole } : u)));
+  /**
+   * Dua saklar, bukan satu dropdown role.
+   *
+   * "Mengelola situs ini" dan "boleh menjual di situs ini" adalah dua fakta yang
+   * disimpan di dua tabel, dan seseorang bisa keduanya sekaligus. Satu dropdown
+   * memaksa keduanya jadi pilihan yang saling meniadakan, yang bukan modelnya.
+   */
+  async function toggleSiteFlag(user: UserRow, field: "isAgent" | "isPublisher", next: boolean) {
+    const key = field === "isAgent" ? "is_agent" : "is_publisher";
+    const prev = user[key];
+    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, [key]: next } : u)));
     setUpdating(user.id);
     try {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, siteRole }),
+        body: JSON.stringify({ userId: user.id, [field]: next }),
       });
       if (!res.ok) {
         const data = await res.json();
         alert(data.error ?? t("panel.roleChangeFailed"));
-        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, site_role: prev } : u)));
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, [key]: prev } : u)));
       }
     } finally {
       setUpdating(null);
@@ -112,7 +119,7 @@ export function UsersTable({
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, siteRole: "customer" }),
+        body: JSON.stringify({ email }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -129,21 +136,21 @@ export function UsersTable({
     }
   }
 
-  async function changeRole(user: UserRow, role: Role) {
-    if (role === user.role) return;
-    const prev = user.role;
-    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, role } : u)));
+  async function changeRole(user: UserRow, accountType: AccountType) {
+    if (accountType === user.account_type) return;
+    const prev = user.account_type;
+    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, account_type: accountType } : u)));
     setUpdating(user.id);
     try {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, role }),
+        body: JSON.stringify({ userId: user.id, accountType }),
       });
       if (!res.ok) {
         const data = await res.json();
         alert(data.error ?? t("panel.roleChangeFailed"));
-        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, role: prev } : u)));
+        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, account_type: prev } : u)));
       }
     } finally {
       setUpdating(null);
@@ -252,7 +259,7 @@ export function UsersTable({
   const unverifiedCount = users.filter((u) => !u.email_verified_at).length;
 
   const filtered = users.filter((u) => {
-    if (roleFilter !== "all" && u.role !== roleFilter) return false;
+    if (roleFilter !== "all" && u.account_type !== roleFilter) return false;
     if (verifyFilter === "unverified" && u.email_verified_at) return false;
     if (verifyFilter === "verified" && !u.email_verified_at) return false;
     if (!search) return true;
@@ -260,7 +267,7 @@ export function UsersTable({
     return (
       u.full_name?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
-      u.role.toLowerCase().includes(q)
+      u.account_type.toLowerCase().includes(q)
     );
   });
 
@@ -403,11 +410,11 @@ export function UsersTable({
               <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
               <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
               {showSiteRole && (
-                <SiteRoleControl
+                <SiteFlags
                   user={u}
                   canEdit={isSiteAdmin}
                   disabled={updating === u.id}
-                  onChange={changeSiteRole}
+                  onToggle={toggleSiteFlag}
                 />
               )}
               {showSiteRole && isSiteAdmin && (
@@ -441,7 +448,7 @@ export function UsersTable({
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.role")}</th>
                 {showSiteRole && (
                   <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">
-                    {t("panel.siteRole")}
+                    {t("panel.siteFlags")}
                   </th>
                 )}
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("plan.colPlan")}</th>
@@ -469,11 +476,11 @@ export function UsersTable({
                   </td>
                   {showSiteRole && (
                     <td className="px-4 py-3 text-center">
-                      <SiteRoleControl
+                      <SiteFlags
                         user={u}
                         canEdit={isSiteAdmin}
                         disabled={updating === u.id}
-                        onChange={changeSiteRole}
+                        onToggle={toggleSiteFlag}
                       />
                     </td>
                   )}
@@ -594,40 +601,48 @@ function PlanControl({
 }
 
 /**
- * Role seseorang DI SITUS yang sedang dilihat.
+ * Dua kotak centang, bukan satu dropdown.
  *
- * Sengaja terpisah dari RoleControl di bawahnya, meski pilihannya sama persis:
- * yang satu keanggotaan, yang satu tingkat platform. Satu kontrol untuk keduanya
- * berarti admin sebuah situs bisa mengangkat dirinya jadi platform admin lewat
- * dropdown yang sama.
+ * "Mengelola situs ini" (Agent) dan "boleh menjual di situs ini" (publisher)
+ * disimpan di dua tabel dan bisa berlaku bersamaan. Satu dropdown memaksa
+ * keduanya jadi pilihan yang saling meniadakan, dan itu bukan modelnya.
  */
-function SiteRoleControl({
+function SiteFlags({
   user,
   canEdit,
   disabled,
-  onChange,
+  onToggle,
 }: {
   user: UserRow;
   canEdit: boolean;
   disabled: boolean;
-  onChange: (user: UserRow, role: SiteRole) => void;
+  onToggle: (user: UserRow, field: "isAgent" | "isPublisher", next: boolean) => void;
 }) {
   const t = useT();
-  const current = user.site_role;
-  if (!current) return <span className="text-xs text-[var(--muted)]">—</span>;
-  if (!canEdit) return <span className="text-xs font-medium">{current}</span>;
+  if (user.is_agent === null || user.is_agent === undefined) {
+    return <span className="text-xs text-[var(--muted)]">—</span>;
+  }
+  const box = (
+    field: "isAgent" | "isPublisher",
+    checked: boolean,
+    label: string,
+  ) => (
+    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--muted)]">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled || !canEdit}
+        onChange={(e) => onToggle(user, field, e.target.checked)}
+        className="h-3.5 w-3.5 rounded border-[var(--border)] accent-[var(--primary)] disabled:opacity-50"
+      />
+      {label}
+    </label>
+  );
   return (
-    <select
-      value={current}
-      disabled={disabled}
-      onChange={(e) => onChange(user, e.target.value as SiteRole)}
-      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
-      aria-label={t("panel.siteRole")}
-    >
-      <option value="customer">customer</option>
-      <option value="publisher">publisher</option>
-      <option value="agent">agent</option>
-    </select>
+    <span className="inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+      {box("isAgent", !!user.is_agent, t("panel.roleAgent"))}
+      {box("isPublisher", !!user.is_publisher, t("panel.rolePublisher"))}
+    </span>
   );
 }
 
@@ -640,15 +655,15 @@ function RoleControl({
   user: UserRow;
   canEdit: boolean;
   disabled: boolean;
-  onChange: (user: UserRow, role: Role) => void;
+  onChange: (user: UserRow, accountType: AccountType) => void;
 }) {
   const t = useT();
-  if (!canEdit) return <RoleBadge role={user.role} />;
+  if (!canEdit) return <RoleBadge role={user.account_type} />;
   return (
     <select
-      value={user.role}
+      value={user.account_type}
       disabled={disabled}
-      onChange={(e) => onChange(user, e.target.value as Role)}
+      onChange={(e) => onChange(user, e.target.value as AccountType)}
       className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
       aria-label={t("panel.changeRole")}
     >
@@ -708,7 +723,7 @@ function DeleteUserButton({
   onClick: () => void;
 }) {
   const t = useT();
-  const blocked = user.role === "company";
+  const blocked = user.account_type === "company";
   return (
     <button
       type="button"
@@ -731,11 +746,11 @@ function DeleteUserButton({
   );
 }
 
-function RoleBadge({ role }: { role: Role }) {
+function RoleBadge({ role }: { role: AccountType }) {
   const cls =
     role === "company"
       ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-      : role === "publisher"
+      : role === "agent"
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
         : "bg-[var(--accent-subtle)] text-[var(--muted)]";
   return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{role}</span>;

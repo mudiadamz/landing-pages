@@ -80,34 +80,34 @@ Ringkasan yang paling sering dilanggar:
   Signup Google langsung terverifikasi (lihat trigger `lp_handle_new_user`). Selama belum
   verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +
   filter "Belum verifikasi" di `/panel/users`.
-- **Tiga tingkat: Company → Agent → Customer.** Satu akun global (email unik
-  se-project Supabase), keanggotaan per-situs. Detail & riwayat keputusannya di
+- **Tiga jenis akun: Company → Agent → Customer.** Satu akun global (email unik
+  se-project Supabase). Detail & riwayat keputusannya di
   [`docs/plans/hierarchical-users.md`](docs/plans/hierarchical-users.md).
-  - **Company** = `lp_profiles.role = 'admin'`. Lintas situs, dan satu-satunya
-    yang boleh buat/hapus situs, mengangkat Company lain, dan menghapus akun.
-  - **Agent** = `lp_site_members.role = 'admin'`. Mengurus konten, setelan, dan
-    anggota **situs itu saja**. (`role = 'publisher'` di tabel yang sama: boleh
-    menjual, bukan pengelola.)
-  - **Customer** = `lp_site_members.role = 'customer'`. Pembeli, anggota situs
-    tempat dia mendaftar atau membeli.
-  - Nilai lama `'admin'` masih **dibaca** sebagai Company/Agent oleh
-    `normalizeRole`/`normalizeSiteRole`, tapi ditolak CHECK sebagai nilai baru.
-  - Izin efektif = Company **atau** role keanggotaan di situs itu — satu
-    resolver, `lib/site-membership.ts: effectiveRole()`. Bukan anggota =
-    `null` = tidak boleh apa-apa, bukan "anggap saja Customer".
-- **Profiles** (`lp_profiles`: `id`, `full_name`, `role`, `publisher_status`,
-  `email_verified_at`, `avatar_url`, `plan`, kolom `publisher_*`):
-  `getProfile()` cached; profil dibuat otomatis sebagai `customer` saat pertama
-  diakses. Role dinormalisasi case-insensitive via
-  `lib/profile-utils.ts: normalizeRole()`.
+  - **`lp_profiles.account_type`** = `company | agent | customer`. Jenis akunnya.
+    Tidak ada `role` lagi di tabel ini, dan **publisher bukan jenis akun**.
+  - **`lp_site_agents(site_id, user_id)`** = Agent mana mengelola situs mana.
+    Satu situs boleh punya beberapa Agent.
+  - **`lp_site_members(site_id, user_id, is_publisher, publisher_*)`** = customer
+    situs itu. Tabel ini **tidak menyimpan role**. `is_publisher` = customer ini
+    boleh menjual **di situs ini**; berkas KYC-nya ada di baris yang sama, jadi
+    verifikasinya per storefront.
+  - Company lintas situs dan tidak perlu baris di mana pun: dia yang membuat
+    situsnya, dan mengunci dirinya di luar domain baru adalah cara bodoh
+    kehilangan akses.
+  - Izin dijawab satu tempat: `lib/site-membership.ts` (`canManageSite`,
+    `canSellOnSite`) di atas `SiteStanding` — tiga fakta dari tiga tabel, sengaja
+    tidak diringkas jadi satu "role". Meringkasnya itu yang dulu membuat
+    "publisher" tersimpan di dua tempat sekaligus.
 - **Empat gate, jangan tertukar** (`lib/actions/profiles.ts`):
   - `requireAdmin()` — Company. Untuk aksi yang **tidak boleh
     didelegasikan**: buat/hapus situs, hapus akun, ban, ubah role platform.
-  - `requireSiteAdmin(siteId?)` — Agent itu (Company selalu lolos).
+  - `requireSiteAdmin(siteId?)` — Agent situs itu (Company selalu lolos).
     Dipakai layar & action per-situs. **Wajib menerima `siteId` yang dikirim
     klien**, bukan situs yang kebetulan sedang dilihat.
-  - `canSellProducts()` — platform: admin atau publisher. `canSellOnCurrentSite()`
-    versi per-situsnya.
+  - `canSellProducts()` — Company & Agent, tanpa menyebut situs.
+    `canSellOnCurrentSite(siteId)` versi per-situsnya, dan **itu yang dipakai
+    untuk publisher** — izin jualnya terikat satu situs, jadi gate yang tidak
+    menyebut situs tidak bisa menjawabnya.
   - `requireFeature(key)` — Company dan Agent selalu lolos; selain
     itu fitur harus diberikan ke role-nya di peta situs itu. Nav panel digambar
     dari `getAccessibleFeatures()`.

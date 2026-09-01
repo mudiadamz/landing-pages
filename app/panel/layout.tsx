@@ -3,7 +3,7 @@ import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isCanonicalRequest, canonicalOrigin, currentSite } from "@/lib/site-resolve";
 import { siteBrand } from "@/lib/site-brand";
-import { getProfile, getAccessibleFeatures } from "@/lib/actions/profiles";
+import { getProfile, getAccessibleFeatures, canSellOnCurrentSite } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { getPanelPalette } from "@/lib/actions/site-settings";
 import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
@@ -78,7 +78,7 @@ export default async function PanelLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const canSell = profile?.role === "company" || profile?.role === "publisher";
+  const canSell = await canSellOnCurrentSite();
   const displayName = profile?.full_name?.trim() || user?.email?.split("@")[0] || "User";
   // Our own flag, not auth's — since signup stopped waiting for confirmation,
   // auth.users.email_confirmed_at is true for everyone and says nothing about
@@ -116,7 +116,7 @@ export default async function PanelLayout({
         dangerouslySetInnerHTML={{ __html: paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
       />
       <PanelSidebar
-        role={profile?.role}
+        accountType={profile?.account_type}
         canSell={!!canSell}
         pendingActions={pendingActions}
         features={features}
@@ -128,7 +128,7 @@ export default async function PanelLayout({
         <PanelTopbar
           displayName={displayName}
           email={user?.email ?? null}
-          role={profile?.role}
+          accountType={profile?.account_type}
           avatarUrl={profile?.avatar_url ?? ""}
           brand={brand}
           locale={locale}

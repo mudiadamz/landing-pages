@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
-import { normalizeRole, normalizePublisherStatus } from "@/lib/profile-utils";
+import { normalizeAccountType, normalizePublisherStatus } from "@/lib/profile-utils";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { currentSiteId } from "@/lib/site-resolve";
 import { PublisherApplyForm } from "./apply-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
@@ -31,14 +33,22 @@ export default async function PublisherPage() {
   const [{ data: row }, content] = await Promise.all([
     supabase
       .from("lp_profiles")
-      .select("role, publisher_status, publisher_reject_note")
+      .select("account_type")
       .eq("id", user.id)
       .single(),
     getSiteContent(),
   ]);
 
-  const role = normalizeRole(row?.role);
-  const status = normalizePublisherStatus(row?.publisher_status);
+  const accountType = normalizeAccountType(row?.account_type);
+  // Pengajuan ini milik pasangan (orang, situs): statusnya dibaca dari
+  // keanggotaan di situs yang sedang dibuka, bukan dari profilnya.
+  const { data: membership } = await createAdminClient()
+    .from("lp_site_members")
+    .select("publisher_status, publisher_reject_note")
+    .eq("user_id", user.id)
+    .eq("site_id", await currentSiteId())
+    .maybeSingle();
+  const status = normalizePublisherStatus(membership?.publisher_status);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -50,9 +60,9 @@ export default async function PublisherPage() {
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
         <PublisherApplyForm
-          role={role}
+          accountType={accountType}
           status={status}
-          rejectNote={row?.publisher_reject_note ?? null}
+          rejectNote={membership?.publisher_reject_note ?? null}
           termsHeading={content.publisherTermsHeading}
           terms={content.publisherTerms}
         />
