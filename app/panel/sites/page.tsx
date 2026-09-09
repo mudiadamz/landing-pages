@@ -3,7 +3,7 @@ import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
-import { getSites, isVercelConfigured } from "@/lib/actions/sites";
+import { getSites } from "@/lib/actions/sites";
 import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
 import { paletteOptions } from "@/lib/palette";
@@ -21,7 +21,7 @@ export default async function SitesPage() {
   // canonical domain's own host — a guard worth having twice.
   if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/sites`);
 
-  const [sites, vercelAutomated] = await Promise.all([getSites(), isVercelConfigured()]);
+  const sites = await getSites();
 
   // Labels only. This screen names a site's template and palette in its summary line
   // but no longer lets you change them, so it has no use for the full picker options.
@@ -49,7 +49,6 @@ export default async function SitesPage() {
         // Public anyway (it ships to the browser as a NEXT_PUBLIC var) and needed
         // verbatim: it is the one redirect URI Google is configured with.
         supabaseProjectUrl={(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}
-        vercelAutomated={vercelAutomated}
         templateLabels={templateLabels}
         paletteLabels={paletteLabels}
       />

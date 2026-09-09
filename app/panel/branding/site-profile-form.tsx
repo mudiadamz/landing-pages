@@ -20,7 +20,7 @@ import { useT } from "@/lib/i18n/client";
  *
  * Grouped into three blocks, in the order someone actually fills them: what it is
  * called, what it looks like, what it sells. The old combined form interleaved these
- * with the host field and the Vercel guide, so no section read as finished.
+ * with the host field and the DNS guide, so no section read as finished.
  */
 
 const CARD =

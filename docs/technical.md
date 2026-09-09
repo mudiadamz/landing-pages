@@ -257,14 +257,44 @@ docs/                   catatan panjang (arsitektur, multi-domain, analytics, re
 Panduan arsitektur lengkap untuk agent AI ada di [`CLAUDE.md`](../CLAUDE.md), dan
 khusus area panel di [`app/panel/CLAUDE.md`](../app/panel/CLAUDE.md).
 
-## Deploy
+## Deploy (Docker)
+
+Satu container aplikasi di belakang Caddy. Supabase tetap di project hosted —
+yang di-self-host cuma aplikasinya.
 
 ```bash
-vercel --prod --yes
+cp .env.example .env.production        # isi: Supabase, Duitku, Resend, ACME_EMAIL
+docker compose --env-file .env.production up -d --build
 ```
 
-Region function dipin ke `sin1` (`vercel.json`) supaya dekat database Supabase
-Singapore. Perubahan `NEXT_PUBLIC_*` butuh redeploy karena di-inline saat build.
+Satu berkas env untuk dua keperluan: `--env-file` mengisi build arg, `env_file:`
+di compose mengirim rahasianya ke dalam container.
+
+**`NEXT_PUBLIC_*` disulih saat BUILD, bukan saat run.** Nilainya ikut masuk ke
+bundle yang dikirim ke browser, jadi mengubahnya lewat `docker run -e` tidak
+berpengaruh pada apa pun yang berjalan di sana. Ganti nilainya → **build ulang**.
+(Anon key memang aman ikut ke image — ia dikirim ke setiap pengunjung. Service
+role key tidak boleh, dan tidak pernah jadi build arg.)
+
+### Menambah domain
+
+1. `/panel/sites` → **Tambah domain**, simpan barisnya.
+2. Arahkan DNS-nya: A record ke IP server, atau CNAME ke host kanonik.
+
+Tidak ada langkah ketiga. Caddy menerbitkan sertifikat saat permintaan pertama
+untuk domain itu datang, sesudah bertanya ke `/api/tls-check` — yang menjawab
+dari `lp_sites`. Gerbang itu bukan formalitas: tanpanya, siapa pun yang
+mengarahkan domainnya ke IP server ini bisa memaksa penerbitan sertifikat, dan
+rate limit Let's Encrypt dihitung per akun.
+
+### Perintah harian
+
+```bash
+docker compose --env-file .env.production up -d --build   # deploy ulang
+docker compose logs -f app                                # log aplikasi
+docker compose ps                                         # status + health
+curl -fsS https://admuiux.com/api/health                  # {"ok":true}
+```
 
 ## Docs
 

@@ -1,0 +1,25 @@
+# Yang tidak boleh ikut ke build context.
+#
+# node_modules yang paling penting: image ini meng-install ulang dengan pnpm di
+# dalam container, dan menyalin node_modules host berarti binary native untuk
+# arsitektur yang salah — gagalnya baru kelihatan saat runtime.
+node_modules
+.next
+.git
+.vercel
+
+# Rahasia. .env.example yang boleh, karena isinya cuma nama variabel.
+.env
+.env.*
+!.env.example
+
+# Berkas kerja yang tidak ada urusannya dengan image
+.claude
+.cursor
+docs
+tests
+supabase/.branches
+supabase/.temp
+*.log
+.DS_Store
+tsconfig.tsbuildinfo

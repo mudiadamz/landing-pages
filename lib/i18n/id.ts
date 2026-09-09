@@ -296,9 +296,6 @@ export const id = {
   "sites.threePlaces": "Menambah domain butuh tiga tempat",
   "sites.placeHere": "Di sini",
   "sites.placeHereWhat": "— hostname-nya, plus aktif/nonaktif.",
-  "sites.placeVercelWhat": "— supaya domainnya sampai ke aplikasi ini.",
-  "sites.vercelAuto": "Otomatis — panel ini yang menambahkannya.",
-  "sites.vercelManual": "Manual, lihat panduan per domain.",
   "sites.placeSupabaseWhat": "— supaya pengunjung bisa login di domain itu.",
   "sites.identityLivesIn":
     "Nama situs, tagline, deskripsi SEO, logo, ikon, template, palet, dan niche diatur di",
@@ -325,9 +322,6 @@ export const id = {
   "analytics.noteOptional": "Catatan (opsional)",
   "analytics.staleSession": "Sesi lama masih ada — klik untuk hapus",
   "analytics.loadingJourney": "Memuat perjalanan…",
-  "sites.checkingVercel": "Memeriksa status di Vercel…",
-  "sites.apexHint": "Domain utama (apex) — pakai A record",
-  "sites.subdomainHint": "Subdomain — pakai CNAME",
   "editor.bold": "Tebal",
   "editor.boldKey": "Tebal (Ctrl+B)",
   "editor.italic": "Miring",
@@ -427,12 +421,12 @@ export const id = {
   "sites.copied": "Tersalin",
   "sites.open": "Buka",
   "sites.guideHeading": "Langkah di luar panel ini",
-  "sites.guideSubAuto": "Vercel sudah otomatis — tinggal cek {host} bisa dibuka.",
-  "sites.guideSubManual": "Domain di Vercel — tanpa itu, {host} tidak bisa dibuka.",
+  "sites.guideSub": "Arahkan DNS-nya, lalu {host} bisa dibuka — sertifikatnya otomatis.",
+  "sites.dnsBody": "Buat record A untuk domain ini yang menunjuk ke IP server, atau CNAME ke host kanonik. Sertifikat HTTPS-nya terbit sendiri saat domainnya pertama kali dibuka — tidak ada langkah lain.",
+  "sites.placeDnsWhat": "— arahkan domainnya ke server ini; HTTPS-nya otomatis.",
+  "sites.pointDnsNext": "Tinggal arahkan DNS-nya.",
   "sites.step1Title": "Arahkan domain ke aplikasi",
-  "sites.step1TitleAuto": "Arahkan domain ke aplikasi — sudah otomatis",
   "sites.step2Title": "Login — tidak ada yang perlu didaftarkan",
-  "sites.stepWhereAuto": "Otomatis",
   "sites.step3Title": "Cek",
   "sites.step3Intro": "Buka domainnya dan pastikan tiga hal:",
   "sites.step3CheckHome": "Homepage tampil dengan produk niche yang dipilih di atas.",
@@ -878,14 +872,10 @@ export const id = {
 
   "sites.switchFailed": "Gagal mengganti situs.",
   "sites.domainSaved": "Pengaturan domain tersimpan.",
-  "sites.vercelRemember": "Jangan lupa tambahkan juga di Vercel.",
-  "sites.vercelFailed": "Gagal ditambahkan ke Vercel: {error}",
-  "sites.vercelLive": "Aktif di Vercel.",
-  "sites.vercelPending": "Ditambahkan ke Vercel — menunggu DNS.",
   "sites.domainAdded": "Domain {host} ditambahkan. {note} Lanjut atur identitas & tampilannya.",
   "sites.domainDeleted": "Domain {host} dihapus.",
   "sites.deleteConfirm":
-    "Hapus domain {host}?\n\nPengaturan khusus domain ini (hero, popup, tracking, custom JS) ikut terhapus. Produk tidak terpengaruh.\n\nDomainnya TETAP terdaftar di Vercel — lepas sendiri di sana kalau memang mau dilepas.",
+    "Hapus domain {host}?\n\nPengaturan khusus domain ini (hero, popup, tracking, custom JS) ikut terhapus. Produk tidak terpengaruh.\n\nDomainnya berhenti dilayani begitu barisnya hilang; DNS-nya di registrar tidak ikut berubah.",
   "sites.canonicalBadge": "utama · panel & pembayaran",
   "sites.canonicalHostLocked":
     "Domain utama tidak bisa diubah — callback pembayaran & login terikat ke host ini.",
@@ -980,48 +970,13 @@ export const id = {
   "product.ctaNoteSaveDate": "Simpan tanggalnya biar tidak terlewat.",
   "product.ctaNoteRemind": "Kami ingatkan menjelang acara.",
 
-  "sites.checkFailed": "Gagal diperiksa",
-  "sites.notOnVercel": "Belum di Vercel",
-  "sites.awaitingOwnership": "Menunggu verifikasi kepemilikan",
-  "sites.dnsNotPointed": "DNS belum diarahkan",
-  "sites.liveOnVercel": "Aktif di Vercel",
-  "sites.adding": "Menambahkan…",
-  "sites.addToVercel": "Tambah ke Vercel",
-  "sites.checking": "Memeriksa…",
-  "sites.recheckDns": "Cek DNS lagi",
-  "sites.recheckVerification": "Cek verifikasi",
   "sites.tryAgain": "Coba lagi",
-  "sites.detach": "Lepas dari Vercel",
-  "sites.detachConfirm":
-    "Lepas {host} dari project Vercel?\n\nDomainnya langsung berhenti melayani situs ini. Pengaturan domain di panel TIDAK dihapus — bisa dipasang lagi kapan saja dengan “Tambah ke Vercel”.",
-  "sites.servedByVercel":
-    "Vercel sudah melayani domain ini, SSL otomatis. Tinggal langkah Supabase di bawah.",
-  "sites.dnsIntro": "Domain sudah terdaftar di Vercel tapi",
-  "sites.dnsNotHere": "DNS-nya belum mengarah ke sini",
-  "sites.dnsWrong": "DNS-nya belum benar",
-  "sites.dnsAddRecordAt": ". Tambahkan record di",
-  "sites.dnsWhereNameservers": "tempat nameserver domain ini menunjuk",
-  "sites.dnsNotRegistrar": "— bukan selalu di registrar. Cek dulu nameserver-nya kalau tidak yakin.",
-  "sites.nameserverAlt": "Alternatif: arahkan nameserver ke Vercel",
-  "sites.nameserverAltBody":
-    "Ganti nameserver domain ke Vercel di registrar — Vercel yang mengurus DNS, jadi tidak perlu A record. Nilai nameserver-nya ada di Vercel → Settings → Domains → domain ini. Catatan: semua DNS record lain (email, dll) harus dipindah ke Vercel juga.",
-  "sites.afterRecordBefore": "Setelah record dipasang, klik",
-  "sites.afterRecordAfter": ". Propagasi DNS bisa beberapa menit sampai beberapa jam.",
-  "sites.challengeIntro":
-    "Pasang salah satu record ini di registrar domain, lalu klik “Cek verifikasi”:",
-  "sites.challengeUnknown":
-    "Vercel belum bisa memverifikasi. Cek panel Domains di Vercel untuk record yang diminta.",
 
-  "sites.vercelAutoBody":
-    "Panel ini menambahkannya sendiri lewat API Vercel saat domain dibuat — status & tombolnya ada di kartu domain di atas. Kalau gagal, alasannya tampil di sana beserta tombol coba lagi.",
-  "sites.vercelManualProject": "Project",
-  "sites.vercelManualPath": "→ Settings → Domains →",
-  "sites.vercelManualThenEnter": ", lalu masukkan:",
   "sites.subdomainOfBefore": "Ini subdomain",
   "sites.subdomainOfAfter":
-    "yang DNS-nya sudah di Vercel — begitu ditambahkan, langsung jalan. SSL otomatis, tak perlu beli domain baru.",
+    "yang DNS-nya sudah menunjuk ke server ini — begitu ditambahkan, langsung jalan. HTTPS otomatis, tak perlu beli domain baru.",
   "sites.separateDomainBody":
-    "Domain terpisah: Vercel akan menampilkan record DNS yang harus dipasang (nameserver atau A/CNAME) di registrar Anda. Ikuti yang Vercel tampilkan — jangan pakai nilai dari catatan lama, bisa berubah. SSL otomatis setelah terverifikasi.",
+    "Domain terpisah: pasang A record ke IP server ini (atau CNAME ke host kanonik) di registrar Anda. HTTPS-nya terbit sendiri saat domainnya pertama kali dibuka.",
   "sites.authLegacy":
     "Dulu tiap domain harus ditambahkan ke Redirect URLs di Supabase, dan kalau lupa tidak ada error sama sekali: pengunjung yang menekan “Masuk dengan Google” di {host} malah mendarat di {canonical} berikut cookie sesinya, lalu di {host} tetap terlihat belum masuk.",
   "sites.authNowBefore":
@@ -1219,7 +1174,7 @@ export const id = {
   "panel.backToDomains": "← Domain",
   "sites.identityAndLook": "Identitas & tampilan situs",
   "sites.domainsIntro":
-    "Hostname, status Vercel, dan aktif/nonaktif. Nama, logo, template, palet, dan niche ada di",
+    "Hostname dan aktif/nonaktif. Nama, logo, template, palet, dan niche ada di",
   "panel.storageIntro": "Semua file di Supabase Storage.",
   "panel.storageLoadFailed": "Gagal memuat file: {error}",
   "panel.backShort": "← Kembali",
@@ -1248,7 +1203,6 @@ export const id = {
   "panel.noDigitalProducts": "Belum ada produk digital.",
   "panel.createNewProduct": "Buat produk baru",
   "panel.backToProfile": "Kembali ke profil",
-  "sites.hostName": "Host / Name",
 
   "panel.deleteProductConfirm": "Hapus produk ini?",
   "panel.deletePageConfirm": "Hapus halaman “{title}”? Tindakan ini tidak bisa dibatalkan.",

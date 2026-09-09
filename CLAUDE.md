@@ -33,7 +33,8 @@ Ringkasan yang paling sering dilanggar:
 | Aturan & pola arsitektur | [`docs/architecture.md`](docs/architecture.md) |
 | Multi-domain, tema, palet, PWA per-domain | [`docs/multi-domain.md`](docs/multi-domain.md) + [`docs/technical.md`](docs/technical.md) |
 | Template chat MbahGPT (+ backend-nya) | [`docs/mbahgpt.md`](docs/mbahgpt.md) |
-| Setup, script, env, deploy | [`docs/technical.md`](docs/technical.md), [`.env.example`](.env.example) |
+| Setup, script, env | [`docs/technical.md`](docs/technical.md), [`.env.example`](.env.example) |
+| Deploy (Docker + Caddy) | [`docs/technical.md`](docs/technical.md) → Deploy, `Dockerfile`, `docker-compose.yml`, `Caddyfile` |
 | Pitch produk (non-teknis) | [`README.md`](README.md) |
 | Menjalankan & menguji di mesin lokal | skill [`run-local`](.claude/skills/run-local/SKILL.md) |
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
@@ -67,6 +68,11 @@ Ringkasan yang paling sering dilanggar:
     yang ditolak; install gagal selama masih ada yang belum diputuskan.
 - Server Actions semua di `lib/actions/*.ts`.
 - Kontak support hardcode di `lib/constants.ts` (`SUPPORT_CONTACT`).
+- **Deploy: Docker, bukan Vercel lagi.** `docker compose --env-file .env.production
+  up -d --build` di server; Caddy di depan mengurus TLS untuk semua domain lewat
+  on-demand TLS, dan bertanya ke `/api/tls-check` (jawabannya dari `lp_sites`)
+  sebelum menerbitkan sertifikat. `NEXT_PUBLIC_*` disulih saat **build** — ganti
+  nilainya berarti build ulang, bukan restart.
 - Selesai task → **commit** tanpa diminta. **Jangan `git push`** — diblokir di
   settings (deny rule + PreToolUse hook), termasuk kalau diselipkan di rantai `&&`.
   Adam yang push. (`.cursor/rules/commit-push-after-finish.mdc` masih menyebut push —

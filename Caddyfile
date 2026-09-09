@@ -1,0 +1,48 @@
+# Reverse proxy + TLS untuk semua storefront.
+#
+# Menggantikan yang dulu dikerjakan Vercel: menerima trafik banyak domain dan
+# mengurus sertifikatnya. Bedanya, daftar domain tidak ada di sini — ada di
+# lp_sites, dan Caddy menanyakannya lewat /api/tls-check.
+
+{
+	email {$ACME_EMAIL}
+
+	# Sertifikat diterbitkan saat permintaan pertama untuk sebuah domain datang,
+	# bukan saat Caddy start. Itulah yang membuat "tambah domain di panel, arahkan
+	# DNS, selesai" bisa bekerja tanpa mengedit berkas ini atau me-restart apa pun.
+	#
+	# `ask` WAJIB: tanpa itu siapa pun yang mengarahkan domainnya ke IP ini bisa
+	# memaksa penerbitan sertifikat, dan rate limit Let's Encrypt dihitung per
+	# akun — beberapa ratus domain asal-asalan cukup untuk membuat domain yang sah
+	# gagal memperbarui sertifikatnya.
+	# Hanya `ask` — opsi `interval`/`burst` sudah dicabut dari Caddy 2, dan
+	# memang `ask` yang jadi pengeremnya: tidak ada permintaan sertifikat untuk
+	# domain yang tidak ada di lp_sites.
+	on_demand_tls {
+		ask http://app:3000/api/tls-check
+	}
+}
+
+# Satu blok untuk SEMUA host. `https://` tanpa nama domain berarti "host apa pun",
+# dan on_demand di bawah yang memutuskan mana yang benar-benar dilayani.
+https:// {
+	tls {
+		on_demand
+	}
+
+	encode zstd gzip
+
+	reverse_proxy app:3000 {
+		# Next membaca host dari sini untuk memutuskan storefront mana yang
+		# dirender (lib/site-resolve.ts). Salah meneruskannya = semua domain
+		# menyajikan situs kanonik.
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}
+
+# Yang datang lewat http diarahkan ke https, kecuali tantangan ACME yang memang
+# harus dijawab di port 80.
+http:// {
+	redir https://{host}{uri} permanent
+}

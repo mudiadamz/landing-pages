@@ -24,8 +24,6 @@
     "@monaco-editor/react": "^4.7.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
     "epubjs": "^0.3.93",
     "fflate": "^0.8.3",
     "next": "16.1.6",
@@ -34,6 +32,7 @@
     "react-dom": "19.2.3",
     "react-pdf": "^10.4.1",
     "resend": "^6.9.3",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
@@ -45,7 +44,6 @@
     "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "sharp": "^0.34.5",
     "supabase": "^2.76.15",
     "tailwindcss": "^4",
     "typescript": "^5",

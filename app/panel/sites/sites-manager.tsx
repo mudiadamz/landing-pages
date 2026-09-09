@@ -7,7 +7,6 @@ import { createSite, updateSiteDomain, deleteSite, selectPanelSite } from "@/lib
 // Type-only, so nothing from site-resolve (which reads headers()) reaches the client.
 import type { Site } from "@/lib/site-resolve";
 import { DomainSetupGuide } from "./domain-setup-guide";
-import { VercelDomainStatus } from "./vercel-domain-status";
 import { useT } from "@/lib/i18n/client";
 
 /**
@@ -33,14 +32,12 @@ export function SitesManager({
   sites,
   canonicalHost,
   supabaseProjectUrl,
-  vercelAutomated,
   templateLabels,
   paletteLabels,
 }: {
   sites: Site[];
   canonicalHost: string;
   supabaseProjectUrl: string;
-  vercelAutomated: boolean;
   /** key -> label, so the summary line can name the template without the registry. */
   templateLabels: Record<string, string>;
   paletteLabels: Record<string, string>;
@@ -98,18 +95,12 @@ export function SitesManager({
         setMessage({ type: "err", text: res.error ?? t("common.failed") });
         return;
       }
-      // The row exists either way; what to say depends on how far Vercel got.
-      const v = res.vercel;
-      const vercelNote =
-        !v || v.kind === "not-configured"
-          ? t("sites.vercelRemember")
-          : v.kind === "error"
-            ? t("sites.vercelFailed", { error: v.error })
-            : v.state.verified
-              ? t("sites.vercelLive")
-              : t("sites.vercelPending");
+      // Barisnya ada; sisanya DNS. Tidak ada langkah "daftarkan ke penyedia"
+      // lagi — Caddy menerbitkan sertifikatnya sendiri begitu domainnya menunjuk
+      // ke server ini (lihat app/api/tls-check).
+      const vercelNote = t("sites.pointDnsNext");
       setMessage({
-        type: v?.kind === "error" ? "err" : "ok",
+        type: "ok",
         text: t("sites.domainAdded", { host: newDraft.host, note: vercelNote }),
       });
       setEditing(null);
@@ -166,14 +157,7 @@ export function SitesManager({
             {t("sites.placeHereWhat")}
           </li>
           <li>
-            <strong className="text-foreground">Vercel</strong> {t("sites.placeVercelWhat")}{" "}
-            {vercelAutomated ? (
-              <span className="text-green-700 dark:text-green-400">
-                {t("sites.vercelAuto")}
-              </span>
-            ) : (
-              <span>{t("sites.vercelManual")}</span>
-            )}
+            <strong className="text-foreground">DNS</strong> {t("sites.placeDnsWhat")}
           </li>
           <li>
             <strong className="text-foreground">Supabase</strong> {t("sites.placeSupabaseWhat")}
@@ -274,12 +258,10 @@ export function SitesManager({
 
             {editing !== site.id && !site.is_canonical && (
               <div className="mt-3 space-y-2">
-                <VercelDomainStatus host={site.host} />
                 <DomainSetupGuide
                   host={site.host}
                   supabaseProjectUrl={supabaseProjectUrl}
                   canonicalHost={canonicalHost}
-                  vercelAutomated={vercelAutomated}
                 />
               </div>
             )}

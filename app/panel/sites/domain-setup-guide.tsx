@@ -77,13 +77,11 @@ export function DomainSetupGuide({
   host,
   supabaseProjectUrl,
   canonicalHost,
-  vercelAutomated,
 }: {
   host: string;
   supabaseProjectUrl: string;
   canonicalHost: string;
   /** A token is configured, so the panel adds the domain to Vercel itself. */
-  vercelAutomated: boolean;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -102,9 +100,7 @@ export function DomainSetupGuide({
             {t("sites.guideHeading")}
           </span>
           <span className="block text-xs text-[var(--muted)]">
-            {vercelAutomated
-              ? t("sites.guideSubAuto", { host })
-              : t("sites.guideSubManual", { host })}
+            {t("sites.guideSub", { host })}
           </span>
         </span>
         <span className="shrink-0 text-xs font-medium text-[var(--primary)]">
@@ -114,29 +110,12 @@ export function DomainSetupGuide({
 
       {open && (
         <ol className="space-y-4 border-t border-[var(--border)] px-3 py-3">
-          <Step
-            n={1}
-            title={
-              vercelAutomated
-                ? t("sites.step1TitleAuto")
-                : t("sites.step1Title")
-            }
-            where="Vercel"
-          >
-            {vercelAutomated ? (
-              <p>{t("sites.vercelAutoBody")}</p>
-            ) : (
-              <>
-                <p>
-                  {t("sites.vercelManualProject")}{" "}
-                  <strong className="text-foreground">landing_pages</strong>{" "}
-                  {t("sites.vercelManualPath")}{" "}
-                  <strong className="text-foreground">Add</strong>
-                  {t("sites.vercelManualThenEnter")}
-                </p>
-                <Value>{host}</Value>
-              </>
-            )}
+          {/* Satu-satunya langkah di luar aplikasi ini. Sertifikatnya tidak
+              perlu diurus: Caddy menerbitkannya sendiri saat permintaan pertama
+              untuk domain ini datang, sesudah menanyakan domainnya ke
+              /api/tls-check — dan baris yang barusan disimpan itu jawabannya. */}
+          <Step n={1} title={t("sites.step1Title")} where="DNS">
+            <p>{t("sites.dnsBody")}</p>
             {isSubdomain ? (
               <p>
                 {t("sites.subdomainOfBefore")}{" "}
@@ -148,7 +127,7 @@ export function DomainSetupGuide({
             )}
           </Step>
 
-          <Step n={2} title={t("sites.step2Title")} where={t("sites.stepWhereAuto")}>
+          <Step n={2} title={t("sites.step2Title")} where="Supabase">
             <p>{t("sites.authLegacy", { host, canonical: canonicalHost })}</p>
             <p>
               {t("sites.authNowBefore", { host, canonical: canonicalHost })}{" "}

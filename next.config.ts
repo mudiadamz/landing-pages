@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /**
+   * Jejak server yang berdiri sendiri, untuk image Docker.
+   *
+   * Tanpa ini, menjalankan Next di container berarti menyalin seluruh
+   * node_modules (740 MB waktu masih pakai npm). Dengan standalone, Next
+   * menelusuri modul yang BENAR-BENAR dipakai server dan menaruhnya di
+   * .next/standalone — sisanya tidak ikut. Konsekuensinya: `public/` dan
+   * `.next/static` TIDAK ikut tertelusur dan harus disalin sendiri di
+   * Dockerfile; kalau lupa, situsnya jalan tapi tanpa CSS dan tanpa gambar.
+   */
+  output: "standalone",
   images: {
     remotePatterns: [
       {

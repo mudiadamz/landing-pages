@@ -19,7 +19,7 @@ export async function generateMetadata() {
  * The CONTENT half of a storefront: what it is called, what it looks like, and which
  * slice of the catalog it shows.
  *
- * Split out of /panel/sites, which now owns only the plumbing (hostname, Vercel, on
+ * Split out of /panel/sites, which now owns only the plumbing (hostname, on
  * or off). Follows the same shape as the other per-domain settings screens — hero,
  * konten situs, tracking, popup, custom JS — so which storefront you are editing comes
  * from the panel-wide scope cookie set by the sidebar switcher, not from the host and

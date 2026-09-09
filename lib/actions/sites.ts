@@ -16,14 +16,6 @@ import { normalizeLocale } from "@/lib/i18n";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brandMaxBytes, iconShapeError, readPngSize, sniffBrandImage } from "@/lib/site-brand";
 import { readWebpHeader } from "@/lib/webp";
-import {
-  addVercelDomain,
-  getVercelDomain,
-  verifyVercelDomain,
-  removeVercelDomain,
-  vercelConfigured,
-  type VercelDomainState,
-} from "@/lib/vercel-domains";
 
 // Site is deliberately NOT re-exported here. Every export of a "use server"
 // module is compiled into a callable server action, and a type re-export becomes
@@ -199,60 +191,21 @@ export async function uploadSiteBrandImage(
   return { ok: true, url: data.publicUrl };
 }
 
-/** Whether the panel can add domains to Vercel itself, or must tell you to. */
-export async function isVercelConfigured(): Promise<boolean> {
-  if (!(await requireAdmin())) return false;
-  return vercelConfigured();
-}
-
-export type VercelStatus =
-  | { kind: "not-configured" }
-  | { kind: "ok"; state: VercelDomainState }
-  | { kind: "error"; error: string };
-
-async function toStatus(
-  run: () => Promise<
-    { ok: true; state: VercelDomainState } | { ok: false; error: string; code?: string }
-  >,
-): Promise<VercelStatus> {
-  const res = await run();
-  if (res.ok) return { kind: "ok", state: res.state };
-  if (res.code === "not-configured") return { kind: "not-configured" };
-  return { kind: "error", error: res.error };
-}
-
-/** Read a domain's state on the Vercel project. */
-export async function getDomainStatus(host: string): Promise<VercelStatus> {
-  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
-  return toStatus(() => getVercelDomain(host));
-}
-
-/** Add (or re-add) the domain to the Vercel project. */
-export async function attachDomainToVercel(host: string): Promise<VercelStatus> {
-  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
-  const status = await toStatus(() => addVercelDomain(host));
-  revalidatePath("/panel/sites");
-  return status;
-}
-
 /**
- * Detach from the Vercel project. Explicit only — deleteSite never does this,
- * because a domain that is being re-pointed should keep serving.
+ * Sejak repo ini pindah dari Vercel ke Docker + Caddy, panel tidak lagi
+ * "mendaftarkan" domain ke mana pun.
+ *
+ * Yang dulu ada di sini — tambah/hapus/verifikasi domain lewat API Vercel —
+ * hilang bersama layanannya. Penggantinya bukan API lain: Caddy menerbitkan
+ * sertifikat sendiri saat permintaan pertama untuk sebuah domain datang, dan
+ * yang menentukan boleh-tidaknya adalah baris di `lp_sites` ini juga (lihat
+ * app/api/tls-check). Jadi menyimpan barisnya DAN mengarahkan DNS-nya memang
+ * sudah seluruh prosedurnya.
+ *
+ * Satu hal yang benar-benar hilang: tombol "cek status verifikasi". Vercel
+ * punya jawabannya karena dia yang memegang domainnya; sekarang jawabannya ada
+ * di DNS, dan `dig` lebih jujur daripada tombol yang menebak.
  */
-export async function detachDomainFromVercel(host: string): Promise<VercelStatus> {
-  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
-  const status = await toStatus(() => removeVercelDomain(host));
-  revalidatePath("/panel/sites");
-  return status;
-}
-
-/** Re-check the DNS challenge once the record has been added at the registrar. */
-export async function recheckDomainVerification(host: string): Promise<VercelStatus> {
-  if (!(await requireAdmin())) return { kind: "error", error: "Akses ditolak." };
-  const status = await toStatus(() => verifyVercelDomain(host));
-  revalidatePath("/panel/sites");
-  return status;
-}
 
 /**
  * Everything that invalidates when a site's identity, niche or template changes.
@@ -280,7 +233,7 @@ function bustSiteCaches() {
 
 export async function createSite(
   input: SiteCreateInput,
-): Promise<{ ok: boolean; id?: string; error?: string; vercel?: VercelStatus }> {
+): Promise<{ ok: boolean; id?: string; error?: string }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
   const host = cleanHost(input.host);
@@ -313,11 +266,10 @@ export async function createSite(
   }
   bustSiteCaches();
 
-  // Then hand it to Vercel, if a token is configured. Deliberately AFTER the row
-  // exists and never fatal: a Vercel failure must not throw away the site the admin
-  // just described, and the panel shows the reason plus a retry button.
-  const vercel = await toStatus(() => addVercelDomain(host));
-  return { ok: true, id: data?.id, vercel };
+  // Tidak ada langkah kedua. Barisnya ada = domainnya sah; Caddy menanyakan
+  // baris ini lewat /api/tls-check sebelum menerbitkan sertifikat, jadi sisanya
+  // tinggal mengarahkan DNS.
+  return { ok: true, id: data?.id };
 }
 
 /**

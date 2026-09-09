@@ -5,8 +5,6 @@ import { getCustomJs, getTracking } from "@/lib/actions/site-settings";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { RouteProgress } from "@/components/route-progress";
 import { CustomJsInjector } from "@/components/custom-js-injector";
 import { JsonLd } from "@/components/json-ld";
@@ -285,8 +283,6 @@ export default async function RootLayout({
         {/* Every client component under here can call useT(). The panel layout
             provides its own; nesting is harmless and keeps that one explicit. */}
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
