@@ -356,7 +356,7 @@ function render(hits, today) {
   w("- **Server action** — `t(key, vars, locale)` with an explicit locale. Never a module-level current locale: one server renders every tenant at once.");
   w("- **Data carrying a label** (tab lists, option arrays, `features.ts`) — store the KEY, translate at render. A label resolved in a module-scope array freezes whichever language loaded first.");
   w("- Add the key to `id.ts` **and** `en.ts`; a key missing from `en.ts` is a type error, which is the point.");
-  w("- Run `npx vitest run tests/i18n.test.ts`. It fails on a key nothing calls, so a converted screen must also drop its key from `NOT_YET_CONVERTED`; and it fails on a new duplicate VALUE, so two keys that genuinely share a word need a declared reason in `INTENTIONAL_DUPLICATES`.");
+  w("- Run `pnpm exec vitest run tests/i18n.test.ts`. It fails on a key nothing calls, so a converted screen must also drop its key from `NOT_YET_CONVERTED`; and it fails on a new duplicate VALUE, so two keys that genuinely share a word need a declared reason in `INTENTIONAL_DUPLICATES`.");
   w();
   w("## Free swaps — the string is already in the dictionary");
   w();

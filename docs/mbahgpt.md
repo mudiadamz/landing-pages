@@ -46,7 +46,7 @@ domain yang mau memakainya (tanpa migration — lihat I12).
 
 ## 2. Mengaktifkan
 
-1. Jalankan migration (`npm run db:push` atau `supabase migration up`).
+1. Jalankan migration (`pnpm db:push` atau `supabase migration up`).
 2. Isi `OPENROUTER_API_KEY` di environment server. Variabel lain punya default —
    daftar lengkap + komentarnya ada di [`.env.example`](../.env.example).
 3. Set `template` domainnya ke `mbahgpt` di `/panel/sites`.
@@ -319,16 +319,16 @@ mengukur ulang.
 Belum ada test runner di repo ini. Yang dipakai saat port:
 
 ```bash
-npx tsc --noEmit -p tsconfig.json        # tipe
-npx eslint lib/mbahgpt lib/templates/mbahgpt lib/actions/chat.ts app/api/mbahgpt
-npx vitest run tests/mbahgpt-web-search.test.ts           # aturan query pencarian
-npx vitest run tests/i18n.test.ts tests/i18n-en.test.ts   # kamus: key mati, duplikat
-npm run i18n:scan                        # string yang masih hardcode
-npm run build; echo $?                   # cek EXIT CODE, bukan teks "Compiled"
+pnpm exec tsc --noEmit -p tsconfig.json        # tipe
+pnpm exec eslint lib/mbahgpt lib/templates/mbahgpt lib/actions/chat.ts app/api/mbahgpt
+pnpm exec vitest run tests/mbahgpt-web-search.test.ts           # aturan query pencarian
+pnpm exec vitest run tests/i18n.test.ts tests/i18n-en.test.ts   # kamus: key mati, duplikat
+pnpm i18n:scan                        # string yang masih hardcode
+pnpm build; echo $?                   # cek EXIT CODE, bukan teks "Compiled"
 curl -s -X POST localhost:3000/api/mbahgpt/chat -d '{"content":"halo"}' \
   -H 'Content-Type: application/json'    # tanpa sesi → 401
 ```
 
-Untuk perubahan UI: jalankan `npm run dev`, set satu domain lokal ke template
+Untuk perubahan UI: jalankan `pnpm dev`, set satu domain lokal ke template
 `mbahgpt`, dan periksa juga di lebar ponsel (±414 px) — sidebar berubah jadi drawer
 di bawah breakpoint `md`.

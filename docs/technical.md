@@ -10,10 +10,13 @@ lihat [Multi-domain](#multi-domain).
 
 ## Quick start
 
+> Repo ini memakai **pnpm** (versinya dipatok di `packageManager`). `npm install`
+> sengaja gagal — lihat `scripts/only-pnpm.mjs`.
+
 ```bash
-npm install
+pnpm install
 cp .env.example .env.local     # lalu isi nilainya
-npm run dev                    # http://localhost:3000
+pnpm dev                    # http://localhost:3000
 ```
 
 ### Database
@@ -21,8 +24,8 @@ npm run dev                    # http://localhost:3000
 **Option A — Supabase CLI (local):**
 
 ```bash
-npm run supabase:start   # Start local Supabase (Docker required)
-npm run db:reset         # Apply migrations
+pnpm supabase:start   # Start local Supabase (Docker required)
+pnpm db:reset         # Apply migrations
 ```
 
 Local URL: `http://localhost:54321` (dari `supabase status`). Pakai project URL &
@@ -31,9 +34,9 @@ anon key lokal di `.env.local`.
 **Option B — Remote project:**
 
 ```bash
-npx supabase login
-npx supabase link --project-ref <your-project-id>
-npm run db:push          # Push migrations to remote
+pnpm exec supabase login
+pnpm exec supabase link --project-ref <your-project-id>
+pnpm db:push          # Push migrations to remote
 ```
 
 > **Jebakan env di dev.** Next memuat `.env.development.local` **sebelum**
@@ -44,7 +47,7 @@ npm run db:push          # Push migrations to remote
 > database remote, override lewat shell (process env menang atas file `.env`):
 >
 > ```bash
-> NEXT_PUBLIC_SUPABASE_URL=… NEXT_PUBLIC_SUPABASE_ANON_KEY=… npm run dev
+> NEXT_PUBLIC_SUPABASE_URL=… NEXT_PUBLIC_SUPABASE_ANON_KEY=… pnpm dev
 > ```
 
 ### Auth providers
@@ -68,15 +71,16 @@ npm run db:push          # Push migrations to remote
 
 | Command | |
 |---|---|
-| `npm run dev` | Dev server |
-| `npm run build` | Production build |
-| `npm run lint` | ESLint |
-| `npm run supabase:start` / `:stop` / `:status` | Supabase lokal (Docker) |
-| `npm run db:reset` | Re-apply semua migration ke DB lokal |
-| `npm run db:push` | Push migration ke project remote |
-| `npm run db:migrate` | Jalankan migration yang belum jalan |
-| `npm run pdf:epub` | Konversi PDF → EPUB (`scripts/pdf-to-epub.mjs`) |
-| `npm run gen:splash` | Generate splash screen iOS |
+| `pnpm dev` | Dev server |
+| `pnpm build` | Production build |
+| `pnpm lint` | ESLint |
+| `pnpm supabase:start` / `:stop` / `:status` | Supabase lokal (Docker) |
+| `pnpm db:reset` | Re-apply semua migration ke DB lokal |
+| `pnpm db:push` | Push migration ke project remote |
+| `pnpm db:migrate` | Jalankan migration yang belum jalan |
+| `pnpm pdf:epub` | Konversi PDF → EPUB (`scripts/pdf-to-epub.mjs`) |
+| `pnpm i18n:scan` | Pindai string hardcode → `docs/i18n-backlog.md` |
+| `pnpm test` / `test:watch` | Unit test (vitest) |
 
 ## Environment
 

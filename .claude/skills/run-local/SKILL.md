@@ -20,9 +20,9 @@ order; the order matters more than it looks, because half the failure modes are
 
 ```bash
 colima start                       # Docker runtime; usually the thing that is off
-npx supabase start                 # 8 containers: db, auth, rest, storage, …
-npx supabase migration up --local  # the local DB is almost always behind
-npm run dev                        # http://127.0.0.1:3000
+pnpm exec supabase start                 # 8 containers: db, auth, rest, storage, …
+pnpm exec supabase migration up --local  # the local DB is almost always behind
+pnpm dev                        # http://127.0.0.1:3000
 ```
 
 Then open **`http://127.0.0.1:3000`** — not the `localhost:3000` `docs/technical.md`
@@ -42,8 +42,8 @@ Cannot connect to the Docker daemon at unix:///Users/adam/.colima/default/docker
 ## 2. Supabase
 
 ```bash
-npx supabase start          # idempotent; prints URLs and keys
-npx supabase status         # what is running
+pnpm exec supabase start          # idempotent; prints URLs and keys
+pnpm exec supabase status         # what is running
 ```
 
 **The local database is usually many migrations behind**, because it only moves
@@ -60,14 +60,14 @@ docker exec supabase_db_landing_pages psql -U postgres -d postgres -tAc \
   "select tablename from pg_tables where tablename like 'lp_chat%'"
 ```
 
-> `npx supabase migration list --local` prints migration FILES in the "Local"
+> `pnpm exec supabase migration list --local` prints migration FILES in the "Local"
 > column, which reads as "applied" and is not. It showed versions the database
 > had never run. Trust `schema_migrations` and `pg_tables`.
 
 Apply what is missing:
 
 ```bash
-npx supabase migration up --local
+pnpm exec supabase migration up --local
 ```
 
 `NOTICE … does not exist, skipping` lines are normal — they come from the
@@ -250,7 +250,7 @@ reporting; do not loop turns for fun.
 
 ```bash
 pkill -f "next dev"
-npx supabase stop      # keeps the volume; data survives
+pnpm exec supabase stop      # keeps the volume; data survives
 colima stop
 ```
 

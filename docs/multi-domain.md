@@ -308,7 +308,7 @@ empat permukaan — `app/manifest.ts`, `app/layout.tsx`, `/api/splash`,
 yang di-generate dari `public/icon-512.png` — aset build-time, dan aset build-time
 tidak bisa berbeda per host (alasan yang sama persis dengan `app/icon.svg` di atas),
 jadi tiap domain niche booting dengan lambang ADM.UIUX di atas warna ADM.UIUX.
-`scripts/gen-ios-splash.mjs` dan `npm run gen:splash` ikut dihapus.
+`scripts/gen-ios-splash.mjs` dan `pnpm gen:splash` ikut dihapus.
 
 Dua hal yang menjaga route itu tetap murah dan aman:
 

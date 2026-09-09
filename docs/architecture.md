@@ -208,8 +208,8 @@ membaca layarnya).
 
 **Dan tidak lewat browser.** Jangan menjalankan Chrome untuk memverifikasi
 pekerjaan di repo ini — lambat, sering putus di tengah, dan hampir semua yang
-ingin dibuktikan bisa dibaca dari sisi server. Yang dipakai: `npx tsc --noEmit`,
-`npx eslint`, `npx vitest run tests/`, `npm run build` (cek **exit code**), lalu
+ingin dibuktikan bisa dibaca dari sisi server. Yang dipakai: `pnpm exec tsc --noEmit`,
+`pnpm exec eslint`, `pnpm exec vitest run tests/`, `pnpm build` (cek **exit code**), lalu
 `curl` ke endpoint-nya dan `psql` ke database lokal untuk membuktikan efeknya.
 Rute yang butuh sesi bisa di-`curl` dengan cookie yang dibuat sendiri — resepnya
 ada di skill `run-local`. Kalau sesuatu benar-benar hanya bisa dipastikan dengan

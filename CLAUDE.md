@@ -39,7 +39,7 @@ Ringkasan yang paling sering dilanggar:
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
 | Laporan kampanye iklan | `docs/campaign-reports/` |
 | Rencana berjalan (multi-fase) | `docs/plans/` — status tiap fase ada di dokumennya sendiri |
-| Sisa string hardcode (i18n) | [`docs/i18n-backlog.md`](docs/i18n-backlog.md) — regen: `npm run i18n:scan` |
+| Sisa string hardcode (i18n) | [`docs/i18n-backlog.md`](docs/i18n-backlog.md) — regen: `pnpm i18n:scan` |
 
 ## Konvensi penting
 
@@ -56,6 +56,15 @@ Ringkasan yang paling sering dilanggar:
   Jangan `<input type="file">` telanjang: kartu itu yang memegang state kosong/terisi,
   nama + ukuran, tombol ganti/hapus, dan error. Dulu privat di `product-edit-form.tsx`,
   lalu layar lain menumbuhkan input sendiri yang bentuknya beda.
+- **Manajer paketnya pnpm**, versinya dipatok di `packageManager`. `npm install`
+  sengaja gagal (`scripts/only-pnpm.mjs`) — bukan soal selera: pin keamanan ada
+  di `pnpm-workspace.yaml` yang tidak dibaca npm, dan node_modules npm yang
+  di-hoist menyembunyikan dependency yang tidak pernah dideklarasikan.
+  - Setelan pnpm (`overrides`, `allowBuilds`) ada di **`pnpm-workspace.yaml`**,
+    bukan field `pnpm` di package.json — sejak pnpm 10 yang di package.json
+    diabaikan diam-diam.
+  - `allowBuilds` harus menjawab **setiap** install script dependency, termasuk
+    yang ditolak; install gagal selama masih ada yang belum diputuskan.
 - Server Actions semua di `lib/actions/*.ts`.
 - Kontak support hardcode di `lib/constants.ts` (`SUPPORT_CONTACT`).
 - Selesai task → **commit** tanpa diminta. **Jangan `git push`** — diblokir di

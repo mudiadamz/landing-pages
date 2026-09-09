@@ -1,0 +1,32 @@
+# Setelan pnpm untuk repo ini.
+#
+# Bukan file workspace dalam arti "banyak paket" — repo ini satu paket. Sejak
+# pnpm 10, setelan seperti `overrides` dibaca DARI SINI, bukan dari field `pnpm`
+# di package.json. Ditaruh di package.json, ia diam-diam tidak berlaku: tidak ada
+# peringatan, install tetap "berhasil", dan pin di bawah hilang begitu saja.
+
+# Pin keamanan. epubjs menarik @xmldom/xmldom 0.7.x yang sudah deprecated dan
+# ber-CVE; 0.9.x yang dipakai. Dulu ini `overrides` milik npm di package.json.
+# Waktu repo pindah ke pnpm, pin ini SEMPAT hilang tanpa satu pun pesan error —
+# npm dan pnpm tidak membaca konfigurasi satu sama lain. Itu juga alasan
+# scripts/only-pnpm.mjs ada.
+overrides:
+  epubjs>@xmldom/xmldom: ^0.9.10
+
+# pnpm memblokir install script milik dependency secara bawaan, dan menolak
+# menyelesaikan install selama masih ada yang belum diputuskan. Jadi tiap
+# script harus dijawab di sini — termasuk yang ditolak.
+#
+#   sharp          menyiapkan binding native kalau prebuilt-nya tidak cocok
+#   supabase       postinstall-nya yang MENGUNDUH CLI-nya; tanpa ini
+#                  node_modules/.bin/supabase tidak pernah ada dan setiap
+#                  perintah migration gagal
+#   unrs-resolver  binding native untuk resolver import milik eslint
+#
+#   core-js, es5-ext  postinstall-nya hanya mencetak permintaan donasi
+allowBuilds:
+  sharp: true
+  supabase: true
+  unrs-resolver: true
+  core-js: false
+  es5-ext: false
