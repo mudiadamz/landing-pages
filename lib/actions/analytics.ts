@@ -203,15 +203,15 @@ export async function getAnalytics(range: Range = 30): Promise<Analytics> {
   const emailById = new Map<string, string>();
   const nameById = new Map<string, string>();
   if (userIds.length) {
-    const { data: profs } = await admin.from("lp_profiles").select("id, full_name").in("id", userIds);
-    for (const p of (profs ?? []) as { id: string; full_name: string | null }[]) {
+    // Email from lp_profiles, not auth.admin.listUsers: that listed every
+    // account in the project to find a few, stopped silently at the 1001st,
+    // and was one more GoTrue admin call for any future backend to reproduce.
+    // lp_handle_new_user copies the address into the profile at signup, and the
+    // app has no e-mail-change flow that could make the two drift.
+    const { data: profs } = await admin.from("lp_profiles").select("id, full_name, email").in("id", userIds);
+    for (const p of (profs ?? []) as { id: string; full_name: string | null; email: string | null }[]) {
       if (p.full_name) nameById.set(p.id, p.full_name);
-    }
-    try {
-      const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      for (const u of list?.users ?? []) if (u.id && u.email) emailById.set(u.id, u.email);
-    } catch {
-      /* email lookup best-effort */
+      if (p.email) emailById.set(p.id, p.email);
     }
   }
 

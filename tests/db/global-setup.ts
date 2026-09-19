@@ -76,6 +76,23 @@ export default async function setup(project: TestProject) {
     await client.end();
   }
 
+  // 3. The running GoTrue must behave like production where the app depends on
+  //    it. Containers keep the config they were CREATED with: a stack started
+  //    in June kept confirming e-mails for months after config.toml turned that
+  //    off to mirror production, so signups here returned no session while in
+  //    production they did. `supabase start` alone does not fix it — the
+  //    containers must be recreated.
+  const settings = (await fetch(`${env.API_URL}/auth/v1/settings`, {
+    headers: { apikey: env.ANON_KEY },
+  }).then((r) => r.json())) as { mailer_autoconfirm?: boolean };
+  if (settings.mailer_autoconfirm !== true) {
+    throw new Error(
+      "GoTrue lokal masih meminta konfirmasi email (mailer_autoconfirm=false), beda dengan produksi dan " +
+        "supabase/config.toml. Container-nya dibuat dengan config lama; buat ulang:\n" +
+        "  pnpm exec supabase stop && pnpm exec supabase start -x vector,logflare",
+    );
+  }
+
   project.provide("dbUrl", dbUrl);
   project.provide("apiUrl", env.API_URL);
   project.provide("anonKey", env.ANON_KEY);

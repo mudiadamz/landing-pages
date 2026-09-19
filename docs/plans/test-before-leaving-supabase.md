@@ -154,7 +154,7 @@ baru.
 | 0 | Perbaiki signup yang patah + pasang rel tes integrasi | ✅ |
 | 1 | Characterization test: RLS & GRANT (69 policy, 34 tabel) | ✅ |
 | 2 | Characterization test: trigger, RPC, constraint | ✅ |
-| 3 | Kontrak Auth & sesi | ⬜ |
+| 3 | Kontrak Auth & sesi | ✅ |
 | 4 | Kontrak Storage | ⬜ |
 | 5 | Rapikan temuan yang sudah terlanjur ketahuan | ⬜ |
 | 6 | Gerbang CI + keputusan resource | ⬜ |
@@ -277,21 +277,50 @@ tanpa trigger Postgres.
 
 ## Fase 3 — kontrak Auth & sesi
 
-Delapan method yang benar-benar dipakai: `signInWithPassword`, `signUp`,
-`signOut`, `signInWithOAuth`, `exchangeCodeForSession`, `getUser`,
-`admin.updateUserById`, `admin.deleteUser`, `admin.listUsers`.
+`tests/db/auth-http.test.ts` (13 tes, lewat HTTP ke GoTrue lokal yang sungguhan)
+dan `tests/oauth-return.test.ts` (6 tes, suite murni).
 
-Yang paling rawan bukan itu, tapi **refresh cookie** di `lib/supabase/proxy.ts`:
-token baru ditulis ke request yang sedang jalan **dan** ke response, dalam satu
-lintasan. Salah sedikit → bug sesi basi yang cuma muncul di tab kedua.
+- **Pendaftaran:** signup email langsung mendapat sesi — tidak ada gerbang
+  konfirmasi (produksi `mailer_autoconfirm=true`; verifikasi dikerjakan
+  aplikasi sendiri lewat Resend). Profil lahir `customer`, belum terverifikasi.
+  Kata sandi < 6 karakter ditolak.
+- **Masuk & identitas:** sandi salah ditolak, token dikenali `getUser`, token
+  sampah tidak, refresh token menghasilkan pasangan baru (rotasi).
+- **Tindakan admin:** ban persis seperti yang dikirim `/api/admin/users`
+  (`ban_duration` `876000h` / `none`); `deleteUser` lewat GoTrue menghapus profil
+  dan membiarkan pembeliannya bertahan tanpa nama.
+- **Middleware (`lib/supabase/proxy.ts`):** tanpa sesi `/panel` → `/login`; sesi
+  sah lewat dengan `x-pathname`; `/login` saat sudah masuk → `?next=` yang aman
+  atau `/panel`, dan `//evil.example` ditolak. **Access token kedaluwarsa
+  diperbarui di tempat** — token baru ditulis ke response **dan** diteruskan ke
+  server components. Halaman publik **tidak** menyentuh sesi sama sekali.
+- **Gerbang OAuth lintas domain** (`resolveReturnHost`): hanya host di
+  `lp_sites`; domain asing dan domain yang cuma *mirip* ditolak.
 
-- Tes kontrak: sesi kedaluwarsa + refresh token sah → request berikutnya sudah
-  bawa cookie baru, dan Server Component di lintasan yang sama melihat user.
-- Catat perilaku yang sudah ada: middleware **melewati** lookup sesi kecuali path
-  `/panel/*`, `/read/*`, `/login`, `/signup`. Halaman publik tidak pernah
-  di-refresh oleh middleware.
-- `safeNextPath` sudah ada tesnya; tambah jalur `?sf=` di `lib/oauth-return.ts` —
-  host yang tidak terdaftar di `lp_sites` harus ditolak.
+Dicek dua arah: merusak penulisan cookie ke request, lalu ke response, di
+`proxy.ts` — masing-masing membuat tes refresh merah. Merusak gerbang OAuth
+membuat dua tesnya merah. (Pemeriksaan pertama justru menemukan asersi yang
+kosong: awalan base64 semua cookie sesi sama, jadi tes lolos dengan cookie basi.
+Sekarang yang dibandingkan token hasil decode.)
+
+**Ditemukan & diperbaiki:**
+
+- **Stack lokal tidak sama dengan produksi.** Container GoTrue dibuat 22 Juni,
+  sebelum `config.toml` mematikan konfirmasi email — jadi lokal masih meminta
+  konfirmasi sementara produksi tidak. `supabase start` saja tidak memperbaikinya;
+  container harus dibuat ulang (`supabase stop && supabase start -x
+  vector,logflare` — `vector` me-mount socket Docker yang tidak bisa di-mount di
+  colima). `tests/db/global-setup.ts` sekarang menolak jalan kalau drift ini
+  terjadi lagi.
+- `admin.auth.admin.listUsers({ perPage: 1000 })` di analitik berhenti diam-diam
+  di user ke-1001, dan cuma dipakai untuk email yang sudah ada di
+  `lp_profiles.email`. Dibuang — permukaan Auth yang harus ditiru backend
+  pengganti berkurang satu method.
+
+**Celah yang tidak bisa diuji di sini:** `exchangeCodeForSession` dengan Google
+sungguhan — butuh provider OAuth yang terkonfigurasi. Yang diuji adalah
+gerbangnya (`resolveReturnHost`) dan `safeNextPath`; penukaran kodenya sendiri
+tetap harus dicoba tangan sekali di produksi setiap kali backend auth berubah.
 
 ---
 
