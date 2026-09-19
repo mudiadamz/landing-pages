@@ -27,10 +27,6 @@ exports[`permukaan keamanan > fungsi SECURITY DEFINER milik lp_ 1`] = `
     "name": "lp_sync_like_count",
   },
   {
-    "args": "p_session_id text, p_visitor_id text, p_user_id uuid, p_ip text, p_country text, p_region text, p_city text, p_isp text, p_referrer text, p_referrer_host text, p_landing_path text, p_entry_product_id uuid, p_utm_source text, p_utm_medium text, p_utm_campaign text, p_utm_term text, p_utm_content text, p_device text, p_browser text, p_os text, p_dwell_ms bigint",
-    "name": "lp_track_session",
-  },
-  {
     "args": "p_session_id text, p_visitor_id text, p_user_id uuid, p_ip text, p_country text, p_region text, p_city text, p_isp text, p_referrer text, p_referrer_host text, p_landing_path text, p_entry_product_id uuid, p_utm_source text, p_utm_medium text, p_utm_campaign text, p_utm_term text, p_utm_content text, p_device text, p_browser text, p_os text, p_dwell_ms bigint, p_site_id uuid",
     "name": "lp_track_session",
   },

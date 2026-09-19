@@ -89,6 +89,25 @@ export async function denied(fn: () => Promise<unknown>): Promise<string> {
   throw new Error("Diharapkan ditolak (42501), tapi pernyataannya BERHASIL.");
 }
 
+/**
+ * Run a statement that is EXPECTED to fail on a constraint, and return its
+ * SQLSTATE (or null if it succeeded). Wrapped in a savepoint: without one, the
+ * first expected error aborts the test's transaction and every later statement
+ * fails with "current transaction is aborted" — for the wrong reason.
+ */
+export async function sqlState(fn: () => Promise<unknown>): Promise<string | null> {
+  const sp = `st_${++savepoints}`;
+  await client.query(`savepoint ${sp}`);
+  try {
+    await fn();
+    await client.query(`release savepoint ${sp}`);
+    return null;
+  } catch (e) {
+    await client.query(`rollback to savepoint ${sp}`);
+    return (e as { code?: string }).code ?? "unknown";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Fixtures. All created as the table owner, i.e. outside RLS — they set the
 // scene; the assertions are what run under `as()`.

@@ -153,7 +153,7 @@ baru.
 |---|---|---|
 | 0 | Perbaiki signup yang patah + pasang rel tes integrasi | ✅ |
 | 1 | Characterization test: RLS & GRANT (69 policy, 34 tabel) | ✅ |
-| 2 | Characterization test: trigger, RPC, constraint | ⬜ |
+| 2 | Characterization test: trigger, RPC, constraint | ✅ |
 | 3 | Kontrak Auth & sesi | ⬜ |
 | 4 | Kontrak Storage | ⬜ |
 | 5 | Rapikan temuan yang sudah terlanjur ketahuan | ⬜ |
@@ -241,19 +241,37 @@ dipasang kembali, tes yang relevan merah; dipulihkan, hijau.
 
 ## Fase 2 — trigger, RPC, constraint
 
-- `lp_handle_new_user`: signup email → `email_verified_at` NULL; signup Google →
-  terisi. (Sudah terbukti manual di fase 0 — kodekan.)
-- Trigger hitung: `sold_count`, `rating`, `like_count` naik/turun benar saat
-  baris ditambah **dan** dihapus.
-- `lp_increment_view`: bisa dipanggil `anon`, dan **hanya** menaikkan view_count.
-- `lp_track_session`: dipanggil dua kali dengan `session_id` sama → satu baris,
-  pageview bertambah.
-- Idempotensi uang: insert `lp_purchases` ganda `(user_id, landing_page_id)`
-  ditolak; `merchant_order_id` ganda di `lp_plan_orders` ditolak — inilah yang
-  membuat callback Duitku yang diulang tidak menggandakan pembelian.
-- `ON DELETE` per tabel: hapus user → produk ikut terhapus (CASCADE), tapi
-  `lp_purchases.user_id` jadi NULL dan **barisnya tetap ada**. Omzet tidak boleh
-  berubah karena satu akun dihapus.
+`tests/db/logic.test.ts` — 27 tes. Logika yang hidup **di dalam** database, tidak
+terlihat dari sisi TypeScript, dan harus dibangun ulang dengan tangan di backend
+tanpa trigger Postgres.
+
+- **Trigger penghitung** (`sold_count`, `like_count`, `rating`, `updated_at`)
+  bergerak walau pemicunya — pembeli, penyuka, pengulas — tidak boleh menulis
+  produk. Itu karena triggernya `SECURITY DEFINER`; backend yang menjalankan
+  logika ini dengan hak pemanggil akan berhenti menghitung tanpa suara.
+  Mencabut akses **tidak** mengurangi `sold_count` — penjualannya tetap terjadi.
+- **RPC:** `lp_increment_view` bisa dipanggil anon dan hanya menaikkan
+  `view_count`; `lp_track_session` dengan sesi yang sama = satu baris.
+- **Constraint bisnis:** satu pembelian per orang per produk (callback Duitku
+  yang diulang tidak menggandakan), `merchant_order_id` unik, nomor invoice unik
+  bila ada, satu situs kanonik, slug halaman unik **per situs**, memori chat tidak
+  dobel tanpa peduli huruf besar-kecil, dan semua CHECK (rating, persen potongan,
+  tipe preview/pembelian, bulan & status paket, peran pesan chat, locale, jenis
+  akun).
+- **Menghapus user:** pembelian & pesanan paket **bertahan** tanpa nama (omzet
+  tidak berubah); data pribadi (profil, ulasan, like, chat, keanggotaan) ikut
+  pergi. Dan satu cascade yang jadi alasan aturan aplikasi: **menghapus penjual
+  ikut menghapus pembelian orang lain atas produknya** — itu kenapa
+  `DELETE /api/admin/users` menolak akun yang masih punya produk.
+
+**Ditemukan & diperbaiki** (`20260919050000`):
+
+- `lp_track_session` punya **dua overload** — yang lama tertinggal dari
+  `20260808050000`. Pemanggil yang melewatkan `p_site_id` mendapat "could not
+  choose the best candidate function" dari PostgREST dan kunjungannya hilang.
+- `lp_track_session` bisa dipanggil **anon & user login** lewat
+  `/rest/v1/rpc`: siapa pun bisa menulis sesi dengan IP, negara, UTM, bahkan
+  `p_user_id` pilihannya. Sekarang hanya service role (jalur `/api/analytics`).
 
 ---
 
