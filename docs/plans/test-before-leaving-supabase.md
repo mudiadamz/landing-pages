@@ -33,13 +33,30 @@ backend adalah lapisan yang **nol** tesnya.
 
 ---
 
-## Yang dijaga hari ini vs yang tidak
+## Yang dijaga — sebelum dan sesudah rencana ini
 
 Diukur dari database yang jalan (`supabase_db_landing_pages`), bukan dari membaca
 migration — migration menghitung ganda policy yang pernah diganti.
 
-| Lapisan | Ukuran | Tes |
-|---|---:|---|
+| Lapisan | Ukuran | Tes sebelum | Tes sesudah |
+|---|---:|---:|---|
+| Fungsi murni | 18 file | 131 | 143 (`pnpm test`) |
+| RLS policy (`public` lp_ + `storage`) | 62 | 0 | perilaku per tabel + snapshot seluruhnya |
+| Tabel `lp_` dengan RLS | 27 dari 27 | 0 | dijaga: tak boleh ada yang mati RLS-nya |
+| Grant per kolom | 2 tabel | 0 | daftar keputusan per kolom |
+| Fungsi `SECURITY DEFINER` lp_ | 9 | 0 | snapshot + `search_path` wajib |
+| Trigger, RPC, constraint bisnis | — | 0 | `logic.test.ts` |
+| Kolom yang disebut kode | 300+ referensi | 0 | `schema-contract.test.ts` |
+| Auth & refresh sesi middleware | 8 method | 0 | `auth-http.test.ts` |
+| Storage (5 bucket) | — | 0 | `rls-storage` + `storage-http` |
+| **Total `pnpm test:db`** | | 0 | **189 + 1 celah dikunci** |
+
+Yang masih belum punya tes: isi Server Action di `lib/actions/*` sebagai unit
+(yang dijaga adalah lapisan di bawahnya — policy, grant, skema), pembayaran
+Duitku (`lib/duitku.ts`, signature & callback), dan penukaran kode OAuth Google
+sungguhan.
+
+---|---:|---|
 | Fungsi murni (slug, sanitasi HTML, i18n, predikat izin, warna/ikon) | 16 file | **131** |
 | RLS policy aktif (`public` + `storage`) | 69 | 0 |
 | Tabel dengan RLS menyala | 34 dari 34 | 0 |
@@ -156,7 +173,7 @@ baru.
 | 2 | Characterization test: trigger, RPC, constraint | ✅ |
 | 3 | Kontrak Auth & sesi | ✅ |
 | 4 | Kontrak Storage | ✅ |
-| 5 | Rapikan temuan yang sudah terlanjur ketahuan | ⬜ |
+| 5 | Rapikan temuan yang sudah terlanjur ketahuan | ✅ |
 | 6 | Gerbang CI + keputusan resource | ⬜ |
 
 ---
@@ -369,11 +386,36 @@ dengan aplikasi.
 
 ## Fase 5 — rapikan temuan yang terlanjur ketahuan
 
-- Cabut GRANT UPDATE `anon` di `lp_profiles` (temuan #1). Kerjakan **sesudah**
-  fase 1, supaya tesnya yang membuktikan tidak ada yang rusak.
-- Tambah migration untuk bucket `hiring-cv`.
-- `admin.listUsers` dipanggil `{ perPage: 1000 }` tanpa paginasi — diam-diam
-  memotong di user ke-1001.
+Tiga item asli rencana ini sudah tertutup di fase tempat ia ditemukan:
+
+- Grant tulis `anon` di `lp_profiles` dicabut → Fase 1 (`20260919010000`).
+- Bucket `hiring-cv` masuk migration → Fase 4 (`20260919060000`).
+- `admin.listUsers({ perPage: 1000 })` dibuang → Fase 3.
+
+Yang dirapikan di fase ini:
+
+- **Kategori:** aplikasi meloloskan Agent (`requireFeature("categories")`),
+  database hanya Company. Kategori adalah satu katalog bersama — irisan tiap
+  storefront (`lp_sites.category_ids`) — jadi mengubahnya mengubah semua domain
+  sekaligus; database yang benar. Aksi tulis di `lib/actions/categories.ts`
+  sekarang `requireAdmin()`, dengan pesan yang bisa dibaca alih-alih error
+  database.
+- **`CLAUDE.md`:** pernyataan basi dari sebelum remodel (publisher "menaikkan
+  `role`", kolom `publisher_*` di profil) diganti keadaan sebenarnya, dan
+  aturan yang lahir dari rencana ini ditulis di sana: policy harus sama dengan
+  gerbang aplikasinya; grant kolom adalah daftar; tabel baru harus
+  diklasifikasikan; `pnpm test:db` setelah setiap migration.
+
+**Celah yang diketahui dan sengaja dibiarkan** (masing-masing terlihat, bukan
+terlupa):
+
+| Celah | Kenapa belum | Penanda |
+|---|---|---|
+| Draft produk terbaca siapa pun lewat PostgREST | policy SELECT `true`; mengetatkannya menyentuh puluhan jalur baca | `it.fails` di `rls-commerce.test.ts` |
+| Customer yang diberi fitur lewat `role_permissions` tidak bisa menulis setelan | menirunya di SQL = menyalin `lib/role-permissions.ts` | dokumen ini |
+| Grant `TRUNCATE` default Supabase untuk `anon`/`authenticated` di semua tabel | tidak terjangkau lewat PostgREST; relevan hanya kalau role itu dipakai langsung | snapshot permukaan |
+| `chat-attachments` menerima `text/html` | bucket privat, dilayani di domain Supabase tanpa cookie aplikasi | Fase 4 |
+| `pnpm lint` 1 error di `components/pdf-viewer.tsx` | sudah ada sebelum rencana ini; perilaku UI, tak bisa diverifikasi tanpa layar | tidak masuk gerbang CI |
 
 ---
 

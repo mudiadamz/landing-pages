@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { requireFeature } from "./profiles";
+import { requireAdmin, requireFeature } from "./profiles";
 
 export type CategoryRow = {
   id: string;
@@ -69,8 +69,13 @@ export async function createCategory(
   icon: string = "default",
   parent_id: string | null = null,
 ): Promise<{ ok: boolean; error?: string; id?: string }> {
-  const isAdmin = await requireFeature("categories");
-  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+  // Company only, and on purpose — not requireFeature("categories"), which
+  // lets every Agent through. Categories are ONE catalog shared by all
+  // storefronts: each site's shelf is a slice of it (lp_sites.category_ids), so
+  // renaming or deleting one changes every domain at once. The database already
+  // said so (Company-only policies); this used to let an Agent in and then
+  // fail on the write. See docs/plans/test-before-leaving-supabase.md, fase 5.
+  if (!(await requireAdmin())) return { ok: false, error: "Hanya Company yang bisa mengubah kategori." };
 
   const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, "-");
   if (!normalizedSlug) return { ok: false, error: "Slug tidak boleh kosong." };
@@ -103,8 +108,13 @@ export async function updateCategory(
   icon: string = "default",
   parent_id: string | null = null,
 ): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireFeature("categories");
-  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+  // Company only, and on purpose — not requireFeature("categories"), which
+  // lets every Agent through. Categories are ONE catalog shared by all
+  // storefronts: each site's shelf is a slice of it (lp_sites.category_ids), so
+  // renaming or deleting one changes every domain at once. The database already
+  // said so (Company-only policies); this used to let an Agent in and then
+  // fail on the write. See docs/plans/test-before-leaving-supabase.md, fase 5.
+  if (!(await requireAdmin())) return { ok: false, error: "Hanya Company yang bisa mengubah kategori." };
 
   const normalizedSlug = slug.toLowerCase().trim().replace(/\s+/g, "-");
   if (!normalizedSlug) return { ok: false, error: "Slug tidak boleh kosong." };
@@ -131,8 +141,13 @@ export async function updateCategory(
 export async function deleteCategory(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireFeature("categories");
-  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
+  // Company only, and on purpose — not requireFeature("categories"), which
+  // lets every Agent through. Categories are ONE catalog shared by all
+  // storefronts: each site's shelf is a slice of it (lp_sites.category_ids), so
+  // renaming or deleting one changes every domain at once. The database already
+  // said so (Company-only policies); this used to let an Agent in and then
+  // fail on the write. See docs/plans/test-before-leaving-supabase.md, fase 5.
+  if (!(await requireAdmin())) return { ok: false, error: "Hanya Company yang bisa mengubah kategori." };
 
   const supabase = await createClient();
   const { error } = await supabase

@@ -40,6 +40,7 @@ Ringkasan yang paling sering dilanggar:
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
 | Laporan kampanye iklan | `docs/campaign-reports/` |
 | Rencana berjalan (multi-fase) | `docs/plans/` — status tiap fase ada di dokumennya sendiri |
+| Tes database, RLS, auth, storage | `tests/db/` (`pnpm test:db`) + [`docs/plans/test-before-leaving-supabase.md`](docs/plans/test-before-leaving-supabase.md) |
 | Sisa string hardcode (i18n) | [`docs/i18n-backlog.md`](docs/i18n-backlog.md) — regen: `pnpm i18n:scan` |
 
 ## Konvensi penting
@@ -66,6 +67,24 @@ Ringkasan yang paling sering dilanggar:
     diabaikan diam-diam.
   - `allowBuilds` harus menjawab **setiap** install script dependency, termasuk
     yang ditolak; install gagal selama masih ada yang belum diputuskan.
+- **Dua suite tes.** `pnpm test` murni — jalan tanpa Docker. `pnpm test:db` butuh
+  stack Supabase lokal dan menguji database, RLS, grant, auth, dan storage yang
+  sungguhan; menolak jalan kalau DB tertinggal dari file migration atau GoTrue
+  lokal beda dari produksi. **Jalankan `pnpm test:db` setelah setiap migration** —
+  suite murni tetap hijau waktu seluruh pendaftaran akun patah.
+  - **Policy harus sama dengan gerbang aplikasinya.** Aksi yang menggerbang
+    dengan `requireSiteAdmin`/`requireFeature` lalu menulis lewat client user
+    butuh policy yang meloloskan orang yang sama — kalau tidak, layar itu gagal
+    untuk orang yang dibuatkan layarnya. Kalau lebih longgar, satu panggilan
+    PostgREST dari browser melewati gerbangnya.
+  - **Grant kolom `lp_profiles` & `lp_landing_pages` adalah DAFTAR.** Kolom baru
+    tidak otomatis bisa ditulis user; putuskan, grant, dan perbarui daftar di
+    tesnya. (`avatar_url` gagal diam-diam sebulan karena ini.)
+  - Tabel `lp_` baru: RLS menyala, lalu policy **atau** masuk daftar
+    deny-all di `tests/db/rls-private.test.ts`. Snapshot permukaan keamanan
+    (`tests/db/__snapshots__/rls-surface…`) hanya diperbarui dengan sadar (`-u`).
+  - Tidak ada generated type — `tests/db/schema-contract.test.ts` yang memastikan
+    setiap kolom yang disebut kode memang ada.
 - Server Actions semua di `lib/actions/*.ts`.
 - Kontak support hardcode di `lib/constants.ts` (`SUPPORT_CONTACT`).
 - **Deploy: Docker, bukan Vercel lagi.** `docker compose --env-file .env.production
@@ -142,12 +161,13 @@ Ringkasan yang paling sering dilanggar:
   **Per-situs**, dengan baris kanonik sebagai cadangan — situs yang belum pernah
   mengaturnya tidak kehilangan delegasi hanya karena barisnya belum dibuat.
 - **Publisher (KYC)**: user melamar di `/panel/publisher` — nama legal, foto KTP +
-  selfie, alamat, rekening bank, persetujuan syarat — lalu `publisher_status`
-  jadi `pending`. Status ditulis dengan service-role karena user tidak boleh menaikkan
-  statusnya sendiri. Admin menyetujui/menolak (`lib/actions/admin.ts`); `approved`
-  sekaligus menaikkan `role` jadi `publisher`. Status ∈ `{none, pending, approved,
-  rejected}`. Skemanya di migration `20260729020000_publisher_kyc`,
-  `20260730000000_publisher_identity_payout`, `20260730010000_publisher_address`.
+  selfie, alamat, rekening bank, persetujuan syarat — lalu
+  `lp_site_members.publisher_status` **situs itu** jadi `pending`. Ditulis dengan
+  service-role karena user tidak boleh menaikkan statusnya sendiri. Admin
+  menyetujui/menolak (`lib/actions/admin.ts`); `approved` menyalakan
+  `lp_site_members.is_publisher` untuk situs itu — **bukan** mengubah jenis akun.
+  Status ∈ `{none, pending, approved, rejected}`. Semua kolom `publisher_*` ada di
+  `lp_site_members` sejak `20260903000000`; di `lp_profiles` sudah tidak ada.
 - **Publisher hanya melihat miliknya sendiri**: pemisahan penjualan ada di
   `lib/actions/sales.ts` (satu read yang sudah di-scope per-role), **bukan** di
   halaman — supaya angka global tidak bisa diraih dengan merender komponen lain.
@@ -155,7 +175,7 @@ Ringkasan yang paling sering dilanggar:
 - **Hapus user** (`DELETE /api/admin/users`, tombol di `/panel/users`): platform
   admin saja — beda dari **keluarkan dari situs** (`fromSite: true`) yang boleh
   dilakukan Agent dan hanya mencabut satu baris keanggotaan — ban itu kontrol yang bisa dibatalkan dan boleh didelegasikan, hapus tidak.
-  Ditolak untuk: diri sendiri, akun ber-role admin (turunkan dulu), dan akun yang
+  Ditolak untuk: diri sendiri, akun Company (turunkan dulu), dan akun yang
   **masih punya produk** — `lp_landing_pages.user_id` cascade, jadi menghapus
   pemiliknya ikut menghapus katalog beserta filenya. Foto KTP/selfie di bucket
   `publisher-kyc` dihapus eksplisit (Storage tidak punya FK yang bisa cascade).
