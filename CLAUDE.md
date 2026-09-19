@@ -73,10 +73,17 @@ Ringkasan yang paling sering dilanggar:
   on-demand TLS, dan bertanya ke `/api/tls-check` (jawabannya dari `lp_sites`)
   sebelum menerbitkan sertifikat. `NEXT_PUBLIC_*` disulih saat **build** — ganti
   nilainya berarti build ulang, bukan restart.
-- Selesai task → **commit** tanpa diminta. **Jangan `git push`** — diblokir di
-  settings (deny rule + PreToolUse hook), termasuk kalau diselipkan di rantai `&&`.
-  Adam yang push. (`.cursor/rules/commit-push-after-finish.mdc` masih menyebut push —
-  itu untuk Cursor.)
+- Selesai task → **commit** tanpa diminta. `git push` **diizinkan** sejak
+  2026-09-19 (allow rule `Bash(git push:*)` di `~/.claude/settings.json`), tapi
+  tetap hanya kalau diminta — selesai ≠ siap terbit. Aturan lama "push diblokir
+  deny rule + PreToolUse hook" **tidak pernah benar-benar ada** mekanismenya;
+  yang menahan cuma kalimat ini.
+- **Author commit selalu Adam, bukan Claude.** Commit pakai
+  `git -c user.email=mudi.adamz@gmail.com -c user.name=mudiadamz` (Vercel dulu
+  menolak email lain — lihat memory), dan **tanpa trailer `Co-Authored-By:
+  Claude…`**. Ditegakkan di `~/.claude/settings.json` lewat
+  `attribution.commit: ""` dan `attribution.pr: ""`, jadi berlaku di semua repo,
+  bukan cuma yang ini.
 
 ## Auth & roles
 
