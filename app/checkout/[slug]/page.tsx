@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getLandingPageForCheckout, getRelatedProducts, getProductsByIds } from "@/lib/actions/landing-pages";
-import { isUpcoming } from "@/lib/product-status";
+import { isFreeProduct, isUpcoming } from "@/lib/product-status";
 import { previewLabelText } from "@/lib/preview-label";
 import { ComingSoon } from "@/components/coming-soon";
 import { getPublicReviews, getReviewCount } from "@/lib/actions/reviews";
@@ -155,7 +155,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const priceDiscount = page.price_discount ?? 0;
   const hasDiscount = !isFree && priceDiscount > 0;
   const displayPrice = hasDiscount ? priceDiscount : price;
-  const showAsFree = isFree || displayPrice <= 0;
+  // Same rule the database enforces on lp_purchases — see isFreeProduct.
+  const showAsFree = isFreeProduct(page);
   const discountPct = hasDiscount && price > 0 ? Math.round(((price - priceDiscount) / price) * 100) : 0;
   const soldCount = page.sold_count ?? 0;
   const rating = page.rating != null && page.rating > 0 ? Number(page.rating) : null;

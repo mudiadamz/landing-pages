@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateInvoiceNumber } from "@/lib/invoice";
-import { isUpcoming } from "@/lib/product-status";
+import { isFreeProduct, isUpcoming } from "@/lib/product-status";
 import { grantBundleItems } from "@/lib/bundle";
 import { currentSiteId } from "@/lib/site-resolve";
 
@@ -100,11 +100,20 @@ export async function addPurchase(landingPageId: string) {
   // (defense in depth — the UI already hides the button for non-owners).
   const { data: gate } = await supabase
     .from("lp_landing_pages")
-    .select("available_at, user_id")
+    .select("available_at, user_id, is_free, price, price_discount")
     .eq("id", landingPageId)
     .single();
-  if (isUpcoming(gate?.available_at, gate?.user_id === user.id)) {
+  if (!gate) throw new Error("Produk tidak ditemukan.");
+  if (isUpcoming(gate.available_at, gate.user_id === user.id)) {
     throw new Error("Produk ini belum tersedia.");
+  }
+  // This action is a public POST endpoint: its argument is whatever the caller
+  // sends, not what the "Ambil gratis" button was rendered for. Without this, a
+  // replay with a paid product's id granted it for free. The INSERT policy on
+  // lp_purchases refuses the same thing (20260919020000); this is the readable
+  // error in front of it.
+  if (!isFreeProduct(gate)) {
+    throw new Error("Produk ini berbayar — selesaikan pembayaran di halaman checkout.");
   }
 
   const { error } = await supabase.from("lp_purchases").insert({
