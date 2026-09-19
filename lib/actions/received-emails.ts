@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireFeature } from "./profiles";
 
@@ -27,7 +26,12 @@ export async function getReceivedEmailsForAdmin(): Promise<ReceivedEmailListItem
   const isAdmin = await requireFeature("inbox");
   if (!isAdmin) return [];
 
-  const supabase = await createClient();
+  // Service role behind the gate above — the same shape as deleteReceivedEmail.
+  // The inbox used to be read through the user client under an RLS policy
+  // that let ANY signed-in user read it, so one PostgREST call from a customer's
+  // browser returned the whole support inbox. That policy is gone
+  // (20260919030000); requireFeature("inbox") is now the only way in.
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("lp_received_emails")
     .select("id, from_address, from_name, subject, received_at")
@@ -41,7 +45,7 @@ export async function getReceivedEmailById(id: string): Promise<ReceivedEmailRow
   const isAdmin = await requireFeature("inbox");
   if (!isAdmin) return null;
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("lp_received_emails")
     .select("*")

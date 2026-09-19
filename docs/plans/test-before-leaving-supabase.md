@@ -152,7 +152,7 @@ baru.
 | Fase | Isi | Status |
 |---|---|---|
 | 0 | Perbaiki signup yang patah + pasang rel tes integrasi | ✅ |
-| 1 | Characterization test: RLS & GRANT (69 policy, 34 tabel) | ⬜ |
+| 1 | Characterization test: RLS & GRANT (69 policy, 34 tabel) | ✅ |
 | 2 | Characterization test: trigger, RPC, constraint | ⬜ |
 | 3 | Kontrak Auth & sesi | ⬜ |
 | 4 | Kontrak Storage | ⬜ |
@@ -195,26 +195,47 @@ rusak dipasang kembali, kelima tesnya merah.
 
 ## Fase 1 — characterization test: RLS & GRANT
 
-Tes ditulis dari sudut pandang **penyerang**, bukan dari sudut pandang policy.
-Menulis ulang isi policy jadi assertion cuma menyalin bug; yang dijaga adalah
-perilakunya.
+Tes ditulis dari sisi **penyerang** dengan kontrak yang *seharusnya* berlaku.
+Yang merah adalah lubang; lubangnya ditutup di migration, lalu dibuktikan dua
+arah (dipasang kembali → merah, dipulihkan → hijau). Menulis ulang isi policy
+jadi assertion cuma menyalin bug.
 
-Minimal, satu tes per baris berikut, masing-masing sebagai `anon`, sebagai pemilik,
-dan sebagai orang lain:
+**Hasil: 135 tes di `tests/db/`**, ditambah `tests/product-free.test.ts` di suite
+murni.
 
-- `lp_profiles`: naik pangkat sendiri **ditolak**; ubah `full_name` **boleh**;
-  baca profil orang lain **0 baris**. (Tiga skenario di atas sudah terbukti —
-  tinggal dikodekan.)
-- `lp_purchases`: pembeli melihat miliknya; yang `revoked_at` **tidak** terlihat;
-  tidak ada jalan UPDATE/DELETE lewat API publik.
-- `lp_landing_pages`: pemilik CRUD penuh; orang lain baca saja.
-- Enam tabel tanpa policy: `anon` dan `authenticated` dapat **0 baris** dan
-  **gagal** menulis. Ini yang menjaga temuan #2.
-- Storage: folder `<uid>/…` hanya bisa ditulis pemiliknya; `landing-downloads`
-  tidak bisa dibaca tanpa signed URL; `publisher-kyc` tertutup bagi semua orang.
+| File | Menjaga |
+|---|---|
+| `schema-contract.test.ts` | Setiap kolom yang disebut kode (`select`, filter, `order`, `onConflict`, kunci `insert`/`update`) ada di database. Pengganti jaring kompilator yang tidak pernah ada. |
+| `rls-profiles.test.ts` | Dua lapis profil: RLS (baris mana) + grant kolom (kolom mana), plus daftar keputusan per kolom. |
+| `rls-commerce.test.ts` | Pembelian, produk, ulasan, like, pesanan paket, versi. |
+| `rls-sites.test.ts` | Setelan situs, situs, kategori, halaman, keanggotaan. |
+| `rls-private.test.ts` | Tabel yang keamanannya berupa ketiadaan policy (+ daftar lengkapnya), inbox, kontak, event produk. |
+| `rls-chat.test.ts` | Percakapan MbahGPT privat, dan tidak bisa ditulisi orang lain. |
+| `rls-storage.test.ts` | Policy per bucket, termasuk `landing-downloads` yang tidak bisa dibaca siapa pun lewat API. |
+| `rls-surface.test.ts` | Snapshot seluruh policy, grant per-kolom, dan fungsi `SECURITY DEFINER` — sekaligus daftar persis yang harus di-port. |
 
-**Verifikasi:** matikan satu policy secara manual di database lokal → tes yang
-bersangkutan harus **merah**. Tes yang tidak pernah bisa gagal bukan tes.
+**Yang ditemukan — semua sudah diperbaiki kecuali yang ditandai:**
+
+| Temuan | Jenis | Perbaikan |
+|---|---|---|
+| `/panel/users` membalas 500 untuk semua orang (`.order("role")`) | bug hidup | `776bdce` |
+| Daftar customer tanpa nama/email (select dari tabel yang salah) | bug hidup | `776bdce` |
+| Tolak publisher: path KTP tetap menunjuk file yang sudah dihapus | bug hidup | `776bdce` |
+| Ganti/hapus avatar gagal "permission denied" sejak 2026-08-09 | bug hidup | `20260919010000` |
+| Akun tanpa profil bisa lahir sebagai `company` / plan berbayar / email "terverifikasi" | lubang | `20260919010000` |
+| **Produk berbayar bisa diambil gratis** (replay form "Ambil gratis" atau POST ke PostgREST) | lubang, uang | `20260919020000` + `isFreeProduct` |
+| Customer biasa bisa membuat & menerbitkan produk tanpa gerbang publisher | lubang | `20260919020000` |
+| Penjual bisa menulis `sold_count`/`rating`/`view_count`/`like_count` sendiri | lubang, kepercayaan | `20260919020000` |
+| Siapa pun bisa mengulas tanpa membeli (menjatuhkan rating pesaing) | lubang | `20260919020000` |
+| **Agent tidak bisa menyimpan satu pun setelan situsnya** (tracking, paket, popup, hero, legal, …) | bug hidup | `20260919030000` |
+| **Customer mana pun bisa membaca seluruh inbox support** lewat PostgREST | lubang, privasi | `20260919030000` |
+| Orang bisa menulis ke sesi/pesan/memori chat milik orang lain | lubang, integritas | `20260919030000` |
+| Dua fungsi trigger `SECURITY DEFINER` tanpa `search_path` | pengerasan | `20260919040000` |
+| Draft (`published=false`) terbaca siapa pun lewat PostgREST | **celah diketahui** | dikunci `it.fails`; mengetatkannya menyentuh puluhan jalur baca |
+| Customer yang diberi fitur lewat `role_permissions` tidak bisa menulis (gerbang aplikasi meloloskan, RLS tidak) | **celah diketahui** | meniru peta peran di SQL = menyalin `lib/role-permissions.ts` |
+
+**Verifikasi:** setiap perbaikan dibuktikan dua arah — dengan policy/grant lama
+dipasang kembali, tes yang relevan merah; dipulihkan, hijau.
 
 ---
 
