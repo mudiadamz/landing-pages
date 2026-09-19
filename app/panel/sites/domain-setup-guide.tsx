@@ -8,7 +8,7 @@ import { useT } from "@/lib/i18n/client";
  *
  * Adding a row to lp_sites makes the app ready to serve a domain; it does not make
  * the domain reach the app, and it does not let anyone sign in on it. Those live in
- * Vercel and Supabase. Written per-domain with the real strings filled in, because
+ * DNS and Supabase. Written per-domain with the real strings filled in, because
  * the failure mode is pasting a nearly-right URL and getting a redirect error with
  * no clue which of the three places is wrong.
  */
@@ -81,7 +81,6 @@ export function DomainSetupGuide({
   host: string;
   supabaseProjectUrl: string;
   canonicalHost: string;
-  /** A token is configured, so the panel adds the domain to Vercel itself. */
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);

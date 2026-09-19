@@ -18,7 +18,7 @@ import {
  *
  * So OAuth now always returns to ONE listed URL — the canonical callback — which
  * bounces the visitor back to the domain they came from. Adding a storefront
- * touches Vercel and lp_sites only; Supabase never has to hear about it.
+ * touches DNS and lp_sites only; Supabase never has to hear about it.
  *
  * What the canonical callback must NOT do is exchange the code itself. The PKCE
  * verifier that signInWithOAuth generated was written as a cookie on the domain
@@ -52,7 +52,7 @@ export async function resolveReturnHost(raw: string | null): Promise<string | nu
  * Where Supabase should send the visitor after Google. The canonical callback for
  * a known niche storefront, this same origin for anything else.
  *
- * "Anything else" is localhost, a *.vercel.app preview, or a domain pointed at us
+ * "Anything else" is localhost, a staging hostname, or a domain pointed at us
  * before it was added in the panel. Those keep the old direct behaviour: the
  * bouncer only forwards to hosts it can verify, so routing them through it would
  * strand them on the canonical domain — the very bug this exists to fix. They

@@ -577,7 +577,8 @@ export async function updateCustomJs(
 
 /* Tracking tags: Google Tag Manager + the Tawk.to live chat. Stored as JSON under
  * key "tracking"; each id falls back to its env var when nothing is saved, so it
- * can be configured either in the panel or in Vercel. See lib/tracking-config.ts. */
+ * can be configured either in the panel or in the build's env. See
+ * lib/tracking-config.ts. */
 
 const readTracking = unstable_cache(
   async (siteId: string): Promise<TrackingConfig> => {
@@ -612,7 +613,7 @@ const readTracking = unstable_cache(
 );
 
 /**
- * What Vercel says, when the database says nothing.
+ * What the environment says, when the database says nothing.
  *
  * NOT exported: this module is "use server", so everything it exports has to be
  * an async function (see docs/architecture.md I5).

@@ -152,9 +152,9 @@ export async function POST(req: NextRequest) {
   const fileCap = Math.min(MAX_FILES, limits.chatMaxFiles);
   if (uploads.length > fileCap) return fail(t("chat.maxFiles", { count: fileCap }), 400);
 
-  // Files were uploaded straight to Storage by the browser (Server Actions and
-  // route bodies are capped at ~4.5 MB on Vercel), so what arrives here is a set
-  // of paths. Two things are checked: the path is inside this user's own folder,
+  // Files were uploaded straight to Storage by the browser (see
+  // lib/upload-client.ts), so what arrives here is a set of paths rather than
+  // bytes. Two things are checked: the path is inside this user's own folder,
   // and the type is one the model can actually be given. The byte ceiling that is
   // really ENFORCED is the bucket's own file_size_limit — `size` below is what the
   // browser claimed, and it is used for the running total and the UI only.

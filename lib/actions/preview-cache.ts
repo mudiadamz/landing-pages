@@ -9,8 +9,9 @@ import { createClient } from "@/lib/supabase/server";
  * There is no API that empties the CDN here, and pretending otherwise is how
  * this project already lost a day: a Route Handler that sets its own
  * Cache-Control owns the edge entry, and `revalidatePath` does not touch it.
- * Measured at the time — after an edit, `?cb=<random>` returned new text while
- * the plain URL returned old with `x-vercel-cache: HIT, age: 1058`.
+ * Measured at the time, back when a CDN still fronted this app — after an edit,
+ * `?cb=<random>` returned new text while the plain URL returned old from an
+ * upstream HIT (`age: 1058`).
  *
  * So this purges by rotating the key instead. Stamping `preview_purged_at`
  * feeds lib/epub-version.ts, every preview URL for the product becomes a URL

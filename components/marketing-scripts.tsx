@@ -6,7 +6,8 @@ const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 /**
  * Loads GA4 + Meta Pixel only when their IDs are configured via env
  * (NEXT_PUBLIC_GA_ID / NEXT_PUBLIC_FB_PIXEL_ID). Renders nothing otherwise, so
- * shipping this is safe before the IDs exist — add them in Vercel to go live.
+ * shipping this is safe before the IDs exist. Both are NEXT_PUBLIC_*, inlined at
+ * build time, so adding them means rebuilding the image rather than restarting it.
  */
 export function MarketingScripts() {
   return (

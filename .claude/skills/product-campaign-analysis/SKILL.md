@@ -103,7 +103,7 @@ Measure the **actual landing URL**, not a local dev server:
 
 ```bash
 curl -s -o /dev/null -w "TTFB=%{time_starttransfer}s total=%{time_total}s size=%{size_download}\n" <url>
-curl -s -I <url> | grep -iE "x-vercel-id|x-vercel-cache|cache-control"
+curl -s -I <url> | grep -iE "cache-control|age|server"
 ```
 
 Check every one of these:
@@ -113,9 +113,12 @@ Check every one of these:
   a realistic mobile speed (**~0.7 MB/s** for average Indonesian 4G).
 - **Blocking payload weight.** What must download before the visitor sees
   anything? Images/fonts/archives that block first paint are the usual culprit.
-- **`x-vercel-id`** reveals the function region. Functions must sit near the
-  **Tokyo** database (`hnd1`); running in `iad1` puts a Pacific round trip on
-  every query. A page making ~6 queries pays that six times.
+- **Server-to-database distance.** The app is one container on one server; there
+  is no per-region function placement to check any more. What still matters is
+  where that server sits relative to the **Tokyo** Supabase project — a server on
+  the wrong side of the Pacific puts a round trip on every query, and a page
+  making ~6 queries pays it six times. Measure it from the server itself, not
+  from here.
 - **Cold vs warm cache.** Measure both — an endpoint that unzips or renders on
   demand is fast only after the first hit. Ad bursts hit cold caches.
 - **Streaming.** Does the shell flush before the data queries resolve? Check

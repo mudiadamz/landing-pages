@@ -122,7 +122,7 @@ async function clientIp(): Promise<string | null> {
  *
  * Read through a function rather than exported as a constant so the value is
  * looked up per request — but note NEXT_PUBLIC_* is inlined at BUILD time, so
- * changing it in Vercel needs a redeploy to take effect.
+ * changing it means rebuilding the image, not restarting the container.
  */
 export function captchaSiteKey(): string | null {
   return process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null;

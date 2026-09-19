@@ -1,6 +1,6 @@
 # Multi-domain (beberapa storefront, satu sistem)
 
-Satu deployment Vercel melayani banyak domain. Tiap domain punya nama, tagline,
+Satu container Next di belakang Caddy melayani banyak domain. Tiap domain punya nama, tagline,
 deskripsi SEO, **template tampilan**, **palet warna**, tracking, hero, popup, dan
 custom JS sendiri — tapi **katalog produknya satu**. Domain memilih *kategori*, bukan produk, jadi tidak ada produk yang
 diduplikasi dan satu produk bisa tampil di beberapa storefront.
@@ -9,7 +9,7 @@ Dikelola di **dua layar**, dan pembagiannya disengaja:
 
 | Layar | Isi | Kenapa dipisah |
 |---|---|---|
-| **`/panel/sites`** (Situs → Domain) | hostname, aktif/nonaktif, status Vercel, panduan DNS & Supabase, tambah/hapus domain | Mengubah host butuh DNS, domain di Vercel, dan redirect URL di Supabase. Salah satu huruf dan storefront-nya tidak bisa diakses — atau diam-diam menampilkan situs utama selamanya. |
+| **`/panel/sites`** (Situs → Domain) | hostname, aktif/nonaktif, panduan DNS, tambah/hapus domain | Mengubah host butuh DNS yang benar, dan barisnya di sini yang mengizinkan sertifikat terbit. Salah satu huruf dan storefront-nya tidak bisa diakses — atau diam-diam menampilkan situs utama selamanya. |
 | **`/panel/branding`** (Situs → Identitas situs) | nama, tagline, deskripsi SEO, logo, ikon, template, palet, niche | Semuanya copy & styling: bisa dibalik, sering diubah, tanpa menyentuh dashboard pihak ketiga. |
 
 Dulu satu form. Akibatnya: mengganti logo berarti mengirim ulang field host, dan layar
@@ -58,15 +58,15 @@ Sekarang pilihannya ada di cookie `panel_site` (`lib/panel-site.ts`, httpOnly, p
   request — admin tetap melihat tulisannya sendiri): layout + halaman + `editingSite()`
   tadinya menghasilkan empat query identik per navigasi panel.
 
-Panduan langkah Vercel & Supabase dengan nilai yang sudah terisi ada di tiap baris
-domain di `/panel/sites` — dokumen ini versi lengkapnya.
+Panduan langkah DNS dengan nilai yang sudah terisi ada di tiap baris domain di
+`/panel/sites` — dokumen ini versi lengkapnya.
 
 ## Konsep
 
 | | |
 |---|---|
 | **Tabel** | `lp_sites` — `host`, `name`, `tagline`, `description`, `category_ids`, `template`, `palette`, `logo_url`, `icon_url`, `is_canonical`, `active` |
-| **Domain utama** | `is_canonical = true`. Satu-satunya. Memegang `/panel`, callback Duitku, dan jadi fallback untuk host yang tidak dikenal (preview deployment, `*.vercel.app`, domain yang diarahkan sebelum didaftarkan). |
+| **Domain utama** | `is_canonical = true`. Satu-satunya. Memegang `/panel`, callback Duitku, dan jadi fallback untuk host yang tidak dikenal (localhost, hostname staging, domain yang diarahkan sebelum didaftarkan). |
 | **Niche** | `category_ids` berisi kategori **induk**; sub-kategorinya ikut otomatis. **Kosong = seluruh katalog** — itu yang dipakai domain utama, bukan berarti "tidak tampilkan apa-apa". |
 | **Pengaturan** | `lp_site_settings` di-key `(site_id, key)`. Per-domain: `hero`, `site_content`, `tracking`, `promo_popup`, `custom_js`. Global (pinned ke domain utama): `panel_palette`, `role_permissions`. |
 | **Template** | `lp_sites.template` — frontend storefront: halaman depan, **header/menu, footer**, halaman kategori, dan daftar kategori. Teks bebas divalidasi terhadap `lib/templates/registry.tsx`, **bukan** enum DB, jadi menambah template tidak butuh migration; key tak dikenal jatuh ke `default`. Tiga tema sekarang: `default` (Marketplace), `pustaka` (rak buku), `linkbio` (Linktree). Slot kategori **opsional** — yang kosong jatuh ke versi Marketplace, termasuk chrome-nya. Detail: [`technical.md`](technical.md) → "Template tampilan". |
@@ -128,43 +128,31 @@ Sisanya di **`/panel/branding`** (Situs → Identitas situs), tiga blok:
 - **Tampilan** — template dan palet.
 - **Katalog (niche)** — centang kategori induk. Kosong = seluruh katalog.
 
-### 2. Vercel — supaya domainnya sampai ke aplikasi
+### 2. DNS — supaya domainnya sampai ke aplikasi
 
-**Bisa otomatis.** Kalau `VERCEL_API_TOKEN` diset, panel menambahkan domain ke
-project sendiri lewat REST API Vercel (`POST /v10/projects/{id}/domains`) begitu
-domain dibuat. Kartu domain di `/panel/sites` menampilkan statusnya —
-*Aktif di Vercel* / *Menunggu DNS* / *Belum di Vercel* — plus tombol
-**Tambah ke Vercel** dan **Cek verifikasi**, dan record DNS yang diminta Vercel
-kalau domainnya butuh diverifikasi.
+**Hanya satu langkah, dan itu di registrar.** Arahkan domainnya ke IP server yang
+menjalankan stack Docker — A record (atau CNAME ke domain kanonik untuk
+subdomain). Tidak ada lagi "daftarkan domain ini ke hosting": tidak ada dashboard
+pihak ketiga yang perlu tahu.
 
-Env yang dibutuhkan (lihat `.env.example`):
+**Sertifikatnya terbit sendiri.** Caddy memakai on-demand TLS: saat permintaan
+HTTPS pertama untuk domain itu datang, Caddy bertanya dulu ke
+`/api/tls-check?domain=<host>`, dan route itu menjawab 200 hanya kalau host-nya
+ada di `lp_sites` dan aktif. Jadi baris yang barusan disimpan di langkah 1
+**itulah** izin terbitnya sertifikat — urutannya penting: baris dulu, baru DNS.
 
-```
-VERCEL_API_TOKEN=      # Vercel → Account Settings → Tokens
-VERCEL_PROJECT_ID=     # dari .vercel/project.json (projectId)
-VERCEL_TEAM_ID=        # dari .vercel/project.json (orgId)
-```
+> **Gerbangnya tidak boleh dibuat selalu 200.** Tanpa gerbang, siapa pun yang
+> mengarahkan domainnya ke IP server ini memaksa Caddy meminta sertifikat untuk
+> domain itu, dan Let's Encrypt punya rate limit per akun — orang lain bisa
+> menghabiskan kuota kita. Alasan lengkapnya ada di `app/api/tls-check/route.ts`.
 
-> **Token Vercel itu luas.** Scope-nya per akun/team, bukan per endpoint — tidak
-> ada token "domains saja", jadi token ini bisa melakukan apa pun yang team bisa
-> (termasuk menghapus project). Simpan sebagai env server (**jangan** pakai
-> prefix `NEXT_PUBLIC_`), batasi ke team, dan beri masa kedaluwarsa. Semua
-> pemakaiannya ada di `lib/vercel-domains.ts` dan setiap pemanggil lewat
-> `requireAdmin()`.
+**Menghapus baris di panel = domainnya berhenti dilayani** (gerbang TLS ikut
+menutup), tapi DNS-nya tidak ikut berubah. Kalau mau benar-benar melepas, cabut
+juga record-nya di registrar.
 
-Tanpa token, langkahnya manual dan panduan di panel tetap menampilkan nilai yang
-perlu dipasang. **Menghapus domain di panel tidak melepasnya dari Vercel** —
-disengaja, supaya tidak mematikan domain hidup hanya karena mau di-repoint.
-
-Kalau manual: Project **`landing_pages`** → Settings → Domains → **Add**.
-
-- **Subdomain `admuiux.com`** (mis. `resep.admuiux.com`) — DNS-nya sudah di Vercel,
-  jadi langsung jalan. Tidak perlu beli domain, SSL otomatis.
-- **Domain terpisah** — Vercel menampilkan record DNS yang harus dipasang di
-  registrar (nameserver atau A/CNAME). **Ikuti yang Vercel tampilkan**, jangan
-  nilai dari catatan lama — nilainya bisa berubah. SSL otomatis setelah verifikasi.
-
-Batas domain per project: Hobby 50, Pro *soft limit* 100.000. Tidak akan kena.
+Batas jumlah domain: tidak ada di sisi aplikasi. Yang membatasi cuma rate limit
+Let's Encrypt (50 sertifikat per domain terdaftar per minggu) — jauh di atas
+kecepatan menambah storefront.
 
 ### 3. Supabase — **tidak ada yang perlu diubah**
 
@@ -216,7 +204,7 @@ curl -s -o /dev/null -w '%{redirect_url}\n' \
 Balasannya memuat `/auth/callback` → terdaftar. Balasannya `admuiux.com/` telanjang →
 sudah tidak, dan login patah di mana-mana.
 
-**Localhost dan preview `*.vercel.app`** tidak lewat jalan memutar ini: pelemparnya
+**Localhost dan hostname staging** tidak lewat jalan memutar ini: pelemparnya
 hanya mau mengirim ke host yang ada di `lp_sites`, jadi host asing malah akan
 tersangkut di domain kanonik. Keduanya tetap callback ke dirinya sendiri dan tetap
 butuh baris sendiri di daftar — untuk `http://localhost:3000/auth/callback` sudah ada.

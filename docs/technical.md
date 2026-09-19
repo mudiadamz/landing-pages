@@ -3,7 +3,7 @@
 Setup, operasional, dan konvensi untuk developer. Gambaran produknya (untuk
 non-developer) ada di [`README.md`](../README.md).
 
-Next.js 16 (App Router, Turbopack) · React 19 · Supabase · Vercel (region `sin1`).
+Next.js 16 (App Router, Turbopack) · React 19 · Supabase · Docker + Caddy.
 
 **Satu deployment melayani beberapa domain**, tiap domain punya niche sendiri —
 lihat [Multi-domain](#multi-domain).
@@ -86,7 +86,7 @@ pnpm db:push          # Push migrations to remote
 
 Semua variabel + penjelasannya ada di [`.env.example`](../.env.example). Yang wajib:
 Supabase (URL, anon key, service role key), `NEXT_PUBLIC_SITE_URL`, Duitku, dan
-Resend. Sisanya opsional (tracking, captcha, Vercel domain API).
+Resend. Sisanya opsional (tracking, captcha, OpenRouter).
 
 ## Multi-domain
 
@@ -99,15 +99,16 @@ Palet warna juga per domain (5 preset contrast-checked, dipilih di `/panel/brand
 **Tampilan → Palet warna**). Toggle terang/gelap sengaja disembunyikan di semua halaman publik;
 di panel masih ada.
 
-Dikelola di dua layar: **`/panel/sites`** untuk hostname/Vercel/aktif, dan
+Dikelola di dua layar: **`/panel/sites`** untuk hostname/aktif, dan
 **`/panel/branding`** untuk nama, logo, template, palet, dan niche — dipisah karena
 mengubah host butuh DNS sementara mengubah tagline tidak. Menambah domain butuh dua
 tempat:
 
 1. **Panel** — hostname di `/panel/sites`, lalu nama/logo/template/niche di
    `/panel/branding`.
-2. **Vercel** — otomatis kalau `VERCEL_API_TOKEN` diset (panel memakai REST API
-   Vercel dan menampilkan record DNS yang diminta); manual kalau tidak.
+2. **DNS** — arahkan domainnya ke IP server. Tidak ada pendaftaran ke mana pun:
+   Caddy menerbitkan sertifikatnya sendiri sesudah bertanya ke `/api/tls-check`,
+   yang jawabannya berasal dari baris langkah 1.
 
 Supabase tidak perlu disentuh — lihat **Redirect URLs** di [Auth providers](#auth-providers).
 
@@ -232,7 +233,6 @@ lib/
   actions/              Server Actions (semua mutasi lewat sini)
   supabase/             server / client / admin (service-role)
   site-resolve.ts       host → site, dasar multi-domain
-  vercel-domains.ts     integrasi Vercel Domains API
   templates/            frontend per niche — registry.tsx + satu folder per template
 supabase/migrations/    migration, berurutan timestamp
 docs/                   catatan panjang (arsitektur, multi-domain, analytics, region)
@@ -252,7 +252,8 @@ docs/                   catatan panjang (arsitektur, multi-domain, analytics, re
   ada deploy baru. `lib/actions/sites.ts` sudah benar; call site `updateTag` lain
   (categories, hero, content, tracking, popup) belum diverifikasi.
 - Input file di panel **wajib** pakai `FileUploadCard`.
-- Commit pakai email `mudi.adamz@gmail.com` (kalau tidak, deploy Vercel gagal).
+- Commit pakai email `mudi.adamz@gmail.com`, tanpa trailer `Co-Authored-By:
+  Claude…` — riwayat repo ini atas nama Adam.
 
 Panduan arsitektur lengkap untuk agent AI ada di [`CLAUDE.md`](../CLAUDE.md), dan
 khusus area panel di [`app/panel/CLAUDE.md`](../app/panel/CLAUDE.md).

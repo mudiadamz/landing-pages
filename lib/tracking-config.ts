@@ -3,7 +3,7 @@
  * and the Tawk.to live-chat widget. Stored as JSON in lp_site_settings (key
  * "tracking"), editable at /panel/tracking, with env fallbacks
  * (NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_TAWK_PROPERTY_ID / _WIDGET_ID) so the same
- * values can also be set in Vercel.
+ * values can also come from the build's environment.
  *
  * Tawk lives here rather than in the component because the ids used to be
  * hardcoded ADM.UIUX ones — which meant every niche storefront on this

@@ -6,6 +6,14 @@ Runbook pemindahan project Supabase `admuiux` dari **`ap-northeast-1` (Tokyo)** 
 Ditulis 2026-07-30. Angka inventaris di bawah diukur pada tanggal itu — hitung
 ulang sebelum eksekusi kalau sudah lewat beberapa minggu.
 
+> **Dokumen ini catatan sejarah, bukan prosedur yang masih berlaku.** Waktu
+> ditulis, aplikasinya masih di Vercel, jadi langkah-langkahnya menyebut env
+> Vercel, `vercel.json`, dan region function (`sin1`/`hnd1`). Vercel dipensiunkan
+> 2026-09-09 — sekarang aplikasinya satu container di belakang Caddy, dan yang
+> setara dengan "region function" adalah lokasi server itu sendiri. Isi di bawah
+> **sengaja tidak diubah**: ini rekaman apa yang benar-benar dikerjakan hari itu,
+> dan menulis ulangnya jadi seolah-olah pakai Docker akan memalsukan catatan.
+
 ## Status
 
 **Migrasi selesai 2026-07-30.** Produksi (`admuiux.com`) berjalan penuh di

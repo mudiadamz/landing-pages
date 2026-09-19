@@ -5,9 +5,9 @@ import { listSites, normalizeHost } from "@/lib/site-resolve";
  * Endpoint `ask` untuk on-demand TLS milik Caddy.
  *
  * Caddy memanggil ini SEBELUM menerbitkan sertifikat untuk sebuah domain:
- * 200 = terbitkan, apa pun selain itu = tolak. Inilah yang menggantikan
- * "tambahkan domain ke project" milik Vercel — domain baru cukup diarahkan
- * DNS-nya, dan sertifikatnya terbit sendiri saat permintaan pertama datang.
+ * 200 = terbitkan, apa pun selain itu = tolak. Efeknya: tidak ada lagi langkah
+ * "daftarkan domain ini ke hosting" — domain baru cukup diarahkan DNS-nya, dan
+ * sertifikatnya terbit sendiri saat permintaan pertama datang.
  *
  * **Kenapa ini wajib ada dan tidak boleh selalu 200.** Tanpa gerbang, siapa pun
  * yang mengarahkan domainnya ke IP server ini bisa memaksa Caddy meminta

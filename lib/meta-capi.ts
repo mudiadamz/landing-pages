@@ -7,7 +7,9 @@ import crypto from "node:crypto";
  * pixel via a shared `eventId` (we pass Duitku's merchantOrderId on both sides).
  *
  * Dormant until BOTH NEXT_PUBLIC_FB_PIXEL_ID and META_CAPI_ACCESS_TOKEN are set,
- * so shipping this is safe before the IDs exist — add them in Vercel to go live.
+ * so shipping this is safe before the IDs exist — put them in .env.production to
+ * go live. NEXT_PUBLIC_FB_PIXEL_ID is inlined at build time, so that half needs a
+ * rebuild, not just a restart.
  */
 /**
  * Custom event name. Must match exactly what's selected as the optimisation

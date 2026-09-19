@@ -148,7 +148,7 @@ async function safeCanonicalSite(): Promise<Site | null> {
   }
 }
 
-/** The host this request arrived on. Vercel forwards the real one. */
+/** The host this request arrived on. Caddy forwards the real one (X-Forwarded-Host). */
 export async function currentHost(): Promise<string> {
   const h = await headers();
   return normalizeHost(h.get("x-forwarded-host") ?? h.get("host"));
@@ -156,7 +156,7 @@ export async function currentHost(): Promise<string> {
 
 /**
  * The site serving this request. Falls back to the canonical site for any host
- * we don't recognise — preview deployments, *.vercel.app, a domain pointed at us
+ * we don't recognise — localhost, a staging hostname, a domain pointed at us
  * before it was added in the panel — and for a site that exists but is switched
  * off, so parking a domain never yields a broken page.
  */

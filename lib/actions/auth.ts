@@ -70,7 +70,7 @@ export async function signup(formData: FormData) {
 
   // Our own verification mail, sent alongside the session rather than in front
   // of it — the account works immediately and the panel nags until it's done.
-  // Awaited so a Vercel function isn't frozen mid-send, but never fatal.
+  // Awaited so the send finishes before the response ends, but never fatal.
   if (data.user) {
     // Anggota situs tempat dia MENDAFTAR, bukan situs kanonik: signup berjalan
     // di storefront yang dia buka, dan host itulah satu-satunya jawaban yang

@@ -139,7 +139,7 @@ tak dikenal jatuh ke default alih-alih merusak halaman.
 | Identitas domain di client component | resolve di server, kirim sebagai prop **wajib** | `brand` di `ChromeProps` |
 | Pengaturan global admin | `lp_site_settings` di-pin ke canonical site | `panel_palette` |
 | Reader baru | reader per-request, key-kan komponen dinamis | `EpubViewer key={url \|\| slug}` |
-| Integrasi eksternal | modul sendiri, opsional, degradasi ke instruksi | `lib/vercel-domains.ts` |
+| Integrasi eksternal | modul sendiri, opsional, mati diam-diam tanpa kredensial | `lib/meta-capi.ts` |
 | Input file di panel | `FileUploadCard` — selalu | `components/file-upload-card.tsx` |
 
 **Slot opsional itu pola inti.** Tema hanya menulis permukaan yang niche-nya
@@ -148,9 +148,16 @@ sendiri** — jadi tema yang identitas visualnya kuat harus mengisi setiap slot 
 bisa dinavigasi ke sana, atau pengunjung melompat dari bio card ke header
 storefront penuh.
 
-**Integrasi eksternal harus opsional.** Tanpa `VERCEL_API_TOKEN`, panel jatuh ke
-instruksi tertulis dan tidak ada yang rusak. Pola yang sama untuk apa pun yang
-butuh kredensial pihak ketiga.
+**Integrasi eksternal harus opsional.** Tanpa `META_CAPI_ACCESS_TOKEN`, CAPI diam
+dan checkout tetap jalan; tanpa `OPENROUTER_API_KEY`, MbahGPT bilang "belum
+aktif" alih-alih melempar error. Pola yang sama untuk apa pun yang butuh
+kredensial pihak ketiga: fiturnya mati, aplikasinya tidak.
+
+Pola ini pernah punya contoh ketiga — `lib/vercel-domains.ts`, yang mendaftarkan
+domain baru ke Vercel lewat API kalau tokennya ada, dan menampilkan instruksi
+manual kalau tidak. Modul itu **dihapus** waktu Vercel dipensiunkan (`df69c04`):
+Caddy menerbitkan sertifikat sendiri lewat on-demand TLS, jadi tidak ada lagi
+pihak ketiga yang perlu diberi tahu soal domain baru.
 
 ---
 
@@ -221,7 +228,11 @@ melihat layar, **katakan belum diverifikasi**; jangan mengklaimnya.
 
 - Bahasa UI **Indonesia** (`<html lang="id">`, locale `id_ID`).
 - Caching: `unstable_cache` + invalidasi per tag (lihat I2, I3).
-- Commit pakai email `mudi.adamz@gmail.com` — kalau tidak, deploy Vercel gagal.
-- **Jangan `git push`**: diblokir di settings; Adam yang push.
+- Commit pakai email `mudi.adamz@gmail.com`, dan **tanpa trailer
+  `Co-Authored-By: Claude…`** — riwayat repo ini atas nama Adam. Alasan lamanya
+  (deploy Vercel gagal kalau author-nya lain) sudah gugur bersama Vercel; yang
+  tersisa alasan kepemilikan.
+- `git push` **boleh** (allow rule global sejak 2026-09-19), tapi hanya kalau
+  diminta — selesai ≠ siap terbit.
 - Env var: sumber tunggalnya [`.env.example`](../.env.example). Jangan menyalin
   daftarnya ke dokumen lain — salinan itu pasti akan menyimpang.

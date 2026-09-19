@@ -3,11 +3,11 @@
 /**
  * Attachment uploads: browser → Supabase Storage, directly.
  *
- * The standalone app posted files as base64 inside the chat request. That cannot
- * work here — Vercel caps a function's request body at ~4.5 MB, which one photo
- * can exceed — so the bytes go straight to the private `chat-attachments` bucket
- * and only the resulting PATHS travel in the chat request. Same reasoning, and the
- * same pattern, as `lib/upload-client.ts` for product files.
+ * The standalone app posted files as base64 inside the chat request. Base64 costs
+ * a third more bytes and makes the app hold every attachment in memory just to
+ * forward it, so instead the bytes go straight to the private `chat-attachments`
+ * bucket and only the resulting PATHS travel in the chat request. Same reasoning,
+ * and the same pattern, as `lib/upload-client.ts` for product files.
  *
  * Confinement to the uploader's own folder is a Storage RLS policy, not a check
  * here: this file runs in the browser, so nothing it does is a guarantee.

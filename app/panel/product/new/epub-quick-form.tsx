@@ -16,9 +16,9 @@ import { useT } from "@/lib/i18n/client";
  * source and a deliverable — six answers an EPUB already contains. This asks for
  * the three it does not: the file, which shelf it goes on, and what it costs.
  *
- * The upload goes straight to Storage rather than through the action, because a
- * Server Action body is capped at ~4.5 MB on Vercel and a book routinely exceeds
- * that. Only the resulting path is submitted.
+ * The upload goes straight to Storage rather than through the action; only the
+ * resulting path is submitted. Why it is shaped that way — and why the old
+ * request-body cap is no longer the reason — is in lib/upload-client.ts.
  */
 export function EpubQuickForm({ categories }: { categories: LandingPageCategory[] }) {
   const t = useT();

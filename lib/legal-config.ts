@@ -72,7 +72,7 @@ export const DEFAULT_LEGAL: LegalContent = {
 <ul>
 <li><strong>Supabase</strong> — database, autentikasi, dan penyimpanan file.</li>
 <li><strong>Duitku</strong> — pemrosesan pembayaran (menerima data tagihan yang diperlukan untuk transaksi).</li>
-<li><strong>Vercel</strong> — hosting aplikasi dan analitik performa dasar.</li>
+<li><strong>Penyedia server (VPS)</strong> — hosting aplikasi.</li>
 <li><strong>Resend</strong> — pengiriman email transaksional.</li>
 <li><strong>Tawk.to</strong> — live chat dukungan (jika diaktifkan).</li>
 <li><strong>Google Analytics &amp; Meta Pixel</strong> — pengukuran konversi (jika diaktifkan).</li>

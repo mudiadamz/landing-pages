@@ -25,8 +25,8 @@ import { readWebpHeader } from "@/lib/webp";
 /**
  * The two halves of a site row, deliberately kept apart.
  *
- * They are different jobs with different risks. Changing the HOST means DNS, a
- * Vercel domain and a Supabase redirect URL — get it wrong and the storefront is
+ * They are different jobs with different risks. Changing the HOST means DNS and
+ * the TLS gate that reads this row — get it wrong and the storefront is
  * unreachable, or silently serves the canonical site forever. Changing the NAME or
  * the palette is copy and styling: reversible, frequent, and nobody has to touch
  * an external dashboard.

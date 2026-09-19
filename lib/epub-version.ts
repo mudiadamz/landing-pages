@@ -1,17 +1,20 @@
 /**
  * A short token that changes whenever a product's EPUB changes.
  *
- * The chapter endpoints are deliberately cached hard at the edge
- * (`s-maxage=86400`) — that caching is what fixed the seconds-of-blank-screen
- * problem, so it must stay. But the CDN keys on the request URL, and the URL
+ * The chapter endpoints are deliberately cached hard (`max-age=300,
+ * s-maxage=86400`) — that caching is what fixed the seconds-of-blank-screen
+ * problem, so it must stay. But a cache keys on the request URL, and the URL
  * never mentioned which FILE it was serving. Rewriting the archive to a new
- * storage path therefore changed nothing the CDN could see: an edited chapter
- * kept serving the old text for up to a day.
+ * storage path therefore changed nothing the cache could see: an edited chapter
+ * kept serving the old text.
  *
  * `revalidatePath` is not a fix for this. When a Route Handler sets its own
- * Cache-Control, the CDN entry belongs to that header, not to Next's cache —
- * measured directly: after an edit, `?cb=<random>` returned the new text while
- * the plain URL returned the old one with `x-vercel-cache: HIT`.
+ * Cache-Control, the cached copy belongs to that header, not to Next's cache —
+ * measured directly back when a CDN still fronted this app: after an edit,
+ * `?cb=<random>` returned the new text while the plain URL returned the old one
+ * from an upstream HIT. Serving from one's own server shortens the window to the
+ * browser's `max-age` rather than closing it, and `s-maxage` is waiting for the
+ * day a CDN is put back.
  *
  * So instead of trying to purge the cache, make the key move. Appending this
  * token to the chapter URL means a fresh archive is a fresh URL, and the old

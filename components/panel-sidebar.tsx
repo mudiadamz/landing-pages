@@ -94,7 +94,7 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
     items: [
       { href: "/panel/sites", labelKey: "panel.navDomains", icon: GlobeIcon, adminOnly: true },
       // Directly after Domain: same object, opposite half. Domain is the plumbing
-      // (hostname, Vercel, on/off), this is the content (name, logo, template, niche).
+      // (hostname, DNS, on/off), this is the content (name, logo, template, niche).
       { href: "/panel/branding", labelKey: "panel.navBranding", icon: BadgeIcon, adminOnly: true },
       { href: "/panel/categories", labelKey: "panel.navCategories", icon: TagIcon, feature: "categories" },
       { href: "/panel/hero", labelKey: "panel.navHero", icon: HeroIcon, feature: "hero" },

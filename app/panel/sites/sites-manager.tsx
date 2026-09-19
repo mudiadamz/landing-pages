@@ -10,8 +10,8 @@ import { DomainSetupGuide } from "./domain-setup-guide";
 import { useT } from "@/lib/i18n/client";
 
 /**
- * The PLUMBING half of a storefront: which hostname it answers on, whether it is
- * switched on, and its state at Vercel.
+ * The PLUMBING half of a storefront: which hostname it answers on and whether it
+ * is switched on.
  *
  * Everything cosmetic — name, tagline, search snippet, logo, icon, template,
  * palette, niche — moved to /panel/branding. The two were one form, which meant a
@@ -98,10 +98,10 @@ export function SitesManager({
       // Barisnya ada; sisanya DNS. Tidak ada langkah "daftarkan ke penyedia"
       // lagi — Caddy menerbitkan sertifikatnya sendiri begitu domainnya menunjuk
       // ke server ini (lihat app/api/tls-check).
-      const vercelNote = t("sites.pointDnsNext");
+      const dnsNote = t("sites.pointDnsNext");
       setMessage({
         type: "ok",
-        text: t("sites.domainAdded", { host: newDraft.host, note: vercelNote }),
+        text: t("sites.domainAdded", { host: newDraft.host, note: dnsNote }),
       });
       setEditing(null);
       router.refresh();
@@ -146,9 +146,10 @@ export function SitesManager({
         </p>
       )}
 
-      {/* Adding a row here only makes the app READY to serve a domain. Vercel makes
-          the domain reach it and Supabase lets people sign in on it — both easy to
-          forget, and both fail in ways that look like a bug in this screen. */}
+      {/* Adding a row here only makes the app READY to serve a domain. DNS makes the
+          domain reach it (Caddy then issues the certificate by itself) and Supabase
+          lets people sign in on it — both easy to forget, and both fail in ways that
+          look like a bug in this screen. */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm">
         <p className="font-medium text-foreground">{t("sites.threePlaces")}</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-[var(--muted)]">

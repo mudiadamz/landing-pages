@@ -3,9 +3,15 @@
 /**
  * Client-side, direct-to-Storage uploads for the product form. Files go straight
  * from the browser to Supabase Storage (owner-scoped RLS), NOT through a Server
- * Action — Server Actions on Vercel cap the request body at ~4.5 MB
- * (FUNCTION_PAYLOAD_TOO_LARGE), which a book cover/EPUB easily exceeds. Only the
- * resulting URL/path is later saved to the DB (a tiny payload).
+ * Action. Only the resulting URL/path is later saved to the DB (a tiny payload).
+ *
+ * This started as a workaround for a hosting limit that no longer exists (a
+ * ~4.5 MB request body cap). It stays because the shape is better on its own
+ * terms: a 40 MB EPUB sent through an action crosses the network twice — browser
+ * to app, app to Storage — and the app has to hold the whole thing in memory
+ * while it does. So do not "simplify" this back into the action just because
+ * `serverActions.bodySizeLimit` in next.config.ts is now 50 MB; that limit is no
+ * longer what decides it.
  *
  * Public bucket (assets) uploads return a public URL; private bucket (downloads)
  * uploads return the storage path (the download route signs it).

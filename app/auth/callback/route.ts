@@ -9,9 +9,9 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/panel";
-  // Not `new URL(request.url).origin`: behind Vercel's proxy that can be the
-  // internal hostname, and this value decides which domain the visitor ends up
-  // on. x-forwarded-host is the one the browser actually asked for.
+  // Not `new URL(request.url).origin`: behind Caddy that is the container's own
+  // address, and this value decides which domain the visitor ends up on.
+  // x-forwarded-host is the one the browser actually asked for.
   const origin = await currentOrigin();
 
   /**

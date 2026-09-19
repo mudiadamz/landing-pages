@@ -28,8 +28,7 @@ const PREVIEW_SHOWN_PERCENT = 30;
  * the three it does not: which shelf, what price, and the file itself.
  *
  * The file is uploaded straight to Storage by the browser BEFORE this runs and
- * only its path arrives here, because a Server Action body is capped at ~4.5 MB
- * on Vercel and a book routinely exceeds that. The path is re-derived from the
+ * only its path arrives here (why, in lib/upload-client.ts). The path is re-derived from the
  * session's user id, never trusted from the form, so this cannot be pointed at
  * another seller's object.
  *
