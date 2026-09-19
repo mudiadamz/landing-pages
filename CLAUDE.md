@@ -31,9 +31,10 @@ Ringkasan yang paling sering dilanggar:
 | Mau apa | Ke mana |
 |---|---|
 | Aturan & pola arsitektur | [`docs/architecture.md`](docs/architecture.md) |
-| Multi-domain, tema, palet, PWA per-domain | [`docs/multi-domain.md`](docs/multi-domain.md) + README |
+| Multi-domain, tema, palet, PWA per-domain | [`docs/multi-domain.md`](docs/multi-domain.md) + [`docs/technical.md`](docs/technical.md) |
 | Template chat MbahGPT (+ backend-nya) | [`docs/mbahgpt.md`](docs/mbahgpt.md) |
-| Setup, script, env | [`README.md`](README.md), [`.env.example`](.env.example) |
+| Setup, script, env, deploy | [`docs/technical.md`](docs/technical.md), [`.env.example`](.env.example) |
+| Pitch produk (non-teknis) | [`README.md`](README.md) |
 | Menjalankan & menguji di mesin lokal | skill [`run-local`](.claude/skills/run-local/SKILL.md) |
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
 | Laporan kampanye iklan | `docs/campaign-reports/` |
@@ -150,7 +151,7 @@ Ringkasan yang paling sering dilanggar:
 
 > **Rute ini pindah** dari `/lp/[slug]`. `next.config.ts` menyimpan redirect 308
 > `/lp/:slug → /preview/:slug` — wajib, karena iklan yang jalan menunjuk ke URL lama.
-> Preview juga **noindex** (lihat README → "Preview & SEO"), dan produk di sitemap
+> Preview juga **noindex** (lihat `docs/technical.md` → "Preview & SEO"), dan produk di sitemap
 > menunjuk `/checkout/[slug]`.
 
 - `getPageBySlug()` ambil `html_content`, `preview_type`, `preview_url` (di-`cache()`). `generateMetadata()` bangun OG/canonical.

@@ -25,7 +25,7 @@ npx supabase migration up --local  # the local DB is almost always behind
 npm run dev                        # http://127.0.0.1:3000
 ```
 
-Then open **`http://127.0.0.1:3000`** — not the `localhost:3000` the README
+Then open **`http://127.0.0.1:3000`** — not the `localhost:3000` `docs/technical.md`
 prints. Either works until you need to be signed in; see §3.
 
 ## 1. Docker
@@ -73,7 +73,7 @@ npx supabase migration up --local
 `NOTICE … does not exist, skipping` lines are normal — they come from the
 `drop policy if exists` guards migrations open with.
 
-**Do not reach for `supabase db reset` first**, even though the README's Option A
+**Do not reach for `supabase db reset` first**, even though `docs/technical.md`'s Option A
 names it. It rebuilds from zero and takes the local test user and every fixture
 with it; `migration up` has been enough every time so far. Reset is for a
 database whose state you no longer trust.
