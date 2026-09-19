@@ -28,14 +28,19 @@ declare module "vitest" {
 function stackEnv(): Record<string, string> {
   let out: string;
   try {
-    out = execFileSync("pnpm", ["exec", "supabase", "status", "-o", "env"], {
+    // The CLI binary directly, not `pnpm exec`: pnpm may decide the install is
+    // stale and try to reinstall first, which fails without a TTY and would be
+    // reported here as "the stack is down".
+    out = execFileSync("node_modules/.bin/supabase", ["status", "-o", "env"], {
       encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
     });
-  } catch {
+  } catch (e) {
+    const detail = (e as { stderr?: string }).stderr?.trim().split("\n").slice(-2).join(" ") ?? "";
     throw new Error(
       "Stack Supabase lokal tidak jalan. Nyalakan dulu:\n" +
-        "  colima start && pnpm exec supabase start && pnpm exec supabase migration up --local",
+        "  colima start && pnpm exec supabase start -x vector,logflare && pnpm exec supabase migration up --local\n" +
+        (detail ? `(supabase status: ${detail})` : ""),
     );
   }
   const env: Record<string, string> = {};

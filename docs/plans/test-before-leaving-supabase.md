@@ -174,7 +174,7 @@ baru.
 | 3 | Kontrak Auth & sesi | ✅ |
 | 4 | Kontrak Storage | ✅ |
 | 5 | Rapikan temuan yang sudah terlanjur ketahuan | ✅ |
-| 6 | Gerbang CI + keputusan resource | ⬜ |
+| 6 | Gerbang CI + keputusan resource | ✅ |
 
 ---
 
@@ -184,15 +184,26 @@ baru.
 mati, dan fase 1–4 semuanya butuh rel yang sama.
 
 1. ✅ sudah: `20260919000000_fix_handle_new_user_account_type.sql`.
-2. **Produksi — terdampak.** Diperiksa 2026-09-19 dengan probe baca-saja (anon
-   key, `select=role&limit=0`): di project hosted, `lp_profiles.role` **sudah
-   tidak ada** dan `account_type` ada. Artinya `20260903010000` sudah naik ke
-   produksi, dan trigger yang masih menulis ke `role` ikut bersamanya —
-   pendaftaran di produksi mati sejak itu. Perbaikannya **belum** diterapkan ke
-   produksi: menulis ke database produksi adalah keputusan Adam, bukan bagian
-   yang dikerjakan otomatis. Perintahnya: `pnpm exec supabase db push`
-   (setelah `supabase link`), dan periksa dulu daftar migration yang akan ikut
-   naik dengan `supabase migration list --linked`.
+2. **Produksi — terdampak, dan BELUM diperbaiki di sana.** Diperiksa dengan probe
+   baca-saja (anon key, `select=role&limit=0`): di project hosted `lp_profiles.role`
+   sudah tidak ada, jadi `20260903010000` sudah naik dan pendaftaran di produksi
+   mati sejak itu. Menulis ke database produksi adalah keputusan Adam, bukan
+   bagian yang dikerjakan otomatis.
+
+   Yang harus naik ke produksi — **7 migration** `20260919000000` s.d.
+   `20260919070000` **dan** kode aplikasi dari commit yang sama. **Urutannya:**
+
+   1. Deploy aplikasi dulu (`docker compose --env-file .env.production up -d
+      --build` di server). Kode baru jalan benar di atas skema lama.
+   2. Langsung sesudahnya: `supabase migration list --linked` untuk melihat apa
+      yang akan naik, lalu `supabase db push`.
+
+   Kalau dibalik, inbox support tampil kosong sampai kode baru naik (migration
+   mencabut policy yang dipakai kode lama untuk membacanya). Urutan tidak
+   membuka celah baru — tapi **setiap lubang di Fase 1 dan 4 (produk berbayar
+   gratis, inbox terbaca customer, dst.) tetap terbuka di produksi sampai
+   `db push` selesai.** Deploy kode saja hanya menutup jalur server action
+   `addPurchase`; jalur PostgREST langsung baru tertutup oleh policy-nya.
 3. Tambah dependency: klien Postgres langsung (`pg` atau `postgres`) sebagai
    devDependency. Repo sekarang **tidak punya** — semua akses lewat SDK Supabase,
    jadi tes tidak bisa menyamar jadi role `anon`/`authenticated`.
@@ -421,11 +432,65 @@ terlupa):
 
 ## Fase 6 — gerbang CI + keputusan resource
 
-- `pnpm test` (murni, tanpa Docker) + `pnpm test:db` (butuh Postgres) di CI.
-- `supabase/verify.sql` sudah ada tapi **hanya** memeriksa sisa-sisa penggabungan
-  tiga project lama; nol pemeriksaan RLS `lp_*`. Jangan dikira jaring.
-- Baru di sini keputusan bentuk pengganti diambil, dengan angka: stack Supabase
-  lokal = 8 container, ±710 MB, dan Postgres-nya sendiri cuma 98 MB. Sisanya —
-  Kong 108, realtime 195 (tidak dipakai sama sekali), storage 132, pg_meta 111,
-  auth 15 — itulah yang ditukar dengan kewajiban menulis ulang 69 policy,
-  27 function, dan kontrak refresh cookie.
+### Gerbang CI
+
+`.github/workflows/test.yml`, dua job:
+
+- **unit** — `tsc --noEmit` + `pnpm test`. Tanpa Docker.
+- **db** — stack Supabase **minimal** (Postgres, GoTrue, PostgREST, Storage, Kong)
+  dibangun dari nol oleh semua migration + `seed.sql`, lalu `pnpm test:db`.
+
+**Sudah dibuktikan tanpa GitHub:** job `db` disimulasikan persis di salinan repo
+dengan `project_id` terpisah (volume baru, data lokal tidak tersentuh) — **91
+migration diterapkan dari nol**, kelima bucket muncul, dan **189 tes lolos** di
+atasnya. Itu juga pertama kalinya rangkaian migration ini dibuktikan bisa
+membangun database kosong sampai ujung.
+
+`pnpm lint` belum masuk gerbang: satu error lama di `components/pdf-viewer.tsx`.
+
+### Keputusan resource — dengan angka
+
+Diukur 2026-09-19 di mesin ini, sesudah beban `pnpm test:db`:
+
+| Komponen | Memori | Dipakai aplikasi | Kalau diganti sendiri |
+|---|---:|---|---|
+| storage-api | ~285 MB | 5 bucket, signed URL, batas ukuran/jenis | kontraknya kini dikunci `storage-http.test.ts` |
+| Kong | ~93 MB | hanya meneruskan request | Caddy sudah ada di depan aplikasi |
+| Postgres | ~87 MB | inti — data, RLS, trigger | tidak tergantikan |
+| GoTrue (auth) | ~12 MB | 8 method + refresh cookie | menulis ulang auth demi 12 MB |
+| PostgREST | ~11 MB | setiap query | menulis ulang ratusan query + 62 policy demi 11 MB |
+| realtime, pg_meta, studio, … | ~300 MB+ | **tidak dipakai** | cukup tidak dinyalakan |
+
+Stack lengkap yang jalan sebelumnya: 8 container, ±710 MB. Minimal yang
+cukup untuk seluruh tes: 5 container, ±490 MB.
+
+**Rekomendasi — "lowest resource" yang tidak membuang jaring tes:**
+
+1. **Sekarang:** kalau meninggalkan Supabase *hosted*, self-host
+   **Postgres + GoTrue + PostgREST + storage-api tanpa Kong** — Caddy
+   (sudah ada) merutekan `/auth/v1`, `/rest/v1`, `/storage/v1` langsung ke
+   masing-masing. Perkiraan ±395 MB. **Nol perubahan kode aplikasi**, dan
+   seluruh `tests/db` berlaku apa adanya, karena memang menguji service-service
+   ini. Langkah pertama rencana itu: jalankan `pnpm test:db` lewat Caddy, bukan
+   Kong — belum dibuktikan di sini.
+2. **Kalau memori masih jadi batas:** ganti **storage-api** (komponen terberat)
+   dengan disk atau S3 langsung dari aplikasi. Hemat ±285 MB; kontrak yang harus
+   dipenuhi sudah tertulis sebagai tes.
+3. **Jangan** menulis ulang GoTrue atau PostgREST demi resource: gabungan
+   keduanya ±23 MB, dan menggantinya berarti memindahkan 62 policy, grant kolom,
+   trigger `SECURITY DEFINER`, dan kontrak refresh cookie ke kode aplikasi —
+   persis lapisan tempat rencana ini menemukan sebagian besar bug-nya.
+
+Catatan jujur: Supabase *hosted* memakai **0 MB** di server sendiri. Setiap
+varian self-host di atas **menambah** beban server; yang dihemat adalah biaya
+langganan dan ketergantungan, bukan RAM.
+
+### Perawatan lingkungan lokal (ditemukan di fase ini)
+
+- `supabase start` polos gagal di colima (service `vector` me-mount socket
+  Docker) — pakai daftar `-x` di skill `run-local`.
+- Disk Docker di VM colima penuh (30/30 GB) oleh image Supabase versi lama yang
+  menumpuk; ±9 GB dibebaskan dengan menghapus versi yang sudah digantikan, tanpa
+  menyentuh volume. `wallet-mongo` (project lain) crash-loop saat inisialisasi
+  mesin penyimpanan sejak colima dinyalakan ulang hari ini — bukan karena disk,
+  tidak disentuh.

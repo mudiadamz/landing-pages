@@ -1,0 +1,65 @@
+# The gate. Two jobs, because they need different things:
+#
+#   unit — typecheck + the pure suite. No Docker, seconds.
+#   db   — the local Supabase stack, minimal, and tests/db against it: RLS,
+#          column grants, triggers, auth, storage, and the schema contract.
+#
+# The db job is the one that matters for migrations. The pure suite stayed
+# green through a migration that broke every signup
+# (docs/plans/test-before-leaving-supabase.md); only a real database noticed.
+#
+# `pnpm lint` is NOT a gate yet: it carries one pre-existing error in
+# components/pdf-viewer.tsx. Add it here once that is fixed.
+
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # pnpm version comes from package.json "packageManager".
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm test
+
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+
+      # Only what the tests exercise: Postgres, GoTrue, PostgREST, Storage, and
+      # Kong in front of them (the tests use the same URLs the app does). A
+      # fresh start applies every migration and supabase/seed.sql, from the
+      # same config.toml the local stack uses — which is also what makes
+      # tests/db/global-setup.ts's "GoTrue behaves like production" check pass.
+      - name: Start Supabase (minimal)
+        run: >
+          pnpm exec supabase start
+          -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - run: pnpm test:db
+
+      - name: Stop Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup
