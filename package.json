@@ -18,7 +18,8 @@
     "pdf:epub": "node scripts/pdf-to-epub.mjs",
     "i18n:scan": "node scripts/find-hardcoded-strings.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:db": "vitest run --config vitest.db.config.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -39,11 +40,13 @@
     "@napi-rs/canvas": "^0.1.100",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "pg": "^8.23.0",
     "supabase": "^2.76.15",
     "tailwindcss": "^4",
     "typescript": "^5",

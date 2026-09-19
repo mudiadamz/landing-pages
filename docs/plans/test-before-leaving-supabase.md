@@ -151,7 +151,7 @@ baru.
 
 | Fase | Isi | Status |
 |---|---|---|
-| 0 | Perbaiki signup yang patah + pasang rel tes integrasi | ⬜ |
+| 0 | Perbaiki signup yang patah + pasang rel tes integrasi | ✅ |
 | 1 | Characterization test: RLS & GRANT (69 policy, 34 tabel) | ⬜ |
 | 2 | Characterization test: trigger, RPC, constraint | ⬜ |
 | 3 | Kontrak Auth & sesi | ⬜ |
@@ -167,9 +167,15 @@ baru.
 mati, dan fase 1–4 semuanya butuh rel yang sama.
 
 1. ✅ sudah: `20260919000000_fix_handle_new_user_account_type.sql`.
-2. **Putuskan soal produksi.** Kalau `20260903010000` sudah pernah di-`db push`
-   ke Supabase hosted, pendaftaran di produksi sedang mati dan perbaikan ini
-   harus naik lebih dulu, terpisah dari sisa rencana ini.
+2. **Produksi — terdampak.** Diperiksa 2026-09-19 dengan probe baca-saja (anon
+   key, `select=role&limit=0`): di project hosted, `lp_profiles.role` **sudah
+   tidak ada** dan `account_type` ada. Artinya `20260903010000` sudah naik ke
+   produksi, dan trigger yang masih menulis ke `role` ikut bersamanya —
+   pendaftaran di produksi mati sejak itu. Perbaikannya **belum** diterapkan ke
+   produksi: menulis ke database produksi adalah keputusan Adam, bukan bagian
+   yang dikerjakan otomatis. Perintahnya: `pnpm exec supabase db push`
+   (setelah `supabase link`), dan periksa dulu daftar migration yang akan ikut
+   naik dengan `supabase migration list --linked`.
 3. Tambah dependency: klien Postgres langsung (`pg` atau `postgres`) sebagai
    devDependency. Repo sekarang **tidak punya** — semua akses lewat SDK Supabase,
    jadi tes tidak bisa menyamar jadi role `anon`/`authenticated`.
@@ -182,7 +188,8 @@ mati, dan fase 1–4 semuanya butuh rel yang sama.
    Pemisahannya disengaja — `pnpm test` harus tetap bisa jalan tanpa Docker.
 
 **Verifikasi:** `pnpm test` tetap 131 lolos tanpa Docker; `pnpm test:db` jalan dan
-satu tes contoh (signup membuat profil) lolos.
+`tests/db/signup.test.ts` lolos. **Dicek juga sebaliknya:** dengan trigger versi
+rusak dipasang kembali, kelima tesnya merah.
 
 ---
 
