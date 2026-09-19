@@ -41,7 +41,7 @@ export async function GET(req: Request) {
     const { data, error } = await admin
       .from("lp_profiles")
       .select(PROFILE_COLUMNS)
-      .order("role", { ascending: true })
+      .order("account_type", { ascending: true })
       .order("full_name", { ascending: true });
     if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
     // site_role null = "tidak relevan di tampilan lintas situs", bukan "bukan anggota".
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
     .from("lp_profiles")
     .select(PROFILE_COLUMNS)
     .in("id", ids)
-    .order("role", { ascending: true })
+    .order("account_type", { ascending: true })
     .order("full_name", { ascending: true });
   if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
 

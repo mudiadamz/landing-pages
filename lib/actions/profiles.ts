@@ -445,10 +445,14 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
     .single();
 
   if ((error || !data) && user) {
+    // No account_type: the column's default says 'customer', and a signed-in
+    // user may insert only (id, full_name) — naming any other column here is
+    // refused (20260919010000). That refusal is the point: this is the path an
+    // account without a profile takes, and it must not be a way to pick one's
+    // own account type.
     const { error: insertError } = await supabase.from("lp_profiles").insert({
       id: user.id,
       full_name: user.user_metadata?.full_name ?? null,
-      account_type: "customer",
     });
     if (!insertError || insertError.code === "23505") {
       const ret = await supabase

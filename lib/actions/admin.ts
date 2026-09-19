@@ -18,7 +18,7 @@ export type CustomerRow = {
   id: string;
   full_name: string | null;
   email: string | null;
-  role: string;
+  account_type: string;
   /** Everything they own, revoked included — this is their buying history. */
   purchase_count: number;
   /** How many of those an admin has since taken access to. */
@@ -84,9 +84,13 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   });
 
   const buyerIds = [...countMap.keys()];
+  // lp_profiles, not lp_site_members: names and emails live on the person,
+  // and lp_site_members has none of these columns. The wrong table used to
+  // make this query fail — silently, since the error is not read — and every
+  // customer rendered nameless.
   const { data: profiles } = await supabase
-    .from("lp_site_members")
-    .select("id, full_name, email, role")
+    .from("lp_profiles")
+    .select("id, full_name, email, account_type")
     .in("id", buyerIds);
 
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -97,7 +101,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
       id: uid,
       full_name: p?.full_name ?? null,
       email: p?.email ?? null,
-      role: p?.role ?? "customer",
+      account_type: p?.account_type ?? "customer",
       purchase_count: countMap.get(uid) ?? 0,
       revoked_count: revokedMap.get(uid) ?? 0,
       last_purchase_at: lastPurchaseMap.get(uid) ?? null,
@@ -340,10 +344,16 @@ export async function rejectPublisher(
     const { error: rmErr } = await supabase.storage.from("publisher-kyc").remove(paths);
     if (rmErr) console.error("rejectPublisher photo cleanup error:", rmErr);
     else {
-      await supabase
-        .from("lp_profiles")
+      // The paths live on the membership row since the account_type model —
+      // the same row updated above. They used to be cleared on lp_profiles,
+      // where the columns no longer exist, so the update failed unread and the
+      // application kept pointing at photos that had just been deleted.
+      const { error: clearErr } = await supabase
+        .from("lp_site_members")
         .update({ publisher_ktp_path: null, publisher_selfie_path: null })
-        .eq("id", userId);
+        .eq("user_id", userId)
+        .eq("site_id", (await editingSite()).id);
+      if (clearErr) console.error("rejectPublisher path cleanup error:", clearErr);
     }
   }
 
