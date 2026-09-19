@@ -535,7 +535,7 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ dan storage.objects 1`]
     "using": "((bucket_id = 'landing-downloads'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
   },
   {
-    "check": "",
+    "check": "((bucket_id = 'landing-assets'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]) AND lp_can_sell())",
     "cmd": "UPDATE",
     "policyname": "Users can update own assets",
     "roles": "public",
@@ -543,7 +543,7 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ dan storage.objects 1`]
     "using": "((bucket_id = 'landing-assets'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))",
   },
   {
-    "check": "((bucket_id = 'landing-downloads'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+    "check": "((bucket_id = 'landing-downloads'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND lp_can_sell())",
     "cmd": "INSERT",
     "policyname": "Users can upload downloads in own folder",
     "roles": "public",
@@ -551,7 +551,7 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ dan storage.objects 1`]
     "using": "",
   },
   {
-    "check": "((bucket_id = 'landing-assets'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))",
+    "check": "((bucket_id = 'landing-assets'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]) AND lp_can_sell())",
     "cmd": "INSERT",
     "policyname": "Users can upload own assets",
     "roles": "public",

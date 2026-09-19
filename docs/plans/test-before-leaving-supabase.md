@@ -155,7 +155,7 @@ baru.
 | 1 | Characterization test: RLS & GRANT (69 policy, 34 tabel) | ✅ |
 | 2 | Characterization test: trigger, RPC, constraint | ✅ |
 | 3 | Kontrak Auth & sesi | ✅ |
-| 4 | Kontrak Storage | ⬜ |
+| 4 | Kontrak Storage | ✅ |
 | 5 | Rapikan temuan yang sudah terlanjur ketahuan | ⬜ |
 | 6 | Gerbang CI + keputusan resource | ⬜ |
 
@@ -326,23 +326,44 @@ tetap harus dicoba tangan sekali di produksi setiap kali backend auth berubah.
 
 ## Fase 4 — kontrak Storage
 
-Lima bucket, dan salah satunya masalah:
+`tests/db/storage-http.test.ts` (13 tes, lewat Storage API lokal) melengkapi
+`rls-storage.test.ts` di level SQL. Batas ukuran dan jenis file hanya ditegakkan
+Storage API, dan penghapusan hanya bisa lewat API — dua hal yang tidak terlihat
+dari SQL.
 
-| Bucket | Publik | Di migration? |
-|---|---|---|
-| `landing-assets` | ya | ya |
-| `landing-downloads` | tidak | ya |
-| `publisher-kyc` | tidak | ya |
-| `chat-attachments` | tidak | ya |
-| **`hiring-cv`** | tidak | **TIDAK** |
+| Bucket | Publik | Batas | Jenis | Siapa menulis | Siapa membaca |
+|---|---|---|---|---|---|
+| `landing-assets` | ya | 50 MB | semua | **penjual**, foldernya sendiri | siapa pun |
+| `landing-downloads` | tidak | 50 MB | zip, pdf, epub | **penjual**, foldernya sendiri | **tidak ada** — hanya signed URL dari server sesudah cek pembelian |
+| `chat-attachments` | tidak | 8 MB | daftar tetap | pemilik, foldernya | pemilik |
+| `publisher-kyc` | tidak | 5 MB | JPEG | service role | service role |
+| `hiring-cv` | tidak | 5 MB | PDF | service role | service role |
 
-`hiring-cv` dibuat manual dan tidak pernah masuk version control. Database lokal
-cuma punya 4 bucket — artinya `/api/hiring-test` **sudah patah** di environment
-mana pun yang dibangun dari migration, dan migrasi backend akan melewatkannya
-diam-diam. Fase ini menambahkan migration-nya.
+**Ditemukan & diperbaiki:**
 
-Tes: batas ukuran, mime type yang ditolak, signed URL kedaluwarsa, dan file di
-folder orang lain tidak bisa disentuh.
+- **`hiring-cv` tidak pernah ada di migration** (`20260919060000`). Dibuat tangan
+  di dashboard produksi; database lokal, CI, dan backend pengganti mana pun tidak
+  punya bucket-nya, jadi `/api/hiring-test` gagal di langkah upload. Migration-nya
+  memakai `on conflict do update`, supaya bucket produksi — yang setelannya tidak
+  pernah dicatat — dipaksa ke bentuk tertulis, terutama **privat**. Terbukti:
+  menjalankannya di atas bucket yang sudah publik mengembalikannya jadi privat.
+- **Customer mana pun bisa mengunggah file apa pun ke bucket publik**
+  (`20260919070000`). `landing-assets` sengaja menerima semua jenis file untuk
+  bundle situs, dan policy unggahnya berlaku untuk setiap user login — hosting
+  gratis, termasuk halaman phishing, di domain storage proyek. Sekarang unggahan
+  ke `landing-assets` dan `landing-downloads` mensyaratkan `lp_can_sell()`, sama
+  dengan syarat membuat produk. Satu-satunya jalur client-user ke dua bucket itu
+  adalah form produk di panel; avatar lewat service role.
+
+Dicek dua arah: `hiring-cv` dibuat publik → dua tes merah; pengetatan unggahan
+diverifikasi lewat diff snapshot (tiga policy) dan tes yang merah sebelum
+migration-nya.
+
+**Catatan, tidak diubah:** `chat-attachments` mengizinkan `text/html` dan
+`text/javascript`. Bucket-nya privat dan filenya hanya terbuka lewat signed URL
+di domain Supabase (bukan domain aplikasi, jadi tidak membawa cookie sesi), jadi
+risikonya kecil — tapi layak diingat kalau storage pindah ke domain yang sama
+dengan aplikasi.
 
 ---
 

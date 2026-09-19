@@ -26,12 +26,20 @@ const seed = (bucket: string, name: string) =>
   sql("insert into storage.objects (bucket_id, name) values ($1, $2)", [bucket, name]);
 
 describe("landing-assets — publik, tulis di folder sendiri", () => {
-  it("pemilik mengunggah ke foldernya; tidak ke folder orang lain; anon tidak mengunggah", async () => {
-    const me = await makeUser();
+  it("penjual mengunggah ke foldernya; tidak ke folder orang lain; anon tidak mengunggah", async () => {
+    const me = await makeUser({ accountType: "agent" });
     const other = await makeUser();
     expect((await put({ uid: me }, "landing-assets", `${me}/a.png`)).rowCount).toBe(1);
     await denied(() => put({ uid: me }, "landing-assets", `${other}/a.png`));
     await denied(() => put("anon", "landing-assets", `${me}/b.png`));
+  });
+
+  it("customer biasa tidak bisa mengunggah, bahkan ke foldernya sendiri", async () => {
+    // Public bucket, every file type: open to any account it was free hosting
+    // on the project's storage domain (20260919070000).
+    const me = await makeUser();
+    await denied(() => put({ uid: me }, "landing-assets", `${me}/halaman.html`));
+    await denied(() => put({ uid: me }, "landing-downloads", `${me}/p/x.zip`));
   });
 
   it("siapa pun bisa melihat objeknya — ini bucket gambar publik", async () => {
