@@ -274,7 +274,9 @@ between — before the full funnel.
   fix that recovers 80% of bounced traffic beats any creative rewrite.
 - **Small numbers = wide error bars.** With a few dozen sessions, say so rather
   than over-reading noise.
-- If the fix is code in this repo, offer to implement it — and remember the
-  standing rule to deploy with `vercel --prod --yes` when done.
+- If the fix is code in this repo, offer to implement it — lalu commit. **Deploy
+  tidak bisa dari mesin ini**: sejak Vercel dipensiunkan, yang menerapkannya
+  `docker compose --env-file .env.production up -d --build` di server, dijalankan
+  Adam. Sebutkan bahwa perubahannya belum live.
 - Log the outcome afterwards so predictions calibrate (see
   `docs/ai-analytics-plan.md`, `lp_product_outcomes`).
