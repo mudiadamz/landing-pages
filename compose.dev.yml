@@ -15,14 +15,10 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: lp
-      # Role `app` yang dipakai aplikasi, seperti di produksi (db/init). Tes
-      # memakai password yang sama (tests/db/global-setup.ts).
-      APP_DB_PASSWORD: app
     ports:
       - "127.0.0.1:54329:5432"
     volumes:
       - pgdata_dev:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 2s

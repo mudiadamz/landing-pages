@@ -18,7 +18,7 @@
 set -eu
 
 DUMP="${1:?pakai: scripts/import-supabase-data.sh <supabase-data.dump>}"
-PGEXEC="${PGEXEC:-docker compose exec -T db}"
+PGEXEC="${PGEXEC:-docker compose --env-file .env.production exec -T db}"
 DB="${IMPORT_DB:-lp}"
 
 EXISTING=$($PGEXEC psql -U postgres -d "$DB" -tAc "select (select count(*) from auth.users) + (select count(*) from public.lp_sites)")

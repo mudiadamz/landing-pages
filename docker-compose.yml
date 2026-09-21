@@ -7,7 +7,8 @@
 # (rahasia runtime). Dua berkas terpisah akan menyimpan nilai yang sama dua
 # kali, dan salinan kedua itu yang akan menyimpang.
 #
-# Urutan naik: db sehat → migrate (sekali jalan, db/migrations) sukses → app
+# Urutan naik: db sehat → migrate (sekali jalan: db/migrations + login role
+# app) sukses → app
 # sehat → caddy. Deploy yang membawa migration gagal BERHENTI di migrate: app
 # lama tetap jalan, app baru tidak pernah melihat skema setengah jadi.
 #
@@ -21,13 +22,10 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD di .env.production}
       POSTGRES_DB: lp
-      # Dibaca db/init/01-app-role.sh saat volume pertama kali dibuat.
-      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?isi APP_DB_PASSWORD di .env.production}
     # Tidak ada `ports:` — database hanya dijangkau container lain di jaringan
     # compose. Backup lewat `docker compose exec db pg_dump`.
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "lp"]
       interval: 5s
@@ -35,7 +33,9 @@ services:
       retries: 20
 
   # Sekali jalan per deploy, sebagai PEMILIK database (bukan `app`): migration
-  # membuat tabel dan memberi grant, aplikasi hanya membaca-menulis.
+  # membuat tabel dan memberi grant, aplikasi hanya membaca-menulis. Lalu
+  # memberi role `app` password APP_DB_PASSWORD — setiap deploy, jadi volume
+  # baru, volume lama, dan password yang diganti berakhir sama.
   migrate:
     image: lp-app
     build:
@@ -49,6 +49,7 @@ services:
     command: ["node", "scripts/migrate.mjs"]
     environment:
       MIGRATE_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/lp
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?isi APP_DB_PASSWORD di .env.production}
     restart: "no"
     depends_on:
       db:

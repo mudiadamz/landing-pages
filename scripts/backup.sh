@@ -19,16 +19,18 @@
 set -eu
 
 DEST="${1:-/srv/backups}"
+# --env-file: docker-compose.yml menolak jalan tanpa POSTGRES_PASSWORD dkk.
+COMPOSE="${COMPOSE:-docker compose --env-file .env.production}"
 KEEP_DAYS="${KEEP_DAYS:-14}"
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$DEST"
 
 # Ke berkas sementara dulu, baru di-rename: backup yang gagal di tengah tidak
 # boleh terlihat seperti backup yang berhasil.
-docker compose exec -T db pg_dump -U postgres -d lp -Fc > "$DEST/db-$TS.dump.part"
+$COMPOSE exec -T db pg_dump -U postgres -d lp -Fc > "$DEST/db-$TS.dump.part"
 mv "$DEST/db-$TS.dump.part" "$DEST/db-$TS.dump"
 
-docker compose exec -T app tar -C /srv/storage -czf - . > "$DEST/storage-$TS.tgz.part"
+$COMPOSE exec -T app tar -C /srv/storage -czf - . > "$DEST/storage-$TS.tgz.part"
 mv "$DEST/storage-$TS.tgz.part" "$DEST/storage-$TS.tgz"
 
 echo "$(date -u +%FT%TZ) backup: $(du -h "$DEST/db-$TS.dump" | cut -f1) db, $(du -h "$DEST/storage-$TS.tgz" | cut -f1) storage"

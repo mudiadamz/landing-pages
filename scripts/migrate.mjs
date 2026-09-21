@@ -11,6 +11,12 @@
  * only reads and writes. Use MIGRATE_DATABASE_URL when DATABASE_URL is the app
  * role.
  *
+ * With APP_DB_PASSWORD set, it then gives the `app` role (created, without a
+ * login, by the baseline) that password and LOGIN — on every run, so a fresh
+ * volume, an existing one, and a rotated password all end the same way. This
+ * used to be an initdb script, which runs only on an empty volume and failed
+ * silently when it did not run at all.
+ *
  * Each file runs in its own transaction together with the row that records it,
  * so a failed migration leaves neither half behind. Files already recorded are
  * skipped by version (the timestamp before the first `_`); a recorded version
@@ -35,7 +41,14 @@ export function migrationFiles(dir = DIR) {
     });
 }
 
-export async function migrate(connectionString, { dir = DIR, log = console.log, statusOnly = false } = {}) {
+/**
+ * @param {string} connectionString
+ * @param {{ dir?: string, log?: (m: string) => void, statusOnly?: boolean, appPassword?: string | null }} [opts]
+ */
+export async function migrate(
+  connectionString,
+  { dir = DIR, log = console.log, statusOnly = false, appPassword = null } = {},
+) {
   const client = new pg.Client({ connectionString });
   await client.connect();
   try {
@@ -84,6 +97,10 @@ export async function migrate(connectionString, { dir = DIR, log = console.log, 
       log(`diterapkan: ${m.name}`);
     }
     if (!applied.length && !statusOnly) log("database sudah terbaru");
+    if (appPassword && !statusOnly) {
+      await client.query(`alter role app login password ${client.escapeLiteral(appPassword)}`);
+      log("role app: login diperbarui");
+    }
     return applied;
   } finally {
     await client.end();
@@ -97,7 +114,7 @@ if (isMain) {
     console.error("MIGRATE_DATABASE_URL atau DATABASE_URL harus diisi.");
     process.exit(2);
   }
-  migrate(url, { statusOnly: process.argv.includes("--status") })
+  migrate(url, { statusOnly: process.argv.includes("--status"), appPassword: process.env.APP_DB_PASSWORD || null })
     .then(async () => {
       if (!process.argv.includes("--seed")) return;
       const client = new pg.Client({ connectionString: url });

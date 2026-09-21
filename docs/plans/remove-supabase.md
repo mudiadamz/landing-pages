@@ -97,7 +97,7 @@ langsung. **Tidak ada user yang perlu reset sandi.** Identitas Google ada di
 | 2 | Storage sendiri (disk + URL bertanda) | M | ✅ |
 | 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ✅ |
 | 4 | Postgres pindah ke server sendiri | M | ✅ |
-| 5 | Cutover produksi | S, butuh jendela pemeliharaan | ⬜ |
+| 5 | Cutover produksi | S, butuh jendela pemeliharaan | 🟡 runbook siap & digladikan; eksekusi di produksi = Adam |
 | 6 | Bersih-bersih & penghapusan project Supabase | S | ⬜ |
 
 **Urutannya tidak bisa dibalik di satu titik:** database pindah **paling
@@ -388,8 +388,7 @@ samping app dan Caddy.
 |---|---|
 | `db/migrations/00000000000000_baseline.sql` | shim + seluruh skema (`pg_dump --schema-only` public + app_auth + auth.users/identities, dibersihkan dari pemilik & role internal Supabase) |
 | `db/migrations/_archive/` | 93 migration era Supabase, sebagai riwayat |
-| `scripts/migrate.mjs` | runner: berurutan, satu transaksi per file bersama catatannya, advisory lock, checksum (migration lama yang diubah → ditolak) |
-| `db/init/01-app-role.sh` | saat volume baru: role login `app` + password dari env |
+| `scripts/migrate.mjs` | runner: berurutan, satu transaksi per file bersama catatannya, advisory lock, checksum (migration lama yang diubah → ditolak); lalu LOGIN + password role `app` dari `APP_DB_PASSWORD`, setiap jalan |
 | `docker-compose.yml` | `db` → `migrate` (sekali jalan, pemilik) → `app` (role `app`) → Caddy |
 | `compose.dev.yml` | satu container untuk dev & tes (port 54329) |
 | `scripts/backup.sh` | `pg_dump -Fc` + tar `/srv/storage`, rotasi 14 hari, rclone opsional |
@@ -446,29 +445,59 @@ ulangi latihan restore dengan backup produksi sungguhan setelah cutover.
 
 ---
 
-## Fase 5 — cutover produksi
+## Fase 5 — cutover produksi 🟡 siap & digladikan — menunggu Adam
 
-Satu jendela pemeliharaan. Lamanya ditentukan angka di Fase 0 (terutama besar
-file).
+**Runbook: [`docs/runbooks/cutover-supabase.md`](../runbooks/cutover-supabase.md).**
+Semua perintahnya sudah dijalankan persis seperti tertulis; yang belum hanyalah
+menjalankannya di server produksi, yang tidak bisa dari mesin ini dan memang
+keputusan Adam.
 
-1. Salin file lebih dulu, di luar jendela (rsync inkremental; ulangi di dalam
-   jendela untuk delta-nya).
-2. **Buka jendela:** halaman pemeliharaan, tulis dibekukan.
-3. `pg_dump` data `lp_*` + `auth.users` + `auth.identities` dari Supabase →
-   restore ke Postgres server.
-4. Delta file terakhir; jalankan penulisan ulang URL; periksa hitungan objek dan
-   query `supabase.co` = 0.
-5. Ganti env (`DATABASE_URL`, rahasia HMAC, client Google), `docker compose up -d
-   --build`.
-6. **Uji asap di produksi:** daftar akun baru, login sandi lama, login Google,
-   ambil produk gratis, beli produk berbayar (Duitku sandbox kalau bisa), unduh,
-   unggah thumbnail, chat MbahGPT dengan lampiran, simpan setelan sebagai Agent.
-7. **Tutup jendela.**
+**Alat (baru di fase ini):** `scripts/supabase-catch-up.mjs` — menyamakan skema
+Supabase dengan baseline tanpa CLI (7 migration `20260919*` + `20260921` +
+`20260922` masih tertinggal di produksi). Alat lain dari Fase 2 & 4:
+`storage-migrate.mjs export|rewrite`, `import-supabase-data.sh`,
+`restore-verify.mjs`, `backup.sh`, `restore-drill.sh`. Tiga yang dijalankan di
+server ikut di dalam image, supaya jalan lewat `docker compose run app …` di
+jaringan compose dan langsung ke volume.
 
-**Jalan mundur:** project Supabase **tidak dihapus** dan tidak diubah selama
-fase ini. Selama belum ada tulisan baru yang penting, kembali = kembalikan env
-dan deploy ulang. Sesudah ada tulisan baru, jalan mundurnya adalah dump balik.
-Karena itu jendela rollback dibatasi (lihat Fase 6).
+**Urutannya** (detail di runbook): A. persiapan — URI Google, env baru,
+catch-up skema. B. salin file di luar jendela. C. hentikan app lama → db +
+migrate → dump data Supabase → impor + bandingkan tabel per tabel → delta file
++ tulis ulang URL → nyalakan → uji asap → backup pertama + cron.
+
+**Gladi (2026-09-22):** stack Supabase lokal sebagai produksi — skema sengaja
+tertinggal satu migration, dua file di Storage, URL Supabase di kolom biasa dan
+di HTML. `docker-compose.yml` yang sama sebagai server, di folder lain. Hasil:
+
+- A3: catch-up menemukan & menerapkan migration yang tertinggal.
+- B/C5: file tersalin (2 objek), jalan kedua tidak menyalin apa pun.
+- C2: `migrate` menerapkan baseline dan memberi login ke `app`.
+- C4: impor → **31 tabel cocok dengan sumbernya**, RLS berlaku.
+- C5: tulis ulang menemukan `html_content` & `thumbnail_url`, jalan kedua 0.
+- C6: db & app healthy, migrate keluar 0.
+- C7: login akun lama (hash GoTrue) → `/panel`; daftar akun baru → `/panel`;
+  halaman produk tanpa satu pun URL Supabase, gambar & ZIP yang diambil
+  **byte-identik** dengan yang ada di Supabase; akun yang belum beli → 403;
+  unggah sebagai penjual → 200; 7 halaman panel → 200; tanpa error di log.
+- C8: `backup.sh` → latihan restore dari backup itu → cocok (termasuk pembelian
+  & sesi dari uji asap), dan tar storage berisi ketiga file.
+
+**Ditemukan gladi & diperbaiki:** gladi pertama gagal login — `app` tanpa
+password, karena skrip initdb tidak jalan (di mesin ini bind mount dari luar
+`/Users` kosong). Akar masalahnya lebih umum: password `app` bergantung pada
+skrip yang hanya jalan pada volume kosong, dan gagal diam-diam (health check
+tetap hijau). Sekarang `migrate` memberi password itu **setiap deploy**; skrip
+initdb dihapus. Juga: skrip pembantu memanggil `docker compose` tanpa
+`--env-file` (akan berhenti di `:?` compose), runbook belum menyimpan commit
+untuk jalan mundur, dan `/srv/backups` belum tentu ada.
+
+**Tidak bisa digladikan di sini:** login Google (butuh client & domain
+sungguhan), Duitku, MbahGPT (butuh `OPENROUTER_API_KEY`), Caddy/TLS (Caddyfile
+tidak berubah di rencana ini). Semuanya ada di daftar uji asap runbook.
+
+**Jalan mundur:** project Supabase tidak diubah selain catch-up skema (yang
+hanya menambah). Kembali = checkout commit yang tercatat sebelum B, deploy ulang.
+Tulisan ke database baru sejak C6 tidak ikut kembali.
 
 ---
 

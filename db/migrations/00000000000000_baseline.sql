@@ -25,8 +25,8 @@ begin
   if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin noinherit; end if;
   if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin noinherit bypassrls; end if;
   -- Role yang dipakai aplikasi untuk tersambung. NOLOGIN di sini — password
-  -- dan LOGIN diberikan saat server disiapkan (db/init), bukan di file yang
-  -- masuk git.
+  -- dan LOGIN diberikan scripts/migrate.mjs dari APP_DB_PASSWORD, bukan di
+  -- file yang masuk git.
   if not exists (select 1 from pg_roles where rolname = 'app') then create role app nologin; end if;
 end $$;
 

@@ -29,7 +29,7 @@ declare module "vitest" {
   }
 }
 
-/** Same as compose.dev.yml — roles belong to the server, so dev and tests share it. */
+/** Same as .env.development.local — roles belong to the server, so dev and tests share it. */
 const APP_PASSWORD = "app";
 
 export default async function setup(project: TestProject) {
@@ -54,19 +54,9 @@ export default async function setup(project: TestProject) {
 
   const dbUrl = new URL(server);
   dbUrl.pathname = "/lp_test";
-  await migrate(dbUrl.toString(), { log: () => undefined });
-
-  // Roles are per server, not per database: the baseline creates `app` without
-  // a login (no password belongs in git); the test server gets one here, the
-  // same way db/init does on the real server.
-  const owner = new pg.Client({ connectionString: dbUrl.toString() });
-  await owner.connect();
-  try {
-    await owner.query(`alter role app login password '${APP_PASSWORD}'`);
-    await owner.query("grant connect on database lp_test to app");
-  } finally {
-    await owner.end();
-  }
+  // The same call the `migrate` service makes in production, password included
+  // (the baseline creates `app` without a login — no password belongs in git).
+  await migrate(dbUrl.toString(), { log: () => undefined, appPassword: APP_PASSWORD });
 
   const appDbUrl = new URL(dbUrl);
   appDbUrl.username = "app";

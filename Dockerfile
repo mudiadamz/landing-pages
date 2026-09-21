@@ -83,9 +83,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 # hidup, tapi tanpa CSS dan tanpa satu pun gambar.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-# Runner migration untuk service `migrate` di docker-compose.yml. Hanya butuh
-# `pg`, yang sudah ada di jejak standalone karena lib/backend memakainya.
-COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.mjs ./scripts/migrate.mjs
+# Runner migration untuk service `migrate` di docker-compose.yml, dan alat
+# cutover/latihan restore (docs/runbooks/cutover-supabase.md) yang dijalankan
+# lewat `docker compose run app node scripts/…` — di dalam jaringan compose dan
+# langsung ke volume /srv/storage. Hanya butuh `pg`, yang sudah ada di jejak
+# standalone karena lib/backend memakainya.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.mjs /app/scripts/storage-migrate.mjs /app/scripts/restore-verify.mjs ./scripts/
 COPY --from=builder --chown=nextjs:nodejs /app/db/migrations ./db/migrations
 
 # File unggahan (lib/backend/storage.ts). Direktori dibuat di sini dengan
