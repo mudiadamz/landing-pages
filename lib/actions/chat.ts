@@ -18,7 +18,7 @@
  * clear error rather than a silent empty list.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { currentSiteId } from "@/lib/site-resolve";
 import { ANSWER_LOCK_STALE_MS } from "@/lib/mbahgpt/config";
 import { chatMessagesUsed } from "@/lib/mbahgpt/quota";
@@ -79,11 +79,11 @@ export type ChatMemoryRow = {
  * and a mutable global would leak one visitor's language into another's response.
  */
 async function requireUser() {
-  const [supabase, locale] = await Promise.all([createClient(), requestLocale()]);
+  const [db, locale] = await Promise.all([createClient(), requestLocale()]);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  return { supabase, locale, userId: user?.id ?? null };
+  } = await db.auth.getUser();
+  return { db, locale, userId: user?.id ?? null };
 }
 
 /** Collapse runs of whitespace — the form a memory is stored and deduped in. */
@@ -93,13 +93,13 @@ function normalise(text: string): string {
 
 // -- sessions ---------------------------------------------------------------
 export async function listChatSessions(): Promise<ChatSessionRow[]> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return [];
 
   // The message count comes from an embedded aggregate rather than a second
   // round trip per row: the sidebar shows it for every session, and N+1 queries
   // there is how a sidebar starts costing more than the conversation.
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_chat_sessions")
     .select("id, title, updated_at, answering_at, lp_chat_messages(count)")
     .order("updated_at", { ascending: false });
@@ -127,17 +127,17 @@ export async function listChatSessions(): Promise<ChatSessionRow[]> {
 export async function getChatSession(
   sessionId: string,
 ): Promise<{ session: { id: string; title: string } | null; messages: ChatMessageRow[] }> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return { session: null, messages: [] };
 
-  const { data: session } = await supabase
+  const { data: session } = await db
     .from("lp_chat_sessions")
     .select("id, title")
     .eq("id", sessionId)
     .maybeSingle();
   if (!session) return { session: null, messages: [] };
 
-  const { data } = await supabase
+  const { data } = await db
     .from("lp_chat_messages")
     .select("id, role, content, reasoning, sources, created_at, lp_chat_attachments(id, name, mime, kind, size)")
     .eq("session_id", sessionId)
@@ -168,11 +168,11 @@ export async function getChatSession(
  * where a session has to exist before a message does (e.g. attaching files first).
  */
 export async function createChatSession(): Promise<{ id: string } | { error: string }> {
-  const { supabase, userId, locale } = await requireUser();
+  const { db, userId, locale } = await requireUser();
   if (!userId) return { error: t("chat.signInRequired", undefined, locale) };
 
   const siteId = await currentSiteId();
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_chat_sessions")
     .insert({ user_id: userId, site_id: siteId || null })
     .select("id")
@@ -182,33 +182,33 @@ export async function createChatSession(): Promise<{ id: string } | { error: str
 }
 
 export async function renameChatSession(sessionId: string, title: string): Promise<{ error?: string }> {
-  const { supabase, userId, locale } = await requireUser();
+  const { db, userId, locale } = await requireUser();
   if (!userId) return { error: t("chat.signInShort", undefined, locale) };
   const clean = normalise(title).slice(0, 120);
   if (!clean) return { error: t("chat.titleRequired", undefined, locale) };
 
-  const { error } = await supabase.from("lp_chat_sessions").update({ title: clean }).eq("id", sessionId);
+  const { error } = await db.from("lp_chat_sessions").update({ title: clean }).eq("id", sessionId);
   return error ? { error: error.message } : {};
 }
 
 export async function deleteChatSession(sessionId: string): Promise<{ error?: string }> {
-  const { supabase, userId, locale } = await requireUser();
+  const { db, userId, locale } = await requireUser();
   if (!userId) return { error: t("chat.signInShort", undefined, locale) };
 
   // Messages and attachment ROWS go with it (ON DELETE CASCADE). The stored files
   // are removed first, because once the rows are gone their paths are unknown and
   // the objects would sit in the bucket forever.
-  const { data: files } = await supabase
+  const { data: files } = await db
     .from("lp_chat_attachments")
     .select("storage_path, lp_chat_messages!inner(session_id)")
     .eq("lp_chat_messages.session_id", sessionId);
 
   const paths = ((files ?? []) as { storage_path: string }[]).map((f) => f.storage_path).filter(Boolean);
   if (paths.length) {
-    await supabase.storage.from("chat-attachments").remove(paths);
+    await db.storage.from("chat-attachments").remove(paths);
   }
 
-  const { error } = await supabase.from("lp_chat_sessions").delete().eq("id", sessionId);
+  const { error } = await db.from("lp_chat_sessions").delete().eq("id", sessionId);
   return error ? { error: error.message } : {};
 }
 
@@ -248,12 +248,12 @@ export type ChatAccount = {
  * account falls back to the address it signed up with and the free plan.
  */
 export async function getChatAccount(): Promise<ChatAccount | null> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return null;
 
   const [{ data: auth }, { data: profile }, overrides, prices, meta] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase.from("lp_profiles").select("full_name, avatar_url, plan, plan_expires_at").eq("id", userId).maybeSingle(),
+    db.auth.getUser(),
+    db.from("lp_profiles").select("full_name, avatar_url, plan, plan_expires_at").eq("id", userId).maybeSingle(),
     getPlanLimits(),
     getPlanPrices(),
     getPlanMeta(),
@@ -275,17 +275,17 @@ export async function getChatAccount(): Promise<ChatAccount | null> {
     planLabel: resolvePlanMeta(plan, meta).label,
     planExpiresAt: profile?.plan_expires_at ?? null,
     limits: resolvePlanLimits(plan, overrides),
-    used: await chatMessagesUsed(supabase, userId),
+    used: await chatMessagesUsed(db, userId),
     canUpgrade,
   };
 }
 
 // -- preferences ------------------------------------------------------------
 export async function getChatPrefs(): Promise<{ responseInstructions: string }> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return { responseInstructions: "" };
 
-  const { data } = await supabase
+  const { data } = await db
     .from("lp_chat_prefs")
     .select("response_instructions")
     .eq("user_id", userId)
@@ -294,10 +294,10 @@ export async function getChatPrefs(): Promise<{ responseInstructions: string }> 
 }
 
 export async function saveChatPrefs(responseInstructions: string): Promise<{ error?: string }> {
-  const { supabase, userId, locale } = await requireUser();
+  const { db, userId, locale } = await requireUser();
   if (!userId) return { error: t("chat.signInShort", undefined, locale) };
 
-  const { error } = await supabase.from("lp_chat_prefs").upsert(
+  const { error } = await db.from("lp_chat_prefs").upsert(
     {
       user_id: userId,
       // Capped: this text is prepended to every request in every chat, so an
@@ -312,10 +312,10 @@ export async function saveChatPrefs(responseInstructions: string): Promise<{ err
 
 // -- memories ---------------------------------------------------------------
 export async function listChatMemories(): Promise<ChatMemoryRow[]> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return [];
 
-  const { data } = await supabase
+  const { data } = await db
     .from("lp_chat_memories")
     .select("id, text, pinned, created_at")
     .order("pinned", { ascending: false })
@@ -331,12 +331,12 @@ export async function listChatMemories(): Promise<ChatMemoryRow[]> {
  * would race past.
  */
 export async function addChatMemory(text: string, pinned = false): Promise<ChatMemoryRow[]> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return [];
   const clean = normalise(text).slice(0, 300);
   if (!clean) return listChatMemories();
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_chat_memories")
     .insert({ user_id: userId, text: clean, pinned });
   // 23505 = unique violation: the same fact, already remembered.
@@ -348,7 +348,7 @@ export async function updateChatMemory(
   memoryId: string,
   patch: { text?: string; pinned?: boolean },
 ): Promise<ChatMemoryRow[]> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return [];
 
   const update: { text?: string; pinned?: boolean } = {};
@@ -356,13 +356,13 @@ export async function updateChatMemory(
   if (typeof patch.pinned === "boolean") update.pinned = patch.pinned;
   if (!Object.keys(update).length) return listChatMemories();
 
-  await supabase.from("lp_chat_memories").update(update).eq("id", memoryId);
+  await db.from("lp_chat_memories").update(update).eq("id", memoryId);
   return listChatMemories();
 }
 
 export async function deleteChatMemory(memoryId: string): Promise<ChatMemoryRow[]> {
-  const { supabase, userId } = await requireUser();
+  const { db, userId } = await requireUser();
   if (!userId) return [];
-  await supabase.from("lp_chat_memories").delete().eq("id", memoryId);
+  await db.from("lp_chat_memories").delete().eq("id", memoryId);
   return listChatMemories();
 }

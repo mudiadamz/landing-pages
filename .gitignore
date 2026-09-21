@@ -46,3 +46,7 @@ next-env.d.ts
 
 # Local file storage (lib/backend/storage.ts)
 .storage/
+
+# Sisa lokal Supabase CLI (project-ref, pooler-url) — dipakai runbook cutover,
+# dihapus bersama project Supabase.
+/supabase/

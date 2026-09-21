@@ -1,8 +1,8 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { fetchAllRows } from "@/lib/paginate";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { panelScope } from "@/lib/site-scope";
 
@@ -460,14 +460,14 @@ export async function getProductSummaries(range: Range = 30): Promise<ProductSum
 
 /** Single-product summary — admin or the product's owner. */
 export async function getProductSummary(pageId: string, range: Range = 30): Promise<ProductSummary | null> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return null;
 
   const isAdmin = await requireAdmin();
-  const q = supabase.from("lp_landing_pages").select("id, slug, title").eq("id", pageId);
+  const q = db.from("lp_landing_pages").select("id, slug, title").eq("id", pageId);
   const { data: prod } = await (isAdmin ? q : q.eq("user_id", user.id)).single();
   if (!prod) return null;
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 
@@ -13,9 +13,9 @@ type Props = { searchParams: Promise<{ name?: string }> };
 export default async function HiringTestResultPage({ searchParams }: Props) {
   const { name } = await searchParams;
 
-  const supabase = await createClient();
+  const db = await createClient();
   const [{ data: { user } }, categories] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getCategories(),
   ]);
 

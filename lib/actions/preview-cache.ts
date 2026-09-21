@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 
 /**
  * Force a product's preview to be served fresh.
@@ -25,15 +25,15 @@ import { createClient } from "@/lib/supabase/server";
 export async function purgePreviewCache(
   pageId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Unauthorized" };
 
   // RLS decides whether this user may touch the row; select the slug back so we
   // only revalidate paths that actually exist.
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_landing_pages")
     .update({ preview_purged_at: new Date().toISOString() })
     .eq("id", pageId)

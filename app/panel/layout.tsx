@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { isCanonicalRequest, canonicalOrigin, currentSite } from "@/lib/site-resolve";
 import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures, canSellOnCurrentSite } from "@/lib/actions/profiles";
@@ -70,14 +70,14 @@ export default async function PanelLayout({
     }
   }
 
-  const [supabase, profile, palette] = await Promise.all([
+  const [db, profile, palette] = await Promise.all([
     createClient(),
     getProfile(),
     getPanelPalette(),
   ]);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   const canSell = await canSellOnCurrentSite();
   const displayName = profile?.full_name?.trim() || user?.email?.split("@")[0] || "User";
   // Our own flag, not auth's — since signup stopped waiting for confirmation,

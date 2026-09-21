@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { headers } from "next/headers";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
+import { signingKey } from "@/lib/secrets";
 
 /**
  * Bot prevention for the email/password signup form.
@@ -49,14 +50,9 @@ const MAX_FORM_AGE_MS = 2 * 60 * 60 * 1000;
 const MAX_PER_IP = 10;
 const WINDOW_MS = 60 * 60 * 1000;
 
-/**
- * HMAC key. Never sent anywhere — only used to sign a timestamp we issue and
- * verify moments later — so the service role key is a fine source of entropy,
- * and it's guaranteed to be present wherever signup runs. SIGNUP_FORM_SECRET
- * overrides it if you'd rather keep the two apart.
- */
+/** HMAC key. Never sent anywhere — only signs a timestamp we issue and verify moments later. */
 function formSecret(): string | null {
-  return process.env.SIGNUP_FORM_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || null;
+  return signingKey("signup-form");
 }
 
 function sign(payload: string, secret: string): string {
@@ -70,7 +66,7 @@ function sign(payload: string, secret: string): string {
 export function issueSignupToken(): string {
   const secret = formSecret();
   const issued = Date.now().toString(36);
-  // Without a secret (a dev box with no service key) the token is unsigned and
+  // Without a secret (a dev box with no signing key) the token is unsigned and
   // verification skips the timing check rather than blocking signup entirely.
   return secret ? `${issued}.${sign(issued, secret)}` : issued;
 }

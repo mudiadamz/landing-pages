@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { requireFeature } from "./profiles";
 
 export type ReceivedEmailRow = {
@@ -31,8 +31,8 @@ export async function getReceivedEmailsForAdmin(): Promise<ReceivedEmailListItem
   // that let ANY signed-in user read it, so one PostgREST call from a customer's
   // browser returned the whole support inbox. That policy is gone
   // (20260919030000); requireFeature("inbox") is now the only way in.
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const db = createAdminClient();
+  const { data, error } = await db
     .from("lp_received_emails")
     .select("id, from_address, from_name, subject, received_at")
     .order("received_at", { ascending: false });
@@ -45,8 +45,8 @@ export async function getReceivedEmailById(id: string): Promise<ReceivedEmailRow
   const isAdmin = await requireFeature("inbox");
   if (!isAdmin) return null;
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const db = createAdminClient();
+  const { data, error } = await db
     .from("lp_received_emails")
     .select("*")
     .eq("id", id)
@@ -60,8 +60,8 @@ export async function deleteReceivedEmail(id: string) {
   const isAdmin = await requireFeature("inbox");
   if (!isAdmin) return { error: "Forbidden" };
 
-  const supabase = createAdminClient();
-  const { error } = await supabase
+  const db = createAdminClient();
+  const { error } = await db
     .from("lp_received_emails")
     .delete()
     .eq("id", id);

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/db/admin";
+import { createClient } from "@/lib/db/server";
 import { requireAdmin } from "@/lib/actions/profiles";
 
 /**
@@ -66,10 +66,10 @@ export async function addExcludedIp(
     return { ok: false, error: "Alamat IP tidak valid." };
   }
 
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   const admin = createAdminClient();
   const { error } = await admin

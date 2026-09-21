@@ -2,8 +2,8 @@
 
 /**
  * Client-side, direct-to-Storage uploads for the product form. Files go straight
- * from the browser to Supabase Storage (owner-scoped RLS), NOT through a Server
- * Action. Only the resulting URL/path is later saved to the DB (a tiny payload).
+ * from the browser to the storage route (/api/storage/object, owner rules in
+ * lib/backend/storage.ts), NOT through a Server Action. Only the resulting URL/path is later saved to the DB (a tiny payload).
  *
  * This started as a workaround for a hosting limit that no longer exists (a
  * ~4.5 MB request body cap). It stays because the shape is better on its own
@@ -16,7 +16,7 @@
  * Public bucket (assets) uploads return a public URL; private bucket (downloads)
  * uploads return the storage path (the download route signs it).
  */
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/db/client";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
 import { imageUploadLimit } from "@/lib/actions/profiles";
 
@@ -35,11 +35,11 @@ function assetPathFromUrl(url: string): string | null {
 }
 
 async function session() {
-  const supabase = createClient();
+  const db = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  return { supabase, uid: user?.id ?? null };
+  } = await db.auth.getUser();
+  return { db, uid: user?.id ?? null };
 }
 
 const tooBig = (file: File) => (file.size > MAX_UPLOAD_BYTES ? `Ukuran file melebihi ${MAX_UPLOAD_LABEL}.` : null);
@@ -51,23 +51,23 @@ async function uploadPublic(
   contentType: string,
   previousUrl?: string | null,
 ): Promise<UploadResult> {
-  const { supabase, uid } = await session();
+  const { db, uid } = await session();
   if (!uid) return { error: "Unauthorized" };
   const dir = subdir ? `${uid}/${pageId}/${subdir}` : `${uid}/${pageId}`;
   const path = `${dir}/${Date.now()}-${clean(file.name)}`;
 
   // upsert:false → a plain INSERT. Paths are unique (timestamped), so there's no
   // conflict; upsert would need an UPDATE RLS policy the buckets don't grant.
-  const { error } = await supabase.storage.from(ASSETS).upload(path, file, { contentType, upsert: false });
+  const { error } = await db.storage.from(ASSETS).upload(path, file, { contentType, upsert: false });
   if (error) return { error: error.message };
 
   if (previousUrl) {
     const prev = assetPathFromUrl(previousUrl) ?? previousUrl.split("?")[0];
     if (prev && prev !== path && prev.startsWith(`${uid}/`)) {
-      await supabase.storage.from(ASSETS).remove([prev]).catch(() => {});
+      await db.storage.from(ASSETS).remove([prev]).catch(() => {});
     }
   }
-  const { data } = supabase.storage.from(ASSETS).getPublicUrl(path);
+  const { data } = db.storage.from(ASSETS).getPublicUrl(path);
   return { url: data.publicUrl };
 }
 
@@ -78,20 +78,20 @@ async function uploadPrivate(
   contentType: string,
   previousPath?: string | null,
 ): Promise<UploadResult> {
-  const { supabase, uid } = await session();
+  const { db, uid } = await session();
   if (!uid) return { error: "Unauthorized" };
   const dir = subdir ? `${uid}/${pageId}/${subdir}` : `${uid}/${pageId}`;
   const path = `${dir}/${Date.now()}-${clean(file.name)}`;
 
   // upsert:false → plain INSERT (landing-downloads has no UPDATE policy, so an
   // upsert's ON CONFLICT DO UPDATE would violate RLS). Paths are unique anyway.
-  const { error } = await supabase.storage.from(DOWNLOADS).upload(path, file, { contentType, upsert: false });
+  const { error } = await db.storage.from(DOWNLOADS).upload(path, file, { contentType, upsert: false });
   if (error) return { error: error.message };
 
   if (previousPath) {
     const prev = previousPath.split("?")[0];
     if (prev && prev !== path && prev.startsWith(`${uid}/`)) {
-      await supabase.storage.from(DOWNLOADS).remove([prev]).catch(() => {});
+      await db.storage.from(DOWNLOADS).remove([prev]).catch(() => {});
     }
   }
   return { url: path }; // path, not URL
@@ -139,11 +139,11 @@ export async function uploadNewEpubClient(file: File): Promise<UploadResult> {
   if (big) return { error: big };
   if (!isEpub(file)) return { error: "Hanya file EPUB yang diizinkan" };
 
-  const { supabase, uid } = await session();
+  const { db, uid } = await session();
   if (!uid) return { error: "Unauthorized" };
 
   const path = `${uid}/_new/${Date.now()}-${clean(file.name)}`;
-  const { error } = await supabase.storage
+  const { error } = await db.storage
     .from(DOWNLOADS)
     .upload(path, file, { contentType: "application/epub+zip", upsert: false });
   if (error) return { error: error.message };

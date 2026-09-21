@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 
 function parseFrom(from: string): { email: string; name: string | null } {
   const match = from.match(/^(.+?)\s*<([^>]+)>$/);
@@ -73,8 +73,8 @@ export async function POST(req: NextRequest) {
     const { email: fromEmail, name: fromName } = parseFrom(email.from);
     const toAddresses = Array.isArray(email.to) ? email.to : [email.to];
 
-    const supabase = createAdminClient();
-    const { error: insertError } = await supabase.from("lp_received_emails").insert({
+    const db = createAdminClient();
+    const { error: insertError } = await db.from("lp_received_emails").insert({
       resend_email_id: emailId,
       from_address: fromEmail,
       from_name: fromName ?? null,

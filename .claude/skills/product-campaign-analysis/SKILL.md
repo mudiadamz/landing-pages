@@ -51,14 +51,28 @@ bug as a creative one.
 
 ## Step 1 — Pull the first-party data
 
-Query Supabase directly with the service-role key. This pattern works:
+Production data lives in the Postgres container on the server, reachable only
+from inside the compose network — so run the query **in the running app
+container** (on the server, from the repo folder), which already has `pg` and a
+`DATABASE_URL` for the `app` role. `app` sees no `lp_` table until it switches
+role; switch to `service_role` inside a **read-only** transaction, which is the
+same thing the app's admin client does and can't write by accident:
 
 ```bash
-node --env-file=.env.local -e '
-const { createClient } = require("@supabase/supabase-js");
-const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-(async () => { /* queries here */ })();'
+docker compose --env-file .env.production exec -T app node --input-type=module -e '
+import pg from "pg";
+const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
+await c.connect();
+await c.query("begin transaction read only");
+await c.query("set local role service_role");
+const { rows } = await c.query("select count(*) from lp_sessions where started_at > now() - interval \x271 day\x27");
+console.log(rows);
+await c.query("rollback"); await c.end();'
 ```
+
+(`\x27` is a single quote inside the shell-quoted script.) Locally the same code
+runs with `node --env-file=.env.development.local` against the dev database —
+which holds test data, not the campaign. This machine cannot reach production.
 
 Tables that matter:
 
@@ -113,12 +127,10 @@ Check every one of these:
   a realistic mobile speed (**~0.7 MB/s** for average Indonesian 4G).
 - **Blocking payload weight.** What must download before the visitor sees
   anything? Images/fonts/archives that block first paint are the usual culprit.
-- **Server-to-database distance.** The app is one container on one server; there
-  is no per-region function placement to check any more. What still matters is
-  where that server sits relative to the **Tokyo** Supabase project — a server on
-  the wrong side of the Pacific puts a round trip on every query, and a page
-  making ~6 queries pays it six times. Measure it from the server itself, not
-  from here.
+- **Server-to-database distance.** Gone as a factor: Postgres runs in a
+  container on the same server as the app, so a query costs a local round trip.
+  What still matters is where that **server** sits relative to the visitors
+  (Indonesia) — measure TTFB from an Indonesian vantage point, not from here.
 - **Cold vs warm cache.** Measure both — an endpoint that unzips or renders on
   demand is fast only after the first hit. Ad bursts hit cold caches.
 - **Streaming.** Does the shell flush before the data queries resolve? Check

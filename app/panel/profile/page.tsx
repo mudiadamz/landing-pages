@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { currentSiteId } from "@/lib/site-resolve";
 import type { MessageKey } from "@/lib/i18n";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { signOut } from "@/lib/actions/auth";
 import { getPurchasesForUser } from "@/lib/actions/purchases";
 import { getMyFavorites } from "@/lib/actions/likes";
@@ -58,14 +58,14 @@ const PUBLISHER_BADGE: Record<PublisherStatus, { textKey: MessageKey; className:
 
 export default async function ProfilePage() {
   const t = translator(await requestLocale());
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) redirect("/login");
 
   const [{ data: row }, purchases, favorites] = await Promise.all([
-    supabase
+    db
       .from("lp_profiles")
       // One string literal, deliberately: supabase-js infers the row type from
       // the literal, and a concatenated expression collapses it to an error type.

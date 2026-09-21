@@ -70,9 +70,9 @@ export const DEFAULT_LEGAL: LegalContent = {
 <h2>Pihak Ketiga (Sub-pemroses)</h2>
 <p>Kami menggunakan penyedia layanan tepercaya untuk menjalankan platform. Mereka hanya memproses data seperlunya untuk fungsinya:</p>
 <ul>
-<li><strong>Supabase</strong> — database, autentikasi, dan penyimpanan file.</li>
 <li><strong>Duitku</strong> — pemrosesan pembayaran (menerima data tagihan yang diperlukan untuk transaksi).</li>
-<li><strong>Penyedia server (VPS)</strong> — hosting aplikasi.</li>
+<li><strong>Penyedia server (VPS)</strong> — hosting aplikasi, database, dan penyimpanan file.</li>
+<li><strong>Google</strong> — masuk dengan akun Google (jika Anda memilihnya).</li>
 <li><strong>Resend</strong> — pengiriman email transaksional.</li>
 <li><strong>Tawk.to</strong> — live chat dukungan (jika diaktifkan).</li>
 <li><strong>Google Analytics &amp; Meta Pixel</strong> — pengukuran konversi (jika diaktifkan).</li>

@@ -2,7 +2,7 @@
 
 Port dari aplikasi mandiri `mbahgpt/` (Python stdlib + SQLite + Ionic) ke dalam
 deployment ini: **frontend jadi satu template storefront**, **backend jadi route
-handler + Server Actions di atas Supabase**.
+handler + Server Actions di atas Postgres** (lewat `lib/backend`, RLS tetap berlaku).
 
 Dokumen ini menjelaskan bentuk hasil port, **apa yang berubah dan kenapa**, serta
 batasan yang lahir dari perpindahan itu. Aturan umum codebase tetap di
@@ -34,11 +34,11 @@ lib/templates/mbahgpt/           frontend (port index.html)
   prefs-dialog.tsx  4 tab: akun, tampilan & bahasa, instruksi jawaban, memori
   markdown.tsx    renderer keluaran model (tanpa HTML mentah)
   copy-button.tsx tombol salin (kode & jawaban)
-  upload.ts       unggah lampiran langsung ke Storage
+  upload.ts       unggah lampiran langsung ke storage (/api/storage/object)
   chrome.tsx      header/footer tipis untuk halaman selain beranda
   category.tsx    slot Category & Categories
 
-supabase/migrations/20260817000000_mbahgpt_chat.sql
+db/migrations/_archive/20260817000000_mbahgpt_chat.sql   (riwayat — sudah termasuk baseline)
 ```
 
 Registry: kunci template **`mbahgpt`**. Set `lp_sites.template = 'mbahgpt'` untuk
@@ -46,7 +46,8 @@ domain yang mau memakainya (tanpa migration — lihat I12).
 
 ## 2. Mengaktifkan
 
-1. Jalankan migration (`pnpm db:push` atau `supabase migration up`).
+1. Tabel `lp_chat_*` sudah ada di baseline — cukup database yang migration-nya
+   terbaru (`pnpm db:migrate`; di server otomatis lewat service `migrate`).
 2. Isi `OPENROUTER_API_KEY` di environment server. Variabel lain punya default —
    daftar lengkap + komentarnya ada di [`.env.example`](../.env.example).
 3. Set `template` domainnya ke `mbahgpt` di `/panel/sites`.
@@ -58,8 +59,8 @@ apa-apa soal itu.
 ## 3. Alur satu pesan
 
 ```
-browser                     app                          Supabase / OpenRouter
-   │ upload lampiran ─────────────────────────────────▶ Storage (chat-attachments)
+browser                     app                          Postgres·disk / OpenRouter
+   │ upload lampiran ──▶ PUT /api/storage/object ───────▶ disk (chat-attachments)
    │ POST /api/mbahgpt/chat {session_id, content, attachments[]}
    │                          ├─ auth + rate limit (hitung pesan 1 menit terakhir)
    │                          ├─ claim: answering_at = now()  ← kunci per sesi
@@ -274,10 +275,10 @@ mengukur ulang.
 | Versi Python | Di sini | Alasan |
 |---|---|---|
 | SQLite lokal, satu pengguna | Postgres + RLS per user | satu deployment melayani banyak pengunjung |
-| Lampiran BLOB di `chats.db` | Supabase Storage (bucket privat) | baris Postgres direplikasi & di-backup; unggahan lewat browser langsung karena body function dibatasi ~4.5 MB |
+| Lampiran BLOB di `chats.db` | bucket privat `chat-attachments` di disk server (`lib/backend/storage.ts`), barisnya di Postgres | database tetap kecil dan ikut `backup.sh`; browser mengunggah langsung ke route storage, jadi request chat hanya membawa path, bukan base64 |
 | Lock sesi di memori proses | kolom `answering_at` + heartbeat 15 dtk, basi setelah 4 ketukan | request berikutnya bisa mendarat di instance lain; lock yang mati harus melepas dirinya sendiri, dan satu-satunya bukti "masih hidup" yang bisa dibaca request lain adalah stempel yang terus bergerak |
 | Rate limit per IP di memori | hitung pesan user 1 menit terakhir di Postgres | instance ephemeral, dan banyak orang berbagi IP di belakang NAT |
-| CSRF/Host pinning, token UI, CSP nonce sendiri | auth Supabase + cookie SameSite + header aplikasi | ancamannya beda: ini bukan lagi port di `127.0.0.1` |
+| CSRF/Host pinning, token UI, CSP nonce sendiri | auth aplikasi (sesi opak di cookie httpOnly `SameSite=Lax`) + header aplikasi | ancamannya beda: ini bukan lagi port di `127.0.0.1` |
 | `prefs (key, value)` | satu baris per user, kolom bernama | migration di sini normal; key salah ketik = no-op senyap |
 
 ## 9. Batasan yang diketahui

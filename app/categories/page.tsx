@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateCategoriesView } from "@/lib/templates/chrome";
@@ -19,9 +19,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Data loader; the storefront's template decides how the sections look. */
 export default async function CategoriesPage() {
-  const supabase = await createClient();
+  const db = await createClient();
   const [{ data: { user } }, site, categories] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     currentSite(),
     getCategories(),
   ]);

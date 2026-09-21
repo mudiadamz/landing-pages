@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { fetchAllRows } from "@/lib/paginate";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { panelScope } from "@/lib/site-scope";

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { getPublishedPage } from "@/lib/actions/pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
@@ -40,9 +40,9 @@ export default async function EditorialPageRoute({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const db = await createClient();
   const [{ data: { user } }, categories, page] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getCategories(),
     getPublishedPage(slug),
   ]);

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getLandingPageForCheckout, getRelatedProducts, getProductsByIds } from "@/lib/actions/landing-pages";
 import { isFreeProduct, isUpcoming } from "@/lib/product-status";
 import { previewLabelText } from "@/lib/preview-label";
@@ -97,7 +97,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CheckoutPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const [supabase, page, sp, site, locale] = await Promise.all([
+  const [db, page, sp, site, locale] = await Promise.all([
     createClient(),
     getCheckoutPage(slug),
     searchParams,
@@ -110,7 +110,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const adHeadline = sanitizeAdHeadline(sp.h);
   const [{ data: { user } }, reviews, reviewCount, related, liked, bundleItems, pickedRelated] =
     await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getPublicReviews(page.id, 5),
     getReviewCount(page.id),
     getRelatedProducts(page.id, page.category_id ?? null, 5),

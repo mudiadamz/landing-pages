@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Resend } from "resend";
+import { signingKey } from "@/lib/secrets";
 
 /**
  * Our own email verification, replacing Supabase's confirmation mail.
@@ -20,9 +21,9 @@ import { Resend } from "resend";
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 
-/** Same reasoning as lib/signup-guard: signing key, never transmitted. */
+/** Signing key, never transmitted (lib/secrets.ts). */
 function secret(): string | null {
-  return process.env.SIGNUP_FORM_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || null;
+  return signingKey("email-verify");
 }
 
 function sign(payload: string, key: string): string {

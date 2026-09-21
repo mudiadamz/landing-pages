@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { getLegalContent } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
@@ -19,7 +19,7 @@ import type { LegalKey } from "@/lib/legal-config";
  * inside `.page-prose` — the same pipeline as the editorial pages at /p/[slug].
  */
 export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
-  const supabase = await createClient();
+  const db = await createClient();
   const [
     {
       data: { user },
@@ -28,7 +28,7 @@ export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
     legal,
     locale,
   ] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getCategories(),
     getLegalContent(),
     requestLocale(),

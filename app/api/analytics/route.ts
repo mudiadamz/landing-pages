@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/db/admin";
+import { createClient } from "@/lib/db/server";
 import { currentSiteId } from "@/lib/site-resolve";
 
 /**
@@ -68,11 +68,11 @@ const EMPTY_GEO: Geo = { country: null, region: null, city: null, isp: null };
 
 /** Geo for an IP via the lp_ip_geo cache; on miss, ip-api.com (free, no key). */
 async function lookupGeo(
-  supabase: ReturnType<typeof createAdminClient>,
+  db: ReturnType<typeof createAdminClient>,
   ip: string,
 ): Promise<Geo> {
   try {
-    const { data: cached } = await supabase
+    const { data: cached } = await db
       .from("lp_ip_geo")
       .select("country, region, city, isp")
       .eq("ip", ip)
@@ -95,7 +95,7 @@ async function lookupGeo(
             isp: j.isp?.slice(0, 120) ?? null,
           }
         : EMPTY_GEO;
-    await supabase.from("lp_ip_geo").upsert({ ip, ...geo }, { onConflict: "ip" });
+    await db.from("lp_ip_geo").upsert({ ip, ...geo }, { onConflict: "ip" });
     return geo;
   } catch {
     return EMPTY_GEO;
@@ -148,8 +148,8 @@ export async function POST(req: Request) {
     // Identity resolved server-side from the auth cookie (never trusted from client).
     let userId: string | null = null;
     try {
-      const supabase = await createClient();
-      const { data } = await supabase.auth.getUser();
+      const db = await createClient();
+      const { data } = await db.auth.getUser();
       userId = data.user?.id ?? null;
     } catch {
       /* anon */

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 
 /**
  * Bundles grant their contents as ordinary purchases. Doing it this way means

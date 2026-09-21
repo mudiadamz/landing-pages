@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { notFound } from "next/navigation";
 import { getHiringContent } from "@/lib/actions/site-settings";
 import { translator } from "@/lib/i18n";
@@ -19,9 +19,9 @@ export async function generateMetadata(): Promise<Metadata> {
  * /panel/hiring; this route pins the URL and the layout.
  */
 export default async function HiringPage() {
-  const supabase = await createClient();
+  const db = await createClient();
   const [{ data: { user } }, categories, hiring, locale] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getCategories(),
     getHiringContent(),
     requestLocale(),

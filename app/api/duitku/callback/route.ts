@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureSiteMembership } from "@/lib/actions/profiles";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { grantBundleItems } from "@/lib/bundle";
 import { validateDuitkuCallback } from "@/lib/duitku";
 import { sendPurchaseConfirmationEmail } from "@/lib/email";
@@ -96,9 +96,9 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const supabase = createAdminClient();
+      const db = createAdminClient();
       const paymentMethod = (formData.get("paymentCode") as string) ?? "duitku";
-      const { error } = await supabase.from("lp_purchases").insert({
+      const { error } = await db.from("lp_purchases").insert({
         user_id: userId,
         landing_page_id: landingPageId,
         amount: Number(amount) || 0,
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
           // again. Taking the money and granting nothing is not an option, so a
           // fresh payment restores access. (Free re-claims deliberately do NOT:
           // see addPurchase, where undoing a revoke would cost nothing.)
-          const { data: existing } = await supabase
+          const { data: existing } = await db
             .from("lp_purchases")
             .select("id, revoked_at")
             .eq("user_id", userId)
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
             .maybeSingle();
 
           if (existing?.revoked_at) {
-            await supabase
+            await db
               .from("lp_purchases")
               .update({
                 revoked_at: null,
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
       } else {
         // A bundle also hands over everything inside it.
         await grantBundleItems(userId, landingPageId);
-        const { data: page } = await supabase
+        const { data: page } = await db
           .from("lp_landing_pages")
           .select("title, slug, zip_url")
           .eq("id", landingPageId)

@@ -1,4 +1,4 @@
-import { callRpc, type DbResult, QueryBuilder } from "./query";
+import { callRpc, type DbResult, QueryBuilder, type Row } from "./query";
 import type { Who } from "./rls";
 
 /**
@@ -9,13 +9,13 @@ import type { Who } from "./rls";
  * use — and so a signed-in user is looked up once and reused (callers memoise).
  */
 export type DbClient = {
-  from(table: string): QueryBuilder<any[]>;
+  from(table: string): QueryBuilder<Row[]>;
   rpc(fn: string, args?: Record<string, unknown>): Promise<DbResult>;
 };
 
 export function dbClient(who: () => Promise<Who> | Who): DbClient {
   return {
-    from: (table: string) => new QueryBuilder<any[]>(who, table),
+    from: (table: string) => new QueryBuilder<Row[]>(who, table),
     rpc: (fn: string, args?: Record<string, unknown>) => callRpc(who, fn, args),
   };
 }

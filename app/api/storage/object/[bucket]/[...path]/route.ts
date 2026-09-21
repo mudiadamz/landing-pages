@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { BUCKETS } from "@/lib/backend/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 
 /**
  * Upload from the browser: `PUT` the file's bytes as the body.
@@ -29,8 +29,8 @@ export async function PUT(request: Request, { params }: Ctx) {
     );
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.storage.from(bucket).upload(path.join("/"), await request.arrayBuffer(), {
+  const db = await createClient();
+  const { data, error } = await db.storage.from(bucket).upload(path.join("/"), await request.arrayBuffer(), {
     contentType: request.headers.get("content-type") ?? undefined,
     upsert: request.headers.get("x-upsert") === "true",
   });

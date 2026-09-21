@@ -2,7 +2,7 @@
 
 import { unzipSync } from "fflate";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import {
   MAX_UPLOAD_BYTES,
   MAX_UPLOAD_LABEL,
@@ -11,7 +11,7 @@ import {
   isImageType,
 } from "@/lib/upload-limit";
 import { requireAdmin } from "@/lib/actions/profiles";
-import type { ServerClient } from "@/lib/supabase/server";
+import type { ServerClient } from "@/lib/db/server";
 
 const BUCKET = "landing-assets";
 
@@ -29,7 +29,7 @@ function pathFromPublicUrl(url: string, bucket: string): string | null {
  * Failures are swallowed so a replace never fails on cleanup.
  */
 async function removePreviousAsset(
-  supabase: Pick<ServerClient, "storage">,
+  db: Pick<ServerClient, "storage">,
   previousUrl: string | null | undefined,
   userId: string,
   newPath: string,
@@ -38,7 +38,7 @@ async function removePreviousAsset(
   const path = pathFromPublicUrl(previousUrl, BUCKET) ?? previousUrl.split("?")[0];
   if (!path || path === newPath || !path.startsWith(`${userId}/`)) return;
   try {
-    await supabase.storage.from(BUCKET).remove([path]);
+    await db.storage.from(BUCKET).remove([path]);
   } catch {
     /* ignore cleanup errors */
   }
@@ -49,10 +49,10 @@ export async function uploadAsset(
   formData: FormData,
   previousUrl?: string | null,
 ): Promise<{ url: string } | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   const file = formData.get("file") as File;
@@ -78,7 +78,7 @@ export async function uploadAsset(
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${user.id}/${pageId}/${Date.now()}-${sanitized}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await db.storage.from(BUCKET).upload(path, file, {
     contentType: file.type,
     upsert: false,
   });
@@ -86,9 +86,9 @@ export async function uploadAsset(
   if (error) return { error: error.message };
 
   // Replacing a single-slot asset (e.g. thumbnail): delete the old file.
-  await removePreviousAsset(supabase, previousUrl, user.id, path);
+  await removePreviousAsset(db, previousUrl, user.id, path);
 
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(path);
   return { url: urlData.publicUrl };
 }
 
@@ -102,10 +102,10 @@ const LIBRARY_FOLDER = "_library";
 export async function uploadLibraryAsset(
   formData: FormData,
 ): Promise<{ url: string } | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   const file = formData.get("file") as File;
@@ -130,24 +130,24 @@ export async function uploadLibraryAsset(
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${user.id}/${LIBRARY_FOLDER}/${Date.now()}-${sanitized}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await db.storage.from(BUCKET).upload(path, file, {
     contentType: file.type,
     upsert: false,
   });
   if (error) return { error: error.message };
 
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(path);
   return { url: urlData.publicUrl };
 }
 
 export async function listLibraryAssets(): Promise<{ name: string; url: string }[]> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase.storage
+  const { data, error } = await db.storage
     .from(BUCKET)
     .list(`${user.id}/${LIBRARY_FOLDER}`, {
       limit: 1000,
@@ -160,7 +160,7 @@ export async function listLibraryAssets(): Promise<{ name: string; url: string }
   for (const f of data) {
     if (f.id && f.name && !f.name.startsWith(".")) {
       const path = `${user.id}/${LIBRARY_FOLDER}/${f.name}`;
-      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(path);
       results.push({ name: f.name, url: urlData.publicUrl });
     }
   }
@@ -168,13 +168,13 @@ export async function listLibraryAssets(): Promise<{ name: string; url: string }
 }
 
 export async function listAssets(pageId: string): Promise<{ name: string; url: string }[]> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase.storage
+  const { data, error } = await db.storage
     .from(BUCKET)
     .list(`${user.id}/${pageId}`, { limit: 50 });
 
@@ -186,7 +186,7 @@ export async function listAssets(pageId: string): Promise<{ name: string; url: s
     // hidden files — only show directly-uploaded image/video assets here.
     if (f.id && f.name && !f.name.startsWith(".")) {
       const path = `${user.id}/${pageId}/${f.name}`;
-      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(path);
       results.push({ name: f.name, url: urlData.publicUrl });
     }
   }
@@ -206,14 +206,14 @@ export async function uploadSiteZip(
   | { html: string; fileCount: number; indexPath: string }
   | { error: string }
 > {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   // Confirm the caller owns this page before writing anything.
-  const { data: page } = await supabase
+  const { data: page } = await db
     .from("lp_landing_pages")
     .select("id")
     .eq("id", pageId)
@@ -281,7 +281,7 @@ export async function uploadSiteZip(
       chunk.map((f) => {
         const ext = f.path.split(".").pop()?.toLowerCase() || "";
         const blob = new Blob([f.data as BlobPart], { type: getMimeType(ext) });
-        return supabase.storage.from(BUCKET).upload(`${prefix}/${f.path}`, blob, {
+        return db.storage.from(BUCKET).upload(`${prefix}/${f.path}`, blob, {
           contentType: getMimeType(ext),
           upsert: true,
         });
@@ -296,13 +296,13 @@ export async function uploadSiteZip(
   // <base href> = the storage directory that holds index.html, so the page's
   // relative references (images/…, fonts/…, css/…) resolve to storage.
   const baseDir = indexDir ? `${prefix}/${indexDir}` : prefix;
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(baseDir);
+  const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(baseDir);
   const baseHref = urlData.publicUrl.replace(/\/?$/, "/");
 
   const indexHtml = new TextDecoder().decode(indexFile.data);
   const html = injectBaseHref(indexHtml, baseHref);
 
-  const { error: updErr } = await supabase
+  const { error: updErr } = await db
     .from("lp_landing_pages")
     .update({ html_content: html })
     .eq("id", pageId)
@@ -325,10 +325,10 @@ export async function uploadPreviewPdf(
   formData: FormData,
   previousUrl?: string | null,
 ): Promise<{ url: string } | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   const file = formData.get("file") as File | null;
@@ -343,16 +343,16 @@ export async function uploadPreviewPdf(
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${user.id}/${pageId}/preview/${Date.now()}-${sanitized}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await db.storage.from(BUCKET).upload(path, file, {
     contentType: "application/pdf",
     upsert: true,
   });
   if (error) return { error: error.message };
 
   // Replacing the preview PDF: delete the old one.
-  await removePreviousAsset(supabase, previousUrl, user.id, path);
+  await removePreviousAsset(db, previousUrl, user.id, path);
 
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(path);
   return { url: urlData.publicUrl };
 }
 
@@ -366,10 +366,10 @@ export async function uploadPreviewEpub(
   formData: FormData,
   previousUrl?: string | null,
 ): Promise<{ url: string } | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   const file = formData.get("file") as File | null;
@@ -384,15 +384,15 @@ export async function uploadPreviewEpub(
   const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${user.id}/${pageId}/preview/${Date.now()}-${sanitized}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await db.storage.from(BUCKET).upload(path, file, {
     contentType: "application/epub+zip",
     upsert: true,
   });
   if (error) return { error: error.message };
 
-  await removePreviousAsset(supabase, previousUrl, user.id, path);
+  await removePreviousAsset(db, previousUrl, user.id, path);
 
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { data: urlData } = db.storage.from(BUCKET).getPublicUrl(path);
   return { url: urlData.publicUrl };
 }
 

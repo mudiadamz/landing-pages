@@ -22,7 +22,8 @@ request
   │
   ├─ app/**/page.tsx ............... DATA: ambil semua data, lalu dispatch
   │     └─ lib/actions/*.ts ........ akses DB (Server Actions + cached reader)
-  │           └─ lib/supabase/* .... server (RLS) / client / admin (service-role)
+  │           └─ lib/db/* .......... server (RLS) / anon / client / admin (service_role)
+  │                 └─ lib/backend/* SQL ke Postgres (withRls, auth, storage)
   │
   └─ lib/templates/* ............... PRESENTASI: registry + komponen per tema
 ```
@@ -41,7 +42,7 @@ argumen**, tidak dibaca ulang di dalam lapisan lain.
 | `lib/templates/*` | merender props yang diterima | fetch sendiri; impor `templates/chrome.tsx` (siklus) |
 | `lib/actions/*.ts` | mutasi + cached reader | export fungsi sinkron atau type (I5) |
 | cached reader | menerima `siteId`/host sebagai argumen | membaca `headers()` / `cookies()` |
-| `supabase/admin.ts` | di mana pun **dengan gate otorisasi eksplisit** | dipakai tanpa gate — RLS sudah tidak menjaga apa pun |
+| `lib/db/admin.ts` | di mana pun **dengan gate otorisasi eksplisit** | dipakai tanpa gate — RLS sudah tidak menjaga apa pun |
 
 **Kenapa presentasi tidak fetch:** filter katalog per-domain dan cache key mudah
 salah secara halus. Kalau tema boleh fetch sendiri, tema keempat bisa
@@ -93,7 +94,7 @@ Client itu **bypass RLS**, jadi RLS tidak lagi menjadi jaring pengaman — gate-
 harus eksplisit: `requireAdmin()`, `requireFeature()`, atau cek kepemilikan lewat
 `auth.getUser()`. Dipakai di luar `app/api/**` itu wajar dan memang dilakukan
 (~20 modul di `lib/actions/`), yang tidak boleh adalah dipakai **tanpa** gate.
-Kalau RLS sudah cukup, pakai `supabase/server.ts` — lebih aman secara default.
+Kalau RLS sudah cukup, pakai `lib/db/server.ts` — lebih aman secara default.
 Pengecualian yang di-gate pemanggilnya: `lib/signup-guard.ts` (jalan sebelum auth,
 memang), `lib/epub-source.ts`, `lib/bundle.ts`.
 
@@ -110,7 +111,10 @@ harus ikut domain tempat pembeli belanja.
 `app/panel/layout.tsx` mendaftar route **pembeli**; sisanya canonical-only. Terbalik
 berarti layar admin berikutnya otomatis terbuka di semua domain.
 
-**I10 — Tabel app diawali `lp_`.** Satu Supabase dipakai beberapa app.
+**I10 — Tabel app diawali `lp_`.** Awalnya karena satu database dipakai beberapa
+app; sekarang konvensi yang dijaga tes — `tests/db/rls-private.test.ts` dan
+snapshot `rls-surface` memilih tabel lewat prefix itu, jadi tabel baru tanpa
+`lp_` lolos dari pemeriksaan RLS.
 
 **I11 — Palet hanya mengubah 4 token mood.** Latar, teks, dan border tetap — di
 situlah kontrasnya. Situs menyimpan **kunci preset**, bukan hex, karena preset sudah
@@ -201,11 +205,14 @@ karena **alat ukurnya** yang bohong, bukan kodenya. Aturannya:
 - **Angka diambil dari DB**, bukan dari hitungan link di HTML (testimoni & related
   products juga menghasilkan link produk).
 
-**Test otomatis: unit saja.** `tests/*.test.ts` (vitest) hanya menguji fungsi
-murni dan berkas — tanpa database, tanpa jaringan, tanpa browser. Tidak ada
-integration/e2e suite di repo ini, dan tidak perlu diusulkan: menjalankannya
-berarti menyalakan Supabase lokal, membuat sesi, dan memanggil gateway
-pembayaran — lambat, rapuh, dan sudah ditutupi verifikasi manual di atas.
+**Test otomatis: dua suite.** `pnpm test` (`tests/*.test.ts`) menguji fungsi
+murni dan berkas — tanpa database, tanpa jaringan. `pnpm test:db`
+(`tests/db/`) jalan di atas satu container Postgres (`compose.dev.yml`),
+membangun database `lp_test` dari `db/migrations` setiap kali, dan menguji RLS,
+grant, trigger, auth, storage, dan runner migration sungguhan — kode yang diuji
+tersambung sebagai role `app`, hak yang sama dengan produksi. Tidak ada suite
+e2e browser atau gateway pembayaran, dan tidak perlu diusulkan: itu lambat,
+rapuh, dan sudah ditutupi verifikasi manual di atas.
 
 Yang layak ditulis test-nya adalah aturan yang **gagalnya senyap**: `expandQuery`
 (query pencarian yang salah tetap menghasilkan jawaban yang terdengar benar),
@@ -217,7 +224,8 @@ membaca layarnya).
 pekerjaan di repo ini — lambat, sering putus di tengah, dan hampir semua yang
 ingin dibuktikan bisa dibaca dari sisi server. Yang dipakai: `pnpm exec tsc --noEmit`,
 `pnpm exec eslint`, `pnpm exec vitest run tests/`, `pnpm build` (cek **exit code**), lalu
-`curl` ke endpoint-nya dan `psql` ke database lokal untuk membuktikan efeknya.
+`curl` ke endpoint-nya dan `psql` ke database lokal (`docker compose -f
+compose.dev.yml exec db psql -U postgres -d lp`) untuk membuktikan efeknya.
 Rute yang butuh sesi bisa di-`curl` dengan cookie yang dibuat sendiri — resepnya
 ada di skill `run-local`. Kalau sesuatu benar-benar hanya bisa dipastikan dengan
 melihat layar, **katakan belum diverifikasi**; jangan mengklaimnya.

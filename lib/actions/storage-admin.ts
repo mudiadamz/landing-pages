@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { requireAdmin } from "@/lib/actions/profiles";
 
 export type StorageFile = {
@@ -23,7 +23,7 @@ export type StorageListing = {
   error?: string;
 };
 
-const PAGE = 100; // Supabase list page size
+const PAGE = 100; // list page size (same as storage-api used)
 const MAX_FILES = 3000; // safety cap so a huge bucket can't hang the page
 const MAX_DEPTH = 8;
 

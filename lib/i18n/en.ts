@@ -305,10 +305,9 @@ export const en: Record<keyof typeof id, string> = {
   "panel.colourPalette": "Colour palette",
   "panel.catalogNiche": "Catalogue (niche)",
   "panel.noRootCategories": "No top-level categories yet. Create one under Categories first.",
-  "sites.threePlaces": "Adding a domain takes three places",
+  "sites.threePlaces": "Adding a domain takes two places",
   "sites.placeHere": "Here",
   "sites.placeHereWhat": "— the hostname, plus active/inactive.",
-  "sites.placeSupabaseWhat": "— so visitors can sign in on that domain.",
   "sites.identityLivesIn":
     "Site name, tagline, SEO description, logo, icon, template, palette and niche are set under",
   "sites.identityNotHere": "— not here. Full reference:",
@@ -1181,7 +1180,7 @@ export const en: Record<keyof typeof id, string> = {
   "sites.identityAndLook": "Site identity & appearance",
   "sites.domainsIntro":
     "Hostname and active/inactive. Name, logo, template, palette and niche live in",
-  "panel.storageIntro": "Every file in Supabase Storage.",
+  "panel.storageIntro": "Every file stored on the server.",
   "panel.storageLoadFailed": "Could not load the files: {error}",
   "panel.backShort": "← Back",
   "panel.uploadHtmlTitle": "Upload an HTML landing page",

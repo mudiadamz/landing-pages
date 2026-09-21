@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
 import {
   listEpubChapters,
@@ -66,13 +66,13 @@ async function resolveTarget(
   pageId: string,
   target: EpubTarget,
 ): Promise<Resolved | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { data: page } = await supabase
+  const { data: page } = await db
     .from("lp_landing_pages")
     .select("slug, preview_type, preview_url, story_epub_url")
     .eq("id", pageId)

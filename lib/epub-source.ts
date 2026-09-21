@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { clampCutPercent } from "@/lib/epub-cut";
 

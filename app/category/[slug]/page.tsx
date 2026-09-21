@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { translator } from "@/lib/i18n";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getLandingPagesForHomepage, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { currentSite } from "@/lib/site-resolve";
@@ -32,10 +32,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   const sortParam = Array.isArray(sp.sort) ? sp.sort[0] : sp.sort;
   const sort: HomepageSort = sortParam === "popular" ? "popular" : "newest";
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   const [site, pages, categories, reviews, reviewCounts, locale] = await Promise.all([
     currentSite(),

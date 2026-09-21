@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { IMAGE_TYPES } from "@/lib/mbahgpt/messages";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
@@ -19,14 +19,14 @@ import { requestLocale } from "@/lib/i18n/request";
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [supabase, locale] = await Promise.all([createClient(), requestLocale()]);
+  const [db, locale] = await Promise.all([createClient(), requestLocale()]);
   const t = translator(locale);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return NextResponse.json({ error: t("chat.signInShort") }, { status: 401 });
 
-  const { data: attachment } = await supabase
+  const { data: attachment } = await db
     .from("lp_chat_attachments")
     .select("name, mime, storage_path")
     .eq("id", id)
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!attachment) return NextResponse.json({ error: t("chat.attachmentNotFound") }, { status: 404 });
 
   const inline = IMAGE_TYPES.has(attachment.mime);
-  const { data, error } = await supabase.storage
+  const { data, error } = await db.storage
     .from("chat-attachments")
     .createSignedUrl(attachment.storage_path, 60 * 60, {
       // The filename is sanitised because it lands in a Content-Disposition

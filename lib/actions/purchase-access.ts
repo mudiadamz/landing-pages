@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { requireAdmin } from "./profiles";
 
 /**
@@ -87,10 +87,10 @@ export async function setPurchaseRevoked(
   if (!(await requireAdmin())) return { ok: false, error: "Tidak diizinkan." };
   if (!purchaseId) return { ok: false, error: "Pembelian tidak ditemukan." };
 
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   const admin = createAdminClient();
   const { error } = await admin

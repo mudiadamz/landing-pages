@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { requireFeature } from "./profiles";
 import { currentSiteId } from "@/lib/site-resolve";
 import { panelScope } from "@/lib/site-scope";
@@ -33,8 +33,8 @@ export async function submitContact(formData: FormData) {
     return { ok: false, error: "Pesan minimal 10 karakter." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_contacts").insert({
+  const db = await createClient();
+  const { error } = await db.from("lp_contacts").insert({
     name,
     email,
     message,
@@ -54,11 +54,11 @@ export async function getContactsForAdmin(): Promise<ContactSubmission[]> {
   const isAdmin = await requireFeature("contacts");
   if (!isAdmin) return [];
 
-  const supabase = await createClient();
+  const db = await createClient();
   // Scoped to the storefront the panel is managing; messages sent before the site_id
   // column existed count with the canonical site.
   const { filter: scope } = await panelScope();
-  let query = supabase
+  let query = db
     .from("lp_contacts")
     .select("id, name, email, message, created_at")
     .order("created_at", { ascending: false });

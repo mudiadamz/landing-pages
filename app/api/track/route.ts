@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/db/admin";
+import { createClient as createServerClient } from "@/lib/db/server";
 
 /**
  * Visitor analytics ingestion. Accepts a small JSON event from the preview /
@@ -34,14 +34,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false }, { status: 200 });
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     // Skip internal traffic (team accounts flagged exclude_from_stats).
     try {
       const authed = await createServerClient();
       const { data: auth } = await authed.auth.getUser();
       if (auth.user) {
-        const { data: prof } = await supabase
+        const { data: prof } = await db
           .from("lp_profiles")
           .select("exclude_from_stats")
           .eq("id", auth.user.id)
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       /* anonymous — nothing to exclude */
     }
 
-    const { data: page } = await supabase
+    const { data: page } = await db
       .from("lp_landing_pages")
       .select("id")
       .eq("slug", slug)
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
         ? Math.min(Math.round(durationRaw), 6 * 60 * 60 * 1000) // cap 6h
         : null;
 
-    await supabase.from("lp_product_events").insert({
+    await db.from("lp_product_events").insert({
       landing_page_id: page.id,
       session_id: clamp(body.sessionId, 80),
       kind,

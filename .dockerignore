@@ -18,10 +18,9 @@ node_modules
 .cursor
 docs
 tests
-supabase/.branches
-supabase/.temp
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
 .storage
 db/migrations/_archive
+supabase

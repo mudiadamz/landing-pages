@@ -294,7 +294,7 @@ describe("Google", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The proxy contract (lib/supabase/proxy.ts)
+// The proxy contract (lib/db/proxy.ts)
 // ---------------------------------------------------------------------------
 
 describe("proxy: sesi & pengalihan", () => {
@@ -302,7 +302,7 @@ describe("proxy: sesi & pengalihan", () => {
   let user: { id: string; email: string };
 
   beforeAll(async () => {
-    ({ updateSession } = (await import("@/lib/supabase/proxy")) as never);
+    ({ updateSession } = (await import("@/lib/db/proxy")) as never);
     user = await ownUser();
   });
 

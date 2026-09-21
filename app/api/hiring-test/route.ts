@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { getHiringContent } from "@/lib/actions/site-settings";
 
 const CV_BUCKET = "hiring-cv";
@@ -24,12 +24,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ukuran CV melebihi 5 MB." }, { status: 400 });
   }
 
-  // Upload CV to Supabase Storage
-  const supabase = createAdminClient();
+  // Upload CV to storage (hiring-cv, service only)
+  const db = createAdminClient();
   const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
   const storagePath = `${Date.now()}_${safeName}.pdf`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await db.storage
     .from(CV_BUCKET)
     .upload(storagePath, cvFile, {
       contentType: "application/pdf",
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Generate a signed URL valid for 30 days
-  const { data: signedData } = await supabase.storage
+  const { data: signedData } = await db.storage
     .from(CV_BUCKET)
     .createSignedUrl(storagePath, 60 * 60 * 24 * 30);
 

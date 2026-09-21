@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/proxy";
+import { updateSession } from "@/lib/db/proxy";
 
 /**
  * Runs before every matched request. Named proxy.ts (Next 16's convention,

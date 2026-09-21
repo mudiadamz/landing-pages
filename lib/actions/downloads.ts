@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/upload-limit";
 
 const BUCKET = "landing-downloads";
@@ -32,10 +32,10 @@ export async function uploadZip(
   formData: FormData,
   previousPath?: string | null,
 ): Promise<{ url: string } | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   const file = formData.get("file") as File;
@@ -70,10 +70,10 @@ export async function uploadStoryPdf(
   formData: FormData,
   previousPath?: string | null,
 ): Promise<{ url: string } | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   const file = formData.get("file") as File;
@@ -112,10 +112,10 @@ export async function uploadStoryEpub(
   formData: FormData,
   previousPath?: string | null,
 ): Promise<{ url: string } | { error: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
   const file = formData.get("file") as File;

@@ -2,8 +2,8 @@
 
 import { unstable_cache, updateTag, revalidateTag, revalidatePath } from "next/cache";
 import { DEFAULT_SOCIAL_URLS, normalizeSocialUrls, type SocialUrls } from "@/lib/social";
-import { createAnonClient } from "@/lib/supabase/anon";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/db/anon";
+import { createClient } from "@/lib/db/server";
 import { requireFeature, requireAdmin, requireSiteAdmin } from "./profiles";
 import { normalizeRolePermissions, type RolePermissions } from "@/lib/role-permissions";
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
@@ -30,7 +30,7 @@ import {
   type PlanMeta,
   type PlanPrices,
 } from "@/lib/plans";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import {
   DEFAULT_POPUP,
   normalizePopup,
@@ -69,8 +69,8 @@ export async function updateRolePermissions(
   if (!(await requireSiteAdmin(target))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeRolePermissions(perms);
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_site_settings")
     .upsert(
       {
@@ -98,8 +98,8 @@ export async function updateRolePermissions(
 const readHero = unstable_cache(
   async (siteId: string): Promise<HeroConfig> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -127,8 +127,8 @@ export async function updateHero(
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeHero(config);
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_site_settings")
     .upsert(
       {
@@ -156,8 +156,8 @@ export async function updateHero(
 const readSiteContent = unstable_cache(
   async (siteId: string): Promise<SiteContent> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -185,8 +185,8 @@ export async function updateSiteContent(
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeContent(content);
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_site_settings")
     .upsert(
       {
@@ -225,8 +225,8 @@ export async function updateSiteContent(
 const readLegalContent = unstable_cache(
   async (siteId: string): Promise<LegalContent> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -266,8 +266,8 @@ export async function updateLegalContent(
     updatedAt: new Date().toISOString(),
   });
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: LEGAL_KEY,
@@ -291,8 +291,8 @@ export async function updateLegalContent(
 const readHiringContent = unstable_cache(
   async (siteId: string): Promise<HiringContent> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -320,8 +320,8 @@ export async function updateHiringContent(
   if (!allowed) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeHiring(content);
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: HIRING_KEY,
@@ -384,8 +384,8 @@ function normalizeOtherLinks(raw: unknown): OtherLink[] {
 const readOtherLinks = unstable_cache(
   async (siteId: string): Promise<OtherLink[]> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -414,8 +414,8 @@ export async function updateOtherLinks(
   if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeOtherLinks(links);
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: OTHER_LINKS_KEY,
@@ -456,8 +456,8 @@ export async function updateOtherLinks(
 const readSocialUrls = unstable_cache(
   async (siteId: string): Promise<SocialUrls> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -486,8 +486,8 @@ export async function updateSocialUrls(
   if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizeSocialUrls(urls);
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: SOCIAL_KEY,
@@ -509,8 +509,8 @@ export async function updateSocialUrls(
 const readCustomJs = unstable_cache(
   async (siteId: string): Promise<string> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -536,8 +536,8 @@ export async function updateCustomJs(
   const isAdmin = await requireFeature("custom-js");
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: CUSTOM_JS_KEY,
@@ -563,8 +563,8 @@ const readTracking = unstable_cache(
   async (siteId: string): Promise<TrackingConfig> => {
     const fromEnv = envTracking();
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -641,8 +641,8 @@ export async function updateTracking(
   }
 
   const clean = normalizeTracking({ gtmId, tawkPropertyId, tawkWidgetId });
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_site_settings")
     .upsert(
       {
@@ -673,8 +673,8 @@ export async function updateTracking(
 const readPanelPalette = unstable_cache(
   async (siteId: string): Promise<PaletteConfig> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -702,8 +702,8 @@ export async function updatePanelPalette(
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePalette(config);
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_site_settings")
     .upsert(
       {
@@ -729,7 +729,7 @@ export async function updatePanelPalette(
 const readPopupBanner = unstable_cache(
   async (siteId: string): Promise<PopupBanner> => {
     try {
-      // Anon client built directly, NOT lib/supabase/server's createClient: that
+      // Anon client built directly, NOT lib/db/server's createClient: that
       // one reads cookies(), and Next refuses dynamic data sources inside
       // unstable_cache. It throws, the catch below turns it into DEFAULT_POPUP,
       // and DEFAULT_POPUP is `enabled: false` — so the banner was silently off
@@ -737,8 +737,8 @@ const readPopupBanner = unstable_cache(
       // file already does it this way; this one was written later and copied the
       // wrong neighbour. The config is public site settings, so there is no
       // session to carry anyway.
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -770,8 +770,8 @@ export async function updatePopupBanner(
   if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePopup(config);
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_site_settings")
     .upsert(
       {
@@ -882,8 +882,8 @@ export async function subscribePopupEmail(
 const readPlanPrices = unstable_cache(
   async (siteId: string): Promise<PlanPrices> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -914,8 +914,8 @@ export async function updatePlanPrices(
   if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePlanPrices(prices);
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: PLAN_PRICES_KEY,
@@ -954,8 +954,8 @@ export async function updatePlanPrices(
 const readPlanLimits = unstable_cache(
   async (siteId: string): Promise<PlanLimitsOverrides> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -986,8 +986,8 @@ export async function updatePlanLimits(
   if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePlanLimitsOverrides(overrides);
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: PLAN_LIMITS_KEY,
@@ -1021,8 +1021,8 @@ export async function updatePlanLimits(
 const readPlanMeta = unstable_cache(
   async (siteId: string): Promise<PlanMeta> => {
     try {
-      const supabase = createAnonClient();
-      const { data } = await supabase
+      const db = createAnonClient();
+      const { data } = await db
         .from("lp_site_settings")
         .select("value")
         .eq("site_id", siteId)
@@ -1053,8 +1053,8 @@ export async function updatePlanMeta(
   if (!(await requireSiteAdmin(siteId))) return { ok: false, error: "Akses ditolak." };
 
   const clean = normalizePlanMeta(meta);
-  const supabase = await createClient();
-  const { error } = await supabase.from("lp_site_settings").upsert(
+  const db = await createClient();
+  const { error } = await db.from("lp_site_settings").upsert(
     {
       site_id: siteId ?? (await currentSiteId()),
       key: PLAN_META_KEY,

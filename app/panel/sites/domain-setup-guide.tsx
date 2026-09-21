@@ -7,10 +7,11 @@ import { useT } from "@/lib/i18n/client";
  * The steps this panel cannot do for you.
  *
  * Adding a row to lp_sites makes the app ready to serve a domain; it does not make
- * the domain reach the app, and it does not let anyone sign in on it. Those live in
- * DNS and Supabase. Written per-domain with the real strings filled in, because
- * the failure mode is pasting a nearly-right URL and getting a redirect error with
- * no clue which of the three places is wrong.
+ * the domain reach the app — that lives in DNS. Google sign-in needs nothing per
+ * domain, but the one callback it does need is shown so it can be checked.
+ * Written per-domain with the real strings filled in, because the failure mode
+ * is pasting a nearly-right URL and getting a redirect error with no clue which
+ * place is wrong.
  */
 
 function Copy({ value }: { value: string }) {

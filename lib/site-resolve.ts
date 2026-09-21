@@ -1,9 +1,9 @@
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { unstable_cache } from "next/cache";
-import { createAnonClient } from "@/lib/supabase/anon";
-import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAnonClient } from "@/lib/db/anon";
+import { createClient as createServerClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
 import { normalizeAccountType } from "@/lib/profile-utils";
 import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
@@ -249,10 +249,10 @@ export const editingSite = cache(async (): Promise<Site> => {
  */
 export const listMemberSites = cache(async (): Promise<Site[]> => {
   const all = await listSites();
-  const supabase = await createServerClient();
+  const db = await createServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return [];
 
   const admin = createAdminClient();

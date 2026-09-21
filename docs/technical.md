@@ -3,7 +3,7 @@
 Setup, operasional, dan konvensi untuk developer. Gambaran produknya (untuk
 non-developer) ada di [`README.md`](../README.md).
 
-Next.js 16 (App Router, Turbopack) · React 19 · Supabase · Docker + Caddy.
+Next.js 16 (App Router, Turbopack) · React 19 · PostgreSQL 17 · Docker + Caddy.
 
 **Satu deployment melayani beberapa domain**, tiap domain punya niche sendiri —
 lihat [Multi-domain](#multi-domain).
@@ -15,57 +15,65 @@ lihat [Multi-domain](#multi-domain).
 
 ```bash
 pnpm install
-cp .env.example .env.local     # lalu isi nilainya
-pnpm dev                    # http://localhost:3000
+colima start                   # atau Docker Desktop — cukup untuk satu container
+pnpm db:up                     # Postgres 17 dari compose.dev.yml, port 54329
+pnpm db:migrate --seed         # db/migrations + contoh data (db/seed.sql)
+pnpm dev                       # http://127.0.0.1:3000
 ```
 
 ### Database
 
-**Option A — Supabase CLI (local):**
+Postgres polos, satu container (`compose.dev.yml`, project `lp-dev`, database
+`lp`). Tidak ada Supabase, PostgREST, atau GoTrue: aplikasi bicara SQL langsung
+lewat `lib/backend/` (`pg`), sebagai role `app`, dan setiap query berjalan di
+dalam transaksi yang sudah berganti ke `anon` / `authenticated` / `service_role`
+— jadi RLS & grant tetap yang memutuskan.
+
+Isi `.env.development.local` untuk dev:
 
 ```bash
-pnpm supabase:start   # Start local Supabase (Docker required)
-pnpm db:reset         # Apply migrations
+NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000
+DATABASE_URL=postgresql://app:app@127.0.0.1:54329/lp               # aplikasi
+MIGRATE_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54329/lp  # migration (pemilik)
+APP_DB_PASSWORD=app            # db:migrate memberi role app password ini
+STORAGE_SIGNING_SECRET=<acak, ≥32 karakter>
+STORAGE_ROOT=.storage          # file unggahan, di-gitignore
 ```
 
-Local URL: `http://localhost:54321` (dari `supabase status`). Pakai project URL &
-anon key lokal di `.env.local`.
-
-**Option B — Remote project:**
-
-```bash
-pnpm exec supabase login
-pnpm exec supabase link --project-ref <your-project-id>
-pnpm db:push          # Push migrations to remote
-```
-
-> **Jebakan env di dev.** Next memuat `.env.development.local` **sebelum**
-> `.env.local`, jadi kalau file itu ada dan menunjuk ke Supabase lokal
-> (`http://127.0.0.1:54321`) sementara Supabase lokal tidak jalan, semua reader
-> gagal *tanpa error yang terlihat* — hero, popup, produk, semuanya jatuh ke
-> nilai bawaan dan halaman kelihatan kosong. Untuk menjalankan dev terhadap
-> database remote, override lewat shell (process env menang atas file `.env`):
->
-> ```bash
-> NEXT_PUBLIC_SUPABASE_URL=… NEXT_PUBLIC_SUPABASE_ANON_KEY=… pnpm dev
-> ```
+- **Migration** ada di `db/migrations/`, dimulai dari
+  `00000000000000_baseline.sql` (seluruh skema + shim role & `auth.uid()`).
+  `pnpm db:migrate` (`scripts/migrate.mjs`) menerapkan yang belum jalan, satu
+  transaksi per file, dan **menolak** migration lama yang isinya berubah
+  (checksum). Riwayat era Supabase: `db/migrations/_archive/`, hanya bacaan.
+- **Role `app` bukan pemilik.** Ia boleh `set role` ke tiga role di atas, tapi
+  tanpa itu tidak menyentuh tabel `lp_` mana pun; langsung hanya ke
+  `auth.users`, `auth.identities`, dan `app_auth.*`. Error "password
+  authentication failed for user app" = `APP_DB_PASSWORD` belum diterapkan —
+  jalankan `pnpm db:migrate` lagi.
+- **Tes** (`pnpm test:db`) memakai server yang sama tapi membangun database
+  `lp_test` sendiri dari nol setiap kali jalan.
 
 ### Auth providers
 
-- **Email verification:** signup tidak menunggu verifikasi Supabase
-  (`mailer_autoconfirm`). Bukti kepemilikan alamat ada di
-  `lp_profiles.email_verified_at`, diisi lewat email Resend sendiri.
-- **Google OAuth:** aktifkan provider Google di Supabase Dashboard → Auth →
-  Providers → Google, isi Client ID & Secret dari
-  [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
-  Di Google, *Authorized redirect URI* = callback **Supabase**
-  (`https://<ref>.supabase.co/auth/v1/callback`) — satu nilai untuk semua domain.
-- **Redirect URLs Supabase** (Auth → URL Configuration) cukup berisi callback
-  domain kanonik (`<NEXT_PUBLIC_SITE_URL>/auth/callback`) plus
+Auth milik aplikasi sendiri (`lib/backend/auth.ts`, `lib/auth/`), di atas tabel
+`auth.users` yang sama — hash bcrypt lama tetap berlaku.
+
+- **Sesi:** token opak di cookie httpOnly `lp_session` (`__Host-lp_session` di
+  HTTPS), hanya sha256-nya yang disimpan di `app_auth.sessions`, berlaku 30 hari
+  sejak terakhir dipakai. Logout dan ban mencabutnya saat itu juga.
+- **Email verification:** signup langsung aktif. Bukti kepemilikan alamat ada di
+  `lp_profiles.email_verified_at`, diisi lewat email Resend sendiri
+  (`lib/email-verify.ts`).
+- **Google:** `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` dari
+  [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+  (OAuth + PKCE tanpa SDK, `lib/backend/google.ts`). *Authorized redirect URIs*
+  cukup `https://<host kanonik>/auth/callback` plus
   `http://localhost:3000/auth/callback` untuk dev. Login dari storefront lain
-  kembali ke callback kanonik dengan `?sf=<host>`, lalu dipantulkan ke domain
-  asalnya — jadi **domain baru tidak perlu didaftarkan di Supabase**. Aturan &
-  penjagaannya di [`lib/oauth-return.ts`](../lib/oauth-return.ts).
+  pulang ke callback kanonik dengan host asalnya di dalam `state`, lalu `code`-nya
+  diteruskan ke domain asal yang memegang verifier PKCE — jadi **domain baru
+  tidak perlu didaftarkan di Google**. Aturan & penjagaannya di
+  [`lib/oauth-return.ts`](../lib/oauth-return.ts). Keduanya kosong = tombol Google
+  menjawab "belum dikonfigurasi".
 
 ## Scripts
 
@@ -74,19 +82,19 @@ pnpm db:push          # Push migrations to remote
 | `pnpm dev` | Dev server |
 | `pnpm build` | Production build |
 | `pnpm lint` | ESLint |
-| `pnpm supabase:start` / `:stop` / `:status` | Supabase lokal (Docker) |
-| `pnpm db:reset` | Re-apply semua migration ke DB lokal |
-| `pnpm db:push` | Push migration ke project remote |
-| `pnpm db:migrate` | Jalankan migration yang belum jalan |
+| `pnpm db:up` | Postgres dev (`compose.dev.yml`, port 54329) |
+| `pnpm db:migrate` | Terapkan migration yang belum jalan (`--seed`: plus `db/seed.sql`, `--status`: daftar saja) |
 | `pnpm pdf:epub` | Konversi PDF → EPUB (`scripts/pdf-to-epub.mjs`) |
 | `pnpm i18n:scan` | Pindai string hardcode → `docs/i18n-backlog.md` |
-| `pnpm test` / `test:watch` | Unit test (vitest) |
+| `pnpm test` / `test:watch` | Unit test (vitest), tanpa Docker |
+| `pnpm test:db` | Tes database, RLS, auth, storage — butuh `pnpm db:up` |
 
 ## Environment
 
 Semua variabel + penjelasannya ada di [`.env.example`](../.env.example). Yang wajib:
-Supabase (URL, anon key, service role key), `NEXT_PUBLIC_SITE_URL`, Duitku, dan
-Resend. Sisanya opsional (tracking, captcha, OpenRouter).
+`DATABASE_URL` (di produksi diisi compose sendiri), `STORAGE_SIGNING_SECRET`,
+`NEXT_PUBLIC_SITE_URL`, Duitku, dan Resend. Di server juga `POSTGRES_PASSWORD` dan
+`APP_DB_PASSWORD`. Sisanya opsional (Google, tracking, captcha, OpenRouter).
 
 ## Multi-domain
 
@@ -110,9 +118,9 @@ tempat:
    Caddy menerbitkan sertifikatnya sendiri sesudah bertanya ke `/api/tls-check`,
    yang jawabannya berasal dari baris langkah 1.
 
-Supabase tidak perlu disentuh — lihat **Redirect URLs** di [Auth providers](#auth-providers).
+Google Cloud Console tidak perlu disentuh — lihat [Auth providers](#auth-providers).
 
-Sesi login tidak lintas domain (cookie Supabase per-domain) — itu disengaja. Maka:
+Sesi login tidak lintas domain (cookie `lp_session` per-domain) — itu disengaja. Maka:
 route **pembeli** (`/panel/purchases`, invoice, favorit) jalan di **semua** domain,
 karena sesi pembeli hanya ada di domain tempat dia beli. Yang canonical-only cuma
 layar **admin** dan callback Duitku.
@@ -228,19 +236,25 @@ app/
   checkout/[slug]/      checkout + halaman "done"
   read/[slug]/          reader untuk pembeli
   panel/                admin & customer area  (CLAUDE.md sendiri di dalamnya)
-  api/                  Duitku, download, epub, webhook, tracking
+  api/                  Duitku, download, epub, webhook, tracking, storage, auth
+  storage/v1/object/    file publik & file privat ber-URL bertanda
 lib/
   actions/              Server Actions (semua mutasi lewat sini)
-  supabase/             server / client / admin (service-role)
+  db/                   client: server (user dari sesi) / anon / admin (service_role) / client (browser)
+  backend/              SQL ke Postgres: withRls, query builder, auth, storage, Google
+  auth/                 cookie sesi (currentUser, startSession, endSession)
   site-resolve.ts       host → site, dasar multi-domain
   templates/            frontend per niche — registry.tsx + satu folder per template
-supabase/migrations/    migration, berurutan timestamp
+proxy.ts                validasi sesi untuk /panel, /read, /login, /signup (runtime Node)
+db/migrations/          baseline + migration sesudahnya; _archive/ = riwayat era Supabase
+scripts/                migrate, backup, restore-drill, alat cutover
 docs/                   catatan panjang (arsitektur, multi-domain, analytics, region)
 ```
 
 ## Konvensi
 
-- Semua tabel app diawali **`lp_`** (satu Supabase dipakai beberapa app).
+- Semua tabel app diawali **`lp_`** (konvensi sejak database ini dipakai bersama
+  app lain; tetap dipakai supaya nama tabel konsisten dan tes RLS bisa memilihnya).
 - Bahasa UI **Indonesia** (`<html lang="id">`, locale `id_ID`).
 - Semua mutasi lewat Server Actions di `lib/actions/*.ts`; caching pakai
   `unstable_cache` + invalidasi per tag.
@@ -260,22 +274,51 @@ khusus area panel di [`app/panel/CLAUDE.md`](../app/panel/CLAUDE.md).
 
 ## Deploy (Docker)
 
-Satu container aplikasi di belakang Caddy. Supabase tetap di project hosted —
-yang di-self-host cuma aplikasinya.
+Semuanya di satu server: Postgres, aplikasi, dan Caddy. Tidak ada layanan
+database/auth/storage di luar.
 
 ```bash
-cp .env.example .env.production        # isi: Supabase, Duitku, Resend, ACME_EMAIL
+cp .env.example .env.production        # isi: POSTGRES_PASSWORD, APP_DB_PASSWORD,
+                                       # STORAGE_SIGNING_SECRET, Duitku, Resend, ACME_EMAIL, …
 docker compose --env-file .env.production up -d --build
 ```
 
-Satu berkas env untuk dua keperluan: `--env-file` mengisi build arg, `env_file:`
-di compose mengirim rahasianya ke dalam container.
+Urutan naiknya: `db` (postgres:17, volume `pgdata`) sehat → `migrate` (sekali
+jalan, sebagai pemilik: `db/migrations` + memberi role `app` password
+`APP_DB_PASSWORD`) keluar 0 → `app` (sebagai role `app`, volume `storage` di
+`/srv/storage`) sehat → Caddy. Deploy yang membawa migration gagal **berhenti di
+`migrate`** — app lama tetap jalan.
+
+- `POSTGRES_PASSWORD` dan `APP_DB_PASSWORD`: **hex saja** (`openssl rand -hex 32`),
+  karena keduanya masuk ke URL koneksi. `DATABASE_URL` tidak perlu diisi —
+  compose menetapkannya ke container `db`.
+- `STORAGE_SIGNING_SECRET`: menandatangani URL unduhan privat; menggantinya
+  membatalkan URL yang sudah dibagikan (umurnya ≤ 1 jam).
+
+Satu berkas env untuk dua keperluan: `--env-file` mengisi build arg & password
+database, `env_file:` di compose mengirim rahasianya ke dalam container.
 
 **`NEXT_PUBLIC_*` disulih saat BUILD, bukan saat run.** Nilainya ikut masuk ke
 bundle yang dikirim ke browser, jadi mengubahnya lewat `docker run -e` tidak
 berpengaruh pada apa pun yang berjalan di sana. Ganti nilainya → **build ulang**.
-(Anon key memang aman ikut ke image — ia dikirim ke setiap pengunjung. Service
-role key tidak boleh, dan tidak pernah jadi build arg.)
+Tidak satu pun rahasia boleh jadi build arg.
+
+### Backup
+
+Tanggung jawab kita sendiri sekarang. `scripts/backup.sh` (dari folder repo di
+server) membuat `db-<waktu>.dump` (`pg_dump -Fc`) dan `storage-<waktu>.tgz`,
+menyimpan 14 hari, dan menyalinnya keluar lewat rclone kalau `RCLONE_REMOTE`
+diisi — tanpa itu backup ada di disk yang sama dengan database.
+
+```bash
+crontab -e   # 15 3 * * *  cd /srv/landing_pages && scripts/backup.sh >> /var/log/lp-backup.log 2>&1
+```
+
+Backup yang belum pernah di-restore belum terbukti ada: salin satu ke mesin
+pengembang dan jalankan `scripts/restore-drill.sh db-….dump` (restore ke
+database kosong di container dev, lalu cek jumlah baris, RLS, dan migration).
+
+Pindah sekali jalan dari Supabase hosted: [`runbooks/cutover-supabase.md`](runbooks/cutover-supabase.md).
 
 ### Menambah domain
 
@@ -292,8 +335,8 @@ rate limit Let's Encrypt dihitung per akun.
 
 ```bash
 docker compose --env-file .env.production up -d --build   # deploy ulang
-docker compose logs -f app                                # log aplikasi
-docker compose ps                                         # status + health
+docker compose --env-file .env.production logs -f app     # log aplikasi
+docker compose --env-file .env.production ps              # status + health (migrate: Exited 0)
 curl -fsS https://admuiux.com/api/health                  # {"ok":true}
 ```
 
@@ -305,4 +348,5 @@ curl -fsS https://admuiux.com/api/health                  # {"ok":true}
 | [`multi-domain.md`](multi-domain.md) | Beberapa domain, satu sistem |
 | [`mbahgpt.md`](mbahgpt.md) | Template chat MbahGPT + backend-nya |
 | [`plans/`](plans/) | Rencana berjalan (multi-fase) |
+| [`runbooks/`](runbooks/) | Prosedur sekali jalan (cutover dari Supabase) |
 | [`ai-analytics-plan.md`](ai-analytics-plan.md) | Rencana analytics |

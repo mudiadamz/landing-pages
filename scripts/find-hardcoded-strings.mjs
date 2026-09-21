@@ -33,6 +33,9 @@ import { join, relative } from "node:path";
 const ROOT = process.cwd();
 const SCAN_DIRS = ["app", "components", "lib"];
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "supabase"]);
+// The data layer: its strings are SQL and error codes, not text anyone reads.
+// lib/backend/auth.ts is the exception — its MESSAGES are shown on /login.
+const SKIP_FILES = /^lib\/backend\/(?!auth\.ts$)/;
 const outArg = process.argv.indexOf("--out");
 const OUT = outArg > -1 ? process.argv[outArg + 1] : "docs/i18n-backlog.md";
 
@@ -264,7 +267,7 @@ function walk(dir, out = []) {
     if (SKIP_DIRS.has(name)) continue;
     const full = join(dir, name);
     if (statSync(full).isDirectory()) walk(full, out);
-    else if (full.endsWith(".ts") || full.endsWith(".tsx")) out.push(full);
+    else if ((full.endsWith(".ts") || full.endsWith(".tsx")) && !SKIP_FILES.test(relative(ROOT, full))) out.push(full);
   }
   return out;
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { getProfile, requireFeature, currentSiteStanding } from "./profiles";
 import { fetchAllRows } from "@/lib/paginate";
 import { panelScope } from "@/lib/site-scope";
@@ -69,13 +69,13 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
   const global = !sellerOnly && (await requireFeature("stats"));
   if (!global && !sellerOnly) return null;
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
   // Storefront scope, from the sidebar switcher. Unattributed purchases (before the
   // site_id column existed) count with the canonical site.
   const { filter: scope } = await panelScope();
 
   // Products in scope.
-  let pageQuery = supabase.from("lp_landing_pages").select("id, title");
+  let pageQuery = db.from("lp_landing_pages").select("id, title");
   if (!global) pageQuery = pageQuery.eq("user_id", profile.id);
   const { data: pages } = await pageQuery;
   const products = pages ?? [];
@@ -108,7 +108,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
     revoked_at: string | null;
   }>(
     (from, to) => {
-      let q = supabase
+      let q = db
         .from("lp_purchases")
         .select("id, user_id, landing_page_id, purchased_at, amount, payment_method, revoked_at")
         .order("purchased_at", { ascending: false })
@@ -159,7 +159,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
   const buyerIds = [...new Set(head.map((p) => p.user_id).filter((id): id is string => !!id))];
   const profileById = new Map<string, { full_name: string | null; email: string | null }>();
   if (buyerIds.length) {
-    const { data: profs } = await supabase
+    const { data: profs } = await db
       .from("lp_profiles")
       .select("id, full_name, email")
       .in("id", buyerIds);

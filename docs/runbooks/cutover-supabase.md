@@ -33,14 +33,15 @@ dulu.
    POSTGRES_PASSWORD=<hex>
    APP_DB_PASSWORD=<hex>
    STORAGE_SIGNING_SECRET=<hex>
-   SIGNUP_FORM_SECRET=<hex>        # wajib: dulu jatuh ke service role key
    GOOGLE_CLIENT_ID=…
    GOOGLE_CLIENT_SECRET=…
    ```
 
    `DATABASE_URL` tidak perlu diisi — compose menetapkannya ke container `db`.
-   Variabel `NEXT_PUBLIC_SUPABASE_*` dan `SUPABASE_SERVICE_ROLE_KEY` **biarkan**
-   sampai Fase 6 (dipakai langkah C).
+   Aplikasi baru tidak membaca variabel Supabase apa pun, tapi
+   `SUPABASE_SERVICE_ROLE_KEY` **biarkan** sampai cutover selesai — langkah B dan
+   C5 memakainya untuk mengunduh file. `SIGNUP_FORM_SECRET` yang sudah ada boleh
+   tetap (kalau kosong, kuncinya diturunkan dari `STORAGE_SIGNING_SECRET`).
 3. **Samakan skema Supabase dengan baseline** (dari mesin pengembang, di repo):
 
    ```sh
@@ -162,6 +163,18 @@ bucket; catat.
    (`scripts/restore-drill.sh db-….dump`) dan catat hasilnya di rencana.
 
 Jendela selesai.
+
+## D. Sesudahnya
+
+- Hapus `NEXT_PUBLIC_SUPABASE_*` dan `SUPABASE_SERVICE_ROLE_KEY` dari
+  `.env.production`.
+- **Halaman legal** di setiap situs (`/panel/legal`) disimpan di database dan
+  mungkin masih menyebut Supabase sebagai sub-pemroses — periksa & perbarui.
+  (Teks bawaan di `lib/legal-config.ts` sudah diperbarui.)
+- Setelah 30 hari tanpa jalan mundur: simpan satu backup terakhir project
+  Supabase di luar server, hapus URI callback Supabase dari Google Cloud Console,
+  lalu hapus project Supabase-nya. Di mesin pengembang: `rm -rf supabase/` dan
+  volume Docker `supabase_*_landing_pages`.
 
 ---
 

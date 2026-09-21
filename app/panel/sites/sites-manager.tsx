@@ -145,9 +145,9 @@ export function SitesManager({
       )}
 
       {/* Adding a row here only makes the app READY to serve a domain. DNS makes the
-          domain reach it (Caddy then issues the certificate by itself) and Supabase
-          lets people sign in on it — both easy to forget, and both fail in ways that
-          look like a bug in this screen. */}
+          domain reach it (Caddy then issues the certificate by itself) — easy to
+          forget, and it fails in a way that looks like a bug in this screen. Sign-in
+          needs nothing per domain: Google returns through the canonical callback. */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm">
         <p className="font-medium text-foreground">{t("sites.threePlaces")}</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-[var(--muted)]">
@@ -157,9 +157,6 @@ export function SitesManager({
           </li>
           <li>
             <strong className="text-foreground">DNS</strong> {t("sites.placeDnsWhat")}
-          </li>
-          <li>
-            <strong className="text-foreground">Supabase</strong> {t("sites.placeSupabaseWhat")}
           </li>
         </ol>
         <p className="mt-2 text-xs text-[var(--muted)]">

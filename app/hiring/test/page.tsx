@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { notFound } from "next/navigation";
@@ -15,9 +15,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HiringTestPage() {
-  const supabase = await createClient();
+  const db = await createClient();
   const [{ data: { user } }, categories, hiring, locale] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getCategories(),
     getHiringContent(),
     requestLocale(),

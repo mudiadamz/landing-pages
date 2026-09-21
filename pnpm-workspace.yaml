@@ -18,15 +18,11 @@ overrides:
 # script harus dijawab di sini — termasuk yang ditolak.
 #
 #   sharp          menyiapkan binding native kalau prebuilt-nya tidak cocok
-#   supabase       postinstall-nya yang MENGUNDUH CLI-nya; tanpa ini
-#                  node_modules/.bin/supabase tidak pernah ada dan setiap
-#                  perintah migration gagal
 #   unrs-resolver  binding native untuk resolver import milik eslint
 #
 #   core-js, es5-ext  postinstall-nya hanya mencetak permintaan donasi
 allowBuilds:
   sharp: true
-  supabase: true
   unrs-resolver: true
   core-js: false
   es5-ext: false

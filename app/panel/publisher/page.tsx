@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { normalizeAccountType, normalizePublisherStatus } from "@/lib/profile-utils";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { currentSiteId } from "@/lib/site-resolve";
 import { PublisherApplyForm } from "./apply-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
@@ -24,14 +24,14 @@ export async function generateMetadata() {
  */
 export default async function PublisherPage() {
   const t = translator(await requestLocale());
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) redirect("/login");
 
   const [{ data: row }, content] = await Promise.all([
-    supabase
+    db
       .from("lp_profiles")
       .select("account_type")
       .eq("id", user.id)

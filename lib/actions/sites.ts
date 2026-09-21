@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import {
   PANEL_SITE_COOKIE,
   PANEL_SITE_COOKIE_MAX_AGE,
@@ -13,7 +13,7 @@ import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { paletteFromKey } from "@/lib/palette";
 import { normalizeLocale } from "@/lib/i18n";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { brandMaxBytes, iconShapeError, readPngSize, sniffBrandImage } from "@/lib/site-brand";
 import { readWebpHeader } from "@/lib/webp";
 
@@ -241,11 +241,11 @@ export async function createSite(
   if (err) return { ok: false, error: err };
   if (!input.name.trim()) return { ok: false, error: "Nama situs tidak boleh kosong." };
 
-  const supabase = await createClient();
+  const db = await createClient();
   // Host and name only. Everything else takes its column default, and the admin is
   // sent to /panel/branding to choose it — a new domain is unreachable for as long
   // as DNS takes anyway, so there is nothing gained by demanding its palette first.
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_sites")
     .insert({
       host,
@@ -289,8 +289,8 @@ export async function updateSiteDomain(
   const err = hostError(host);
   if (err) return { ok: false, error: err };
 
-  const supabase = await createClient();
-  const { data: row } = await supabase
+  const db = await createClient();
+  const { data: row } = await db
     .from("lp_sites")
     .select("host, is_canonical")
     .eq("id", id)
@@ -306,7 +306,7 @@ export async function updateSiteDomain(
     };
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_sites")
     .update({ host, active: input.active, updated_at: new Date().toISOString() })
     .eq("id", id);
@@ -335,8 +335,8 @@ export async function updateSiteProfile(
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
   if (!input.name.trim()) return { ok: false, error: "Nama situs tidak boleh kosong." };
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_sites")
     .update({
       name: input.name.trim(),
@@ -369,8 +369,8 @@ export async function updateSiteProfile(
 export async function deleteSite(id: string): Promise<{ ok: boolean; error?: string }> {
   if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
 
-  const supabase = await createClient();
-  const { data: row } = await supabase
+  const db = await createClient();
+  const { data: row } = await db
     .from("lp_sites")
     .select("is_canonical")
     .eq("id", id)
@@ -382,7 +382,7 @@ export async function deleteSite(id: string): Promise<{ ok: boolean; error?: str
     };
   }
 
-  const { error } = await supabase.from("lp_sites").delete().eq("id", id);
+  const { error } = await db.from("lp_sites").delete().eq("id", id);
   if (error) {
     console.error("deleteSite error:", error);
     return { ok: false, error: "Gagal menghapus." };

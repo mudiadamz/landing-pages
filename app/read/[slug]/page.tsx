@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { EpubReader } from "@/components/epub-reader";
 import { EpubBootSplash } from "@/components/epub-boot-splash";
@@ -25,13 +25,13 @@ type Props = { params: Promise<{ slug: string }> };
 
 export default async function ReadPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/read/${slug}`)}`);
 
-  const { data: page } = await supabase
+  const { data: page } = await db
     .from("lp_landing_pages")
     .select("id, title, slug, story_epub_url, story_pdf_url, story_pdf_url_dark, thumbnail_url, user_id")
     .eq("slug", slug)
@@ -40,7 +40,7 @@ export default async function ReadPage({ params }: Props) {
 
   // The seller can read their own product; everyone else needs a purchase.
   if (page.user_id !== user.id) {
-    const { data: purchase } = await supabase
+    const { data: purchase } = await db
       .from("lp_purchases")
       .select("id")
       .eq("user_id", user.id)

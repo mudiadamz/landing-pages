@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getPlanLimits, getPlanMeta, getPlanPrices } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { translator } from "@/lib/i18n";
@@ -30,7 +30,7 @@ export default async function UpgradePage({
 }: {
   searchParams: Promise<{ order?: string }>;
 }) {
-  const [supabase, locale, prices, overrides, meta, params] = await Promise.all([
+  const [db, locale, prices, overrides, meta, params] = await Promise.all([
     createClient(),
     requestLocale(),
     getPlanPrices(),
@@ -50,7 +50,7 @@ export default async function UpgradePage({
   if (!shown.length) notFound();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   let plan = effectivePlan("free", null);
   let expiresAt: string | null = null;
@@ -58,12 +58,12 @@ export default async function UpgradePage({
 
   if (user) {
     const [{ data: profile }, { data: order }] = await Promise.all([
-      supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
+      db.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
       // Only the order they just came back from, and only while it is unsettled.
       // The callback is server-to-server and may still be in flight when the
       // browser lands here — the same race /checkout/[slug]/done handles.
       params.order
-        ? supabase
+        ? db
             .from("lp_plan_orders")
             .select("status")
             .eq("id", params.order)

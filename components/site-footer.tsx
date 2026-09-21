@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
 import { getSocialUrls, getHiringContent } from "@/lib/actions/site-settings";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { currentSite } from "@/lib/site-resolve";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -19,7 +19,7 @@ import { t } from "@/lib/i18n";
  * there is no client boundary forcing the brand through props.
  */
 export async function SiteFooter() {
-  const [content, supabase, site, socialUrls, locale, hiring] = await Promise.all([
+  const [content, db, site, socialUrls, locale, hiring] = await Promise.all([
     getSiteContent(),
     createClient(),
     currentSite(),
@@ -29,7 +29,7 @@ export async function SiteFooter() {
   ]);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   return (
     <>

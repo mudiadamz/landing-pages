@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getHomepageListing, getCategories, type HomepageSort } from "@/lib/actions/landing-pages";
 import { getPublicReviews, getReviewCounts } from "@/lib/actions/reviews";
 import { getHero } from "@/lib/actions/site-settings";
@@ -37,7 +37,7 @@ type Props = {
  * like "shows every product on every domain" by fetching its own way.
  */
 export default async function Home({ searchParams }: Props) {
-  const supabase = await createClient();
+  const db = await createClient();
   const sp = await searchParams;
   const one = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v) ?? "";
   const sort: HomepageSort = one(sp.sort) === "popular" ? "popular" : "newest";
@@ -55,7 +55,7 @@ export default async function Home({ searchParams }: Props) {
   ].slice(0, 20);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   const [site, listing, categories, reviews, reviewCounts, hero, content, otherLinks, socialUrls, locale] =
     await Promise.all([
     currentSite(),

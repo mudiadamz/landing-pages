@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { requireAdmin, requireFeature } from "./profiles";
 
 export type CategoryRow = {
@@ -18,8 +18,8 @@ export async function getAdminCategories(): Promise<CategoryRow[]> {
   const isAdmin = await requireFeature("categories");
   if (!isAdmin) return [];
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const db = await createClient();
+  const { data, error } = await db
     .from("lp_landing_page_categories")
     .select("id, name, slug, sort_order, icon, parent_id")
     .order("sort_order", { ascending: true });
@@ -34,7 +34,7 @@ export async function getAdminCategories(): Promise<CategoryRow[]> {
  * Returns an error message, or null when valid.
  */
 async function validateParent(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  db: Awaited<ReturnType<typeof createClient>>,
   selfId: string | null,
   parentId: string | null,
 ): Promise<string | null> {
@@ -42,7 +42,7 @@ async function validateParent(
   if (selfId && parentId === selfId)
     return "Kategori tidak bisa menjadi induk dirinya sendiri.";
 
-  const { data: parent } = await supabase
+  const { data: parent } = await db
     .from("lp_landing_page_categories")
     .select("id, parent_id")
     .eq("id", parentId)
@@ -52,7 +52,7 @@ async function validateParent(
     return "Induk harus kategori utama (maksimal 2 tingkat).";
 
   if (selfId) {
-    const { count } = await supabase
+    const { count } = await db
       .from("lp_landing_page_categories")
       .select("id", { count: "exact", head: true })
       .eq("parent_id", selfId);
@@ -81,11 +81,11 @@ export async function createCategory(
   if (!normalizedSlug) return { ok: false, error: "Slug tidak boleh kosong." };
   if (!name.trim()) return { ok: false, error: "Nama tidak boleh kosong." };
 
-  const supabase = await createClient();
-  const parentError = await validateParent(supabase, null, parent_id);
+  const db = await createClient();
+  const parentError = await validateParent(db, null, parent_id);
   if (parentError) return { ok: false, error: parentError };
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_landing_page_categories")
     .insert({ name: name.trim(), slug: normalizedSlug, sort_order, icon, parent_id })
     .select("id")
@@ -120,11 +120,11 @@ export async function updateCategory(
   if (!normalizedSlug) return { ok: false, error: "Slug tidak boleh kosong." };
   if (!name.trim()) return { ok: false, error: "Nama tidak boleh kosong." };
 
-  const supabase = await createClient();
-  const parentError = await validateParent(supabase, id, parent_id);
+  const db = await createClient();
+  const parentError = await validateParent(db, id, parent_id);
   if (parentError) return { ok: false, error: parentError };
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_landing_page_categories")
     .update({ name: name.trim(), slug: normalizedSlug, sort_order, icon, parent_id })
     .eq("id", id);
@@ -149,8 +149,8 @@ export async function deleteCategory(
   // fail on the write. See docs/plans/test-before-leaving-supabase.md, fase 5.
   if (!(await requireAdmin())) return { ok: false, error: "Hanya Company yang bisa mengubah kategori." };
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const db = await createClient();
+  const { error } = await db
     .from("lp_landing_page_categories")
     .delete()
     .eq("id", id);

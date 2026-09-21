@@ -1,7 +1,7 @@
 import { cache, Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getLandingPageBySlug, getLandingPageForCheckout, getProductsByIds, getNextInSeries, getBundleContaining } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
 import { ComingSoon } from "@/components/coming-soon";
@@ -210,9 +210,9 @@ async function PreviewContent({ slug }: { slug: string }) {
 
   // For the "Masuk dengan Google" item in the actions menu (logged-out only)
   // and the like button's current state.
-  const supabase = await createClient();
+  const db = await createClient();
   const [{ data: { user } }, liked, related, popupConfig] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getMyLike(page.id),
     getProductsByIds(page.related_product_ids ?? []),
     // Joins the existing parallel fetch rather than adding a waterfall, and is

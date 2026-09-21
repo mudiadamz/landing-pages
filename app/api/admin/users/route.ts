@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { requireAdmin, requireFeature, requireSiteAdmin } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
 import { normalizeAccountType } from "@/lib/profile-utils";
@@ -9,10 +9,10 @@ import { deleteUser, setBanned } from "@/lib/backend/auth";
 
 /** Caller identity + access: full admin, and whether they can reach the Users feature. */
 async function getCaller() {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { user: null, isAdmin: false, hasUsers: false };
 
   const [isAdmin, hasUsers] = await Promise.all([requireAdmin(), requireFeature("users")]);

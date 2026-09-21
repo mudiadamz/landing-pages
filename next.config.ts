@@ -31,12 +31,6 @@ const nextConfig: NextConfig = {
       // Stored files are served by this app (lib/backend/storage.ts) at
       // NEXT_PUBLIC_SITE_URL/storage/v1/object/public/…
       ...ownStorageHost(),
-      // Rows written before the move still point at Supabase until
-      // scripts/storage-migrate.mjs rewrite runs at cutover.
-      {
-        protocol: "https",
-        hostname: "**.supabase.co",
-      },
     ],
   },
   experimental: {

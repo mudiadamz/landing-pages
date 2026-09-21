@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { Button } from "@/components/ui/button";
@@ -18,12 +18,12 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
   const t = translator(await requestLocale());
   const { slug } = await params;
   const { resultCode, merchantOrderId } = await searchParams;
-  const supabase = await createClient();
+  const db = await createClient();
   const [
     { data: { user } },
     categories,
   ] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getCategories(),
   ]);
 
@@ -43,7 +43,7 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
   // 403 until then. RLS lets a user read their own purchases.
   let hasPurchase = false;
   if (success && checkoutData && user) {
-    const { data: purchase } = await supabase
+    const { data: purchase } = await db
       .from("lp_purchases")
       .select("id")
       .eq("user_id", user.id)

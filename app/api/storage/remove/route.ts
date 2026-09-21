@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 
 /**
  * Remove objects from the browser: `POST { bucket, paths }`. Runs as the
@@ -12,8 +12,8 @@ export async function POST(request: Request) {
   const paths = Array.isArray(body?.paths) ? body.paths.filter((p): p is string => typeof p === "string") : [];
   if (!bucket || paths.length === 0) return NextResponse.json({ data: [] });
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.storage.from(bucket).remove(paths);
+  const db = await createClient();
+  const { data, error } = await db.storage.from(bucket).remove(paths);
   if (error) return NextResponse.json({ error }, { status: Number(error.statusCode) || 400 });
   return NextResponse.json({ data });
 }

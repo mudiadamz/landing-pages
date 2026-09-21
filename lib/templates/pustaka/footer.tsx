@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { currentSite } from "@/lib/site-resolve";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { requestLocale } from "@/lib/i18n/request";
@@ -18,14 +18,14 @@ import { t } from "@/lib/i18n";
  * on every domain.
  */
 export async function PustakaFooter() {
-  const [site, supabase, locale] = await Promise.all([
+  const [site, db, locale] = await Promise.all([
     currentSite(),
     createClient(),
     requestLocale(),
   ]);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   const links: [string, string][] = [
     ["/", "Beranda"],

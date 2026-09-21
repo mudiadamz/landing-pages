@@ -20,13 +20,18 @@ import { schema, type Schema } from "./schema";
 
 export type DbError = { message: string; code: string; details: string | null; hint: string | null };
 
+/** A result row. Untyped on purpose — see DbResult. The one `any` in this client. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Row = any;
+
 /**
  * Same shape as supabase-js's response: a success/failure union, so that
  * `if (error) return …` narrows `data` to non-null exactly as call sites expect.
- * Rows are `any` because this client, like the untyped supabase-js one it
- * replaces, has no generated schema types.
+ * Rows are `Row` (= any) because this client, like the untyped supabase-js one
+ * it replaces, has no generated schema types; tests/db/schema-contract.test.ts
+ * is what checks that every column the code names exists.
  */
-export type DbResult<T = any> =
+export type DbResult<T = Row> =
   | { data: T; error: null; count: number | null; status: number; statusText: string }
   | { data: null; error: DbError; count: number | null; status: number; statusText: string };
 
@@ -54,7 +59,7 @@ class Params {
   }
 }
 
-export class QueryBuilder<R = any[]> implements PromiseLike<DbResult<R>> {
+export class QueryBuilder<R = Row[]> implements PromiseLike<DbResult<R>> {
   private mode: Mode = "select";
   private selectRaw: string | null = null;
   private returning = false;
@@ -173,15 +178,15 @@ export class QueryBuilder<R = any[]> implements PromiseLike<DbResult<R>> {
   }
 
   /** One row: `data` becomes that row instead of an array. */
-  single(): QueryBuilder<any> {
+  single(): QueryBuilder<Row> {
     this.singleMode = "single";
-    return this as unknown as QueryBuilder<any>;
+    return this as unknown as QueryBuilder<Row>;
   }
 
   /** At most one row: `data` becomes that row, or null. */
-  maybeSingle(): QueryBuilder<any> {
+  maybeSingle(): QueryBuilder<Row> {
     this.singleMode = "maybe";
-    return this as unknown as QueryBuilder<any>;
+    return this as unknown as QueryBuilder<Row>;
   }
 
   // ---- execution -----------------------------------------------------------
@@ -474,7 +479,7 @@ export class QueryBuilder<R = any[]> implements PromiseLike<DbResult<R>> {
   }
 }
 
-/** `supabase.rpc(fn, args)` — a function call with named arguments. */
+/** `db.rpc(fn, args)` — a function call with named arguments. */
 export async function callRpc(who: () => Promise<Who> | Who, fn: string, args: Record<string, unknown> = {}): Promise<DbResult> {
   try {
     const s = await schema();

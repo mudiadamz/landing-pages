@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Attachment uploads: browser → Supabase Storage, directly.
+ * Attachment uploads: browser → storage route (/api/storage/object), directly.
  *
  * The standalone app posted files as base64 inside the chat request. Base64 costs
  * a third more bytes and makes the app hold every attachment in memory just to
@@ -13,7 +13,7 @@
  * here: this file runs in the browser, so nothing it does is a guarantee.
  */
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/db/client";
 import type { MessageKey } from "@/lib/i18n";
 
 export type PendingFile = {
@@ -80,10 +80,10 @@ export async function uploadChatFiles(
 ): Promise<{ refs: UploadedRef[] } | { error: string }> {
   if (!files.length) return { refs: [] };
 
-  const supabase = createClient();
+  const db = createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { error: t("chat.sessionExpired") };
 
   const refs: UploadedRef[] = [];
@@ -91,7 +91,7 @@ export async function uploadChatFiles(
     // Timestamped, so re-picking the same file is a new object rather than an
     // upsert (the bucket grants INSERT only, exactly as the download bucket does).
     const path = `${user.id}/chat/${Date.now()}-${safeName(pending.name)}`;
-    const { error } = await supabase.storage
+    const { error } = await db.storage
       .from("chat-attachments")
       .upload(path, pending.file, { contentType: pending.mime, upsert: false });
     if (error) return { error: t("chat.uploadFailed", { name: pending.name, reason: error.message }) };

@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { ensureSiteMembership } from "@/lib/actions/profiles";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { isFreeProduct, isUpcoming } from "@/lib/product-status";
 import { grantBundleItems } from "@/lib/bundle";
@@ -26,13 +26,13 @@ export type PurchaseWithPage = {
 };
 
 export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_purchases")
     .select(`
       id,
@@ -62,7 +62,7 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
   const parentIds = [...new Set(rows.map((r) => r.bundle_parent_id).filter(Boolean) as string[])];
   const parentTitles = new Map<string, string>();
   if (parentIds.length) {
-    const { data: parents } = await supabase
+    const { data: parents } = await db
       .from("lp_landing_pages")
       .select("id, title")
       .in("id", parentIds);
@@ -90,15 +90,15 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
 }
 
 export async function addPurchase(landingPageId: string) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) redirect("/login");
 
   // Block claiming a product that's still in its scheduled-upcoming window
   // (defense in depth — the UI already hides the button for non-owners).
-  const { data: gate } = await supabase
+  const { data: gate } = await db
     .from("lp_landing_pages")
     .select("available_at, user_id, is_free, price, price_discount")
     .eq("id", landingPageId)
@@ -116,7 +116,7 @@ export async function addPurchase(landingPageId: string) {
     throw new Error("Produk ini berbayar — selesaikan pembayaran di halaman checkout.");
   }
 
-  const { error } = await supabase.from("lp_purchases").insert({
+  const { error } = await db.from("lp_purchases").insert({
     user_id: user.id,
     landing_page_id: landingPageId,
     amount: 0,
@@ -171,10 +171,10 @@ export type InvoiceRow = {
  * asking where it went.
  */
 export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return [];
 
   const { data, error } = await createAdminClient()
@@ -222,10 +222,10 @@ export async function getInvoicesForUser(): Promise<InvoiceRow[]> {
 }
 
 export async function getInvoiceById(id: string): Promise<(InvoiceRow & { user_name: string; user_email: string }) | null> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return null;
 
   // Service role, scoped by hand to the caller — same reasoning as the list
@@ -249,7 +249,7 @@ export async function getInvoiceById(id: string): Promise<(InvoiceRow & { user_n
 
   const lp = Array.isArray(data.landing_pages) ? data.landing_pages[0] : data.landing_pages;
 
-  const { data: profile } = await supabase
+  const { data: profile } = await db
     .from("lp_profiles")
     .select("full_name, email")
     .eq("id", user.id)

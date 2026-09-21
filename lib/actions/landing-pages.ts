@@ -5,8 +5,8 @@ import { t } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { effectivePlan, resolvePlanLimits, withinLimit, PLANS } from "@/lib/plans";
 import { revalidatePath, updateTag, unstable_cache } from "next/cache";
-import { createAnonClient } from "@/lib/supabase/anon";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/db/anon";
+import { createClient } from "@/lib/db/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
 import { currentSite } from "@/lib/site-resolve";
@@ -136,10 +136,10 @@ export async function expandNicheCategoryIds(
 }
 
 export async function getLandingPagesForUser() {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return [];
 
   // Scoped to the storefront the panel is managing. Products belong to CATEGORIES, not
@@ -149,7 +149,7 @@ export async function getLandingPagesForUser() {
   const { site } = await panelScope();
   const allowedCategories = await expandNicheCategoryIds(site.category_ids ?? []);
 
-  let query = supabase
+  let query = db
     .from("lp_landing_pages")
     .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, published, category_id, zip_url, view_count")
     .eq("user_id", user.id)
@@ -163,13 +163,13 @@ export async function getLandingPagesForUser() {
 }
 
 export async function getLandingPageById(id: string) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_landing_pages")
     .select("*")
     .eq("id", id)
@@ -181,11 +181,11 @@ export async function getLandingPageById(id: string) {
 }
 
 export async function getLandingPageBySlug(slug: string) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  const { data, error } = await supabase
+  } = await db.auth.getUser();
+  const { data, error } = await db
     .from("lp_landing_pages")
     .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, preview_cut_percent, preview_purged_at, story_pdf_url, story_pdf_url_dark, story_epub_url, like_count, related_product_ids, next_product_id, available_at, thumbnail_url, published, user_id")
     .eq("slug", slug)
@@ -222,8 +222,8 @@ export async function getLandingPageBySlug(slug: string) {
  * someone finishing a free part is the best moment to offer the complete set.
  */
 export async function getBundleContaining(productId: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const db = await createClient();
+  const { data } = await db
     .from("lp_landing_pages")
     .select("id, title, slug, thumbnail_url, thumbnail_landscape_url, price, price_discount, is_free, bundle_product_ids, bundle_note, published")
     .contains("bundle_product_ids", [productId])
@@ -250,8 +250,8 @@ export async function getBundleContaining(productId: string) {
  * a preview. Readers who finish a part otherwise have nowhere to go.
  */
 export async function getNextInSeries(nextProductId: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
+  const db = await createClient();
+  const { data } = await db
     .from("lp_landing_pages")
     .select("id, title, slug, thumbnail_url, thumbnail_landscape_url, price, price_discount, is_free, published")
     .eq("id", nextProductId)
@@ -280,10 +280,10 @@ export async function createLandingPage(
     throw new Error("Invalid slug: use only lowercase letters, numbers, and hyphens.");
   }
 
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
   /**
@@ -294,8 +294,8 @@ export async function createLandingPage(
    * lapsed would punish the buyer, not the seller.
    */
   const [{ data: profile }, { count }, overrides] = await Promise.all([
-    supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
-    supabase.from("lp_landing_pages").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    db.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
+    db.from("lp_landing_pages").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     getPlanLimits(),
   ]);
   const plan = effectivePlan(profile?.plan, profile?.plan_expires_at ?? null);
@@ -306,7 +306,7 @@ export async function createLandingPage(
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_landing_pages")
     .insert({
       title,
@@ -327,13 +327,13 @@ export async function createLandingPage(
 }
 
 export async function updateLandingPageHtml(id: string, html_content: string) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_landing_pages")
     .update({ html_content })
     .eq("id", id)
@@ -361,10 +361,10 @@ export async function updateLandingPageSettings(
   },
   slug?: string,
 ) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
   const update: Record<string, unknown> = {};
@@ -393,7 +393,7 @@ export async function updateLandingPageSettings(
     throw new Error("Preview link membutuhkan URL.");
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_landing_pages")
     .update(update)
     .eq("id", id)
@@ -413,8 +413,8 @@ export async function updateLandingPageSettings(
 
 export const getCategories = unstable_cache(
   async (): Promise<LandingPageCategory[]> => {
-    const supabase = createAnonClient();
-    const { data, error } = await supabase
+    const db = createAnonClient();
+    const { data, error } = await db
       .from("lp_landing_page_categories")
       .select("id, name, slug, icon, parent_id")
       .order("sort_order", { ascending: true });
@@ -488,10 +488,10 @@ type ListingArgs = {
  * and PostgREST returns it in the same round trip.
  */
 async function queryListing({ categoryIds, sort, q, page }: ListingArgs): Promise<HomepageListing> {
-  const supabase = createAnonClient();
+  const db = createAnonClient();
   const from = (page - 1) * HOMEPAGE_PAGE_SIZE;
 
-  let query = supabase
+  let query = db
     .from("lp_landing_pages")
     .select(
       "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
@@ -627,7 +627,7 @@ const getCachedHomepagePages = unstable_cache(
     sort: HomepageSort,
     siteCategoryIds: string[],
   ): Promise<LandingPagePublic[]> => {
-    const supabase = createAnonClient();
+    const db = createAnonClient();
 
     // Resolve the requested category slug to the set of category ids to include.
     // For a PARENT category, aggregate its own pages + all of its sub-categories'
@@ -663,7 +663,7 @@ const getCachedHomepagePages = unstable_cache(
       if (categoryIds.length === 0) return [];
     }
 
-    let query = supabase
+    let query = db
       .from("lp_landing_pages")
       .select(
         "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
@@ -699,11 +699,11 @@ const getCachedHomepagePages = unstable_cache(
 );
 
 export async function getLandingPageForCheckout(slug: string) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  const { data, error } = await supabase
+  } = await db.auth.getUser();
+  const { data, error } = await db
     .from("lp_landing_pages")
     .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids, thumbnail_landscape_url, thumbnail_extra_urls")
     .eq("slug", slug)
@@ -725,8 +725,8 @@ export async function incrementLandingView(slug: string) {
   const clean = slug.trim();
   if (!clean) return;
   try {
-    const supabase = createAnonClient();
-    await supabase.rpc("lp_increment_view", { p_slug: clean });
+    const db = createAnonClient();
+    await db.rpc("lp_increment_view", { p_slug: clean });
   } catch {
     /* view counting is best-effort — never surface an error to the visitor */
   }
@@ -766,8 +766,8 @@ export async function getRelatedProducts(
     : current;
   const categoryIds = [parent.id, ...cats.filter((c) => c.parent_id === parent.id).map((c) => c.id)];
 
-  const supabase = createAnonClient();
-  const { data, error } = await supabase
+  const db = createAnonClient();
+  const { data, error } = await db
     .from("lp_landing_pages")
     .select("id, title, slug, price, price_discount, is_free, thumbnail_url, thumbnail_landscape_url")
     .eq("published", true)
@@ -791,8 +791,8 @@ export async function getProductsByIds(ids: string[]): Promise<RelatedProduct[]>
   const clean = (ids ?? []).filter((id) => typeof id === "string" && id.length > 0);
   if (clean.length === 0) return [];
 
-  const supabase = createAnonClient();
-  const { data, error } = await supabase
+  const db = createAnonClient();
+  const { data, error } = await db
     .from("lp_landing_pages")
     .select("id, title, slug, price, price_discount, is_free, thumbnail_url")
     .eq("published", true)
@@ -839,10 +839,10 @@ export async function updateLandingPagePricing(
     available_at?: string | null;
   }
 ) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
   // Descriptions are publisher-authored rich text — sanitize before storing.
@@ -852,7 +852,7 @@ export async function updateLandingPagePricing(
     payload.long_description = clean || null;
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_landing_pages")
     .update(payload)
     .eq("id", id)
@@ -867,13 +867,13 @@ export async function updateLandingPagePricing(
 
 /** Pin/unpin a product so it sorts to the front of public listings. */
 export async function setLandingPageFeatured(id: string, featured: boolean) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_landing_pages")
     .update({ featured })
     .eq("id", id)
@@ -890,13 +890,13 @@ export async function setLandingPageFeatured(id: string, featured: boolean) {
  * non-owners on /preview/[slug] and /checkout/[slug] (the owner can still preview).
  */
 export async function setLandingPagePublished(id: string, published: boolean) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_landing_pages")
     .update({ published })
     .eq("id", id)
@@ -915,13 +915,13 @@ export async function setLandingPagePublished(id: string, published: boolean) {
 }
 
 export async function deleteLandingPage(id: string) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_landing_pages")
     .delete()
     .eq("id", id)

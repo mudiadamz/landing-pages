@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { fetchAllRows } from "@/lib/paginate";
 
 export type Bucket = { key: string; count: number };
@@ -66,14 +66,14 @@ export async function getProductStats(
   // "today"/hourly and daily by the viewer's wall clock rather than UTC.
   tzOffsetMinutes = 420,
 ): Promise<ProductStats | null> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return null;
 
   // Confirm ownership up front (also blocks a valid-but-not-yours id).
-  const { data: owned } = await supabase
+  const { data: owned } = await db
     .from("lp_landing_pages")
     .select("id")
     .eq("id", pageId)
@@ -89,7 +89,7 @@ export async function getProductStats(
   // "partial data" warning in the UI could never fire.
   const { rows: raw, capped } = await fetchAllRows<EventRow>(
     (from, to) =>
-      supabase
+      db
         .from("lp_product_events")
         .select("session_id, kind, page, referrer_host, device, browser, os, duration_ms, cta_action, created_at")
         .eq("landing_page_id", pageId)

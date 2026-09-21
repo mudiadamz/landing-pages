@@ -16,12 +16,12 @@ export const QUOTA_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** User turns in the last 24 hours. Assistant replies are not charged for. */
 export async function chatMessagesUsed(
-  supabase: Pick<DbClient, "from">,
+  db: Pick<DbClient, "from">,
   userId: string,
   now = Date.now(),
 ): Promise<number> {
   const since = new Date(now - QUOTA_WINDOW_MS).toISOString();
-  const { count, error } = await supabase
+  const { count, error } = await db
     .from("lp_chat_messages")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)

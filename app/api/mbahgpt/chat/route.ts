@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { currentSiteId } from "@/lib/site-resolve";
 import {
   ANSWER_LOCK_HEARTBEAT_MS,
@@ -106,11 +106,11 @@ export async function POST(req: NextRequest) {
   // The reader's language, resolved once per request and threaded down. Every
   // message this route can produce is read by a person, including the ones that
   // travel inside the stream.
-  const [supabase, locale] = await Promise.all([createClient(), requestLocale()]);
+  const [db, locale] = await Promise.all([createClient(), requestLocale()]);
   const t = translator(locale);
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return fail(t("chat.signInRequired"), 401);
 
   // Said plainly rather than surfaced as a 500 from the first upstream call: an
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
    * second lookup could disagree with the one the quota was checked against.
    */
   const [{ data: profile }, overrides, meta] = await Promise.all([
-    supabase.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
+    db.from("lp_profiles").select("plan, plan_expires_at").eq("id", user.id).maybeSingle(),
     // Per storefront: what Pro is worth is decided by the domain the visitor is
     // on, because that is whose model bill it lands on.
     getPlanLimits(),
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
   // counter would reset constantly, and several people share an IP behind NAT.
   if (RATE_LIMIT > 0) {
     const since = new Date(Date.now() - 60_000).toISOString();
-    const { count } = await supabase
+    const { count } = await db
       .from("lp_chat_messages")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
 
   // The plan's daily quota. A different guard from the rate limit above: that one
   // stops a burst, this one stops a day.
-  const spent = await chatMessagesUsed(supabase, user.id);
+  const spent = await chatMessagesUsed(db, user.id);
   if (!withinLimit(spent, limits.chatMessagesPerDay)) {
     return fail(
       t("chat.quotaSpent", {
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
   // RLS scopes this read to the caller, so a miss covers both a deleted chat and
   // somebody else's — and both get the same answer below.
   const existing = requested
-    ? (await supabase.from("lp_chat_sessions").select("id").eq("id", requested).maybeSingle()).data
+    ? (await db.from("lp_chat_sessions").select("id").eq("id", requested).maybeSingle()).data
     : null;
 
   let sessionId: string;
@@ -223,7 +223,7 @@ export async function POST(req: NextRequest) {
      * X-Session-Id header, which the client already reads.
      */
     const siteId = await currentSiteId();
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("lp_chat_sessions")
       .insert({ user_id: user.id, site_id: siteId || null, model: MODEL })
       .select("id")
@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
   // conversation — and the browser cannot enforce that for the browser next door.
   const claimedAt = new Date().toISOString();
   const staleBefore = new Date(Date.now() - ANSWER_LOCK_STALE_MS).toISOString();
-  const { data: locked } = await supabase
+  const { data: locked } = await db
     .from("lp_chat_sessions")
     .update({ answering_at: claimedAt })
     .eq("id", sessionId)
@@ -257,7 +257,7 @@ export async function POST(req: NextRequest) {
   const lock = { heldAt: claimedAt };
 
   const release = async () => {
-    await supabase
+    await db
       .from("lp_chat_sessions")
       .update({ answering_at: null })
       .eq("id", sessionId)
@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
 
   try {
     return await runTurn({
-      supabase,
+      db,
       userId: user.id,
       sessionId,
       content,
@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
 }
 
 type Ctx = {
-  supabase: Awaited<ReturnType<typeof createClient>>;
+  db: Awaited<ReturnType<typeof createClient>>;
   userId: string;
   sessionId: string;
   content: string;
@@ -303,11 +303,11 @@ type Ctx = {
 };
 
 async function runTurn(ctx: Ctx): Promise<Response> {
-  const { supabase, userId, sessionId, content, uploads, forced, mode, retry, limits } = ctx;
+  const { db, userId, sessionId, content, uploads, forced, mode, retry, limits } = ctx;
 
   // Earlier turns decide two things: whether a bare follow-up still needs the web,
   // and what the search query should actually say.
-  const history = await loadHistory(supabase, sessionId);
+  const history = await loadHistory(db, sessionId);
 
   // A retry re-sends a message that already failed. "Failed to fetch" can mean the
   // request never arrived OR that it arrived and the connection then broke, so when
@@ -328,7 +328,7 @@ async function runTurn(ctx: Ctx): Promise<Response> {
 
   // -- store the user's message ---------------------------------------------
   if (!alreadyStored) {
-    const { data: inserted, error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await db
       .from("lp_chat_messages")
       .insert({ session_id: sessionId, user_id: userId, role: "user", content })
       .select("id")
@@ -336,7 +336,7 @@ async function runTurn(ctx: Ctx): Promise<Response> {
     if (insertError || !inserted) throw new Error(insertError?.message || "could not store the message");
 
     if (uploads.length) {
-      await supabase.from("lp_chat_attachments").insert(
+      await db.from("lp_chat_attachments").insert(
         uploads.map((file) => ({
           message_id: inserted.id,
           user_id: userId,
@@ -353,7 +353,7 @@ async function runTurn(ctx: Ctx): Promise<Response> {
     // renamed chat is never overwritten by a later turn.
     const title = content.split(/\s+/).filter(Boolean).join(" ").slice(0, 60);
     if (title) {
-      await supabase.from("lp_chat_sessions").update({ title }).eq("id", sessionId).eq("title", "");
+      await db.from("lp_chat_sessions").update({ title }).eq("id", sessionId).eq("title", "");
     }
   }
 
@@ -361,11 +361,11 @@ async function runTurn(ctx: Ctx): Promise<Response> {
   // is available from this turn onward rather than only from the next one. Skipped
   // on a retry: the facts were already stored when the message first arrived, and
   // the dedupe index would make the chip say "0 saved" anyway.
-  const captured = alreadyStored ? 0 : await captureMemories(supabase, userId, sessionId, content);
+  const captured = alreadyStored ? 0 : await captureMemories(db, userId, sessionId, content);
 
   const [prefs, memories] = await Promise.all([
-    supabase.from("lp_chat_prefs").select("response_instructions").eq("user_id", userId).maybeSingle(),
-    supabase.from("lp_chat_memories").select("id, text, pinned, created_at"),
+    db.from("lp_chat_prefs").select("response_instructions").eq("user_id", userId).maybeSingle(),
+    db.from("lp_chat_memories").select("id, text, pinned, created_at"),
   ]);
 
   const selected = rankMemories((memories.data ?? []) as ChatMemory[], content);
@@ -383,8 +383,8 @@ async function runTurn(ctx: Ctx): Promise<Response> {
 /** Whether an assistant turn came from a search — enough to steer the next one. */
 type HistoryRow = StoredMessage & { hadSources: boolean };
 
-async function loadHistory(supabase: Ctx["supabase"], sessionId: string): Promise<HistoryRow[]> {
-  const { data } = await supabase
+async function loadHistory(db: Ctx["db"], sessionId: string): Promise<HistoryRow[]> {
+  const { data } = await db
     .from("lp_chat_messages")
     .select("id, role, content, sources, lp_chat_attachments(id, name, mime, size, storage_path)")
     .eq("session_id", sessionId)
@@ -410,7 +410,7 @@ async function loadHistory(supabase: Ctx["supabase"], sessionId: string): Promis
 
 /** Store what the user asked to remember; returns how many were new. */
 async function captureMemories(
-  supabase: Ctx["supabase"],
+  db: Ctx["db"],
   userId: string,
   sessionId: string,
   content: string,
@@ -422,7 +422,7 @@ async function captureMemories(
   // itself — a single batch would fail whole and lose the new facts with it.
   let saved = 0;
   for (const text of facts) {
-    const { error } = await supabase
+    const { error } = await db
       .from("lp_chat_memories")
       .insert({ user_id: userId, text, session_id: sessionId });
     if (!error) saved += 1;
@@ -438,7 +438,7 @@ function streamTurn(
   ctx: Ctx,
   turn: { system: string; searching: boolean; searchLocked: boolean; resolved: string; captured: number },
 ): Response {
-  const { supabase, userId, sessionId, release, lock, t, limits } = ctx;
+  const { db, userId, sessionId, release, lock, t, limits } = ctx;
 
   // What the reply accumulates to. Held out here so the disconnect path can
   // persist exactly what had arrived.
@@ -468,7 +468,7 @@ function streamTurn(
     if (state.finished) return;
     beating = (async () => {
       const next = new Date().toISOString();
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("lp_chat_sessions")
         .update({ answering_at: next })
         .eq("id", sessionId)
@@ -509,7 +509,7 @@ function streamTurn(
             merged.push(source);
           }
         }
-        await supabase.from("lp_chat_messages").insert({
+        await db.from("lp_chat_messages").insert({
           session_id: sessionId,
           user_id: userId,
           role: "assistant",
@@ -519,7 +519,7 @@ function streamTurn(
         });
       }
       // Bump updated_at so the sidebar keeps most-recent-first order.
-      await supabase.from("lp_chat_sessions").update({ updated_at: new Date().toISOString() }).eq("id", sessionId);
+      await db.from("lp_chat_sessions").update({ updated_at: new Date().toISOString() }).eq("id", sessionId);
     } finally {
       await release();
     }
@@ -576,8 +576,8 @@ function streamTurn(
 
         // Rebuilt AFTER the user message was stored, so the turn being answered is
         // part of it — the same reason the Python version read the DB here.
-        const history = await loadHistory(supabase, sessionId);
-        const { messages, needsPdf } = await buildMessages(history, (path) => loadBytes(supabase, path));
+        const history = await loadHistory(db, sessionId);
+        const { messages, needsPdf } = await buildMessages(history, (path) => loadBytes(db, path));
         const trimmed = trimHistory(messages, limits.chatHistory);
         const payload: ChatMessage[] = system ? [{ role: "system", content: system }, ...trimmed] : trimmed;
 
@@ -682,8 +682,8 @@ function collect(line: string, state: { reply: string; reasoning: string; citati
 }
 
 /** Attachment bytes, or null when the object is gone. */
-async function loadBytes(supabase: Ctx["supabase"], path: string): Promise<Uint8Array | null> {
-  const { data, error } = await supabase.storage.from("chat-attachments").download(path);
+async function loadBytes(db: Ctx["db"], path: string): Promise<Uint8Array | null> {
+  const { data, error } = await db.storage.from("chat-attachments").download(path);
   if (error || !data) return null;
   return new Uint8Array(await data.arrayBuffer());
 }

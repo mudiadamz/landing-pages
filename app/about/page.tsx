@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
@@ -15,13 +15,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AboutPage() {
   const t = translator(await requestLocale());
-  const supabase = await createClient();
+  const db = await createClient();
   const [
     { data: { user } },
     categories,
     content,
   ] = await Promise.all([
-    supabase.auth.getUser(),
+    db.auth.getUser(),
     getCategories(),
     getSiteContent(),
   ]);

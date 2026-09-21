@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 
 export async function GET(
@@ -8,15 +8,15 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const supabase = await createClient();
+    const db = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await db.auth.getUser();
     if (!user) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    const { data: page } = await supabase
+    const { data: page } = await db
       .from("lp_landing_pages")
       .select("id, zip_url, title")
       .eq("slug", slug)
@@ -26,7 +26,7 @@ export async function GET(
       return NextResponse.json({ error: "File tidak tersedia" }, { status: 404 });
     }
 
-    const { data: purchase } = await supabase
+    const { data: purchase } = await db
       .from("lp_purchases")
       .select("id")
       .eq("user_id", user.id)

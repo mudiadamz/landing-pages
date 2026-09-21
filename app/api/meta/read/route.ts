@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/db/admin";
+import { createClient } from "@/lib/db/server";
 import { sendMetaReadEvent, READ_THRESHOLD_MS } from "@/lib/meta-capi";
 
 /**
@@ -56,8 +56,8 @@ export async function POST(req: Request) {
       if (banned) return new NextResponse(null, { status: 204 });
     }
     try {
-      const supabase = await createClient();
-      const { data } = await supabase.auth.getUser();
+      const db = await createClient();
+      const { data } = await db.auth.getUser();
       if (data.user) {
         const { data: prof } = await admin
           .from("lp_profiles")

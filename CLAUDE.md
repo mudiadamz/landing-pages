@@ -40,16 +40,18 @@ Ringkasan yang paling sering dilanggar:
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
 | Laporan kampanye iklan | `docs/campaign-reports/` |
 | Rencana berjalan (multi-fase) | `docs/plans/` — status tiap fase ada di dokumennya sendiri |
-| Tes database, RLS, auth, storage | `tests/db/` (`pnpm test:db`) + [`docs/plans/test-before-leaving-supabase.md`](docs/plans/test-before-leaving-supabase.md) |
+| Tes database, RLS, auth, storage | `tests/db/` (`pnpm test:db`, butuh `pnpm db:up`) |
+| Cutover dari Supabase (sekali, tugas Adam) | [`docs/runbooks/cutover-supabase.md`](docs/runbooks/cutover-supabase.md) |
 | Sisa string hardcode (i18n) | [`docs/i18n-backlog.md`](docs/i18n-backlog.md) — regen: `pnpm i18n:scan` |
 
 ## Konvensi penting
 
 - Semua tabel app diawali prefix **`lp_`** (mis. `lp_landing_pages`, `lp_purchases`,
-  `lp_sites`). Tabel lama pernah di-rename → lihat migration `2026062100xx_*`.
+  `lp_sites`). Tabel lama pernah di-rename → lihat `db/migrations/_archive/2026062100xx_*`.
 - Bahasa UI: **Indonesia** (`<html lang="id">`, locale `id_ID`).
-- Client di `lib/supabase/` (namanya sisa sejarah — di baliknya SQL langsung ke
-  Postgres lewat `lib/backend/`, bukan Supabase):
+- Client di `lib/db/` — bentuk API-nya meniru supabase-js (`.from().select().eq()`,
+  `.storage.from()`, `.auth.getUser()`), di baliknya SQL langsung ke Postgres lewat
+  `lib/backend/`:
   - `server.ts` — server components/actions, sebagai user dari cookie sesi, **terkena RLS**.
   - `anon.ts` — sebagai `anon`, untuk bacaan publik (boleh di dalam cache).
   - `client.ts` — browser; hanya `.storage` (lewat route sendiri) dan `.auth.getUser()`.
@@ -79,8 +81,9 @@ Ringkasan yang paling sering dilanggar:
   - **Policy harus sama dengan gerbang aplikasinya.** Aksi yang menggerbang
     dengan `requireSiteAdmin`/`requireFeature` lalu menulis lewat client user
     butuh policy yang meloloskan orang yang sama — kalau tidak, layar itu gagal
-    untuk orang yang dibuatkan layarnya. Kalau lebih longgar, satu panggilan
-    PostgREST dari browser melewati gerbangnya.
+    untuk orang yang dibuatkan layarnya. Kalau lebih longgar, gerbang aplikasi
+    jadi satu-satunya penjaga. (Dulu satu panggilan PostgREST dari browser
+    melewatinya; jalan itu sudah tidak ada, tapi policy tetap lapis kedua.)
   - **Grant kolom `lp_profiles` & `lp_landing_pages` adalah DAFTAR.** Kolom baru
     tidak otomatis bisa ditulis user; putuskan, grant, dan perbarui daftar di
     tesnya. (`avatar_url` gagal diam-diam sebulan karena ini.)
@@ -113,14 +116,14 @@ Ringkasan yang paling sering dilanggar:
 
 ## Auth & roles
 
-- **Proxy** (`proxy.ts` → `lib/supabase/proxy.ts`, runtime Node): memvalidasi sesi di `/panel`, `/read`, `/login`, `/signup` saja. `/panel/*` butuh login (redirect ke `/login`); user login yang buka `/login`/`/signup` diarahkan ke `?next=` kalau ada, kalau tidak ke `/panel`.
+- **Proxy** (`proxy.ts` → `lib/db/proxy.ts`, runtime Node): memvalidasi sesi di `/panel`, `/read`, `/login`, `/signup` saja. `/panel/*` butuh login (redirect ke `/login`); user login yang buka `/login`/`/signup` diarahkan ke `?next=` kalau ada, kalau tidak ke `/panel`.
 - **`?next=` sesudah login**: tujuan setelah masuk, dipakai checkout, reader, dan storefront chat (`/login?next=/`). Nilainya **wajib** lewat `safeNextPath()` (`lib/next-path.ts`) — `startsWith("/")` saja meloloskan `//evil.example`, yang browser resolve ke origin lain.
 - **Auth milik sendiri, bukan GoTrue** (`lib/backend/auth.ts`, sejak fase 3
   `docs/plans/remove-supabase.md`). User tetap di `auth.users` (hash bcrypt GoTrue
   dipakai apa adanya); sesi = token opak di cookie httpOnly `lp_session` /
   `__Host-lp_session`, disimpan sebagai sha256 di `app_auth.sessions`. **Jangan pernah
   menentukan identitas dari hal lain** — `currentUser()` (`lib/auth/session.ts`) atau
-  `supabase.auth.getUser()` (bentuk lama, jawaban sama). Ban (`setBanned`) mencabut
+  `db.auth.getUser()` dari `lib/db/server` (bentuk lama, jawaban sama). Ban (`setBanned`) mencabut
   semua sesi saat itu juga.
 - **Sign-in**: email/password (`lib/actions/auth.ts: login`, batas gagal per IP & per
   email) atau Google (`signInWithGoogle` → `lib/backend/google.ts`, OAuth+PKCE tanpa
@@ -139,7 +142,7 @@ Ringkasan yang paling sering dilanggar:
   verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +
   filter "Belum verifikasi" di `/panel/users`.
 - **Tiga jenis akun: Company → Agent → Customer.** Satu akun global (email unik
-  se-project Supabase). Detail & riwayat keputusannya di
+  di `auth.users`). Detail & riwayat keputusannya di
   [`docs/plans/hierarchical-users.md`](docs/plans/hierarchical-users.md).
   - **`lp_profiles.account_type`** = `company | agent | customer`. Jenis akunnya.
     Tidak ada `role` lagi di tabel ini, dan **publisher bukan jenis akun**.
@@ -248,7 +251,7 @@ POST /api/duitku/callback   (server-to-server, balas 200 "OK" cepat)
   • PurchaseTracker fires event `purchase` (GA4 + Meta Pixel), dedup via merchantOrderId
 GET /api/download/[slug]
   • cek login + ada record di lp_purchases (RLS)
-  • generate signed URL Supabase Storage → redirect
+  • URL bertanda HMAC (lib/backend/storage.ts, 1 jam) → redirect
 ```
 
 ### Tabel `lp_purchases`

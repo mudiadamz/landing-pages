@@ -1,16 +1,16 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 
 /** Whether the current user has liked this product (false when logged out). */
 export async function getMyLike(pageId: string): Promise<boolean> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return false;
 
-  const { data } = await supabase
+  const { data } = await db
     .from("lp_product_likes")
     .select("id")
     .eq("landing_page_id", pageId)
@@ -28,13 +28,13 @@ export async function getMyLike(pageId: string): Promise<boolean> {
 export async function toggleLike(
   pageId: string,
 ): Promise<{ ok: boolean; liked: boolean; count: number }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   const readCount = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from("lp_landing_pages")
       .select("like_count")
       .eq("id", pageId)
@@ -44,7 +44,7 @@ export async function toggleLike(
 
   if (!user) return { ok: false, liked: false, count: await readCount() };
 
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("lp_product_likes")
     .select("id")
     .eq("landing_page_id", pageId)
@@ -52,9 +52,9 @@ export async function toggleLike(
     .maybeSingle();
 
   if (existing) {
-    await supabase.from("lp_product_likes").delete().eq("id", existing.id);
+    await db.from("lp_product_likes").delete().eq("id", existing.id);
   } else {
-    await supabase.from("lp_product_likes").insert({ landing_page_id: pageId, user_id: user.id });
+    await db.from("lp_product_likes").insert({ landing_page_id: pageId, user_id: user.id });
   }
 
   return { ok: true, liked: !existing, count: await readCount() };
@@ -77,13 +77,13 @@ export type FavoriteProduct = {
  * page that's no longer visible comes back null and is filtered out.
  */
 export async function getMyFavorites(): Promise<FavoriteProduct[]> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_product_likes")
     .select(
       "created_at, landing_page:lp_landing_pages(id, title, slug, price, price_discount, is_free, thumbnail_url, published)",

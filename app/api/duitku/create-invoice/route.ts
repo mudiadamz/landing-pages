@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { createDuitkuInvoice } from "@/lib/duitku";
 import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
 import { isUpcoming } from "@/lib/product-status";
@@ -7,10 +7,10 @@ import { canonicalOrigin, currentOrigin, currentSiteId } from "@/lib/site-resolv
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
+    const db = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await db.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

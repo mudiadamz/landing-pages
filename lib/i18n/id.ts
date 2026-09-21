@@ -293,10 +293,9 @@ export const id = {
   "panel.colourPalette": "Palet warna",
   "panel.catalogNiche": "Katalog (niche)",
   "panel.noRootCategories": "Belum ada kategori induk. Buat dulu di Kategori.",
-  "sites.threePlaces": "Menambah domain butuh tiga tempat",
+  "sites.threePlaces": "Menambah domain butuh dua tempat",
   "sites.placeHere": "Di sini",
   "sites.placeHereWhat": "— hostname-nya, plus aktif/nonaktif.",
-  "sites.placeSupabaseWhat": "— supaya pengunjung bisa login di domain itu.",
   "sites.identityLivesIn":
     "Nama situs, tagline, deskripsi SEO, logo, ikon, template, palet, dan niche diatur di",
   "sites.identityNotHere": "— bukan di sini. Referensi lengkap:",
@@ -1171,7 +1170,7 @@ export const id = {
   "sites.identityAndLook": "Identitas & tampilan situs",
   "sites.domainsIntro":
     "Hostname dan aktif/nonaktif. Nama, logo, template, palet, dan niche ada di",
-  "panel.storageIntro": "Semua file di Supabase Storage.",
+  "panel.storageIntro": "Semua file yang tersimpan di server.",
   "panel.storageLoadFailed": "Gagal memuat file: {error}",
   "panel.backShort": "← Kembali",
   "panel.uploadHtmlTitle": "Upload HTML landing page",

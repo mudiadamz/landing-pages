@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/db/server";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { extractEpubChapters } from "@/lib/epub-server";
 
@@ -14,13 +14,13 @@ import { extractEpubChapters } from "@/lib/epub-server";
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   try {
-    const supabase = await createClient();
+    const db = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await db.auth.getUser();
     if (!user) return NextResponse.json({ error: "Anda harus login" }, { status: 401 });
 
-    const { data: page } = await supabase
+    const { data: page } = await db
       .from("lp_landing_pages")
       .select("id, story_epub_url, user_id")
       .eq("slug", slug)
@@ -31,7 +31,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 
     // The seller can always read their own product; everyone else must have bought it.
     if (page.user_id !== user.id) {
-      const { data: purchase } = await supabase
+      const { data: purchase } = await db
         .from("lp_purchases")
         .select("id")
         .eq("user_id", user.id)

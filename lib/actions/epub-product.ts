@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { extractEpubMeta, readEpubFile, IMG_MIME } from "@/lib/epub-server";
 import { slugFromTitle, isValidSlug } from "@/lib/slug";
@@ -45,10 +45,10 @@ export async function createProductFromEpub(input: {
 }): Promise<{ ok: true; id: string; slug: string } | { ok: false; error: string }> {
   if (!(await canSellProducts())) return { ok: false, error: "Akses ditolak." };
 
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Belum masuk." };
 
   const path = (input.epubPath ?? "").trim();

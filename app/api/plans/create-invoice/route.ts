@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { createDuitkuInvoice } from "@/lib/duitku";
 import { getPlanMeta, getPlanPrices } from "@/lib/actions/site-settings";
 import { canonicalOrigin, currentOrigin, currentSiteId } from "@/lib/site-resolve";
@@ -28,12 +28,12 @@ import { isPurchasable, normalizePlan, resolvePlanMeta, visiblePlanKeys, type Pa
 const MAX_MONTHS = 24;
 
 export async function POST(req: NextRequest) {
-  const [supabase, locale] = await Promise.all([createClient(), requestLocale()]);
+  const [db, locale] = await Promise.all([createClient(), requestLocale()]);
   const t = translator(locale);
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return NextResponse.json({ error: t("chat.signInRequired") }, { status: 401 });
 
   const email = user.email?.trim();

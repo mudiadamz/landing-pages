@@ -2,9 +2,9 @@
 
 import { cache } from "react";
 import { unstable_noStore, unstable_cache, revalidatePath } from "next/cache";
-import { createAnonClient } from "@/lib/supabase/anon";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAnonClient } from "@/lib/db/anon";
+import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import {
   normalizeAccountType,
   normalizePublisherStatus,
@@ -159,10 +159,10 @@ export async function ensureSiteMembership(userId: string, siteId: string): Prom
 const readRolePermissions = unstable_cache(
   async (siteId: string, canonicalId: string): Promise<RolePermissions> => {
     try {
-      const supabase = createAnonClient();
+      const db = createAnonClient();
       const ids = [...new Set([siteId, canonicalId].filter(Boolean))];
       if (!ids.length) return DEFAULT_ROLE_PERMISSIONS;
-      const { data } = await supabase
+      const { data } = await db
         .from("lp_site_settings")
         .select("site_id, value")
         .eq("key", "role_permissions")
@@ -220,13 +220,13 @@ export async function getAccessibleFeatures(): Promise<FeatureKey[]> {
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
   unstable_noStore();
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("lp_profiles")
     .select("id, full_name, account_type, email_verified_at, avatar_url")
     .eq("id", user.id)
@@ -287,10 +287,10 @@ export async function applyAsPublisher(
   selfie?: string,
   application?: PublisherApplication,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Belum masuk." };
 
   const ktpBytes = decodeJpegDataUrl(ktp);
@@ -335,7 +335,7 @@ export async function applyAsPublisher(
   // Pengajuan sekarang milik pasangan (orang, situs): dia melamar jadi publisher
   // DI SITUS yang sedang dia buka, bukan di seluruh platform.
   const siteId = await currentSiteId();
-  const { data: current } = await supabase
+  const { data: current } = await db
     .from("lp_profiles")
     .select("account_type")
     .eq("id", user.id)
@@ -429,13 +429,13 @@ export type ProfileWithUser = {
 /** For profile page: profile + email from auth. Returns null if not logged in. */
 export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
   unstable_noStore();
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return null;
 
-  let { data, error } = await supabase
+  let { data, error } = await db
     .from("lp_profiles")
     .select("id, full_name, account_type")
     .eq("id", user.id)
@@ -447,12 +447,12 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
     // refused (20260919010000). That refusal is the point: this is the path an
     // account without a profile takes, and it must not be a way to pick one's
     // own account type.
-    const { error: insertError } = await supabase.from("lp_profiles").insert({
+    const { error: insertError } = await db.from("lp_profiles").insert({
       id: user.id,
       full_name: user.user_metadata?.full_name ?? null,
     });
     if (!insertError || insertError.code === "23505") {
-      const ret = await supabase
+      const ret = await db
         .from("lp_profiles")
         .select("id, full_name, account_type")
         .eq("id", user.id)
@@ -484,14 +484,14 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
 }
 
 export async function updateProfile(formData: FormData) {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Belum masuk." };
 
   const full_name = (formData.get("full_name") as string)?.trim() ?? "";
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_profiles")
     .update({ full_name: full_name || null })
     .eq("id", user.id);
@@ -536,10 +536,10 @@ const AVATAR_MAX_BYTES = 512 * 1024;
 export async function uploadProfileAvatar(
   form: FormData,
 ): Promise<{ ok: boolean; url?: string; error?: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Belum masuk." };
 
   const file = form.get("file");
@@ -571,7 +571,7 @@ export async function uploadProfileAvatar(
   const { data } = admin.storage.from("landing-assets").getPublicUrl(path);
   const url = data.publicUrl;
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_profiles")
     .update({ avatar_url: url })
     .eq("id", user.id);
@@ -586,13 +586,13 @@ export async function uploadProfileAvatar(
 
 /** Clear the picture and fall back to the initial letter. */
 export async function removeProfileAvatar(): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Belum masuk." };
 
-  const { error } = await supabase
+  const { error } = await db
     .from("lp_profiles")
     .update({ avatar_url: null })
     .eq("id", user.id);

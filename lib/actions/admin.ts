@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { editingSite } from "@/lib/site-resolve";
 import { canSellOnSite } from "@/lib/site-membership";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/db/admin";
 import { requireFeature, getProfile, currentSiteStanding } from "./profiles";
 
 export type Stats = {
@@ -30,16 +30,16 @@ export async function getStats(): Promise<Stats | null> {
   const isAdmin = await requireFeature("stats");
   if (!isAdmin) return null;
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const [pagesRes, purchasesRes, revokedRes, buyersRes] = await Promise.all([
-    supabase.from("lp_landing_pages").select("id", { count: "exact", head: true }),
-    supabase.from("lp_purchases").select("id", { count: "exact", head: true }),
-    supabase
+    db.from("lp_landing_pages").select("id", { count: "exact", head: true }),
+    db.from("lp_purchases").select("id", { count: "exact", head: true }),
+    db
       .from("lp_purchases")
       .select("id", { count: "exact", head: true })
       .not("revoked_at", "is", null),
-    supabase.from("lp_purchases").select("user_id"),
+    db.from("lp_purchases").select("user_id"),
   ]);
 
   // Deleted accounts leave their purchases behind with a NULL user_id. Counting
@@ -60,10 +60,10 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   const isAdmin = await requireFeature("stats");
   if (!isAdmin) return [];
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   // Service role, so revoked rows are included — the point is to surface them.
-  const { data: purchases } = await supabase
+  const { data: purchases } = await db
     .from("lp_purchases")
     .select("user_id, purchased_at, revoked_at")
     .order("purchased_at", { ascending: false });
@@ -88,7 +88,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   // and lp_site_members has none of these columns. The wrong table used to
   // make this query fail — silently, since the error is not read — and every
   // customer rendered nameless.
-  const { data: profiles } = await supabase
+  const { data: profiles } = await db
     .from("lp_profiles")
     .select("id, full_name, email, account_type")
     .in("id", buyerIds);
@@ -143,8 +143,8 @@ export async function getMyProductStats(): Promise<PublisherStats | null> {
   const standing = await currentSiteStanding();
   if (!profile || !canSellOnSite(standing)) return null;
 
-  const supabase = createAdminClient();
-  const { data: pages } = await supabase
+  const db = createAdminClient();
+  const { data: pages } = await db
     .from("lp_landing_pages")
     .select("id, title")
     .eq("user_id", profile.id);
@@ -153,7 +153,7 @@ export async function getMyProductStats(): Promise<PublisherStats | null> {
 
   const agg = new Map<string, { sold: number; revenue: number; revoked: number }>();
   if (ids.length) {
-    const { data: purchases } = await supabase
+    const { data: purchases } = await db
       .from("lp_purchases")
       .select("landing_page_id, amount, revoked_at")
       .in("landing_page_id", ids);
@@ -223,8 +223,8 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   // pasangan (orang, situs) — daftar lintas situs akan menampilkan orang yang
   // bukan urusan Agent ini.
   const site = await editingSite();
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const db = createAdminClient();
+  const { data, error } = await db
     .from("lp_site_members")
     .select(
       "user_id, publisher_applied_at, publisher_ktp_path, publisher_selfie_path, publisher_real_name, publisher_display_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at",
@@ -236,7 +236,7 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   if (error || !data?.length) return [];
 
   // Nama & email tetap di profil: itu milik orangnya, bukan milik pengajuan.
-  const { data: profiles } = await supabase
+  const { data: profiles } = await db
     .from("lp_profiles")
     .select("id, full_name, email")
     .in("id", data.map((r) => r.user_id));
@@ -244,7 +244,7 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
 
   const sign = async (path: string | null) => {
     if (!path) return null;
-    const { data: signed } = await supabase.storage
+    const { data: signed } = await db.storage
       .from("publisher-kyc")
       .createSignedUrl(path, KYC_URL_TTL_SECONDS);
     return signed?.signedUrl ?? null;
@@ -279,8 +279,8 @@ export async function approvePublisher(userId: string): Promise<{ ok: boolean; e
   // (orang, situs) sejak model account_type. Menyetujui di sini tidak membuka
   // izin jual di storefront lain, dan memang tidak seharusnya.
   const site = await editingSite();
-  const supabase = createAdminClient();
-  const { error } = await supabase
+  const db = createAdminClient();
+  const { error } = await db
     .from("lp_site_members")
     .update({
       is_publisher: true,
@@ -310,10 +310,10 @@ export async function rejectPublisher(
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
   if (!userId) return { ok: false, error: "User tidak valid." };
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
   const reviewer = await getProfile();
 
-  const { data: row, error } = await supabase
+  const { data: row, error } = await db
     .from("lp_site_members")
     .update({
       is_publisher: false,
@@ -341,14 +341,14 @@ export async function rejectPublisher(
     Boolean,
   ) as string[];
   if (paths.length) {
-    const { error: rmErr } = await supabase.storage.from("publisher-kyc").remove(paths);
+    const { error: rmErr } = await db.storage.from("publisher-kyc").remove(paths);
     if (rmErr) console.error("rejectPublisher photo cleanup error:", rmErr);
     else {
       // The paths live on the membership row since the account_type model —
       // the same row updated above. They used to be cleared on lp_profiles,
       // where the columns no longer exist, so the update failed unread and the
       // application kept pointing at photos that had just been deleted.
-      const { error: clearErr } = await supabase
+      const { error: clearErr } = await db
         .from("lp_site_members")
         .update({ publisher_ktp_path: null, publisher_selfie_path: null })
         .eq("user_id", userId)

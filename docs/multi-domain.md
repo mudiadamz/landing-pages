@@ -106,7 +106,8 @@ setiap penulisan sesi di antara keduanya akan gagal tanpa suara.
 
 ## Menambah domain
 
-Tiga tempat. Melewatkan satu menghasilkan gejala yang terlihat seperti bug.
+Dua tempat (panel & DNS); langkah 3–4 menjelaskan kenapa login tidak butuh apa-apa.
+Melewatkan satu menghasilkan gejala yang terlihat seperti bug.
 
 ### 1. Panel — `/panel/sites` → **Tambah domain**
 
@@ -154,73 +155,61 @@ Batas jumlah domain: tidak ada di sisi aplikasi. Yang membatasi cuma rate limit
 Let's Encrypt (50 sertifikat per domain terdaftar per minggu) — jauh di atas
 kecepatan menambah storefront.
 
-### 3. Supabase — **tidak ada yang perlu diubah**
+### 3. Login — **tidak ada yang perlu diubah**
 
-Login Google di domain baru jalan tanpa menyentuh dashboard. Bagian ini menjelaskan
-kenapa, karena dulu tidak begitu dan kesalahannya sulit dikenali.
+Login di domain baru jalan tanpa mendaftarkan apa pun di mana pun. Bagian ini
+menjelaskan kenapa, karena dulu tidak begitu dan kesalahannya sulit dikenali.
 
-**Dulu:** tiap domain harus didaftarkan sendiri di Authentication → URL Configuration
-→ Redirect URLs. Kalau lupa, tidak ada error. `redirect_to` yang tidak terdaftar
-bukan ditolak oleh Supabase — dibuang diam-diam dan diganti **Site URL** project.
-Jadi "Masuk dengan Google" tetap berhasil, tapi pengunjungnya mendarat di
-`admuiux.com` berikut cookie sesinya, dan di domain yang dia mulai tadi dia tetap
-terlihat belum masuk. Pembeli yang login di tengah checkout terlempar keluar dari
-produk yang sedang dibeli.
+**Dulu** (era Supabase Auth): tiap domain harus didaftarkan sendiri sebagai
+Redirect URL, dan kalau lupa tidak ada error — alamat yang tidak terdaftar
+diganti diam-diam dengan domain utama. "Masuk dengan Google" tetap berhasil,
+tapi pengunjungnya mendarat di `admuiux.com` berikut cookie sesinya, dan di
+domain yang dia mulai tadi dia tetap terlihat belum masuk.
 
-**Sekarang:** OAuth selalu kembali ke satu URL yang pasti terdaftar — callback
-domain kanonik — lalu callback itu **melempar balik** ke domain asal.
+**Sekarang:** Google hanya kenal **satu** redirect URI — callback domain kanonik —
+dan callback itu **melempar balik** ke domain asal. Domain asalnya menumpang di
+parameter `state` OAuth (redirect URI harus persis sama di Google, jadi tidak bisa
+membawanya).
 
 ```
-domaintest.fit  →  Google  →  admuiux.com/auth/callback?sf=domaintest.fit
+domaintest.fit  →  Google  →  admuiux.com/auth/callback?code=…&state=<acak>.domaintest.fit
                                         ↓ (tidak menukar code di sini)
-                              domaintest.fit/auth/callback?code=…
-                                        ↓ exchangeCodeForSession
+                              domaintest.fit/auth/callback?code=…&state=…
+                                        ↓ cek state vs cookie, tukar code + verifier PKCE
                               cookie sesi terpasang di domaintest.fit
 ```
 
 Yang berpindah adalah **`code`-nya, bukan sesinya**. Domain kanonik sengaja tidak
-menukar code itu sendiri: `signInWithOAuth` menulis verifier PKCE sebagai cookie di
-domain yang tombolnya ditekan, dan cookie tidak lintas host — `admuiux.com` tidak
-bisa membacanya. Justru karena code itu tak berguna di tempat lain, mengopernya lewat
-jalan memutar ini aman. Detail dan penjagaannya ada di `lib/oauth-return.ts`;
-`?sf=` divalidasi terhadap `lp_sites`, tanpa itu callback kanonik jadi open redirect
-yang menyerahkan code pengunjung ke domain siapa pun.
+menukar code itu sendiri: `signInWithGoogle` menulis verifier PKCE dan `state` di
+cookie `lp_oauth` milik domain yang tombolnya ditekan, dan cookie tidak lintas host
+— `admuiux.com` tidak bisa membacanya. Justru karena code itu tak berguna di
+tempat lain, mengopernya lewat jalan memutar ini aman. Detail dan penjagaannya di
+`lib/oauth-return.ts` dan `app/auth/callback/route.ts`:
 
-**Yang masih wajib ada di daftar** cuma satu baris, dan sudah terpasang:
-
-```
-https://admuiux.com/auth/callback
-```
-
-Kalau baris itu hilang, login patah di **semua** domain sekaligus. Cara mengeceknya
-tanpa membuka dashboard — minta GoTrue memvalidasi alamatnya lewat token yang pasti
-ditolak, lalu lihat ke mana dia melempar:
-
-```bash
-curl -s -o /dev/null -w '%{redirect_url}\n' \
-  "https://uxizlsoggphacyvtshub.supabase.co/auth/v1/verify?token=x&type=signup&redirect_to=https%3A%2F%2Fadmuiux.com%2Fauth%2Fcallback"
-```
-
-Balasannya memuat `/auth/callback` → terdaftar. Balasannya `admuiux.com/` telanjang →
-sudah tidak, dan login patah di mana-mana.
+- host di `state` divalidasi terhadap `lp_sites` — tanpa itu callback kanonik jadi
+  open redirect yang menyerahkan code pengunjung ke domain siapa pun;
+- domain asal mencocokkan `state` dengan cookie browser itu sendiri (mencegah
+  login CSRF), dan cookie itu dibaca sekali lalu dihapus.
 
 **Localhost dan hostname staging** tidak lewat jalan memutar ini: pelemparnya
 hanya mau mengirim ke host yang ada di `lp_sites`, jadi host asing malah akan
-tersangkut di domain kanonik. Keduanya tetap callback ke dirinya sendiri dan tetap
-butuh baris sendiri di daftar — untuk `http://localhost:3000/auth/callback` sudah ada.
+tersangkut di domain kanonik. Keduanya callback ke dirinya sendiri, dan karena
+itu butuh baris sendiri di Google (untuk `http://localhost:3000/auth/callback`
+sudah ada).
 
-### 4. Google Cloud Console — **biasanya tidak perlu diubah**
+### 4. Google Cloud Console — **tidak perlu diubah**
 
-Login Google lewat Supabase memakai callback **milik Supabase**, bukan domain kita.
-Jadi *Authorized redirect URIs* di Google tetap satu nilai untuk semua domain:
+*Authorized redirect URIs* di OAuth client (`GOOGLE_CLIENT_ID`) cukup:
 
 ```
-https://uxizlsoggphacyvtshub.supabase.co/auth/v1/callback
+https://admuiux.com/auth/callback
+http://localhost:3000/auth/callback
 ```
 
-Sudah terpasang sejak awal, jadi **domain baru tidak menambah pekerjaan di sini**.
-Tambahkan `https://<domain>` ke *Authorized JavaScript origins* hanya kalau nanti
-memakai Google One Tap — sekarang tidak dipakai.
+Domain baru **tidak menambah pekerjaan di sini**. Kalau baris pertama hilang,
+login Google patah di **semua** domain sekaligus (Google menolak dengan
+`redirect_uri_mismatch`). Tambahkan `https://<domain>` ke *Authorized JavaScript
+origins* hanya kalau nanti memakai Google One Tap — sekarang tidak dipakai.
 
 ### 5. Cek
 
@@ -324,28 +313,28 @@ orang lain di WhatsApp.
 Sejak `lp_site_members` ada, "admin" bukan satu tingkat lagi. Tiga istilah,
 dijelaskan lengkap di [`plans/hierarchical-users.md`](plans/hierarchical-users.md):
 
-- **Company** (`lp_profiles.role = 'admin'`) melihat semua domain dan
+- **Company** (`lp_profiles.account_type = 'company'`) melihat semua domain dan
   satu-satunya yang boleh menambah/menghapus domain, mengangkat Company lain,
   dan menghapus akun.
-- **Agent** (`lp_site_members.role = 'admin'`) mengurus konten, setelan, dan
+- **Agent** (baris di `lp_site_agents`) mengurus konten, setelan, dan
   anggota **domain itu saja**. Filter situs di tiap layar per-domain hanya
   memuat domain yang jadi keanggotaannya, dan cookie `panel_site` dicocokkan
   dengan daftar itu — mengganti nilainya di devtools tidak membuka domain orang
   lain. Agent satu domain tidak melihat filternya sama sekali: tidak ada yang
   bisa dipilih.
-- **Customer** (`lp_site_members.role = 'customer'`) pembeli di domain itu.
+- **Customer** (baris di `lp_site_members`) pembeli di domain itu.
 
 Konsekuensi yang mudah terlewat: **panel tetap hanya dilayani domain kanonik**,
-jadi Agent sebuah domain niche pun login di sana. Sesi Supabase tidak lintas
-domain, dan itu tidak berubah.
+jadi Agent sebuah domain niche pun login di sana. Sesi tidak lintas domain, dan
+itu tidak berubah.
 
 Detail, fase, dan keputusan yang masih terbuka ada di
 [`plans/hierarchical-users.md`](plans/hierarchical-users.md).
 
 ## Yang perlu diketahui
 
-**Login tidak lintas domain, dan itu disengaja.** Cookie sesi Supabase terikat per
-domain. Pengunjung login sendiri di tiap domain. Karena akunnya tetap satu
+**Login tidak lintas domain, dan itu disengaja.** Cookie sesi (`lp_session`, atau
+`__Host-lp_session` di HTTPS — host-only, httpOnly) terikat per domain. Pengunjung login sendiri di tiap domain. Karena akunnya tetap satu
 `auth.users` (email yang sama), pembelian dari beberapa domain tetap muncul
 bersama di "Pembelian saya".
 
@@ -361,7 +350,7 @@ storefront. Dijaga di `app/panel/layout.tsx` dengan **allowlist** route pembeli
 otomatis ikut terkunci. Route admin yang dibuka dari domain niche di-redirect ke
 **path yang sama di domain utama**, tempat sesinya sudah ada.
 
-Layout tidak menerima pathname, jadi middleware (`lib/supabase/proxy.ts`)
+Layout tidak menerima pathname, jadi middleware (`lib/db/proxy.ts`)
 meneruskannya lewat header `x-pathname`.
 
 **Pembayaran tidak butuh setelan per domain.** `callbackUrl` Duitku selalu ke

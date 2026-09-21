@@ -92,13 +92,13 @@ langsung. **Tidak ada user yang perlu reset sandi.** Identitas Google ada di
 
 | Fase | Isi | Ukuran | Status |
 |---|---|---|---|
-| 0 | Prasyarat, keputusan, dan ukuran data produksi | S | 🟡 keputusan ✅, ukuran produksi belum |
+| 0 | Prasyarat, keputusan, dan ukuran data produksi | S | ✅ keputusan; ukuran produksi terukur sendiri di langkah B runbook (tanpa user sungguhan, jendela tidak kritis) |
 | 1 | Lapisan data sendiri di atas Postgres Supabase yang sama | **L** | ✅ |
 | 2 | Storage sendiri (disk + URL bertanda) | M | ✅ |
 | 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ✅ |
 | 4 | Postgres pindah ke server sendiri | M | ✅ |
 | 5 | Cutover produksi | S, butuh jendela pemeliharaan | 🟡 runbook siap & digladikan; eksekusi di produksi = Adam |
-| 6 | Bersih-bersih & penghapusan project Supabase | S | ⬜ |
+| 6 | Bersih-bersih & penghapusan project Supabase | S | ✅ kode; 🟡 hapus project = Adam (30 hari sesudah cutover) |
 
 **Urutannya tidak bisa dibalik di satu titik:** database pindah **paling
 akhir**. GoTrue dan storage-api menempel ke Postgres Supabase (skema `auth` milik
@@ -501,21 +501,42 @@ Tulisan ke database baru sejak C6 tidak ikut kembali.
 
 ---
 
-## Fase 6 — bersih-bersih
+## Fase 6 — bersih-bersih ✅ (kode) · 🟡 penghapusan project = Adam, 30 hari sesudah cutover
 
-- Hapus `@supabase/supabase-js`, `@supabase/ssr`, dan devDependency `supabase`
-  (CLI), serta `lib/supabase/*`, `supabase/config.toml`, dan env
-  `NEXT_PUBLIC_SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` di `.env.example`,
-  Dockerfile, dan compose.
-- `schema-contract.test.ts` pensiun (tipe hasil generate yang menjaganya).
-  `rls-surface` dan tes perilaku RLS tetap.
-- Tulis ulang bagian Supabase di `CLAUDE.md`, `docs/architecture.md`,
-  `docs/technical.md`, dan skill `run-local`.
-- **Setelah 30 hari tanpa rollback:** backup terakhir project Supabase disimpan
-  di luar server, lalu project-nya dihapus. Keputusan Adam, dilakukan tangan.
+**Dikerjakan:**
 
-**Selesai kalau:** `grep -ri supabase` di kode aplikasi hanya menemukan riwayat
-di `_archive/` dan dokumen, dan tagihan Supabase berhenti.
+- `@supabase/supabase-js`, `@supabase/ssr` dan CLI `supabase` dicabut dari
+  `package.json` (+ entri `allowBuilds`). `supabase/config.toml` dihapus; sisa
+  lokal CLI (`supabase/.temp`: project-ref, pooler-url — berguna untuk cutover)
+  dibiarkan di mesin, di-gitignore.
+- `lib/supabase/*` → **`lib/db/*`**, dan variabel `supabase` → `db` di seluruh
+  `app/`, `lib/`, `components/` (mekanis; `tsc` + kedua suite hijau).
+- Env Supabase hilang dari `.env.example`, Dockerfile (build arg), compose.
+  Fallback kunci HMAC ke `SUPABASE_SERVICE_ROLE_KEY` diganti kunci turunan
+  per-keperluan dari `STORAGE_SIGNING_SECRET` (`lib/secrets.ts`).
+- `images.remotePatterns` berhenti menyebut `**.supabase.co`.
+- Teks yang dilihat orang: panel Situs tidak lagi menyuruh mengatur Supabase
+  ("dua tempat", bukan tiga), panel Storage, dan kebijakan privasi bawaan
+  (Supabase dicoret dari sub-pemroses; Google ditambahkan untuk login).
+- Dokumen & skill (`technical.md`, `multi-domain.md`, `mbahgpt.md`,
+  `architecture.md`, `run-local`, `product-campaign-analysis`) ditulis ulang.
+- Lint kembali ke satu error lama (`pdf-viewer.tsx`): `any` di adapter
+  dikumpulkan jadi satu alias `Row` dengan alasannya.
+
+**Menyimpang:** `schema-contract.test.ts` **tidak** pensiun — rancangan awal
+mengandaikan tipe hasil generate (Kysely), sedangkan yang dibangun adalah adapter
+berbentuk supabase-js tanpa tipe. Tes itulah satu-satunya yang memastikan setiap
+kolom yang disebut kode memang ada, jadi tetap.
+
+**Sisa `supabase` di repo, semuanya disengaja:** `db/migrations/_archive/`
+(riwayat), dokumen rencana & runbook, alat cutover (`supabase-catch-up.mjs`,
+`import-supabase-data.sh`, `storage-migrate.mjs export`), dan komentar yang
+menjelaskan perilaku yang ditiru (bentuk API supabase-js, batas PostgREST, hash
+GoTrue).
+
+**Untuk Adam, sesudah cutover:** bagian D runbook — hapus env Supabase, periksa
+halaman legal tiap situs di database, dan setelah 30 hari tanpa jalan mundur:
+backup terakhir, hapus URI callback Supabase di Google, hapus project.
 
 ---
 
@@ -527,7 +548,7 @@ di `_archive/` dan dokumen, dan tagihan Supabase berhenti.
 | File | di Supabase | disk server + backup di luar |
 | Jalan browser ke database | PostgREST (anon key di bundle) | **tidak ada** |
 | Aturan keamanan | RLS + grant + trigger | **sama persis**, tetap diuji |
-| Tipe query | ditulis tangan, tak diperiksa | di-generate dari skema |
+| Tipe query | ditulis tangan, tak diperiksa | ditulis tangan; setiap kolom yang disebut kode diperiksa ada (`schema-contract`) |
 | Stack tes lokal/CI | 5–8 container Supabase | 1 container Postgres |
 | Tanggung jawab baru | — | backup, patch Postgres, rate limit login |
 
