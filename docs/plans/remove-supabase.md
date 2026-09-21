@@ -92,7 +92,7 @@ langsung. **Tidak ada user yang perlu reset sandi.** Identitas Google ada di
 
 | Fase | Isi | Ukuran | Status |
 |---|---|---|---|
-| 0 | Prasyarat, keputusan, dan ukuran data produksi | S | ⬜ |
+| 0 | Prasyarat, keputusan, dan ukuran data produksi | S | 🟡 keputusan ✅, ukuran produksi belum |
 | 1 | Lapisan data sendiri (Kysely) di atas Postgres Supabase yang sama | **L** | ⬜ |
 | 2 | Storage sendiri (disk + Caddy + URL bertanda) | M | ⬜ |
 | 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ⬜ |
@@ -110,34 +110,30 @@ jadi ia duluan dan yang paling besar.
 
 ## Fase 0 — prasyarat, keputusan, ukuran
 
-**Harus beres sebelum satu baris kode diubah:**
+**Keputusan — dicatat 2026-09-21 (Adam):**
 
-1. **Rollout yang tertunda naik dulu.** Tujuh migration `20260919*` dan kode
-   aplikasinya (lihat Fase 0 rencana tes). Rencana ini dibangun di atas produksi
-   yang sehat. Pendaftaran di produksi mati sampai itu naik.
+1. **Rollout produksi tidak diperlukan dulu.** Belum ada user sungguhan, jadi
+   produksi tidak perlu disehatkan sebelum rencana ini jalan. Konsekuensinya
+   melegakan dua fase: di Fase 3, logout massal saat pindah auth tidak merugikan
+   siapa pun, dan di Fase 5 jendela pemeliharaan tidak kritis.
 
-2. **Nasib planning-poker (`pp_`) dan texas-poker (`tp_`).** Keduanya tinggal di
-   database yang sama, memakai `auth.users` yang sama, dan tabelnya ada di
-   publication `supabase_realtime`. **Realtime dipakai mereka, bukan aplikasi
-   ini.** Mencabut Supabase sepenuhnya memutus keduanya. Pilihan:
-   - (a) keduanya sudah mati → tabel `pp_`/`tp_` dibuang di Fase 4;
-   - (b) masih hidup → pindahkan ke project/database sendiri **sebelum** Fase 4,
-     termasuk akun penggunanya.
+2. **App lain yang dulu berbagi database ini sudah pensiun dan dibuang.**
+   `20260921000000_drop_planning_poker_texas_poker.sql` membuang tabel, fungsi,
+   dan trigger-nya — termasuk trigger di `auth.users` yang ikut jalan di setiap
+   pendaftaran aplikasi ini. Publication `supabase_realtime` kini kosong: **tidak
+   ada lagi yang membutuhkan Realtime**, dan tidak ada app lain yang ikut putus
+   saat Supabase dicabut.
 
-   Keputusan Adam. Rencana ini mengasumsikan (a) sampai dikatakan lain.
+3. **File disimpan di disk server** (`/srv/storage/<bucket>/…`), dilayani Caddy
+   untuk yang publik. Backup jadi tanggung jawab kita (Fase 4).
 
-3. **Tujuan file.** Rekomendasi: **disk server** (`/srv/storage/<bucket>/…`),
-   karena paling hemat resource (nol container tambahan) dan Caddy bisa melayani
-   file publik tanpa menyentuh Node. Konsekuensinya: **backup jadi tanggung jawab
-   kita** (lihat Fase 4). Alternatifnya object storage S3-compatible (R2/B2):
-   backup-nya diurus penyedia, tapi ada biaya dan ketergantungan baru. Keputusan
-   Adam; rencana ini mengasumsikan disk.
+4. **Client OAuth Google dibuat sendiri** di Google Cloud Console. Yang
+   didaftarkan: *Authorized redirect URI* `https://<domain-kanonik>/auth/callback`
+   dan `http://127.0.0.1:3000/auth/callback` untuk lokal. Cukup itu — `?sf=` di
+   `lib/oauth-return.ts` meneruskan kode ke storefront lain. Client ID & secret
+   masuk `.env.production` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) di Fase 3.
 
-4. **Client OAuth Google sendiri.** Sekarang client Google dikonfigurasi di
-   dashboard Supabase, dengan redirect ke domain Supabase. Buat client baru di
-   Google Cloud Console dengan redirect `https://<domain-kanonik>/auth/callback`.
-   Cuma satu redirect yang dibutuhkan: mekanisme `?sf=` di `lib/oauth-return.ts`
-   tetap meneruskan kode ke domain asal.
+**Masih terbuka:**
 
 5. **Ukur data produksi** (baca-saja, butuh koneksi database produksi):
 
@@ -156,11 +152,11 @@ jadi ia duluan dan yang paling besar.
     where avatar_url like '%supabase.co/storage%';
    ```
 
-   Angkanya menentukan jendela pemeliharaan di Fase 5 dan ruang disk yang
-   dibutuhkan server.
+   Dengan belum adanya user sungguhan, yang benar-benar menentukan di sini
+   adalah **volume file** (ruang disk server) dan jumlah URL yang harus ditulis
+   ulang di Fase 2.
 
-**Selesai kalau:** keempat keputusan tercatat di sini, dan angka produksi tertulis
-di bawah.
+**Selesai kalau:** angka produksi di atas tertulis di sini.
 
 ---
 
@@ -344,8 +340,8 @@ Umumkan.
 samping app dan Caddy.
 
 - **Baseline, bukan replay 91 migration.** Migration lama menyebut `storage.*`,
-  `supabase_realtime`, `supabase_auth_admin`, dan tabel `pp_`/`tp_`. Semuanya
-  tidak ada di Postgres polos. Buat `00000000000000_baseline.sql` dari
+  `supabase_realtime` dan `supabase_auth_admin` — tidak ada di Postgres polos —
+  serta membuat lalu membuang tabel app yang sudah pensiun (`20260921000000`). Buat `00000000000000_baseline.sql` dari
   `pg_dump --schema-only` skema `public` (hanya `lp_*`) + skema `auth` yang dipakai.
   Migration lama dipindah ke `supabase/migrations/_archive/` sebagai riwayat.
 - **Shim — hal kecil yang membuat semua policy tetap sama:**

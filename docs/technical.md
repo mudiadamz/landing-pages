@@ -305,5 +305,4 @@ curl -fsS https://admuiux.com/api/health                  # {"ok":true}
 | [`multi-domain.md`](multi-domain.md) | Beberapa domain, satu sistem |
 | [`mbahgpt.md`](mbahgpt.md) | Template chat MbahGPT + backend-nya |
 | [`plans/`](plans/) | Rencana berjalan (multi-fase) |
-| [`supabase-region-migration.md`](supabase-region-migration.md) | Pindah region Supabase |
 | [`ai-analytics-plan.md`](ai-analytics-plan.md) | Rencana analytics |

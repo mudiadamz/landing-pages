@@ -168,9 +168,9 @@ describe("lp_profiles — setiap kolom sudah diputuskan", () => {
 
 describe("lp_profiles — membuat profil sendiri (fallback getProfile)", () => {
   // lib/actions/profiles.ts:getProfile inserts a row with the USER client when
-  // none exists — e.g. an account inherited from the texas-poker/planning-poker
-  // projects that share this auth.users. That path must keep working, and must
-  // not be a way to be born an admin.
+  // none exists — an auth.users row created outside this app's signup path
+  // (by hand, by an import, or before lp_handle_new_user existed). That path
+  // must keep working, and must not be a way to be born an admin.
 
   it("boleh membuat profilnya sendiri dengan nama saja, dan jadi customer", async () => {
     const me = await makeUserWithoutProfile();

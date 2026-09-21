@@ -170,7 +170,8 @@ baru.
 mati, dan fase 1–4 semuanya butuh rel yang sama.
 
 1. ✅ sudah: `20260919000000_fix_handle_new_user_account_type.sql`.
-2. **Produksi — terdampak, dan BELUM diperbaiki di sana.** Diperiksa dengan probe
+2. **Produksi — terdampak, dan BELUM diperbaiki di sana.** *(2026-09-21: tidak
+   diperlukan — belum ada user sungguhan; lihat `remove-supabase.md` Fase 0.)* Diperiksa dengan probe
    baca-saja (anon key, `select=role&limit=0`): di project hosted `lp_profiles.role`
    sudah tidak ada, jadi `20260903010000` sudah naik dan pendaftaran di produksi
    mati sejak itu. Menulis ke database produksi adalah keputusan Adam, bukan

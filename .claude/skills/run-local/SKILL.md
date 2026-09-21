@@ -20,7 +20,7 @@ order; the order matters more than it looks, because half the failure modes are
 
 ```bash
 colima start                       # Docker runtime; usually the thing that is off
-pnpm exec supabase start -x vector,logflare,studio,imgproxy,edge-runtime,supavisor
+pnpm exec supabase start -x vector,logflare,studio,imgproxy,edge-runtime,supavisor,realtime
                                    # 8 containers: db, auth, rest, storage, …
 pnpm exec supabase migration up --local  # the local DB is almost always behind
 pnpm dev                        # http://127.0.0.1:3000
@@ -43,7 +43,7 @@ Cannot connect to the Docker daemon at unix:///Users/adam/.colima/default/docker
 ## 2. Supabase
 
 ```bash
-pnpm exec supabase start -x vector,logflare,studio,imgproxy,edge-runtime,supavisor
+pnpm exec supabase start -x vector,logflare,studio,imgproxy,edge-runtime,supavisor,realtime
 pnpm exec supabase status         # what is running
 ```
 
@@ -51,8 +51,9 @@ pnpm exec supabase status         # what is running
 which colima cannot mount — a plain `supabase start` on a fresh set of
 containers fails with `error while creating mount source path
 '…/.colima/default/docker.sock': operation not supported`. The rest of the list
-is simply not used by this app (no realtime, no edge functions) and costs
-memory. `pnpm test:db` needs even less — see `.github/workflows/test.yml`.
+is simply not used by this app (no edge functions; realtime was only ever
+used by two retired apps that shared this database, dropped in
+20260921000000) and costs memory. `pnpm test:db` needs even less — see `.github/workflows/test.yml`.
 
 **Containers keep the config they were created with.** Editing
 `supabase/config.toml` does nothing to a running stack, and `supabase start` on
