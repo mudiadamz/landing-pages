@@ -93,7 +93,7 @@ langsung. **Tidak ada user yang perlu reset sandi.** Identitas Google ada di
 | Fase | Isi | Ukuran | Status |
 |---|---|---|---|
 | 0 | Prasyarat, keputusan, dan ukuran data produksi | S | 🟡 keputusan ✅, ukuran produksi belum |
-| 1 | Lapisan data sendiri (Kysely) di atas Postgres Supabase yang sama | **L** | ⬜ |
+| 1 | Lapisan data sendiri di atas Postgres Supabase yang sama | **L** | ✅ |
 | 2 | Storage sendiri (disk + Caddy + URL bertanda) | M | ⬜ |
 | 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ⬜ |
 | 4 | Postgres pindah ke server sendiri | M | ⬜ |
@@ -160,68 +160,61 @@ jadi ia duluan dan yang paling besar.
 
 ---
 
-## Fase 1 — lapisan data sendiri
+## Fase 1 — lapisan data sendiri ✅
 
-**Tujuan:** tidak ada lagi `.from("lp_…")`. Setiap query lewat Kysely + `pg`,
-langsung ke **Postgres Supabase yang sama**. GoTrue dan storage-api belum
-disentuh.
+**Kenyataan berbeda dari rencana, dan rencananya diperbaiki.** Rencana awal
+menulis ulang 261 query ke Kysely, modul per modul. Pengukuran sebelum mulai
+menunjukkan API supabase-js yang benar-benar dipakai **kecil dan tertutup**:
+`select/insert/update/upsert/delete`, 10 filter, `order/range/limit`,
+`single/maybeSingle`, `count`, 5 embed, 2 RPC. Jadi yang diganti adalah
+**mesinnya**, bukan pemanggilnya: `lib/supabase/{server,admin}.ts` dan
+`lib/supabase/anon.ts` (baru) sekarang mengembalikan objek dengan bentuk yang
+sama, dijawab oleh `lib/backend/` — SQL langsung ke Postgres lewat
+`withRls()`. **Nol dari 77 file pemanggil diubah** untuk bagian query.
 
-**Bentuknya:**
+**Kenapa ini lebih aman, bukan sekadar lebih cepat:** mesinnya membangun JSON
+persis seperti PostgREST (`json_agg`, `json_populate_recordset`), sehingga
+kesamaannya bisa **dibuktikan**. `tests/db/adapter-diff.test.ts` menjalankan
+setiap bentuk query yang dipakai kode lewat PostgREST asli dan lewat mesin baru,
+pada database dan identitas yang sama, lalu membandingkan `data`, `count`, dan
+kode error: 25/25 identik — tipe numeric/bigint/timestamptz/uuid[]/jsonb, semua
+filter, `.or()` dengan negasi, keempat jenis embed (termasuk `!inner` +
+filter kolom embed dan petunjuk FK), `single/maybeSingle` + `PGRST116`,
+penolakan RLS `42501`, pelanggaran unik `23505`, upsert, RPC. Mutasi satu
+operator (`neq` → `=`) membuatnya merah.
 
-```ts
-// lib/db/index.ts
-export async function withRls<T>(
-  who: "anon" | "service_role" | { uid: string },
-  fn: (tx: Transaction<DB>) => Promise<T>,
-): Promise<T>
-```
+**Yang dibangun:**
 
-Isinya persis `as()` dari harness tes: transaksi, `set local role`, klaim JWT.
-Identitas `{ uid }` diambil dari `supabase.auth.getUser()` yang masih ada. Di Fase 3
-sumbernya berganti, `withRls` tidak.
+| File | Isi |
+|---|---|
+| `lib/backend/pool.ts` | satu pool `pg` per proses (`DATABASE_URL`) |
+| `lib/backend/rls.ts` | `withRls(who, fn)` — transaksi + `set_config('role')` + klaim JWT |
+| `lib/backend/grammar.ts` | parser select & filter `.or()` gaya PostgREST |
+| `lib/backend/query.ts` | builder berbentuk supabase-js → SQL |
+| `lib/backend/schema.ts` | FK, kolom json, PK, fungsi void — dibaca sekali |
+| `lib/supabase/anon.ts` | pengganti ±25 client anon yang dibuat sendiri-sendiri |
 
-- **Tipe dihasilkan dari database** (`kysely-codegen`) dan di-commit. Ini sekaligus
-  menutup celah "tidak ada generated type" yang dicatat rencana sebelumnya:
-  kolom yang hilang jadi error kompilasi, tidak lagi 500 saat runtime.
-  `schema-contract.test.ts` tetap dipertahankan sampai Fase 6 sebagai jaring
-  kedua.
-- **Koneksi:** connection string langsung ke Postgres Supabase (pooler mode
-  transaksi). `set local` berlaku per transaksi, jadi aman di pooler. Kysely
-  memakai unnamed statement, jadi tidak bentrok dengan pooler.
-- **Pola strangler, modul per modul.** Supabase-js dan Kysely hidup berdampingan
-  karena keduanya bicara ke database yang sama. Urutan yang disarankan, dari yang
-  paling terisolasi: analytics → reviews/likes → categories → site-settings → sites
-  → landing-pages → purchases/sales → profiles/admin. Satu modul = satu commit
-  yang bisa di-deploy.
-- **Pemetaan idiom PostgREST:** `.maybeSingle()` → `executeTakeFirst()`,
-  `.single()` → `executeTakeFirstOrThrow()`, `count: "exact", head: true` →
-  `count(*)`, `.upsert(…, { onConflict })` → `onConflict().doUpdateSet()`,
-  `.or("a.eq.x,b.ilike.%q%")` → `where(eb => eb.or([...]))`. Lima embedded select
-  (termasuk yang pakai petunjuk FK `!purchases_landing_page_id_fkey`) → join
-  eksplisit. Dua RPC → `sql\`select lp_track_session(…)\``.
-- **`lib/site-scope.ts`** (`.or()` untuk multi-tenant, dipakai di 10 file) ditulis
-  ulang sebagai helper Kysely **duluan**, karena semua modul lain bergantung
-  padanya.
+- **Identitas pemanggil** diverifikasi lewat `auth.getUser()` (GoTrue, sampai
+  Fase 3) **sekali per access token** lalu diingat — tidak pernah dari
+  `getSession()`, yang cuma membaca cookie yang bisa dipalsukan.
+- **`middleware.ts` → `proxy.ts`** (konvensi Next 16). Diperiksa dari kode Next
+  16.1.6 sendiri: file `proxy` dijalankan di runtime **Node**, `middleware` di
+  Edge. `lib/missing-record.ts` tadinya bicara ke PostgREST dengan `fetch` dari
+  Edge; sekarang bertanya ke Postgres sebagai `anon`, dengan batas waktu dan
+  gagal-terbuka yang sama. Ini juga yang memungkinkan validasi sesi di proxy
+  pada Fase 3.
+- `tests/db/with-rls.test.ts`: dengan pool dipaksa **satu** koneksi, identitas
+  user / anon / service_role tidak pernah bocor ke pemanggil berikutnya —
+  termasuk setelah transaksi gagal di tengah.
 
-**Tes:**
+**Verifikasi:** `tsc` bersih, `next build` lulus (tidak ada `pg` di bundle
+browser; proxy dibangun untuk Node), 143 tes murni + 218 tes database lolos,
+dan aplikasi dijalankan sungguhan: 11 halaman publik + 21 halaman/endpoint panel
+sebagai Company menjawab 200 tanpa satu error di log, `/api/admin/users`
+mengembalikan data, redirect sesi & guard 404 berperilaku sama.
 
-- Semua `tests/db` harus tetap hijau **tanpa diubah**.
-- Tes baru: `tests/db/with-rls.test.ts` membuktikan `withRls` tidak bocor antar
-  request. Transaksi A sebagai user X tidak boleh meninggalkan role atau klaim
-  untuk transaksi B di koneksi pool yang sama. Ini bug terburuk yang mungkin
-  muncul di fase ini, dan tidak kelihatan di layar.
-
-**Selesai kalau:**
-
-```bash
-grep -rE '\.from\("lp_' app lib components | wc -l   # 0
-grep -rE '\.rpc\(' app lib components | wc -l        # 0
-```
-
-dan `pnpm test` + `pnpm test:db` hijau.
-
-**Jalan mundur:** per modul. Revert satu commit mengembalikan modul itu ke
-supabase-js.
+**Selesai:** `grep rest/v1` = 0; tidak ada client supabase-js yang melayani
+`.from()`/`.rpc()`. `.auth` dan `.storage` masih Supabase — Fase 2 dan 3.
 
 ---
 

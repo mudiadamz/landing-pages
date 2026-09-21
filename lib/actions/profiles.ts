@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 import { unstable_noStore, unstable_cache, revalidatePath } from "next/cache";
-import { createClient as createSupabaseJS } from "@supabase/supabase-js";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -159,10 +159,7 @@ export async function ensureSiteMembership(userId: string, siteId: string): Prom
 const readRolePermissions = unstable_cache(
   async (siteId: string, canonicalId: string): Promise<RolePermissions> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const ids = [...new Set([siteId, canonicalId].filter(Boolean))];
       if (!ids.length) return DEFAULT_ROLE_PERMISSIONS;
       const { data } = await supabase

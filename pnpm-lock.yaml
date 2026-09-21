@@ -32,6 +32,9 @@ importers:
       pdfjs-dist:
         specifier: 5.4.296
         version: 5.4.296
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -78,9 +81,6 @@ importers:
       eslint-config-next:
         specifier: 16.1.6
         version: 16.1.6(@typescript-eslint/parser@8.56.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
-      pg:
-        specifier: ^8.23.0
-        version: 8.23.0
       supabase:
         specifier: ^2.76.15
         version: 2.76.15

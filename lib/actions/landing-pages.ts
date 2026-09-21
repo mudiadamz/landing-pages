@@ -5,7 +5,7 @@ import { t } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { effectivePlan, resolvePlanLimits, withinLimit, PLANS } from "@/lib/plans";
 import { revalidatePath, updateTag, unstable_cache } from "next/cache";
-import { createClient as createSupabaseJS } from "@supabase/supabase-js";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { createClient } from "@/lib/supabase/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
@@ -14,12 +14,6 @@ import { panelScope } from "@/lib/site-scope";
 
 export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable" | "excerpt";
 
-function createAnonClient() {
-  return createSupabaseJS(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-}
 
 export type LandingPageCategory = {
   id: string;

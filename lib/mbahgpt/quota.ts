@@ -6,7 +6,7 @@
  * Action that holds another. Two clients for one count would be one more thing
  * that can disagree about who is asking.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/backend/db";
 
 /**
  * The quota window. Rolling, not calendar — see `PlanLimits.chatMessagesPerDay`
@@ -16,7 +16,7 @@ export const QUOTA_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** User turns in the last 24 hours. Assistant replies are not charged for. */
 export async function chatMessagesUsed(
-  supabase: SupabaseClient,
+  supabase: Pick<DbClient, "from">,
   userId: string,
   now = Date.now(),
 ): Promise<number> {

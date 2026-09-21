@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { unstable_cache } from "next/cache";
-import { createClient as createSupabaseJS } from "@supabase/supabase-js";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
@@ -75,10 +75,7 @@ const FALLBACK_SITE: Site = {
 };
 
 function anonClient() {
-  return createSupabaseJS(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  return createAnonClient();
 }
 
 /** "Resepku.com:3000" -> "resepku.com". Ports and case break host matching. */

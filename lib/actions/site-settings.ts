@@ -2,7 +2,7 @@
 
 import { unstable_cache, updateTag, revalidateTag, revalidatePath } from "next/cache";
 import { DEFAULT_SOCIAL_URLS, normalizeSocialUrls, type SocialUrls } from "@/lib/social";
-import { createClient as createSupabaseJS } from "@supabase/supabase-js";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { createClient } from "@/lib/supabase/server";
 import { requireFeature, requireAdmin, requireSiteAdmin } from "./profiles";
 import { normalizeRolePermissions, type RolePermissions } from "@/lib/role-permissions";
@@ -98,10 +98,7 @@ export async function updateRolePermissions(
 const readHero = unstable_cache(
   async (siteId: string): Promise<HeroConfig> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -159,10 +156,7 @@ export async function updateHero(
 const readSiteContent = unstable_cache(
   async (siteId: string): Promise<SiteContent> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -231,10 +225,7 @@ export async function updateSiteContent(
 const readLegalContent = unstable_cache(
   async (siteId: string): Promise<LegalContent> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -300,10 +291,7 @@ export async function updateLegalContent(
 const readHiringContent = unstable_cache(
   async (siteId: string): Promise<HiringContent> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -396,10 +384,7 @@ function normalizeOtherLinks(raw: unknown): OtherLink[] {
 const readOtherLinks = unstable_cache(
   async (siteId: string): Promise<OtherLink[]> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -471,10 +456,7 @@ export async function updateOtherLinks(
 const readSocialUrls = unstable_cache(
   async (siteId: string): Promise<SocialUrls> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -527,10 +509,7 @@ export async function updateSocialUrls(
 const readCustomJs = unstable_cache(
   async (siteId: string): Promise<string> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -584,10 +563,7 @@ const readTracking = unstable_cache(
   async (siteId: string): Promise<TrackingConfig> => {
     const fromEnv = envTracking();
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -697,10 +673,7 @@ export async function updateTracking(
 const readPanelPalette = unstable_cache(
   async (siteId: string): Promise<PaletteConfig> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -764,10 +737,7 @@ const readPopupBanner = unstable_cache(
       // file already does it this way; this one was written later and copied the
       // wrong neighbour. The config is public site settings, so there is no
       // session to carry anyway.
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -912,10 +882,7 @@ export async function subscribePopupEmail(
 const readPlanPrices = unstable_cache(
   async (siteId: string): Promise<PlanPrices> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -987,10 +954,7 @@ export async function updatePlanPrices(
 const readPlanLimits = unstable_cache(
   async (siteId: string): Promise<PlanLimitsOverrides> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")
@@ -1057,10 +1021,7 @@ export async function updatePlanLimits(
 const readPlanMeta = unstable_cache(
   async (siteId: string): Promise<PlanMeta> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_site_settings")
         .select("value")

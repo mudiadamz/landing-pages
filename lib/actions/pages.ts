@@ -1,7 +1,7 @@
 "use server";
 
 import { unstable_cache, revalidateTag, revalidatePath } from "next/cache";
-import { createClient as createSupabaseJS } from "@supabase/supabase-js";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { currentSiteId } from "@/lib/site-resolve";
@@ -22,10 +22,7 @@ import type { EditorialPage, EditorialPageSummary } from "@/lib/page-types";
 const readPublishedPages = unstable_cache(
   async (siteId: string): Promise<EditorialPageSummary[]> => {
     try {
-      const supabase = createSupabaseJS(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createAnonClient();
       const { data } = await supabase
         .from("lp_pages")
         .select("id, slug, title, sort_order")
@@ -49,10 +46,7 @@ export async function getPublishedPages(siteId?: string): Promise<EditorialPageS
 /** One published page for the public route. Null when missing or still a draft. */
 export async function getPublishedPage(slug: string): Promise<EditorialPage | null> {
   const siteId = await currentSiteId();
-  const supabase = createSupabaseJS(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  const supabase = createAnonClient();
   const { data } = await supabase
     .from("lp_pages")
     .select("id, site_id, slug, title, content, published, sort_order")

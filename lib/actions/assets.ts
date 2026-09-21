@@ -11,7 +11,7 @@ import {
   isImageType,
 } from "@/lib/upload-limit";
 import { requireAdmin } from "@/lib/actions/profiles";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ServerClient } from "@/lib/supabase/server";
 
 const BUCKET = "landing-assets";
 
@@ -29,7 +29,7 @@ function pathFromPublicUrl(url: string, bucket: string): string | null {
  * Failures are swallowed so a replace never fails on cleanup.
  */
 async function removePreviousAsset(
-  supabase: SupabaseClient,
+  supabase: Pick<ServerClient, "storage">,
   previousUrl: string | null | undefined,
   userId: string,
   newPath: string,

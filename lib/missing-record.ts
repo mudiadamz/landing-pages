@@ -10,11 +10,18 @@
  * path. That is a real cost, so it is:
  *   - scoped to the paths that can actually miss,
  *   - answered from an in-process cache for TTL_MS, and
- *   - fail-open: a Supabase hiccup renders the page rather than inventing a 404.
+ *   - fail-open: a database hiccup renders the page rather than inventing a 404.
+ *
+ * Asks Postgres directly, as the `anon` role — the same view of the data a
+ * logged-out visitor has, which is what PostgREST gave it before. This runs in
+ * proxy.ts, which Next 16 executes on the Node runtime (unlike the old Edge
+ * middleware), so the database driver is available here.
  */
 
-const REST = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1`;
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+import { withRls } from "@/lib/backend/rls";
+
+/** The proxy must not hang on a slow database; the page can decide later. */
+const TIMEOUT_MS = 1500;
 
 /** Long enough that a crawler sweeping a sitemap costs one query per slug. */
 const TTL_MS = 60_000;
@@ -33,19 +40,27 @@ function remember(key: string, exists: boolean) {
   cache.set(key, { exists, at: Date.now() });
 }
 
-async function ask(url: string, cacheKey: string): Promise<boolean> {
+/** First row of a query as a logged-out visitor, or throws after TIMEOUT_MS. */
+async function firstRow<T>(sql: string, params: unknown[]): Promise<T | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      withRls("anon", async (c) => (await c.query(sql, params)).rows[0] as T | undefined),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("missing-record: timeout")), TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function ask(sql: string, params: unknown[], cacheKey: string): Promise<boolean> {
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.exists;
 
   try {
-    const res = await fetch(url, {
-      headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
-      // The proxy must not hang on a slow database; the page can decide later.
-      signal: AbortSignal.timeout(1500),
-    });
-    if (!res.ok) return true; // fail open
-    const rows = (await res.json()) as unknown[];
-    const exists = Array.isArray(rows) && rows.length > 0;
+    const exists = (await firstRow(sql, params)) !== undefined;
     remember(cacheKey, exists);
     return exists;
   } catch {
@@ -63,7 +78,7 @@ const SLUG = /^[a-z0-9-]+$/;
  * unmatched path already 404s on its own.
  */
 export async function isMissingRecord(pathname: string, host: string): Promise<boolean> {
-  if (!REST || !KEY) return false;
+  if (!process.env.DATABASE_URL) return false;
 
   const page = /^\/p\/([^/]+)\/?$/.exec(pathname);
   if (page) {
@@ -79,16 +94,8 @@ export async function isMissingRecord(pathname: string, host: string): Promise<b
     if (cachedSite && Date.now() - cachedSite.at < TTL_MS && !cachedSite.exists) return false;
 
     try {
-      const res = await fetch(
-        `${REST}/lp_sites?select=id&host=eq.${encodeURIComponent(host)}&limit=1`,
-        {
-          headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
-          signal: AbortSignal.timeout(1500),
-        },
-      );
-      if (!res.ok) return false;
-      const rows = (await res.json()) as { id: string }[];
-      siteId = rows[0]?.id ?? null;
+      const row = await firstRow<{ id: string }>("select id from lp_sites where host = $1 limit 1", [host]);
+      siteId = row?.id ?? null;
     } catch {
       return false;
     }
@@ -96,7 +103,8 @@ export async function isMissingRecord(pathname: string, host: string): Promise<b
     if (!siteId) return false;
 
     const exists = await ask(
-      `${REST}/lp_pages?select=id&site_id=eq.${siteId}&slug=eq.${encodeURIComponent(slug)}&published=eq.true&limit=1`,
+      "select 1 from lp_pages where site_id = $1 and slug = $2 and published limit 1",
+      [siteId, slug],
       `page:${siteId}:${slug}`,
     );
     return !exists;
@@ -111,10 +119,7 @@ export async function isMissingRecord(pathname: string, host: string): Promise<b
     // reachable by its owner (see getLandingPageForCheckout), so a guard that
     // 404'd drafts would lock a seller out of previewing their own page.
     // Products are global by slug, so no site lookup is needed here.
-    const exists = await ask(
-      `${REST}/lp_landing_pages?select=id&slug=eq.${encodeURIComponent(slug)}&limit=1`,
-      `product:${slug}`,
-    );
+    const exists = await ask("select 1 from lp_landing_pages where slug = $1 limit 1", [slug], `product:${slug}`);
     return !exists;
   }
 

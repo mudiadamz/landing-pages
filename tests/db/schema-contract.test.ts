@@ -33,7 +33,7 @@ const SOURCES = [
       .filter((f) => /\.tsx?$/.test(f))
       .map((f) => `${dir}/${f}`),
   ),
-  "middleware.ts",
+  "proxy.ts",
 ];
 
 /** Top-level comma split that respects (), {}, [] and quotes. */
