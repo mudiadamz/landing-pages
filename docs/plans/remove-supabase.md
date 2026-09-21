@@ -94,7 +94,7 @@ langsung. **Tidak ada user yang perlu reset sandi.** Identitas Google ada di
 |---|---|---|---|
 | 0 | Prasyarat, keputusan, dan ukuran data produksi | S | 🟡 keputusan ✅, ukuran produksi belum |
 | 1 | Lapisan data sendiri di atas Postgres Supabase yang sama | **L** | ✅ |
-| 2 | Storage sendiri (disk + Caddy + URL bertanda) | M | ⬜ |
+| 2 | Storage sendiri (disk + URL bertanda) | M | ✅ |
 | 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ⬜ |
 | 4 | Postgres pindah ke server sendiri | M | ⬜ |
 | 5 | Cutover produksi | S, butuh jendela pemeliharaan | ⬜ |
@@ -218,56 +218,76 @@ mengembalikan data, redirect sesi & guard 404 berperilaku sama.
 
 ---
 
-## Fase 2 — storage sendiri
+## Fase 2 — storage sendiri ✅
 
-**Tujuan:** tidak ada lagi `.storage`. File ada di disk server.
+**Tujuan:** `.storage` tidak lagi bicara ke Supabase. File ada di disk server.
 
-- **Letak:** `/srv/storage/<bucket>/<path>`, volume Docker yang di-mount ke app
-  dan Caddy. Bentuk path-nya **sama** dengan Supabase (`<uid>/…`), supaya
-  migrasinya cuma salin.
-- **File publik** (`landing-assets`): dilayani **Caddy langsung** di
-  `/storage/v1/object/public/landing-assets/*`. Path yang sama dengan Supabase
-  sengaja dipakai: URL lama cukup diganti host-nya.
-- **File privat** (`landing-downloads`, `chat-attachments`, `publisher-kyc`,
-  `hiring-cv`): hanya lewat route aplikasi, dengan **URL bertanda HMAC**
-  (`path + kedaluwarsa`, rahasia di env). Ini pengganti `createSignedUrl`, dan
-  pemeriksa pembeliannya tetap di tempat yang sama (`lib/actions/downloads.ts`).
-- **Unggahan:** browser mem-POST ke route handler (`/api/upload/<bucket>`) yang
-  menulis ke disk secara streaming. **Aturan dari `storage-http.test.ts` pindah
-  ke sini:** batas ukuran per bucket, daftar jenis file, penulis harus
-  `lp_can_sell()` untuk bucket penjual, folder `<uid>/` harus milik pemanggil.
-  `lib/upload-client.ts` dan `lib/templates/mbahgpt/upload.ts` berhenti bicara ke
+Sama seperti Fase 1, bentuk API-nya dipertahankan (`storage.from(b).upload/
+download/remove/list/createSignedUrl/getPublicUrl`), jadi ±40 pemanggil tidak
+disentuh. Yang berganti adalah apa yang ada di baliknya.
+
+| File | Isi |
+|---|---|
+| `lib/backend/storage.ts` | bucket (batas ukuran & jenis, sama dengan konfigurasi Supabase), disk di `STORAGE_ROOT`, **policy `storage.objects` ditulis ulang di `allowed()`**, URL bertanda HMAC, `serveFile()` |
+| `app/storage/v1/object/public/[bucket]/[...path]` | file publik (bucket publik saja) |
+| `app/storage/v1/object/sign/[bucket]/[...path]` | file privat, hanya dengan token `exp.sig` yang sah |
+| `app/api/storage/object/[bucket]/[...path]` | `PUT` unggahan dari browser, sebagai user yang login |
+| `app/api/storage/remove` | hapus dari browser, sebagai user yang login |
+| `lib/supabase/client.ts` | `.storage` browser → dua route di atas |
+| `scripts/storage-migrate.mjs` | `export` (Supabase → disk, fetch biasa tanpa SDK, idempoten) dan `rewrite` (URL lama → host baru di **setiap** kolom teks/jsonb tabel `lp_`, ditemukan dari katalog) |
+
+**Keputusan yang menyimpang dari rancangan awal, dan alasannya:**
+
+- **File publik dilayani app, bukan Caddy.** Satu jalur kode untuk publik dan
+  privat, Range request dan header keamanan diuji di satu tempat. Caddy bisa
+  mengambil alih nanti kalau bebannya terukur — path-nya sudah sama.
+- **URL di database tetap absolut** (`NEXT_PUBLIC_SITE_URL/storage/v1/…`), bukan
+  relatif. Email, og:image, dan JSON-LD butuh URL absolut, dan helper
+  `assetUrl()` berarti menyentuh setiap pembaca. Masalah font lintas domain yang
+  jadi alasan URL relatif diselesaikan dengan `Access-Control-Allow-Origin: *`
+  pada file publik.
+- **Konten aktif (HTML/SVG/XML) disajikan dengan `Content-Security-Policy:
+  sandbox`** + `nosniff`. Dulu file penjual tinggal di origin Supabase; sekarang
+  satu origin dengan aplikasi, jadi HTML unggahan penjual tanpa sandbox bisa
+  membaca apa pun yang bisa dibaca aplikasi.
+- **Route unggahan `/api/storage/object/…`**, bukan `/api/upload/<bucket>` — path
+  mengikuti bentuk storage-api supaya shim browser tetap tipis.
+- `rls-storage.test.ts` dan `storage-http.test.ts` **belum** dipensiunkan:
+  keduanya masih menguji Supabase Storage yang masih hidup sampai cutover, dan
+  jadi pembanding untuk tes port-nya. Pensiun di Fase 4 bersama stack lokal
   Supabase.
-- **URL di database:** host lama ditulis ulang menjadi **path relatif**
-  (`/storage/v1/object/public/…`), supaya setiap storefront melayani file dari
-  domainnya sendiri. Ini menghindari masalah CORS font di bundle situs yang
-  memakai `<base href>`. Tempat yang butuh URL absolut (og:image, email, JSON-LD)
-  memakai helper `assetUrl(path, origin)`. `next.config.ts` → `images.remotePatterns`
-  berhenti menyebut `**.supabase.co`.
-- **Migrasi file:** `scripts/migrate-storage.mjs` sudah ada (mengunduh lewat SDK).
-  Ubah supaya menulis ke disk dan mencocokkan jumlah objek dan byte per bucket
-  dengan angka Fase 0.
+- `scripts/migrate-storage.mjs` (salin antar project Supabase) dihapus —
+  digantikan `storage-migrate.mjs export`.
 
 **Tes:**
 
-- `storage-http.test.ts` **di-port** ke route baru. Asersinya tetap sama:
-  penjual boleh, customer tidak, folder orang lain tidak, di atas batas ditolak,
-  jenis salah ditolak, file dijual tidak bisa diambil tanpa URL bertanda,
-  `publisher-kyc` dan `hiring-cv` tertutup. Route handler diuji dengan
-  meng-import-nya langsung (seperti `updateSession` di `auth-http.test.ts`),
-  tanpa server.
-- `rls-storage.test.ts` pensiun di fase ini, karena policy `storage.objects` tidak
-  dipakai lagi. Setiap asersinya harus sudah punya pasangan di tes route.
-  Snapshot `rls-surface` diperbarui (policy storage hilang).
-- Tes baru: URL bertanda yang **kedaluwarsa** atau **diubah satu karakter**
-  ditolak.
+- `tests/db/storage-own.test.ts` (20): asersi `storage-http.test.ts` di-port ke
+  route baru, route handler di-import langsung — penjual boleh, customer tidak,
+  folder orang lain tidak, di atas batas & jenis salah ditolak, bucket privat
+  tertutup tanpa token, `publisher-kyc`/`hiring-cv` hanya service. Ditambah:
+  token kedaluwarsa / diubah satu karakter → 403, path traversal ditolak,
+  header sandbox, Range 206/416, list. Mutasi (hapus syarat `lp_can_sell`,
+  lewati `verifyToken`) → 3 merah.
+- `tests/db/storage-migrate.test.ts` (4): objek yang ditaruh di Supabase Storage
+  keluar di disk byte-per-byte sama; jalan kedua tidak menyalin apa pun; uji
+  kering tidak mengubah; `--apply` menulis ulang kolom biasa, HTML, dan teks JSON
+  sampai tidak ada yang tersisa.
+- Dijalankan sungguhan (`pnpm dev`, cookie sesi): anon unggah → 403, penjual
+  unggah ke foldernya → 200, folder orang lain → 403, GET publik → 200 +
+  `nosniff`, bucket privat lewat URL publik → 404, hapus → 404 sesudahnya;
+  `/api/download/<slug>` sesudah beli → redirect ke URL bertanda → 200
+  `no-store`, token diubah → 403, tanpa login → `/login`.
 
-**Selesai kalau:** `grep -r '\.storage' app lib components` kosong; query Fase 0
-tentang URL `supabase.co/storage` mengembalikan 0 di setiap tabel; jumlah objek
-di disk sama dengan di Supabase.
+**Verifikasi:** `tsc` bersih, `next build` lulus, 143 tes murni + 242 tes
+database lolos.
+
+**Sisa untuk cutover (Fase 5):** `export` dari project produksi, lalu `rewrite
+--from https://<ref>.supabase.co --to https://<domain kanonik> --apply`.
+Sampai itu, baris lama tetap menunjuk Supabase (makanya `**.supabase.co` masih
+di `images.remotePatterns`).
 
 **Jalan mundur:** file lama tetap ada di Supabase sampai Fase 6. Kembalikan
-kodenya dan jalankan penulisan ulang URL ke arah sebaliknya.
+kodenya dan jalankan `rewrite` ke arah sebaliknya.
 
 ---
 

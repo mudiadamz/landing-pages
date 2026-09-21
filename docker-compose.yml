@@ -32,6 +32,10 @@ services:
       - "3000"
     env_file:
       - .env.production
+    volumes:
+      # Semua file unggahan. Ini DATA, bukan cache: ikut dicadangkan bersama
+      # database (docs/plans/remove-supabase.md).
+      - storage:/srv/storage
     healthcheck:
       test:
         - CMD
@@ -65,5 +69,6 @@ services:
         condition: service_healthy
 
 volumes:
+  storage:
   caddy_data:
   caddy_config:

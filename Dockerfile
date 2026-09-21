@@ -91,6 +91,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# File unggahan (lib/backend/storage.ts). Direktori dibuat di sini dengan
+# pemilik nextjs supaya volume bernama yang di-mount ke sini mewarisi pemiliknya;
+# kalau tidak, volume baru milik root dan setiap unggahan gagal EACCES.
+ENV STORAGE_ROOT=/srv/storage
+RUN mkdir -p /srv/storage && chown nextjs:nodejs /srv/storage
+
 USER nextjs
 EXPOSE 3000
 

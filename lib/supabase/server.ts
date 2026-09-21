@@ -1,15 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { dbClient } from "@/lib/backend/db";
+import { storageClient } from "@/lib/backend/storage";
 import type { Who } from "@/lib/backend/rls";
 
 /**
  * The per-request client: the signed-in user's view of the data.
  *
- * `.from()` / `.rpc()` no longer go through PostgREST — they run as SQL in
- * lib/backend, as the same Postgres role PostgREST would have used, so every
- * RLS policy applies exactly as before (docs/plans/remove-supabase.md, fase 1).
- * `.auth` and `.storage` are still Supabase's until fases 2 and 3.
+ * `.from()` / `.rpc()` run as SQL in lib/backend, as the Postgres role
+ * PostgREST would have used, so every RLS policy applies exactly as before
+ * (docs/plans/remove-supabase.md, fase 1). `.storage` is the server's own disk,
+ * under the same rules the storage.objects policies enforced (fase 2). `.auth`
+ * is still Supabase's until fase 3.
  *
  * Who the caller is comes from `auth.getUser()` — VERIFIED by the auth server,
  * never from `getSession()`, which only decodes a cookie anyone can forge. It is
@@ -57,7 +59,7 @@ export async function createClient() {
   };
 
   const db = dbClient(who);
-  return { auth: supabase.auth, storage: supabase.storage, from: db.from, rpc: db.rpc };
+  return { auth: supabase.auth, storage: storageClient(who), from: db.from, rpc: db.rpc };
 }
 
 export type ServerClient = Awaited<ReturnType<typeof createClient>>;

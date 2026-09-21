@@ -1,5 +1,19 @@
 import type { NextConfig } from "next";
 
+function ownStorageHost() {
+  const site = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!site) return [];
+  const u = new URL(site);
+  return [
+    {
+      protocol: u.protocol.replace(":", "") as "http" | "https",
+      hostname: u.hostname,
+      port: u.port,
+      pathname: "/storage/v1/object/public/**",
+    },
+  ];
+}
+
 const nextConfig: NextConfig = {
   /**
    * Jejak server yang berdiri sendiri, untuk image Docker.
@@ -14,6 +28,11 @@ const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
+      // Stored files are served by this app (lib/backend/storage.ts) at
+      // NEXT_PUBLIC_SITE_URL/storage/v1/object/public/…
+      ...ownStorageHost(),
+      // Rows written before the move still point at Supabase until
+      // scripts/storage-migrate.mjs rewrite runs at cutover.
       {
         protocol: "https",
         hostname: "**.supabase.co",

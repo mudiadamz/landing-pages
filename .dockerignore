@@ -23,3 +23,4 @@ supabase/.temp
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
+.storage
