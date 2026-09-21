@@ -75,11 +75,9 @@ function Step({
 
 export function DomainSetupGuide({
   host,
-  supabaseProjectUrl,
   canonicalHost,
 }: {
   host: string;
-  supabaseProjectUrl: string;
   canonicalHost: string;
 }) {
   const t = useT();
@@ -126,8 +124,7 @@ export function DomainSetupGuide({
             )}
           </Step>
 
-          <Step n={2} title={t("sites.step2Title")} where="Supabase">
-            <p>{t("sites.authLegacy", { host, canonical: canonicalHost })}</p>
+          <Step n={2} title={t("sites.step2Title")} where="Google">
             <p>
               {t("sites.authNowBefore", { host, canonical: canonicalHost })}{" "}
               <strong className="text-foreground">{t("sites.authNoExtraWork")}</strong>{" "}
@@ -140,11 +137,6 @@ export function DomainSetupGuide({
             </p>
             <p>{t("sites.redirectUrlNote")}</p>
             <Value>{`https://${canonicalHost}/auth/callback`}</Value>
-            <p>
-              {t("sites.googleUrisBefore")} <em>Authorized redirect URIs</em>{" "}
-              {t("sites.googleUrisAfter")}
-            </p>
-            <Value>{`${supabaseProjectUrl}/auth/v1/callback`}</Value>
           </Step>
 
           <Step n={3} title={t("sites.step3Title")} where={host}>

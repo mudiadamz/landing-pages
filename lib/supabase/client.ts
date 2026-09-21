@@ -1,13 +1,13 @@
-import { createBrowserClient } from "@supabase/ssr";
-
 /**
  * The browser client.
  *
  * `.storage` no longer talks to Supabase: files live on the server's disk
  * (docs/plans/remove-supabase.md, fase 2), so uploads and deletes go to the
  * app's own routes, which run them as the signed-in user under the same rules
- * as server code. Only the three methods browser code uses exist. `.auth` is
- * still Supabase's until fase 3.
+ * as server code. Only the three methods browser code uses exist.
+ *
+ * `.auth.getUser()` asks /api/auth/user (fase 3): the session cookie is
+ * httpOnly, so the browser cannot read who it is by itself — which is the point.
  */
 
 type StorageError = { message: string; statusCode?: string };
@@ -61,10 +61,18 @@ function bucket(name: string) {
   };
 }
 
+type BrowserUser = { id: string; email: string | null };
+
+async function getUser(): Promise<{ data: { user: BrowserUser | null }; error: null }> {
+  try {
+    const res = await fetch("/api/auth/user", { cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as { user?: BrowserUser | null };
+    return { data: { user: res.ok ? (json.user ?? null) : null }, error: null };
+  } catch {
+    return { data: { user: null }, error: null };
+  }
+}
+
 export function createClient() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  return { auth: supabase.auth, storage: { from: bucket } };
+  return { auth: { getUser }, storage: { from: bucket } };
 }

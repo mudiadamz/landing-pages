@@ -5,6 +5,7 @@ import { requireAdmin, requireFeature, requireSiteAdmin } from "@/lib/actions/pr
 import { editingSite } from "@/lib/site-resolve";
 import { normalizeAccountType } from "@/lib/profile-utils";
 import { normalizePlan } from "@/lib/plans";
+import { deleteUser, setBanned } from "@/lib/backend/auth";
 
 /** Caller identity + access: full admin, and whether they can reach the Users feature. */
 async function getCaller() {
@@ -324,7 +325,7 @@ export async function PATCH(req: Request) {
   }
 
   // Ban / unban. Updates is_active and bans/unbans at the auth level so a banned
-  // user's session stops working (getUser fails → middleware sends to /login).
+  // user's sessions stop working (revoked → proxy sends to /login).
   if (typeof active === "boolean") {
     // Ban itu tingkat PLATFORM — orangnya tidak bisa masuk ke domain mana pun.
     // Admin situs yang ingin mengeluarkan seseorang memakai DELETE fromSite.
@@ -341,10 +342,11 @@ export async function PATCH(req: Request) {
     if (error) {
       return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
     }
-    const { error: banError } = await admin.auth.admin.updateUserById(userId, {
-      ban_duration: active ? "none" : "876000h",
-    });
-    if (banError) {
+    try {
+      // Also ends every session the user has — the ban bites on their next click.
+      await setBanned(userId, !active);
+    } catch (banError) {
+      console.error("setBanned error:", banError);
       await admin.from("lp_profiles").update({ is_active: !active }).eq("id", userId);
       return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
     }
@@ -470,8 +472,9 @@ export async function DELETE(req: Request) {
     );
   }
 
-  const { error } = await admin.auth.admin.deleteUser(userId);
-  if (error) {
+  try {
+    await deleteUser(userId);
+  } catch (error) {
     console.error("deleteUser error:", error);
     return NextResponse.json({ error: "Gagal menghapus user." }, { status: 500 });
   }

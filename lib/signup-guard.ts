@@ -104,7 +104,7 @@ function verifySignupToken(raw: string | null): TokenVerdict {
  * which means local dev or a proxy that isn't forwarding — nothing worth keying
  * a limit on, so the limit is skipped rather than applied to everyone at once.
  */
-async function clientIp(): Promise<string | null> {
+export async function clientIp(): Promise<string | null> {
   const h = await headers();
   const raw =
     h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip")?.trim() || "";

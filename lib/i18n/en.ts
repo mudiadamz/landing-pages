@@ -987,20 +987,16 @@ export const en: Record<keyof typeof id, string> = {
     "whose DNS already points at this server — it works the moment it is added. HTTPS is automatic, and no new domain has to be bought.",
   "sites.separateDomainBody":
     "A separate domain: add an A record pointing at this server's IP (or a CNAME to the canonical host) at your registrar. HTTPS is issued on the first request.",
-  "sites.authLegacy":
-    "Every domain used to need adding to Redirect URLs in Supabase, and forgetting produced no error at all: a visitor pressing “Sign in with Google” on {host} landed on {canonical} along with their session cookie, and on {host} still looked signed out.",
   "sites.authNowBefore":
     "Sign-in on {host} now goes back through the {canonical} callback — the only one registered — and that callback hands it back to {host} to finish there. So a new domain",
   "sites.authNoExtraWork": "adds no work",
-  "sites.authNowAfter": "in Supabase or in the Google Cloud Console.",
+  "sites.authNowAfter": "in the Google Cloud Console.",
   "sites.sessionBefore": "Sign-in sessions are",
   "sites.sessionNot": "not",
   "sites.sessionAfter":
     "shared across domains — visitors sign in on each domain separately, and that is deliberate.",
   "sites.redirectUrlNote":
-    "The one line that must stay in Supabase (Authentication → URL Configuration → Redirect URLs) covers every domain at once, and is already there. If it disappears, sign-in breaks on every domain:",
-  "sites.googleUrisBefore": "Same for the",
-  "sites.googleUrisAfter": "in Google, which points at Supabase rather than at our domain:",
+    "The one URL that must be registered in the Google Cloud Console (OAuth client → Authorized redirect URIs) covers every domain at once. If it disappears, Google sign-in breaks on every domain:",
   "sites.step3Purchases":
     "opens on this domain — a buyer must be able to see their purchases where they bought them. Admin screens (products, domains, users) bounce to",
   "sites.paymentBefore": "Payments need no setup at all: the Duitku callback always goes to",

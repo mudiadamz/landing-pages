@@ -9,28 +9,22 @@ import {
 /**
  * Google sign-in for storefronts that are not the canonical domain.
  *
- * Supabase validates the `redirect_to` we hand it against the Redirect URLs list
- * in the dashboard, and a value that isn't listed is not an error — it is
- * silently replaced by the project Site URL. So a visitor who signed in on a
- * niche domain landed on admuiux.com with their session cookie stuck there, and
- * on the domain they started from they still looked signed out. Every new
- * storefront needed a dashboard entry nobody remembers to add.
- *
- * So OAuth now always returns to ONE listed URL — the canonical callback — which
- * bounces the visitor back to the domain they came from. Adding a storefront
- * touches DNS and lp_sites only; Supabase never has to hear about it.
+ * Google only redirects to callback URLs registered in its console, compared
+ * exactly. Registering every storefront there is a step nobody remembers when
+ * a domain is added, so sign-in always returns to ONE registered URL — the
+ * canonical callback — which bounces the visitor back to the domain they came
+ * from. Adding a storefront touches DNS and lp_sites only.
  *
  * What the canonical callback must NOT do is exchange the code itself. The PKCE
- * verifier that signInWithOAuth generated was written as a cookie on the domain
- * the visitor clicked from, and cookies do not cross hosts — admuiux.com cannot
- * read it, and the exchange would fail with an empty verifier. It forwards the
- * code instead, and the origin domain (which has the verifier) does the exchange
- * and receives the session cookie. That the code is useless anywhere but there is
- * exactly what makes passing it through the detour safe.
+ * verifier was written as a cookie on the domain the visitor clicked from, and
+ * cookies do not cross hosts — the canonical domain cannot read it. It forwards
+ * the code instead, and the origin domain (which has the verifier) does the
+ * exchange and receives the session cookie. That the code is useless anywhere
+ * but there is exactly what makes passing it through the detour safe.
+ *
+ * The storefront travels inside OAuth `state` (lib/backend/google.ts), since
+ * redirect_uri cannot vary.
  */
-
-/** Carries the storefront through Google and Supabase, which echo unknown params back. */
-export const RETURN_HOST_PARAM = "sf";
 
 /**
  * Is this one of our domains? The gate on the forward, and the reason it is not
@@ -49,27 +43,21 @@ export async function resolveReturnHost(raw: string | null): Promise<string | nu
 }
 
 /**
- * Where Supabase should send the visitor after Google. The canonical callback for
- * a known niche storefront, this same origin for anything else.
+ * Where Google should send the visitor, and which storefront the canonical
+ * callback should forward to. The canonical callback for a known niche
+ * storefront; this same origin for anything else.
  *
  * "Anything else" is localhost, a staging hostname, or a domain pointed at us
- * before it was added in the panel. Those keep the old direct behaviour: the
+ * before it was added in the panel. Those keep the direct behaviour: the
  * bouncer only forwards to hosts it can verify, so routing them through it would
- * strand them on the canonical domain — the very bug this exists to fix. They
- * still need their own Supabase entry, which for localhost is already there.
+ * strand them on the canonical domain — the very bug this exists to fix. Their
+ * own callback URL has to be registered with Google, which for localhost is.
  */
-export async function googleCallbackUrl(next: string | null): Promise<string> {
-  const params = new URLSearchParams();
-  if (next) params.set("next", next);
-
+export async function googleRedirect(): Promise<{ redirectUri: string; returnHost: string | null }> {
   const here = await resolveReturnHost(await currentHost());
   const canonicalHost = normalizeHost(new URL(canonicalOrigin()).host);
-
   if (!here || here === canonicalHost) {
-    const query = params.toString();
-    return `${await currentOrigin()}/auth/callback${query ? `?${query}` : ""}`;
+    return { redirectUri: `${await currentOrigin()}/auth/callback`, returnHost: null };
   }
-
-  params.set(RETURN_HOST_PARAM, here);
-  return `${canonicalOrigin()}/auth/callback?${params.toString()}`;
+  return { redirectUri: `${canonicalOrigin()}/auth/callback`, returnHost: here };
 }

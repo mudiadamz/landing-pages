@@ -1,194 +1,312 @@
-import { createServerClient } from "@supabase/ssr";
+import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
+import pg from "pg";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
+import {
+  AuthError,
+  MAX_FAILURES_PER_EMAIL,
+  MAX_FAILURES_PER_IP,
+  createSession,
+  deleteUser,
+  revokeSession,
+  setBanned,
+  signInWithGoogleClaims,
+  signUpWithPassword,
+  validateSession,
+  verifyPassword,
+} from "@/lib/backend/auth";
+import { resetPool } from "@/lib/backend/pool";
+import { SESSION_COOKIE } from "@/lib/auth/cookie";
 
 /**
- * The auth contract, over HTTP, against the real local GoTrue.
+ * The auth contract, against the app's own accounts and sessions
+ * (lib/backend/auth.ts, docs/plans/remove-supabase.md fase 3).
  *
- * These are the behaviours the app leans on without ever saying so: a signup
- * returns a session immediately (no confirmation gate — the app does its own
- * verification), a ban is `ban_duration`, deleting a user cascades through
- * our tables, and the middleware renews an expired access token in place,
- * writing the new cookie to BOTH the in-flight request and the response.
+ * Kept from the GoTrue version, because the app leans on them: a signup gets a
+ * session at once and a `customer` profile that is not yet verified; short and
+ * wrong passwords are refused; a ban closes login; deleting a user cascades
+ * through our tables but keeps the money; /panel without a session goes to
+ * /login; /login with one honours a SAFE ?next=; public pages don't touch the
+ * session.
  *
- * Unlike the SQL tests, nothing here is rolled back: GoTrue commits. Every user
- * created is removed in afterAll. The calls that count against GoTrue's
- * sign-in/sign-up rate limit (30 per 5 minutes per IP, supabase/config.toml)
- * are kept to a handful; most users are made with the admin API, which is not
- * limited.
+ * Dropped on purpose: refresh-token rotation and in-place access-token renewal
+ * in the proxy. An opaque session has neither. What replaces them is tested
+ * instead: an expired session is gone, a revoked one (logout elsewhere, ban)
+ * dies on the next request, and the expiry slides with use.
+ *
+ * New: an account made BY GOTRUE logs in with its old password — the one thing
+ * that must hold for every user who signed up before this change.
  */
 
 const API = inject("apiUrl");
 const ANON = inject("anonKey");
 const SERVICE = inject("serviceRoleKey");
+const DB = inject("dbUrl");
 
-const admin = createClient(API, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
-const anon = () => createClient(API, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
+const gotrue = createClient(API, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
+const gotrueAnon = () => createClient(API, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
 
+let raw: pg.Client;
 const created: string[] = [];
 const PASSWORD = "rahasia-uji-123";
 const email = () => `t-${crypto.randomUUID().slice(0, 8)}@test.local`;
 
-async function adminUser(): Promise<{ id: string; email: string }> {
+async function ownUser(fullName = "Uji"): Promise<{ id: string; email: string }> {
   const e = email();
-  const { data, error } = await admin.auth.admin.createUser({ email: e, password: PASSWORD, email_confirm: true });
-  if (error || !data.user) throw error ?? new Error("createUser gagal");
-  created.push(data.user.id);
-  return { id: data.user.id, email: e };
+  const u = await signUpWithPassword({ email: e, password: PASSWORD, fullName });
+  created.push(u.id);
+  return { id: u.id, email: e };
 }
 
+async function codeOf(p: Promise<unknown>): Promise<string> {
+  try {
+    await p;
+    return "ok";
+  } catch (e) {
+    if (e instanceof AuthError) return e.code;
+    throw e;
+  }
+}
+
+beforeAll(async () => {
+  await resetPool(DB);
+  process.env.DATABASE_URL = DB;
+  raw = new pg.Client({ connectionString: DB });
+  await raw.connect();
+});
+
 afterAll(async () => {
-  for (const id of created) await admin.auth.admin.deleteUser(id).catch(() => undefined);
+  if (created.length) await raw.query("delete from auth.users where id = any($1)", [created]);
+  await raw.end();
 });
 
 describe("pendaftaran", () => {
-  it("signup email langsung mendapat sesi — tidak ada gerbang konfirmasi", async () => {
-    // mailer_autoconfirm=true in production, enable_confirmations=false here.
-    // The app shows its own verification banner instead (lib/email-verify.ts);
-    // a backend that starts gating login on e-mail confirmation would lock out
-    // every new account.
-    const e = email();
-    const { data, error } = await anon().auth.signUp({
-      email: e,
-      password: PASSWORD,
-      options: { data: { full_name: "Pendaftar" } },
-    });
-    expect(error).toBeNull();
-    expect(data.session?.access_token).toBeTruthy();
-    created.push(data.user!.id);
-
-    const { data: profile } = await admin
-      .from("lp_profiles")
-      .select("full_name, account_type, email, email_verified_at")
-      .eq("id", data.user!.id)
-      .single();
-    expect(profile).toEqual({ full_name: "Pendaftar", account_type: "customer", email: e, email_verified_at: null });
+  it("signup langsung bisa dipakai — profil lahir customer, belum terverifikasi, nama tersimpan", async () => {
+    const u = await ownUser("Pendaftar");
+    const { rows } = await raw.query(
+      "select full_name, account_type, email, email_verified_at from lp_profiles where id = $1",
+      [u.id],
+    );
+    expect(rows[0]).toEqual({ full_name: "Pendaftar", account_type: "customer", email: u.email, email_verified_at: null });
+    const token = await createSession(u.id);
+    expect((await validateSession(token))?.id).toBe(u.id);
   });
 
-  it("kata sandi di bawah 6 karakter ditolak", async () => {
-    const { error } = await anon().auth.signUp({ email: email(), password: "12345" });
-    expect(error?.message ?? "").toMatch(/password/i);
+  it("kata sandi di bawah 6 karakter ditolak; email tidak valid ditolak", async () => {
+    expect(await codeOf(signUpWithPassword({ email: email(), password: "12345" }))).toBe("weak_password");
+    expect(await codeOf(signUpWithPassword({ email: "bukan-email", password: PASSWORD }))).toBe("invalid_email");
+  });
+
+  it("email yang sudah terdaftar ditolak — tanpa peduli huruf besar-kecil", async () => {
+    const u = await ownUser();
+    expect(await codeOf(signUpWithPassword({ email: u.email.toUpperCase(), password: PASSWORD }))).toBe("email_taken");
+  });
+
+  it("baris yang ditulis tetap terbaca GoTrue (jalan mundur): user baru bisa masuk lewat GoTrue", async () => {
+    const u = await ownUser();
+    const { error } = await gotrueAnon().auth.signInWithPassword({ email: u.email, password: PASSWORD });
+    expect(error).toBeNull();
   });
 });
 
-describe("masuk & identitas", () => {
-  it("kata sandi salah ditolak; yang benar memberi sesi; token itu dikenali getUser", async () => {
-    const u = await adminUser();
-    const wrong = await anon().auth.signInWithPassword({ email: u.email, password: "salah-sekali" });
-    expect(wrong.error).not.toBeNull();
+describe("masuk", () => {
+  it("akun buatan GoTrue masuk dengan sandi lamanya ($2a$10$ apa adanya)", async () => {
+    const e = email();
+    const { data, error } = await gotrue.auth.admin.createUser({ email: e, password: PASSWORD, email_confirm: true });
+    if (error) throw error;
+    created.push(data.user.id);
+    const { rows } = await raw.query("select encrypted_password from auth.users where id = $1", [data.user.id]);
+    expect(rows[0].encrypted_password).toMatch(/^\$2a\$10\$/);
 
-    const ok = await anon().auth.signInWithPassword({ email: u.email, password: PASSWORD });
-    expect(ok.error).toBeNull();
-    const who = await admin.auth.getUser(ok.data.session!.access_token);
-    expect(who.data.user?.id).toBe(u.id);
+    expect((await verifyPassword(e, PASSWORD)).id).toBe(data.user.id);
+    expect((await verifyPassword(e.toUpperCase(), PASSWORD)).id).toBe(data.user.id);
   });
 
-  it("token sampah tidak dikenali", async () => {
-    const who = await admin.auth.getUser("bukan.token.sungguhan");
-    expect(who.data.user).toBeNull();
-    expect(who.error).not.toBeNull();
+  it("sandi salah dan email tak dikenal ditolak dengan pesan yang sama", async () => {
+    const u = await ownUser();
+    expect(await codeOf(verifyPassword(u.email, "salah-sekali"))).toBe("invalid_credentials");
+    expect(await codeOf(verifyPassword(email(), PASSWORD))).toBe("invalid_credentials");
   });
 
-  it("refresh token menghasilkan access token baru", async () => {
-    const u = await adminUser();
-    const client = anon();
-    const { data } = await client.auth.signInWithPassword({ email: u.email, password: PASSWORD });
-    const { data: refreshed, error } = await client.auth.refreshSession({
-      refresh_token: data.session!.refresh_token,
-    });
-    expect(error).toBeNull();
-    expect(refreshed.session?.access_token).toBeTruthy();
-    expect(refreshed.session?.refresh_token).not.toBe(data.session!.refresh_token);
+  it("akun Google-saja (hash kosong) tidak bisa masuk dengan sandi apa pun", async () => {
+    const g = await signInWithGoogleClaims({ sub: `g-${crypto.randomUUID()}`, email: email(), email_verified: true });
+    created.push(g.id);
+    expect(await codeOf(verifyPassword(g.email, ""))).toBe("invalid_credentials");
+    expect(await codeOf(verifyPassword(g.email, "apa-saja"))).toBe("invalid_credentials");
+  });
+
+  it(`gagal ${MAX_FAILURES_PER_EMAIL}× untuk satu email → sandi yang BENAR pun ditolak sementara`, async () => {
+    const u = await ownUser();
+    for (let i = 0; i < MAX_FAILURES_PER_EMAIL; i++) await codeOf(verifyPassword(u.email, "tebakan"));
+    expect(await codeOf(verifyPassword(u.email, PASSWORD))).toBe("rate_limited");
+    await raw.query("delete from app_auth.login_failures where email = $1", [u.email]);
+    expect(await codeOf(verifyPassword(u.email, PASSWORD))).toBe("ok");
+  });
+
+  it(`gagal ${MAX_FAILURES_PER_IP}× dari satu IP → IP itu ditolak, IP lain tidak`, async () => {
+    const ip = `203.0.113.${Math.floor(Math.random() * 250)}`;
+    const victim = await ownUser();
+    for (let i = 0; i < MAX_FAILURES_PER_IP; i++) await codeOf(verifyPassword(email(), "tebakan", ip));
+    expect(await codeOf(verifyPassword(victim.email, PASSWORD, ip))).toBe("rate_limited");
+    expect(await codeOf(verifyPassword(victim.email, PASSWORD, "198.51.100.7"))).toBe("ok");
+    await raw.query("delete from app_auth.login_failures where ip = $1", [ip]);
+  });
+});
+
+describe("sesi", () => {
+  it("disimpan hanya sebagai sha256 — token aslinya tidak ada di database", async () => {
+    const u = await ownUser();
+    const token = await createSession(u.id);
+    const { rows } = await raw.query("select token_hash from app_auth.sessions where user_id = $1", [u.id]);
+    expect(rows).toHaveLength(1);
+    expect(Buffer.from(rows[0].token_hash).equals(createHash("sha256").update(token).digest())).toBe(true);
+    expect(JSON.stringify(rows)).not.toContain(token);
+  });
+
+  it("anon dan authenticated tidak bisa menyentuh app_auth sama sekali", async () => {
+    for (const role of ["anon", "authenticated"]) {
+      for (const sql of ["select 1 from app_auth.sessions", "select 1 from app_auth.login_failures"]) {
+        await raw.query("begin");
+        await raw.query(`set local role ${role}`);
+        const err = await raw.query(sql).then(() => null, (e: { code: string }) => e.code);
+        await raw.query("rollback");
+        expect(err, `${role}: ${sql}`).toBe("42501");
+      }
+    }
+  });
+
+  it("token sampah, kosong, dan kepanjangan tidak dikenali", async () => {
+    expect(await validateSession("bukan-token")).toBeNull();
+    expect(await validateSession("")).toBeNull();
+    expect(await validateSession(null)).toBeNull();
+    expect(await validateSession("x".repeat(5000))).toBeNull();
+  });
+
+  it("logout mencabut sesi itu saja", async () => {
+    const u = await ownUser();
+    const a = await createSession(u.id);
+    const b = await createSession(u.id);
+    await revokeSession(a);
+    expect(await validateSession(a)).toBeNull();
+    expect((await validateSession(b))?.id).toBe(u.id);
+  });
+
+  it("kedaluwarsa = tidak berlaku", async () => {
+    const u = await ownUser();
+    const token = await createSession(u.id);
+    await raw.query("update app_auth.sessions set expires_at = now() - interval '1 second' where user_id = $1", [u.id]);
+    expect(await validateSession(token)).toBeNull();
+  });
+
+  it("masa berlaku bergeser saat dipakai (paling sering sekali sehari)", async () => {
+    const u = await ownUser();
+    const token = await createSession(u.id);
+    await raw.query(
+      "update app_auth.sessions set last_seen_at = now() - interval '2 days', expires_at = now() + interval '1 day' where user_id = $1",
+      [u.id],
+    );
+    await validateSession(token);
+    const { rows } = await raw.query("select expires_at > now() + interval '29 days' as slid from app_auth.sessions where user_id = $1", [u.id]);
+    expect(rows[0].slid).toBe(true);
   });
 });
 
 describe("tindakan admin", () => {
-  it("ban (ban_duration) menutup login; 'none' membukanya lagi — persis yang dikirim /api/admin/users", async () => {
-    const u = await adminUser();
-    await admin.auth.admin.updateUserById(u.id, { ban_duration: "876000h" });
-    const banned = await anon().auth.signInWithPassword({ email: u.email, password: PASSWORD });
-    expect(banned.error).not.toBeNull();
+  it("ban menutup login DAN mematikan sesi yang sedang jalan; unban membuka login lagi", async () => {
+    const u = await ownUser();
+    const live = await createSession(u.id);
+    await setBanned(u.id, true);
+    expect(await validateSession(live)).toBeNull();
+    expect(await codeOf(verifyPassword(u.email, PASSWORD))).toBe("banned");
+    // A wrong password learns nothing about the ban.
+    expect(await codeOf(verifyPassword(u.email, "salah"))).toBe("invalid_credentials");
 
-    await admin.auth.admin.updateUserById(u.id, { ban_duration: "none" });
-    const back = await anon().auth.signInWithPassword({ email: u.email, password: PASSWORD });
-    expect(back.error).toBeNull();
+    await setBanned(u.id, false);
+    expect(await codeOf(verifyPassword(u.email, PASSWORD))).toBe("ok");
   });
 
-  it("deleteUser lewat GoTrue: profil hilang, pembeliannya bertahan tanpa nama", async () => {
-    const buyer = await adminUser();
-    const seller = await adminUser();
-    await admin.from("lp_profiles").update({ account_type: "agent" }).eq("id", seller.id);
-    const { data: p } = await admin
-      .from("lp_landing_pages")
-      .insert({ title: "x", slug: `p-${crypto.randomUUID().slice(0, 8)}`, user_id: seller.id, price: 10_000 })
-      .select("id")
-      .single();
-    const { data: purchase } = await admin
-      .from("lp_purchases")
-      .insert({ user_id: buyer.id, landing_page_id: p!.id, amount: 10_000 })
-      .select("id")
-      .single();
+  it("hapus user: profil & sesi hilang, pembeliannya bertahan tanpa nama", async () => {
+    const buyer = await ownUser();
+    const seller = await ownUser();
+    await raw.query("update lp_profiles set account_type = 'agent' where id = $1", [seller.id]);
+    const p = await raw.query(
+      "insert into lp_landing_pages (title, slug, user_id, price) values ('x', $1, $2, 10000) returning id",
+      [`p-${crypto.randomUUID().slice(0, 8)}`, seller.id],
+    );
+    const purchase = await raw.query(
+      "insert into lp_purchases (user_id, landing_page_id, amount) values ($1, $2, 10000) returning id",
+      [buyer.id, p.rows[0].id],
+    );
+    const token = await createSession(buyer.id);
 
-    const { error } = await admin.auth.admin.deleteUser(buyer.id);
-    expect(error).toBeNull();
+    await deleteUser(buyer.id);
 
-    const { data: profile } = await admin.from("lp_profiles").select("id").eq("id", buyer.id).maybeSingle();
-    const { data: kept } = await admin.from("lp_purchases").select("user_id, amount").eq("id", purchase!.id).single();
-    expect(profile).toBeNull();
-    expect(kept).toEqual({ user_id: null, amount: 10_000 });
+    expect((await raw.query("select 1 from lp_profiles where id = $1", [buyer.id])).rows).toEqual([]);
+    expect(await validateSession(token)).toBeNull();
+    const kept = await raw.query("select user_id, amount from lp_purchases where id = $1", [purchase.rows[0].id]);
+    expect(kept.rows[0]).toEqual({ user_id: null, amount: 10000 });
+    await raw.query("delete from lp_landing_pages where id = $1", [p.rows[0].id]);
+  });
+});
 
-    await admin.from("lp_landing_pages").delete().eq("id", p!.id);
+describe("Google", () => {
+  it("akun baru: provider google, dan alamatnya langsung terverifikasi (trigger lp_handle_new_user)", async () => {
+    const e = email();
+    const g = await signInWithGoogleClaims({ sub: `g-${crypto.randomUUID()}`, email: e, email_verified: true, name: "Gugel" });
+    created.push(g.id);
+    expect(g.app_metadata.provider).toBe("google");
+    const { rows } = await raw.query("select full_name, email_verified_at is not null as verified from lp_profiles where id = $1", [g.id]);
+    expect(rows[0]).toEqual({ full_name: "Gugel", verified: true });
+  });
+
+  it("identitas yang sama → akun yang sama", async () => {
+    const sub = `g-${crypto.randomUUID()}`;
+    const a = await signInWithGoogleClaims({ sub, email: email(), email_verified: true });
+    created.push(a.id);
+    const b = await signInWithGoogleClaims({ sub, email: email(), email_verified: true });
+    expect(b.id).toBe(a.id);
+  });
+
+  it("email terverifikasi yang sama dengan akun email → ditautkan ke akun itu", async () => {
+    const u = await ownUser();
+    const g = await signInWithGoogleClaims({ sub: `g-${crypto.randomUUID()}`, email: u.email, email_verified: true });
+    expect(g.id).toBe(u.id);
+    expect(g.app_metadata.providers).toEqual(expect.arrayContaining(["email", "google"]));
+  });
+
+  it("email yang BELUM diverifikasi Google tidak pernah ditautkan ke akun yang ada", async () => {
+    const u = await ownUser();
+    expect(await codeOf(signInWithGoogleClaims({ sub: `g-${crypto.randomUUID()}`, email: u.email, email_verified: false }))).toBe(
+      "oauth_failed",
+    );
+  });
+
+  it("user Google yang di-ban ditolak", async () => {
+    const sub = `g-${crypto.randomUUID()}`;
+    const g = await signInWithGoogleClaims({ sub, email: email(), email_verified: true });
+    created.push(g.id);
+    await setBanned(g.id, true);
+    expect(await codeOf(signInWithGoogleClaims({ sub, email: g.email!, email_verified: true }))).toBe("banned");
   });
 });
 
 // ---------------------------------------------------------------------------
-// The middleware contract (lib/supabase/proxy.ts)
+// The proxy contract (lib/supabase/proxy.ts)
 // ---------------------------------------------------------------------------
 
-type Jar = { name: string; value: string }[];
-
-/** Sign in the way the app does, and return the cookies @supabase/ssr writes. */
-async function signedInCookies(emailAddr: string): Promise<Jar> {
-  const jar = new Map<string, string>();
-  const ssr = createServerClient(API, ANON, {
-    cookies: {
-      getAll: () => [...jar].map(([name, value]) => ({ name, value })),
-      setAll: (list) => list.forEach(({ name, value }) => (value ? jar.set(name, value) : jar.delete(name))),
-    },
-  });
-  const { error } = await ssr.auth.signInWithPassword({ email: emailAddr, password: PASSWORD });
-  if (error) throw error;
-  return [...jar].map(([name, value]) => ({ name, value }));
-}
-
-/** The same session, with its access token declared already expired. */
-function expire(jar: Jar): Jar {
-  expect(jar.length, "sesi uji harus muat dalam satu cookie").toBe(1);
-  const [{ name, value }] = jar;
-  const json = JSON.parse(Buffer.from(value.replace(/^base64-/, ""), "base64url").toString());
-  json.expires_at = Math.floor(Date.now() / 1000) - 60;
-  return [{ name, value: "base64-" + Buffer.from(JSON.stringify(json)).toString("base64url") }];
-}
-
-const accessToken = (value: string) =>
-  JSON.parse(Buffer.from(value.replace(/^base64-/, ""), "base64url").toString()).access_token as string;
-
-describe("middleware: sesi & pengalihan", () => {
-  let updateSession: (req: NextRequest) => Promise<Response & { cookies: { getAll(): Jar } }>;
+describe("proxy: sesi & pengalihan", () => {
+  let updateSession: (req: NextRequest) => Promise<Response & { cookies: { getAll(): unknown[] } }>;
   let user: { id: string; email: string };
 
   beforeAll(async () => {
-    // proxy.ts (and lib/missing-record.ts) read these at import time.
-    process.env.NEXT_PUBLIC_SUPABASE_URL = API;
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = ANON;
     ({ updateSession } = (await import("@/lib/supabase/proxy")) as never);
-    user = await adminUser();
+    user = await ownUser();
   });
 
-  const req = (path: string, jar: Jar = []) =>
+  const req = (path: string, token?: string) =>
     new NextRequest(new URL(path, "http://127.0.0.1:3000"), {
-      headers: jar.length ? { cookie: jar.map((c) => `${c.name}=${c.value}`).join("; ") } : {},
+      headers: token ? { cookie: `${SESSION_COOKIE}=${token}` } : {},
     });
 
   it("tanpa sesi, /panel dialihkan ke /login", async () => {
@@ -197,16 +315,22 @@ describe("middleware: sesi & pengalihan", () => {
     expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
   });
 
+  it("tanpa sesi, /read/<slug> dialihkan ke /login dengan ?next= kembali ke buku", async () => {
+    const loc = new URL((await updateSession(req("/read/buku-a"))).headers.get("location")!);
+    expect(loc.pathname).toBe("/login");
+    expect(loc.searchParams.get("next")).toBe("/read/buku-a");
+  });
+
   it("dengan sesi, /panel lewat — dan membawa x-pathname untuk layout", async () => {
-    const res = await updateSession(req("/panel/products", await signedInCookies(user.email)));
+    const res = await updateSession(req("/panel/products", await createSession(user.id)));
     expect(res.status).toBe(200);
     expect(res.headers.get("x-middleware-request-x-pathname")).toBe("/panel/products");
   });
 
   it("sudah masuk lalu membuka /login: ke ?next= yang aman, atau ke /panel", async () => {
-    const jar = await signedInCookies(user.email);
+    const token = await createSession(user.id);
     const to = async (path: string) => {
-      const loc = new URL((await updateSession(req(path, jar))).headers.get("location")!);
+      const loc = new URL((await updateSession(req(path, token))).headers.get("location")!);
       // NextURL normalises 127.0.0.1 to localhost; any OTHER host is the leak.
       return loc.hostname === "localhost" ? loc.pathname : loc.href;
     };
@@ -216,53 +340,37 @@ describe("middleware: sesi & pengalihan", () => {
     expect(await to("/login?next=//evil.example/x")).toBe("/panel");
   });
 
-  it("access token kedaluwarsa + refresh token sah: diperbarui di tempat, tidak ditendang ke /login", async () => {
-    // The renewed session has to be written to the RESPONSE (so the browser
-    // keeps it) — and to the REQUEST, so the server components rendering this
-    // same page see the user. Getting either half wrong is a session that
-    // works on the second click only.
-    const stale = expire(await signedInCookies(user.email));
-    const res = await updateSession(req("/panel", stale));
-    expect(res.status).toBe(200);
-
-    const renewed = res.cookies.getAll().find((c) => c.name === stale[0].name);
-    expect(renewed, "cookie sesi baru di response").toBeTruthy();
-    expect(accessToken(renewed!.value)).not.toBe(accessToken(stale[0].value));
-
-    // Compare the DECODED token: every session cookie starts with the same
-    // base64 of `{"access_token":"eyJhbGciOi…`, so a prefix match would pass
-    // with the stale cookie still in place (it did, until a mutation test
-    // removed the request-side write and this stayed green).
-    const forwarded = res.headers.get("x-middleware-request-cookie") ?? "";
-    const sent = forwarded
-      .split(/;\s*/)
-      .map((kv) => [kv.slice(0, kv.indexOf("=")), kv.slice(kv.indexOf("=") + 1)] as const)
-      .find(([k]) => k === stale[0].name)?.[1];
-    expect(sent, "cookie sesi ikut diteruskan ke server components").toBeTruthy();
-    expect(accessToken(sent!), "yang diteruskan adalah token BARU").toBe(accessToken(renewed!.value));
+  it("sesi yang dicabut (logout di tab lain, ban) berhenti berlaku di request berikutnya", async () => {
+    const token = await createSession(user.id);
+    expect((await updateSession(req("/panel", token))).status).toBe(200);
+    await revokeSession(token);
+    expect((await updateSession(req("/panel", token))).status).toBe(307);
   });
 
-  it("halaman publik TIDAK menyentuh sesi — sesi kedaluwarsa tidak diperbarui di sana", async () => {
-    // Deliberate (a round trip saved on every storefront view), and a real
-    // constraint on any replacement: public pages only renew a session if the
-    // page itself happens to ask for the user.
-    const stale = expire(await signedInCookies(user.email));
-    const res = await updateSession(req("/", stale));
+  it("halaman publik TIDAK menyentuh sesi — tidak ada cookie yang ditulis", async () => {
+    const res = await updateSession(req("/", await createSession(user.id)));
     expect(res.status).toBe(200);
     expect(res.cookies.getAll()).toEqual([]);
   });
 });
 
 describe("permukaan Auth yang dipakai aplikasi", () => {
-  it("tidak ada lagi admin.listUsers — email diambil dari lp_profiles", async () => {
-    // listUsers({ perPage: 1000 }) silently stopped at the 1001st user, and was
-    // one more GoTrue admin call for a replacement backend to reproduce.
+  const sources = async () => {
     const { readFileSync, readdirSync } = await import("node:fs");
-    const files = ["app", "lib", "components"].flatMap((d) =>
-      (readdirSync(d, { recursive: true }) as string[]).filter((f) => /\.tsx?$/.test(f)).map((f) => `${d}/${f}`),
+    return ["app", "lib", "components"].flatMap((d) =>
+      (readdirSync(d, { recursive: true }) as string[])
+        .filter((f) => /\.tsx?$/.test(f))
+        .map((f) => ({ f: `${d}/${f}`, src: readFileSync(`${d}/${f}`, "utf8") })),
     );
-    const hits = files.filter((f) => /auth\.admin\.listUsers\(/.test(readFileSync(f, "utf8")));
+  };
+
+  it("tidak ada lagi GoTrue: tidak satu pun file aplikasi meng-import @supabase/*", async () => {
+    const hits = (await sources()).filter(({ src }) => /from\s+["']@supabase\//.test(src)).map(({ f }) => f);
     expect(hits).toEqual([]);
   });
-});
 
+  it("satu-satunya method .auth yang dipanggil adalah getUser()", async () => {
+    const calls = new Set((await sources()).flatMap(({ src }) => [...src.matchAll(/\.auth\.([a-zA-Z.]+)\(/g)].map((m) => m[1])));
+    expect([...calls]).toEqual(["getUser"]);
+  });
+});

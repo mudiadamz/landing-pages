@@ -95,7 +95,7 @@ langsung. **Tidak ada user yang perlu reset sandi.** Identitas Google ada di
 | 0 | Prasyarat, keputusan, dan ukuran data produksi | S | 🟡 keputusan ✅, ukuran produksi belum |
 | 1 | Lapisan data sendiri di atas Postgres Supabase yang sama | **L** | ✅ |
 | 2 | Storage sendiri (disk + URL bertanda) | M | ✅ |
-| 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ⬜ |
+| 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ✅ |
 | 4 | Postgres pindah ke server sendiri | M | ⬜ |
 | 5 | Cutover produksi | S, butuh jendela pemeliharaan | ⬜ |
 | 6 | Bersih-bersih & penghapusan project Supabase | S | ⬜ |
@@ -291,59 +291,91 @@ kodenya dan jalankan `rewrite` ke arah sebaliknya.
 
 ---
 
-## Fase 3 — auth sendiri
+## Fase 3 — auth sendiri ✅
 
-**Tujuan:** tidak ada lagi `supabase.auth`. GoTrue berhenti dipanggil.
+**Tujuan:** GoTrue berhenti dipanggil. Tidak ada lagi import `@supabase/*` di
+`app/`, `lib/`, `components/` (dikunci tes).
 
-**Bentuknya:**
+| File | Isi |
+|---|---|
+| `supabase/migrations/20260922000000_app_auth.sql` | skema `app_auth`: `sessions` (sha256 token, bergeser 30 hari) dan `login_failures`; anon/authenticated tidak diberi apa pun |
+| `lib/backend/auth.ts` | daftar, cek sandi (bcryptjs, `$2a$10$` GoTrue apa adanya), sesi, ban, hapus, akun Google |
+| `lib/backend/google.ts` | OAuth 2 + PKCE ke Google dengan `fetch` — tanpa SDK |
+| `lib/auth/session.ts`, `lib/auth/cookie.ts` | cookie sesi & cookie OAuth sementara |
+| `app/api/auth/user` | siapa user ini, untuk kode browser (cookie-nya httpOnly) |
 
-- **Tabel user tetap `auth.users`**, baris yang sama, id yang sama, hash bcrypt
-  yang sama. Aplikasi membaca dan menulisnya langsung. Karena itu 20 FK dan
-  trigger `lp_handle_new_user` tidak berubah. `auth.identities` tetap sumber
-  identitas Google.
-- **Sesi: token opak, bukan JWT.** 32 byte acak di cookie `httpOnly; Secure;
-  SameSite=Lax`, disimpan sebagai sha256 di `app_auth.sessions` (skema sendiri,
-  karena skema `auth` masih milik GoTrue sampai Fase 4). Masa berlaku bergeser
-  (sliding), 30 hari. Ini menghapus seluruh kontrak refresh token dan penulisan
-  ganda cookie request/response di `lib/supabase/proxy.ts`. Middleware cukup
-  memeriksa ada tidaknya sesi.
-- **Sandi:** `bcryptjs` (JS murni, tanpa native build, jadi `allowBuilds` tidak
-  bertambah). Memverifikasi `$2a$10$` lama apa adanya.
-- **Google:** `arctic` (OAuth 2 + PKCE). Alur `?sf=` tidak berubah: callback
-  kanonik meneruskan `code` ke domain asal, karena verifier PKCE-nya cookie milik
-  domain itu. `resolveReturnHost` dan tesnya tetap.
-- **Ban:** kolom `auth.users.banned_until` yang sudah ada. Login dan validasi sesi
-  menolaknya, dan ban **mencabut semua sesi aktif** user itu. GoTrue dulu hanya
-  menolak login baru.
-- **Pembatasan percobaan login:** GoTrue punya batas per IP. Ganti dengan
-  `lp_signup_attempts` yang sudah ada, diperluas ke login. Tanpa ini,
-  brute force sandi terbuka.
-- **Hapus user:** `delete from auth.users`, lalu cascade berjalan persis seperti
-  sekarang (sudah dikunci di `logic.test.ts`).
+**Bentuk yang dipakai:**
 
-**Tes:**
+- **Tabel user tetap `auth.users`** — baris, id, hash yang sama. 20 FK dan
+  trigger `lp_handle_new_user` tidak berubah. Baris baru ditulis dengan kolom
+  token berisi `''` (bukan NULL) supaya GoTrue tetap bisa membacanya: **jalan
+  mundur tanpa migrasi data**, dan ada tesnya (user buatan kode baru bisa masuk
+  lewat GoTrue).
+- **Sesi opak.** 32 byte acak di cookie `httpOnly; SameSite=Lax`, bernama
+  `__Host-lp_session` di HTTPS (browser menolak versi yang tidak Secure /
+  berdomain / ber-path lain). Database hanya menyimpan sha256-nya. Masa
+  berlakunya ditentukan barisnya (30 hari, bergeser paling sering sekali
+  sehari), jadi cookie tidak pernah ditulis ulang di proxy dan kontrak
+  refresh-token + penulisan ganda cookie request/response hilang seluruhnya.
+- **`.auth.getUser()` tetap ada** dengan bentuk supabase-js, dijawab dari sesi
+  sendiri — ±80 pemanggilnya tidak disentuh. Itu satu-satunya method `.auth`
+  yang tersisa (dikunci tes). Ban & hapus akun jadi fungsi biasa
+  (`setBanned`, `deleteUser`).
+- **Proxy memvalidasi sesi** di `/panel`, `/read`, `/login`, `/signup` dengan
+  satu query berindeks. Halaman publik tetap tidak menyentuhnya.
+- **Ban mencabut semua sesi** saat itu juga (GoTrue hanya menolak login baru dan
+  membiarkan access token hidup sampai sejam).
+- **Batas percobaan masuk:** `app_auth.login_failures`, per IP (20 / 15 menit)
+  **dan** per email (10 / 15 menit) — menebak sandi satu akun dari banyak
+  alamat juga berhenti. Waktu respons email-tak-dikenal disamakan dengan
+  sandi-salah (bcrypt terhadap hash tiruan).
+- **Google:** alur `?sf=` tetap, tapi storefront asal kini menumpang di `state`
+  (redirect_uri harus persis sama di Google). Callback memeriksa `state` terhadap
+  cookie milik browser itu (mencegah login CSRF), cookie dibaca sekali lalu
+  dihapus. Email Google yang **belum terverifikasi tidak pernah ditautkan** ke
+  akun yang sudah ada.
+- Pesan error login/signup kini berbahasa Indonesia (dulu pesan mentah GoTrue).
 
-- `auth-http.test.ts` **di-port**. Perilaku yang wajib tetap: signup langsung
-  mendapat sesi, profil lahir `customer` dan belum terverifikasi, sandi < 6 ditolak,
-  sandi salah ditolak, ban menutup login, `/panel` tanpa sesi → `/login`, `/login`
-  dengan sesi → `?next=` yang aman, `//evil.example` ditolak, halaman publik tidak
-  menyentuh sesi. Yang **sengaja hilang**, dengan alasan: rotasi refresh token dan
-  pembaruan access token di middleware. Sesi opak tidak punya keduanya. Penggantinya:
-  sesi kedaluwarsa → `/login`; sesi yang dicabut (logout di tab lain, ban) langsung
-  tidak berlaku.
-- Tes baru: login dengan hash `$2a$10$` hasil GoTrue sungguhan (diambil dari
-  database lokal) berhasil; sesi user yang di-ban mati seketika; percobaan ke-N
-  dari satu IP ditolak.
+**Menyimpang dari rancangan awal:**
 
-**Selesai kalau:** `grep -rE 'supabase\.auth|auth\.admin' app lib components`
-kosong, dan seorang user yang dibuat lewat GoTrue sebelum fase ini bisa login
-dengan sandi lamanya.
+- **`arctic` tidak dipakai** — paketnya dinyatakan deprecated di npm. OAuth +
+  PKCE ke Google cukup ±100 baris `fetch`. id_token tidak diverifikasi tanda
+  tangannya, sesuai OIDC Core §3.1.3.7 (diterima langsung dari token endpoint
+  lewat TLS); iss/aud/exp tetap diperiksa.
+- **Tanpa flag `AUTH_PROVIDER`.** Belum ada user sungguhan (keputusan Fase 0),
+  dan kedua implementasi membaca `auth.users` yang sama — jalan mundurnya cukup
+  deploy image sebelumnya. Dua jalur kode yang hidup bersamaan justru tempat
+  pintu terbuka bersembunyi.
+- **Tabel percobaan sendiri** (`app_auth.login_failures`), bukan
+  `lp_signup_attempts`: yang dihitung beda (gagal masuk per IP *dan* per email,
+  bukan semua pendaftaran per IP).
 
-**Risiko & jalan mundur:** fase paling berbahaya, karena setiap kesalahan di sini
-adalah pintu yang terbuka atau semua orang terkunci. Deploy di belakang flag
-`AUTH_PROVIDER=supabase|own`. Keduanya membaca `auth.users` yang sama, jadi bisa
-dibalik tanpa migrasi data. **Semua user logout sekali** saat flag dibalik.
-Umumkan.
+**Tes:** `tests/db/auth-http.test.ts` ditulis ulang untuk implementasi sendiri
+(30): signup langsung bersesi + profil `customer` belum terverifikasi; sandi
+pendek / email salah / email ganda (beda huruf) ditolak; **akun buatan GoTrue
+masuk dengan sandi lamanya**; user baru terbaca GoTrue; akun Google-saja tidak
+bisa masuk dengan sandi; batas per email dan per IP; token hanya tersimpan
+sebagai sha256; anon/authenticated ditolak di `app_auth`; logout, kedaluwarsa,
+geser; ban mematikan sesi berjalan; hapus user mempertahankan pembelian; lima
+kasus Google; enam kasus proxy; dan tidak ada import `@supabase/*` di kode
+aplikasi. `tests/google-oauth.test.ts` (10, murni): PKCE, state, dan penolakan
+id_token (aud/iss/exp/sub). Mutasi (hapus cek ban, batas percobaan, syarat
+email terverifikasi, pencabutan sesi saat ban) → 4 merah.
+
+Dijalankan sungguhan (`pnpm dev`, lewat form & server action-nya): sandi salah
+→ pesan; akun buatan GoTrue masuk → cookie `lp_session` httpOnly; di belakang
+`x-forwarded-proto: https` → `__Host-lp_session; Secure`; signup → sesi +
+keanggotaan situs + kembali ke `?next=`; email ganda & sandi pendek → pesan;
+logout → sesi dicabut, cookie (termasuk `sb-*` lama) dihapus, `/panel` → 307;
+callback tanpa/dengan state salah atau host asing → `/login?error`; 38 halaman
+panel & publik sebagai Company → 200; unggah/hapus storage dengan cookie baru.
+
+**Verifikasi:** `tsc` bersih, 153 tes murni + 259 tes database lolos.
+
+**Untuk cutover (Fase 5):** isi `GOOGLE_CLIENT_ID/SECRET` (client yang sama
+dengan yang dipakai Supabase) dan tambahkan
+`https://<domain kanonik>/auth/callback` ke Authorized redirect URIs di Google
+Cloud Console. **Semua user logout sekali** — cookie `sb-*` lama tidak dikenal.
 
 ---
 

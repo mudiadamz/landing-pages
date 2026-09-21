@@ -48,10 +48,12 @@ Ringkasan yang paling sering dilanggar:
 - Semua tabel app diawali prefix **`lp_`** (mis. `lp_landing_pages`, `lp_purchases`,
   `lp_sites`). Tabel lama pernah di-rename → lihat migration `2026062100xx_*`.
 - Bahasa UI: **Indonesia** (`<html lang="id">`, locale `id_ID`).
-- Tiga Supabase client di `lib/supabase/`:
-  - `server.ts` — server components/actions, cookie-based, **terkena RLS**.
-  - `client.ts` — browser.
-  - `admin.ts` — Service Role Key, **bypass RLS**. Boleh di luar API route, tapi
+- Client di `lib/supabase/` (namanya sisa sejarah — di baliknya SQL langsung ke
+  Postgres lewat `lib/backend/`, bukan Supabase):
+  - `server.ts` — server components/actions, sebagai user dari cookie sesi, **terkena RLS**.
+  - `anon.ts` — sebagai `anon`, untuk bacaan publik (boleh di dalam cache).
+  - `client.ts` — browser; hanya `.storage` (lewat route sendiri) dan `.auth.getUser()`.
+  - `admin.ts` — role `service_role`, **bypass RLS**. Boleh di luar API route, tapi
     pemakaiannya wajib punya gate otorisasi sendiri.
   - Catatan: client cookie-based **tidak bisa** dipakai di dalam `unstable_cache`.
 - **Semua input file di panel WAJIB `FileUploadCard`** (`components/file-upload-card.tsx`).
@@ -106,18 +108,27 @@ Ringkasan yang paling sering dilanggar:
 
 ## Auth & roles
 
-- **Middleware** (`middleware.ts`): refresh sesi Supabase tiap request. `/panel/*` butuh login (redirect ke `/login`); user login yang buka `/login`/`/signup` diarahkan ke `?next=` kalau ada, kalau tidak ke `/panel`.
+- **Proxy** (`proxy.ts` → `lib/supabase/proxy.ts`, runtime Node): memvalidasi sesi di `/panel`, `/read`, `/login`, `/signup` saja. `/panel/*` butuh login (redirect ke `/login`); user login yang buka `/login`/`/signup` diarahkan ke `?next=` kalau ada, kalau tidak ke `/panel`.
 - **`?next=` sesudah login**: tujuan setelah masuk, dipakai checkout, reader, dan storefront chat (`/login?next=/`). Nilainya **wajib** lewat `safeNextPath()` (`lib/next-path.ts`) — `startsWith("/")` saja meloloskan `//evil.example`, yang browser resolve ke origin lain.
-- **Sign-in**: email/password (`lib/actions/auth.ts: login`) atau Google OAuth (`signInWithGoogle` → `/auth/callback` `exchangeCodeForSession`).
-- **OAuth di domain non-kanonik**: Supabase hanya kenal satu redirect URL, jadi login
-  dari storefront lain kembali ke callback kanonik dengan `?sf=<host>`, lalu callback
+- **Auth milik sendiri, bukan GoTrue** (`lib/backend/auth.ts`, sejak fase 3
+  `docs/plans/remove-supabase.md`). User tetap di `auth.users` (hash bcrypt GoTrue
+  dipakai apa adanya); sesi = token opak di cookie httpOnly `lp_session` /
+  `__Host-lp_session`, disimpan sebagai sha256 di `app_auth.sessions`. **Jangan pernah
+  menentukan identitas dari hal lain** — `currentUser()` (`lib/auth/session.ts`) atau
+  `supabase.auth.getUser()` (bentuk lama, jawaban sama). Ban (`setBanned`) mencabut
+  semua sesi saat itu juga.
+- **Sign-in**: email/password (`lib/actions/auth.ts: login`, batas gagal per IP & per
+  email) atau Google (`signInWithGoogle` → `lib/backend/google.ts`, OAuth+PKCE tanpa
+  SDK → `/auth/callback`). Env: `GOOGLE_CLIENT_ID/SECRET`.
+- **OAuth di domain non-kanonik**: Google hanya kenal satu redirect URI, jadi login
+  dari storefront lain kembali ke callback kanonik dengan host asal di dalam `state`, lalu callback
   itu **meneruskan `code`-nya** ke `/auth/callback` domain asal — bukan menukarnya di
   situ, karena verifier PKCE-nya cookie milik domain asal. Aturan & penjagaannya di
-  `lib/oauth-return.ts`; `?sf=` **wajib** divalidasi terhadap `lp_sites`. Konsekuensi:
-  menambah domain tidak perlu menyentuh dashboard Supabase sama sekali.
-- **Verifikasi email**: signup **tidak** menunggu verifikasi — project Supabase pakai
-  `mailer_autoconfirm=true`, jadi `auth.users.email_confirmed_at` cuma berarti "boleh
-  login". Bukti kepemilikan alamat ada di `lp_profiles.email_verified_at`, diisi lewat
+  `lib/oauth-return.ts`; host itu **wajib** divalidasi terhadap `lp_sites`, dan
+  `state` diperiksa terhadap cookie browser itu. Konsekuensi: menambah domain tidak
+  perlu menyentuh Google Cloud Console sama sekali.
+- **Verifikasi email**: signup **tidak** menunggu verifikasi — akun langsung
+  `email_confirmed_at`, yang cuma berarti "boleh login". Bukti kepemilikan alamat ada di `lp_profiles.email_verified_at`, diisi lewat
   email Resend sendiri (`lib/email-verify.ts` → `/auth/verify-email`, token HMAC 24 jam).
   Signup Google langsung terverifikasi (lihat trigger `lp_handle_new_user`). Selama belum
   verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +

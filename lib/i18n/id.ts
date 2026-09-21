@@ -977,20 +977,16 @@ export const id = {
     "yang DNS-nya sudah menunjuk ke server ini — begitu ditambahkan, langsung jalan. HTTPS otomatis, tak perlu beli domain baru.",
   "sites.separateDomainBody":
     "Domain terpisah: pasang A record ke IP server ini (atau CNAME ke host kanonik) di registrar Anda. HTTPS-nya terbit sendiri saat domainnya pertama kali dibuka.",
-  "sites.authLegacy":
-    "Dulu tiap domain harus ditambahkan ke Redirect URLs di Supabase, dan kalau lupa tidak ada error sama sekali: pengunjung yang menekan “Masuk dengan Google” di {host} malah mendarat di {canonical} berikut cookie sesinya, lalu di {host} tetap terlihat belum masuk.",
   "sites.authNowBefore":
     "Sekarang login di {host} kembali lewat callback {canonical} — satu-satunya yang terdaftar — dan callback itu melemparnya balik ke {host} untuk diselesaikan di sana. Jadi domain baru",
   "sites.authNoExtraWork": "tidak menambah pekerjaan",
-  "sites.authNowAfter": "di Supabase maupun di Google Cloud Console.",
+  "sites.authNowAfter": "di Google Cloud Console.",
   "sites.sessionBefore": "Sesi login",
   "sites.sessionNot": "tidak",
   "sites.sessionAfter":
     "lintas domain — pengunjung login sendiri di tiap domain, dan itu memang disengaja.",
   "sites.redirectUrlNote":
-    "Satu-satunya baris yang harus tetap ada di Supabase (Authentication → URL Configuration → Redirect URLs) berlaku untuk semua domain sekaligus, dan sudah terpasang. Kalau baris ini hilang, login patah di semua domain:",
-  "sites.googleUrisBefore": "Begitu juga",
-  "sites.googleUrisAfter": "di Google, yang menunjuk ke Supabase dan bukan ke domain kita:",
+    "Satu-satunya URL yang harus terdaftar di Google Cloud Console (OAuth client → Authorized redirect URIs) berlaku untuk semua domain sekaligus. Kalau hilang, login Google patah di semua domain:",
   "sites.step3Purchases":
     "bisa dibuka di domain ini — pembeli wajib bisa lihat pembeliannya di tempat dia beli. Layar admin (produk, domain, users) memantul ke",
   "sites.paymentBefore": "Pembayaran tidak perlu disetel apa pun: callback Duitku selalu ke",

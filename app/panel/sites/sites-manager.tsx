@@ -31,13 +31,11 @@ type NewDraft = { host: string; name: string };
 export function SitesManager({
   sites,
   canonicalHost,
-  supabaseProjectUrl,
   templateLabels,
   paletteLabels,
 }: {
   sites: Site[];
   canonicalHost: string;
-  supabaseProjectUrl: string;
   /** key -> label, so the summary line can name the template without the registry. */
   templateLabels: Record<string, string>;
   paletteLabels: Record<string, string>;
@@ -261,7 +259,6 @@ export function SitesManager({
               <div className="mt-3 space-y-2">
                 <DomainSetupGuide
                   host={site.host}
-                  supabaseProjectUrl={supabaseProjectUrl}
                   canonicalHost={canonicalHost}
                 />
               </div>

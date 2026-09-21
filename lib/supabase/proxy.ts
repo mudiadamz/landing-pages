@@ -1,7 +1,8 @@
 import { safeNextPath } from "@/lib/next-path";
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isMissingRecord } from "@/lib/missing-record";
+import { validateSession } from "@/lib/backend/auth";
+import { sessionTokenFrom } from "@/lib/auth/cookie";
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -34,9 +35,7 @@ export async function updateSession(request: NextRequest) {
    *
    * A layout never receives it, and app/panel/layout.tsx has to tell a customer
    * route ("Pembelian saya") from an admin one to decide whether a niche domain
-   * may serve it. Built fresh at each call rather than snapshotted once, because
-   * Supabase rewrites request cookies during the session refresh below and a
-   * stale copy would drop the renewed session.
+   * may serve it.
    */
   const nextWithPath = () => {
     const headers = new Headers(request.headers);
@@ -51,8 +50,8 @@ export async function updateSession(request: NextRequest) {
   const isReadRoute = pathname.startsWith("/read/");
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
-  // Everything else skips the session lookup entirely — it costs a request to
-  // Supabase, and public pages don't need it.
+  // Everything else skips the session lookup entirely — public pages that want
+  // the user ask for it themselves, and most don't.
   if (!isPanelRoute && !isAuthRoute && !isReadRoute) {
     // Still carries x-pathname: the session lookup is what public pages skip,
     // not the header. The root layout reads it to know whether it is rendering
@@ -61,32 +60,10 @@ export async function updateSession(request: NextRequest) {
     return nextWithPath();
   }
 
-  let supabaseResponse = nextWithPath();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = nextWithPath();
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // One indexed lookup in app_auth.sessions. Nothing to refresh: the session is
+  // opaque and its expiry slides server-side, so the cookie is never rewritten
+  // here — and a revoked or banned session stops working on this very request.
+  const user = await validateSession(sessionTokenFrom((n) => request.cookies.get(n)?.value));
 
   if ((isPanelRoute || isReadRoute) && !user) {
     const url = request.nextUrl.clone();
@@ -108,5 +85,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  return nextWithPath();
 }

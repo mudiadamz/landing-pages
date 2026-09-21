@@ -48,7 +48,6 @@ export default async function SitesPage() {
         canonicalHost={canonicalOrigin().replace(/^https?:\/\//, "")}
         // Public anyway (it ships to the browser as a NEXT_PUBLIC var) and needed
         // verbatim: it is the one redirect URI Google is configured with.
-        supabaseProjectUrl={(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "")}
         templateLabels={templateLabels}
         paletteLabels={paletteLabels}
       />
