@@ -56,20 +56,6 @@ Yang masih belum punya tes: isi Server Action di `lib/actions/*` sebagai unit
 Duitku (`lib/duitku.ts`, signature & callback), dan penukaran kode OAuth Google
 sungguhan.
 
----|---:|---|
-| Fungsi murni (slug, sanitasi HTML, i18n, predikat izin, warna/ikon) | 16 file | **131** |
-| RLS policy aktif (`public` + `storage`) | 69 | 0 |
-| Tabel dengan RLS menyala | 34 dari 34 | 0 |
-| Function `SECURITY DEFINER` | 27 | 0 |
-| Trigger | 16 | 0 |
-| Server Action (`lib/actions/*`) | 26 file | 0 |
-| `middleware.ts` + `lib/supabase/proxy.ts` (refresh sesi) | — | 0 |
-| Pembayaran (`lib/duitku.ts`, `lib/invoice.ts`) | — | 0 |
-
-`lib/site-membership.ts` **ada** tesnya, tapi itu predikat murni. Gerbang yang
-benar-benar menahan orang — `requireAdmin`, `requireSiteAdmin`, RLS, GRANT kolom —
-tidak ada satu pun.
-
 ---
 
 ## Tiga hal yang akan diam-diam hilang saat porting
