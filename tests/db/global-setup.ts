@@ -1,105 +1,77 @@
-import { execFileSync } from "node:child_process";
-import { readdirSync } from "node:fs";
 import pg from "pg";
 import type { TestProject } from "vitest/node";
+import { migrate } from "../../scripts/migrate.mjs";
 
 /**
- * Runs once before `pnpm test:db`. Two jobs:
+ * Runs once before `pnpm test:db`: builds a database from nothing, on plain
+ * Postgres (docs/plans/remove-supabase.md, fase 4).
  *
- * 1. Refuse to run against a database that is BEHIND the migration files. The
- *    local DB only moves when someone runs `migration up`; a `git pull` does not
- *    touch it. Tests against a stale schema pass or fail for reasons that have
- *    nothing to do with the code under test — the worst kind of result.
+ * Every run drops and recreates `lp_test`, then applies db/migrations with the
+ * same runner production uses. So the suite never runs against a schema that
+ * is behind the files (the old setup had to refuse that case), and it proves on
+ * every run that the migrations alone produce a working database — no
+ * Supabase, no hand-made state.
  *
- * 2. Hand the stack's URLs and keys to the tests. They come from
- *    `supabase status`, not from a committed file, because the local keys are
- *    the CLI's to decide.
+ * Two URLs are handed to the tests:
+ * - `dbUrl`    — the owner. Fixtures, and the SQL harness that switches roles.
+ * - `appDbUrl` — the `app` role, with exactly the rights production gives the
+ *   application. Code under test (lib/backend) connects as this, so a missing
+ *   grant fails here instead of in production.
+ *
+ * TEST_DATABASE_URL points at the server (any database on it; default: the
+ * container from compose.dev.yml).
  */
 
 declare module "vitest" {
   export interface ProvidedContext {
     dbUrl: string;
-    apiUrl: string;
-    anonKey: string;
-    serviceRoleKey: string;
+    appDbUrl: string;
   }
 }
 
-function stackEnv(): Record<string, string> {
-  let out: string;
-  try {
-    // The CLI binary directly, not `pnpm exec`: pnpm may decide the install is
-    // stale and try to reinstall first, which fails without a TTY and would be
-    // reported here as "the stack is down".
-    out = execFileSync("node_modules/.bin/supabase", ["status", "-o", "env"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-  } catch (e) {
-    const detail = (e as { stderr?: string }).stderr?.trim().split("\n").slice(-2).join(" ") ?? "";
-    throw new Error(
-      "Stack Supabase lokal tidak jalan. Nyalakan dulu:\n" +
-        "  colima start && pnpm exec supabase start -x vector,logflare && pnpm exec supabase migration up --local\n" +
-        (detail ? `(supabase status: ${detail})` : ""),
-    );
-  }
-  const env: Record<string, string> = {};
-  for (const line of out.split("\n")) {
-    const m = line.match(/^([A-Z0-9_]+)="?(.*?)"?$/);
-    if (m) env[m[1]] = m[2];
-  }
-  return env;
-}
+/** Same as compose.dev.yml — roles belong to the server, so dev and tests share it. */
+const APP_PASSWORD = "app";
 
 export default async function setup(project: TestProject) {
-  const env = stackEnv();
-  const dbUrl = process.env.TEST_DATABASE_URL ?? env.DB_URL;
-  if (!dbUrl || !env.API_URL || !env.ANON_KEY || !env.SERVICE_ROLE_KEY) {
-    throw new Error("`supabase status -o env` tidak memberi DB_URL/API_URL/ANON_KEY/SERVICE_ROLE_KEY.");
-  }
+  const server = new URL(process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54329/postgres");
 
-  const newest = readdirSync("supabase/migrations")
-    .filter((f) => f.endsWith(".sql"))
-    .map((f) => f.split("_")[0])
-    .sort()
-    .at(-1);
-
-  const client = new pg.Client({ connectionString: dbUrl });
-  await client.connect();
+  const admin = new pg.Client({ connectionString: server.toString() });
   try {
-    const { rows } = await client.query<{ v: string | null }>(
-      "select max(version) as v from supabase_migrations.schema_migrations",
-    );
-    const applied = rows[0]?.v ?? "";
-    if (applied < (newest ?? "")) {
-      throw new Error(
-        `Database lokal tertinggal: migration terbaru yang diterapkan ${applied || "(tidak ada)"}, ` +
-          `file terbaru ${newest}. Jalankan: pnpm exec supabase migration up --local`,
-      );
-    }
-  } finally {
-    await client.end();
-  }
-
-  // 3. The running GoTrue must behave like production where the app depends on
-  //    it. Containers keep the config they were CREATED with: a stack started
-  //    in June kept confirming e-mails for months after config.toml turned that
-  //    off to mirror production, so signups here returned no session while in
-  //    production they did. `supabase start` alone does not fix it — the
-  //    containers must be recreated.
-  const settings = (await fetch(`${env.API_URL}/auth/v1/settings`, {
-    headers: { apikey: env.ANON_KEY },
-  }).then((r) => r.json())) as { mailer_autoconfirm?: boolean };
-  if (settings.mailer_autoconfirm !== true) {
+    await admin.connect();
+  } catch (e) {
     throw new Error(
-      "GoTrue lokal masih meminta konfirmasi email (mailer_autoconfirm=false), beda dengan produksi dan " +
-        "supabase/config.toml. Container-nya dibuat dengan config lama; buat ulang:\n" +
-        "  pnpm exec supabase stop && pnpm exec supabase start -x vector,logflare",
+      `Postgres tes tidak bisa dihubungi (${server.host}). Nyalakan dulu:\n` +
+        "  docker compose -f compose.dev.yml up -d\n" +
+        `(${e instanceof Error ? e.message : e})`,
     );
   }
+  try {
+    await admin.query("drop database if exists lp_test with (force)");
+    await admin.query("create database lp_test");
+  } finally {
+    await admin.end();
+  }
 
-  project.provide("dbUrl", dbUrl);
-  project.provide("apiUrl", env.API_URL);
-  project.provide("anonKey", env.ANON_KEY);
-  project.provide("serviceRoleKey", env.SERVICE_ROLE_KEY);
+  const dbUrl = new URL(server);
+  dbUrl.pathname = "/lp_test";
+  await migrate(dbUrl.toString(), { log: () => undefined });
+
+  // Roles are per server, not per database: the baseline creates `app` without
+  // a login (no password belongs in git); the test server gets one here, the
+  // same way db/init does on the real server.
+  const owner = new pg.Client({ connectionString: dbUrl.toString() });
+  await owner.connect();
+  try {
+    await owner.query(`alter role app login password '${APP_PASSWORD}'`);
+    await owner.query("grant connect on database lp_test to app");
+  } finally {
+    await owner.end();
+  }
+
+  const appDbUrl = new URL(dbUrl);
+  appDbUrl.username = "app";
+  appDbUrl.password = APP_PASSWORD;
+
+  project.provide("dbUrl", dbUrl.toString());
+  project.provide("appDbUrl", appDbUrl.toString());
 }

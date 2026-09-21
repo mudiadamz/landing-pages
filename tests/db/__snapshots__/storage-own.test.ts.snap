@@ -1,0 +1,58 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`konfigurasi bucket > dipatok — nilainya disalin dari storage.buckets Supabase sebelum dipensiunkan 1`] = `
+{
+  "chat-attachments": {
+    "allowedMimeTypes": [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/gif",
+      "application/pdf",
+      "text/plain",
+      "text/markdown",
+      "text/csv",
+      "text/html",
+      "text/xml",
+      "text/css",
+      "text/javascript",
+      "text/x-python",
+      "application/json",
+      "application/xml",
+      "application/javascript",
+      "application/octet-stream",
+    ],
+    "fileSizeLimit": 8388608,
+    "public": false,
+  },
+  "hiring-cv": {
+    "allowedMimeTypes": [
+      "application/pdf",
+    ],
+    "fileSizeLimit": 5242880,
+    "public": false,
+  },
+  "landing-assets": {
+    "allowedMimeTypes": null,
+    "fileSizeLimit": 52428800,
+    "public": true,
+  },
+  "landing-downloads": {
+    "allowedMimeTypes": [
+      "application/zip",
+      "application/x-zip-compressed",
+      "application/pdf",
+      "application/epub+zip",
+    ],
+    "fileSizeLimit": 52428800,
+    "public": false,
+  },
+  "publisher-kyc": {
+    "allowedMimeTypes": [
+      "image/jpeg",
+    ],
+    "fileSizeLimit": 5242880,
+    "public": false,
+  },
+}
+`;

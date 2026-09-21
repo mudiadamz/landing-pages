@@ -1,8 +1,9 @@
 # The gate. Two jobs, because they need different things:
 #
 #   unit — typecheck + the pure suite. No Docker, seconds.
-#   db   — the local Supabase stack, minimal, and tests/db against it: RLS,
-#          column grants, triggers, auth, storage, and the schema contract.
+#   db   — one plain Postgres container, and tests/db against it: RLS, column
+#          grants, triggers, auth, storage, and the schema contract. The suite
+#          builds its own database from db/migrations on every run.
 #
 # The db job is the one that matters for migrations. The pure suite stayed
 # green through a migration that broke every signup
@@ -39,7 +40,22 @@ jobs:
 
   db:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    # The same image production runs (docker-compose.yml). No Supabase: the
+    # point of this job since fase 4 of docs/plans/remove-supabase.md is that the
+    # security model holds on Postgres alone.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,19 +63,6 @@ jobs:
           node-version: 22
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-
-      # Only what the tests exercise: Postgres, GoTrue, PostgREST, Storage, and
-      # Kong in front of them (the tests use the same URLs the app does). A
-      # fresh start applies every migration and supabase/seed.sql, from the
-      # same config.toml the local stack uses — which is also what makes
-      # tests/db/global-setup.ts's "GoTrue behaves like production" check pass.
-      - name: Start Supabase (minimal)
-        run: >
-          pnpm exec supabase start
-          -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
-
       - run: pnpm test:db
-
-      - name: Stop Supabase
-        if: always()
-        run: pnpm exec supabase stop --no-backup
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54329/postgres

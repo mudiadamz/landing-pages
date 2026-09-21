@@ -70,10 +70,12 @@ Ringkasan yang paling sering dilanggar:
   - `allowBuilds` harus menjawab **setiap** install script dependency, termasuk
     yang ditolak; install gagal selama masih ada yang belum diputuskan.
 - **Dua suite tes.** `pnpm test` murni — jalan tanpa Docker. `pnpm test:db` butuh
-  stack Supabase lokal dan menguji database, RLS, grant, auth, dan storage yang
-  sungguhan; menolak jalan kalau DB tertinggal dari file migration atau GoTrue
-  lokal beda dari produksi. **Jalankan `pnpm test:db` setelah setiap migration** —
-  suite murni tetap hijau waktu seluruh pendaftaran akun patah.
+  satu container Postgres (`pnpm db:up`, `compose.dev.yml`), membangun database
+  `lp_test` dari nol lewat `db/migrations` setiap kali jalan, dan menguji
+  database, RLS, grant, auth, dan storage yang sungguhan. Kode yang diuji
+  tersambung sebagai role `app` — hak yang sama persis dengan produksi, jadi grant
+  yang kurang ketahuan di sini. **Jalankan `pnpm test:db` setelah setiap
+  migration** — suite murni tetap hijau waktu seluruh pendaftaran akun patah.
   - **Policy harus sama dengan gerbang aplikasinya.** Aksi yang menggerbang
     dengan `requireSiteAdmin`/`requireFeature` lalu menulis lewat client user
     butuh policy yang meloloskan orang yang sama — kalau tidak, layar itu gagal
@@ -89,8 +91,11 @@ Ringkasan yang paling sering dilanggar:
     setiap kolom yang disebut kode memang ada.
 - Server Actions semua di `lib/actions/*.ts`.
 - Kontak support hardcode di `lib/constants.ts` (`SUPPORT_CONTACT`).
-- **Deploy: Docker, bukan Vercel lagi.** `docker compose --env-file .env.production
-  up -d --build` di server; Caddy di depan mengurus TLS untuk semua domain lewat
+- **Deploy: Docker, bukan Vercel lagi — dan tanpa Supabase.** `docker compose
+  --env-file .env.production up -d --build` di server: `db` (postgres:17) →
+  `migrate` (sekali jalan, sebagai pemilik) → `app` (sebagai role `app`) → Caddy.
+  Backup: `scripts/backup.sh` dari cron; latihan restore: `scripts/restore-drill.sh`.
+  Caddy di depan mengurus TLS untuk semua domain lewat
   on-demand TLS, dan bertanya ke `/api/tls-check` (jawabannya dari `lp_sites`)
   sebelum menerbitkan sertifikat. `NEXT_PUBLIC_*` disulih saat **build** — ganti
   nilainya berarti build ulang, bukan restart.
@@ -303,7 +308,15 @@ wajib tidak tercatat sama sekali).
 
 ## Catatan migration
 
-- Migration berurutan timestamp di `supabase/migrations/`. **Jangan menyalin daftar
-  "yang terbaru" ke dokumen ini** — salinannya pasti basi (pernah tertinggal dua
-  bulan); `ls supabase/migrations | tail` yang benar.
-- Rangkaian `2026062100xx` adalah rename/merge tabel lama — perhatikan saat menyentuh nama tabel/kolom.
+- Migration berurutan timestamp di `db/migrations/`, diterapkan `pnpm db:migrate`
+  (`scripts/migrate.mjs`; di server: service `migrate`). Dimulai dari
+  `00000000000000_baseline.sql` — seluruh skema per 2026-09-22 plus shim (role
+  `anon`/`authenticated`/`service_role`/`app`, `auth.uid()`). **Migration yang sudah
+  jalan tidak boleh diubah** — runner menyimpan checksum dan menolaknya. **Jangan
+  menyalin daftar "yang terbaru" ke dokumen ini**; `ls db/migrations | tail` yang benar.
+- Riwayat sebelum baseline (91 migration era Supabase) ada di
+  `db/migrations/_archive/` — hanya bacaan; rangkaian `2026062100xx` di sana adalah
+  rename/merge tabel lama.
+- Tabel/skema baru yang dibaca aplikasi **tanpa** berganti role (seperti
+  `app_auth`) butuh grant ke `app` **dan** policy `to app` kalau RLS menyala —
+  `app` bukan pemilik dan tidak BYPASSRLS.

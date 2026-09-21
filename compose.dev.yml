@@ -1,0 +1,33 @@
+# Postgres untuk pengembangan & tes — satu container, menggantikan stack
+# Supabase lokal (docs/plans/remove-supabase.md, fase 4).
+#
+#   docker compose -f compose.dev.yml up -d
+#   pnpm db:migrate --seed   # terapkan db/migrations (+ contoh data) ke database dev
+#   pnpm test:db             # membuat database lp_test sendiri, dari nol
+#
+# Port 54329, bukan 5432: tidak bertabrakan dengan Postgres lain di mesin ini.
+name: lp-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lp
+      # Role `app` yang dipakai aplikasi, seperti di produksi (db/init). Tes
+      # memakai password yang sama (tests/db/global-setup.ts).
+      APP_DB_PASSWORD: app
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata_dev:

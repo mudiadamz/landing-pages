@@ -1,30 +1,70 @@
-# Deployment produksi: satu container app di belakang Caddy.
+# Deployment produksi: Postgres, app, dan Caddy — semuanya di server ini.
 #
 #   docker compose --env-file .env.production up -d --build
 #
-# Satu berkas env untuk keduanya: `--env-file` mengisi ${...} di bawah (build
-# arg), `env_file:` mengirim isinya ke dalam container (rahasia runtime). Dua
-# berkas terpisah akan menyimpan URL Supabase dua kali, dan salinan kedua itu
-# yang akan menyimpang.
+# Satu berkas env untuk semuanya: `--env-file` mengisi ${...} di bawah (build
+# arg & password database), `env_file:` mengirim isinya ke dalam container
+# (rahasia runtime). Dua berkas terpisah akan menyimpan nilai yang sama dua
+# kali, dan salinan kedua itu yang akan menyimpang.
 #
-# Supabase TIDAK ada di sini — tetap di project hosted. Yang di-self-host cuma
-# aplikasinya.
+# Urutan naik: db sehat → migrate (sekali jalan, db/migrations) sukses → app
+# sehat → caddy. Deploy yang membawa migration gagal BERHENTI di migrate: app
+# lama tetap jalan, app baru tidak pernah melihat skema setengah jadi.
+#
+# Tidak ada Supabase lagi (docs/plans/remove-supabase.md). Backup:
+# scripts/backup.sh dari cron host.
 
 services:
-  app:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD di .env.production}
+      POSTGRES_DB: lp
+      # Dibaca db/init/01-app-role.sh saat volume pertama kali dibuat.
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?isi APP_DB_PASSWORD di .env.production}
+    # Tidak ada `ports:` — database hanya dijangkau container lain di jaringan
+    # compose. Backup lewat `docker compose exec db pg_dump`.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "lp"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Sekali jalan per deploy, sebagai PEMILIK database (bukan `app`): migration
+  # membuat tabel dan memberi grant, aplikasi hanya membaca-menulis.
+  migrate:
+    image: lp-app
     build:
       context: .
-      args:
-        # Diulang di sini karena NEXT_PUBLIC_* disulih saat BUILD, bukan saat run.
-        # Menaruhnya hanya di `environment` akan menghasilkan bundle klien yang
-        # menunjuk ke Supabase yang salah — dan itu baru ketahuan di browser.
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      args: &build-args
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
         NEXT_PUBLIC_GTM_ID: ${NEXT_PUBLIC_GTM_ID:-}
         NEXT_PUBLIC_TAWK_PROPERTY_ID: ${NEXT_PUBLIC_TAWK_PROPERTY_ID:-}
         NEXT_PUBLIC_TAWK_WIDGET_ID: ${NEXT_PUBLIC_TAWK_WIDGET_ID:-}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+    command: ["node", "scripts/migrate.mjs"]
+    environment:
+      MIGRATE_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/lp
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    image: lp-app
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    build:
+      context: .
+      # Diulang di sini karena NEXT_PUBLIC_* disulih saat BUILD, bukan saat run.
+      # Menaruhnya hanya di `environment` akan menghasilkan bundle klien yang
+      # menunjuk ke tempat yang salah — dan itu baru ketahuan di browser.
+      args: *build-args
     restart: unless-stopped
     # Tidak ada `ports:`. App hanya dijangkau Caddy lewat jaringan compose —
     # port 3000 yang terbuka ke internet berarti ada jalan memutari TLS.
@@ -32,6 +72,10 @@ services:
       - "3000"
     env_file:
       - .env.production
+    environment:
+      # Menimpa DATABASE_URL apa pun di .env.production: di server ini aplikasi
+      # SELALU bicara ke container db, sebagai role `app`.
+      DATABASE_URL: postgresql://app:${APP_DB_PASSWORD}@db:5432/lp
     volumes:
       # Semua file unggahan. Ini DATA, bukan cache: ikut dicadangkan bersama
       # database (docs/plans/remove-supabase.md).
@@ -69,6 +113,7 @@ services:
         condition: service_healthy
 
 volumes:
+  pgdata:
   storage:
   caddy_data:
   caddy_config:

@@ -16,13 +16,14 @@ import { sql } from "./sql";
  */
 
 describe("permukaan keamanan", () => {
-  it("setiap policy di tabel lp_ dan storage.objects", async () => {
+  // storage.objects dropped out in fase 4: those rules live in
+  // lib/backend/storage.ts now (tests/db/storage-own.test.ts).
+  it("setiap policy di tabel lp_", async () => {
     const { rows } = await sql(
       `select tablename, policyname, cmd, array_to_string(roles, ',') as roles,
               coalesce(qual, '') as using, coalesce(with_check, '') as check
          from pg_policies
-        where (schemaname = 'public' and tablename like 'lp\\_%')
-           or (schemaname = 'storage' and tablename = 'objects')
+        where schemaname = 'public' and tablename like 'lp\\_%'
         order by tablename, policyname`,
     );
     expect(rows).toMatchSnapshot();

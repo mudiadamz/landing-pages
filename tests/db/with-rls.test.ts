@@ -1,3 +1,4 @@
+import pg from "pg";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { pool, resetPool } from "@/lib/backend/pool";
 import { withRls } from "@/lib/backend/rls";
@@ -17,7 +18,7 @@ const who = (c: { query: (s: string) => Promise<{ rows: { r: string; claims: str
 
 beforeAll(async () => {
   process.env.DATABASE_POOL_MAX = "1";
-  await resetPool(inject("dbUrl"));
+  await resetPool(inject("appDbUrl"));
 });
 
 afterAll(async () => {
@@ -63,9 +64,20 @@ describe("withRls — identitas tidak bocor antar pemanggil", () => {
   });
 
   it("RLS benar-benar berlaku di dalamnya — anon tidak melihat profil siapa pun", async () => {
+    // The database is built fresh for every run, so the profile is made here.
+    const owner = new pg.Client({ connectionString: inject("dbUrl") });
+    await owner.connect();
+    const { rows } = await owner.query(
+      `insert into auth.users (id, instance_id, aud, role, email, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+       values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $1, now(), now(), '{}', '{}')
+       returning id`,
+      [`rls-${crypto.randomUUID().slice(0, 8)}@test.local`],
+    );
     const n = await withRls("anon", async (c) => (await c.query("select count(*)::int as n from lp_profiles")).rows[0].n);
     expect(n).toBe(0);
     const all = await withRls("service_role", async (c) => (await c.query("select count(*)::int as n from lp_profiles")).rows[0].n);
     expect(all).toBeGreaterThan(0);
+    await owner.query("delete from auth.users where id = $1", [rows[0].id]);
+    await owner.end();
   });
 });

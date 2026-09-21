@@ -2,9 +2,9 @@ import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 /**
- * Tests that talk to the local Supabase stack — Postgres on :54322, and the
- * HTTP API on :54321 for auth and storage. Run with `pnpm test:db`, after
- * `pnpm exec supabase start` and `pnpm exec supabase migration up --local`.
+ * Tests that talk to a real Postgres — plain postgres:17, the container in
+ * compose.dev.yml (:54329). Run with `pnpm test:db` after `pnpm db:up`; the
+ * global setup builds a fresh `lp_test` database from db/migrations each run.
  *
  * Why this exists at all: the pure suite (`pnpm test`) stayed green through a
  * migration that broke every signup, because not one of its tests touched a
@@ -22,7 +22,8 @@ export default defineConfig({
     globalSetup: ["tests/db/global-setup.ts"],
     // One file at a time. SQL tests run inside a transaction that is rolled
     // back, but two files inserting the same unique value concurrently would
-    // block on each other's uncommitted row; the HTTP tests commit for real.
+    // block on each other's uncommitted row; the auth and storage tests commit
+    // for real.
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,

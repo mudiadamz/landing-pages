@@ -24,3 +24,4 @@ supabase/.temp
 .DS_Store
 tsconfig.tsbuildinfo
 .storage
+db/migrations/_archive

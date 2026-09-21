@@ -96,7 +96,7 @@ langsung. **Tidak ada user yang perlu reset sandi.** Identitas Google ada di
 | 1 | Lapisan data sendiri di atas Postgres Supabase yang sama | **L** | ✅ |
 | 2 | Storage sendiri (disk + URL bertanda) | M | ✅ |
 | 3 | Auth sendiri (sesi, sandi, Google) | **L, paling berisiko** | ✅ |
-| 4 | Postgres pindah ke server sendiri | M | ⬜ |
+| 4 | Postgres pindah ke server sendiri | M | ✅ |
 | 5 | Cutover produksi | S, butuh jendela pemeliharaan | ⬜ |
 | 6 | Bersih-bersih & penghapusan project Supabase | S | ⬜ |
 
@@ -379,53 +379,70 @@ Cloud Console. **Semua user logout sekali** — cookie `sb-*` lama tidak dikenal
 
 ---
 
-## Fase 4 — Postgres pindah ke server sendiri
+## Fase 4 — Postgres pindah ke server sendiri ✅
 
 **Tujuan:** database jalan di container `postgres:17-alpine` di server, di
 samping app dan Caddy.
 
-- **Baseline, bukan replay 91 migration.** Migration lama menyebut `storage.*`,
-  `supabase_realtime` dan `supabase_auth_admin` — tidak ada di Postgres polos —
-  serta membuat lalu membuang tabel app yang sudah pensiun (`20260921000000`). Buat `00000000000000_baseline.sql` dari
-  `pg_dump --schema-only` skema `public` (hanya `lp_*`) + skema `auth` yang dipakai.
-  Migration lama dipindah ke `supabase/migrations/_archive/` sebagai riwayat.
-- **Shim — hal kecil yang membuat semua policy tetap sama:**
+| File | Isi |
+|---|---|
+| `db/migrations/00000000000000_baseline.sql` | shim + seluruh skema (`pg_dump --schema-only` public + app_auth + auth.users/identities, dibersihkan dari pemilik & role internal Supabase) |
+| `db/migrations/_archive/` | 93 migration era Supabase, sebagai riwayat |
+| `scripts/migrate.mjs` | runner: berurutan, satu transaksi per file bersama catatannya, advisory lock, checksum (migration lama yang diubah → ditolak) |
+| `db/init/01-app-role.sh` | saat volume baru: role login `app` + password dari env |
+| `docker-compose.yml` | `db` → `migrate` (sekali jalan, pemilik) → `app` (role `app`) → Caddy |
+| `compose.dev.yml` | satu container untuk dev & tes (port 54329) |
+| `scripts/backup.sh` | `pg_dump -Fc` + tar `/srv/storage`, rotasi 14 hari, rclone opsional |
+| `scripts/restore-drill.sh` + `restore-verify.mjs` | restore ke database kosong, bandingkan jumlah baris per tabel, cek RLS & migration |
+| `scripts/import-supabase-data.sh` | alat cutover (Fase 5): data-only dari Supabase ke database baru |
 
-  ```sql
-  create role anon nologin;  create role authenticated nologin;
-  create role service_role nologin bypassrls;
-  create schema auth;
-  create function auth.uid() returns uuid language sql stable as $$
-    select nullif(nullif(current_setting('request.jwt.claims', true), '')::json->>'sub', '')::uuid
-  $$;
-  create function auth.role() returns text language sql stable as $$
-    select nullif(current_setting('request.jwt.claims', true), '')::json->>'role'
-  $$;
-  -- auth.users / auth.identities: hanya kolom yang dipakai aplikasi.
-  -- app_auth.sessions dipindah ke auth.sessions.
-  ```
+**Shim.** Role `anon`/`authenticated`/`service_role` (nologin; service_role
+BYPASSRLS), `auth.uid()`/`auth.role()` yang membaca klaim dari withRls — 62 policy
+dan semua grant tidak berubah satu huruf pun.
 
-  Role login aplikasi (`app`) diberi keanggotaan di ketiga role itu. Itu yang
-  membuat `set local role` bekerja.
-- **Runner migration sendiri** (`scripts/migrate.mjs`, ±50 baris): menerapkan
-  file SQL berurutan dan mencatat versi di tabel yang sama
-  (`supabase_migrations.schema_migrations`, diganti nama nanti). Format file
-  migration tidak berubah.
-- **Lokal & CI jadi satu container.** `docker compose` dengan `postgres:17-alpine`
-  menggantikan 5–8 container stack Supabase. CI memakai `services: postgres`.
-  `tests/db/global-setup.ts` membaca `DATABASE_URL` alih-alih `supabase status`.
-- **Backup — sekarang tanggung jawab kita.** `pg_dump` terjadwal + salinan
-  `/srv/storage` ke luar server (restic/rclone). **Latihan restore** ke database
-  kosong, lalu `pnpm test:db` di atasnya. Backup yang belum pernah di-restore
-  belum terbukti ada.
+**Role `app`, bukan pemilik.** Aplikasi tersambung sebagai `app`: anggota ketiga
+role itu `WITH INHERIT FALSE, SET TRUE` — boleh `set role`, tapi tanpa itu tidak
+menyentuh satu pun tabel `lp_`. Langsung ke `auth.users`, `auth.identities` dan
+`app_auth.*` saja (grant + policy `to app`; sengaja bukan BYPASSRLS). Migration
+dan backup memakai pemilik. **Menyimpang:** rancangan awal memindah
+`app_auth.sessions` ke `auth.sessions`; tidak dilakukan — tidak ada manfaatnya dan
+menambah satu migrasi data.
 
-**Tes — gerbang terpenting di seluruh rencana:** seluruh `pnpm test:db` hijau
-**melawan Postgres polos** yang dibangun dari baseline + shim. Kalau lolos, model
-keamanannya terbukti tidak bergantung pada Supabase. Snapshot `rls-surface`
-harus identik, kecuali policy storage yang sudah pensiun di Fase 2.
+**Tes — gerbangnya:** seluruh `pnpm test:db` (215) hijau **melawan Postgres
+polos** yang dibangun dari baseline setiap kali jalan, dengan kode yang diuji
+tersambung sebagai `app`. Snapshot `rls-surface` identik kecuali 9 policy
+`storage.objects` yang pensiun di Fase 2 (diff-nya murni penghapusan). Langsung
+menangkap dua hal: `app` tidak bisa menulis `auth.users` karena RLS (→ policy
+`to app`), dan satu tes yang diam-diam bergantung pada isi database lokal.
 
-**Selesai kalau:** CI hijau dengan satu container Postgres, dan latihan restore
-tercatat di sini.
+- Pensiun: `adapter-diff` (pembanding PostgREST — tugasnya selesai),
+  `storage-http` & `rls-storage` (Supabase Storage). Konfigurasi bucket kini
+  dipatok snapshot; tes `storage-migrate` memakai tiruan storage-api (termasuk
+  listing berhalaman > 1000 objek); tes login GoTrue memakai hash `$2a$10$` asli
+  yang ditangkap dari GoTrue v2.194.0.
+- Baru: `tests/db/migrate.test.ts` — sekali saja, file gagal tidak meninggalkan
+  apa pun, file lama yang diubah ditolak.
+- CI: `services: postgres:17-alpine`, tanpa `supabase start`.
+
+**Dijalankan sungguhan:**
+
+1. Data dari Supabase lokal (pengganti produksi) → `import-supabase-data.sh` →
+   `restore-verify` terhadap sumbernya: 31 tabel cocok, sequence ikut, RLS
+   berlaku.
+2. **Latihan restore** (2026-09-21): backup → server Postgres yang benar-benar
+   baru (role belum ada) → `restore-drill.sh` → 31 tabel cocok dengan sumbernya,
+   RLS berlaku, tidak ada migration tertinggal. pg_restore < 1 detik (data uji).
+3. **Gladi `docker-compose.yml` produksi:** image dibangun, `db` sehat → init
+   membuat `app` → `migrate` menerapkan baseline → `app` sehat; impor data;
+   login lewat form dengan akun lama (hash GoTrue) → `/panel`, `/panel/users`,
+   unggah & ambil file → 200. `backup.sh` terhadap stack itu, lalu latihan
+   restore dari backup-nya → cocok (sesi dari login tadi ikut ter-backup).
+4. `pnpm dev` di atas Postgres polos sebagai `app`: login + 9 halaman → 200,
+   tanpa error di log.
+
+**Yang tetap tanggung jawab Adam:** pasang cron `backup.sh`, isi
+`RCLONE_REMOTE` (tanpa itu backup ada di disk yang sama dengan database), dan
+ulangi latihan restore dengan backup produksi sungguhan setelah cutover.
 
 ---
 

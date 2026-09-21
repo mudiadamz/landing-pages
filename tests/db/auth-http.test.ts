@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
@@ -36,16 +35,20 @@ import { SESSION_COOKIE } from "@/lib/auth/cookie";
  * dies on the next request, and the expiry slides with use.
  *
  * New: an account made BY GOTRUE logs in with its old password — the one thing
- * that must hold for every user who signed up before this change.
+ * that must hold for every user who signed up before this change. The hash is
+ * a real one GoTrue wrote (captured from the local Supabase stack before it was
+ * retired), not one made by bcryptjs.
+ *
+ * The code under test connects as `app` (appDbUrl) — the role production
+ * gives the application — so a grant it lacks fails here.
  */
 
-const API = inject("apiUrl");
-const ANON = inject("anonKey");
-const SERVICE = inject("serviceRoleKey");
 const DB = inject("dbUrl");
+const APP_DB = inject("appDbUrl");
 
-const gotrue = createClient(API, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
-const gotrueAnon = () => createClient(API, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
+/** Written by GoTrue v2.194.0 for the password below. */
+const GOTRUE_HASH = "$2a$10$KdpxcXjEDLhfuwxrK.BmUO8f.xUZXnYt7ezP1wQpmQeIZBhRmwmqW";
+const GOTRUE_PASSWORD = "Sm0ke-pass-123";
 
 let raw: pg.Client;
 const created: string[] = [];
@@ -70,8 +73,8 @@ async function codeOf(p: Promise<unknown>): Promise<string> {
 }
 
 beforeAll(async () => {
-  await resetPool(DB);
-  process.env.DATABASE_URL = DB;
+  await resetPool(APP_DB);
+  process.env.DATABASE_URL = APP_DB;
   raw = new pg.Client({ connectionString: DB });
   await raw.connect();
 });
@@ -102,25 +105,24 @@ describe("pendaftaran", () => {
     const u = await ownUser();
     expect(await codeOf(signUpWithPassword({ email: u.email.toUpperCase(), password: PASSWORD }))).toBe("email_taken");
   });
-
-  it("baris yang ditulis tetap terbaca GoTrue (jalan mundur): user baru bisa masuk lewat GoTrue", async () => {
-    const u = await ownUser();
-    const { error } = await gotrueAnon().auth.signInWithPassword({ email: u.email, password: PASSWORD });
-    expect(error).toBeNull();
-  });
 });
 
 describe("masuk", () => {
   it("akun buatan GoTrue masuk dengan sandi lamanya ($2a$10$ apa adanya)", async () => {
     const e = email();
-    const { data, error } = await gotrue.auth.admin.createUser({ email: e, password: PASSWORD, email_confirm: true });
-    if (error) throw error;
-    created.push(data.user.id);
-    const { rows } = await raw.query("select encrypted_password from auth.users where id = $1", [data.user.id]);
-    expect(rows[0].encrypted_password).toMatch(/^\$2a\$10\$/);
+    const { rows } = await raw.query(
+      `insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+                               raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+       values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+               $1, $2, now(), '{"provider":"email","providers":["email"]}', '{}', now(), now())
+       returning id`,
+      [e, GOTRUE_HASH],
+    );
+    created.push(rows[0].id);
 
-    expect((await verifyPassword(e, PASSWORD)).id).toBe(data.user.id);
-    expect((await verifyPassword(e.toUpperCase(), PASSWORD)).id).toBe(data.user.id);
+    expect((await verifyPassword(e, GOTRUE_PASSWORD)).id).toBe(rows[0].id);
+    expect((await verifyPassword(e.toUpperCase(), GOTRUE_PASSWORD)).id).toBe(rows[0].id);
+    expect(await codeOf(verifyPassword(e, "Sm0ke-pass-124"))).toBe("invalid_credentials");
   });
 
   it("sandi salah dan email tak dikenal ditolak dengan pesan yang sama", async () => {

@@ -6,7 +6,7 @@ import { LOCALE_COOKIE, LOCALE_OPTIONS, pickLocale } from "@/lib/i18n/locales";
 import { siteBrand } from "@/lib/site-brand";
 import type { Site } from "@/lib/site-resolve";
 
-const MIGRATION = "supabase/migrations/20260814000000_site_locale.sql";
+const MIGRATION = "db/migrations/_archive/20260814000000_site_locale.sql";
 
 const SITE: Site = {
   id: "site-1",

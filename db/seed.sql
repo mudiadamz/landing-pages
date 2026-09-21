@@ -1,4 +1,4 @@
--- Optional seed data. Runs after migrations during `supabase db reset`.
+-- Optional seed data for a dev database: `pnpm db:migrate --seed`.
 -- Add sample data here if needed.
 
 -- Local test product: an EPUB preview. Points at public/sample-book.epub, which

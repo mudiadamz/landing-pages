@@ -20,6 +20,7 @@ import { GET as signedGet } from "@/app/storage/v1/object/sign/[bucket]/[...path
  */
 
 const DB = inject("dbUrl");
+const APP_DB = inject("appDbUrl");
 let raw: pg.Client;
 let root: string;
 let sellerId: string;
@@ -68,7 +69,7 @@ beforeAll(async () => {
   process.env.STORAGE_ROOT = root;
   process.env.STORAGE_SIGNING_SECRET = "uji-".padEnd(48, "x");
   process.env.NEXT_PUBLIC_SITE_URL = "http://site.test";
-  await resetPool(DB);
+  await resetPool(APP_DB);
   raw = new pg.Client({ connectionString: DB });
   await raw.connect();
   sellerId = await makeUser("agent");
@@ -89,12 +90,10 @@ afterAll(async () => {
 });
 
 describe("konfigurasi bucket", () => {
-  it("sama persis dengan storage.buckets yang masih hidup di Supabase", async () => {
-    const { rows } = await raw.query("select id, public, file_size_limit, allowed_mime_types from storage.buckets");
-    const live = Object.fromEntries(
-      rows.map((r) => [r.id, { public: r.public, fileSizeLimit: Number(r.file_size_limit), allowedMimeTypes: r.allowed_mime_types }]),
-    );
-    expect(BUCKETS).toEqual(live);
+  it("dipatok — nilainya disalin dari storage.buckets Supabase sebelum dipensiunkan", () => {
+    // Was compared against the live storage.buckets table until fase 4 removed
+    // it. A change here is a change to what uploads are accepted.
+    expect(BUCKETS).toMatchSnapshot();
   });
 });
 

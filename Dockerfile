@@ -42,24 +42,17 @@ COPY . .
 # NEXT_PUBLIC_* dibaca saat BUILD, bukan saat run.
 #
 # Next menyulih nilainya ke dalam bundle klien, jadi image yang sudah jadi
-# membawa URL Supabase dan anon key yang dipakai saat membangunnya. Mengubahnya
-# lewat `docker run -e` TIDAK berpengaruh pada apa pun yang berjalan di browser.
-# Karena itu keduanya build arg, dan image untuk staging harus DIBANGUN ULANG —
-# bukan dijalankan ulang dengan env yang berbeda.
-#
-# Anon key memang aman ikut ke dalam image: ia dikirim ke setiap browser
-# pengunjung. Yang TIDAK BOLEH ada di sini adalah service role key.
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+# membawa nilai yang dipakai saat membangunnya. Mengubahnya lewat
+# `docker run -e` TIDAK berpengaruh pada apa pun yang berjalan di browser.
+# Karena itu semuanya build arg, dan image untuk staging harus DIBANGUN ULANG —
+# bukan dijalankan ulang dengan env yang berbeda. Tidak satu pun rahasia.
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_GTM_ID=""
 ARG NEXT_PUBLIC_TAWK_PROPERTY_ID=""
 ARG NEXT_PUBLIC_TAWK_WIDGET_ID=""
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=""
 
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
-    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GTM_ID=$NEXT_PUBLIC_GTM_ID \
     NEXT_PUBLIC_TAWK_PROPERTY_ID=$NEXT_PUBLIC_TAWK_PROPERTY_ID \
     NEXT_PUBLIC_TAWK_WIDGET_ID=$NEXT_PUBLIC_TAWK_WIDGET_ID \
@@ -90,6 +83,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 # hidup, tapi tanpa CSS dan tanpa satu pun gambar.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Runner migration untuk service `migrate` di docker-compose.yml. Hanya butuh
+# `pg`, yang sudah ada di jejak standalone karena lib/backend memakainya.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.mjs ./scripts/migrate.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/db/migrations ./db/migrations
 
 # File unggahan (lib/backend/storage.ts). Direktori dibuat di sini dengan
 # pemilik nextjs supaya volume bernama yang di-mount ke sini mewarisi pemiliknya;
