@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { SaveBar } from "@/components/ui/save-bar";
 import { FileUploadCard } from "@/components/file-upload-card";
 import { updateSiteProfile, uploadSiteBrandImage } from "@/lib/actions/sites";
 import {
@@ -64,6 +65,7 @@ export function SiteProfileForm({
   const [pending, startTransition] = useTransition();
   const [draft, setDraft] = useState<SiteProfileInput>(initial);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
 
   const set = <K extends keyof SiteProfileInput>(key: K, value: SiteProfileInput[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -91,17 +93,7 @@ export function SiteProfileForm({
 
   return (
     <div className="space-y-4">
-      {message && (
-        <p
-          className={`rounded-xl border px-3 py-2.5 text-sm ${
-            message.type === "ok"
-              ? "border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-400"
-              : "border-red-500/30 bg-red-500/5 text-red-700 dark:text-red-400"
-          }`}
-        >
-          {message.text}
-        </p>
-      )}
+
 
       {/* 1 — Identity */}
       <section className={CARD}>
@@ -379,11 +371,17 @@ export function SiteProfileForm({
         </p>
       </section>
 
-      <div className="flex justify-end gap-2">
-        <Button onClick={save} loading={pending} disabled={pending}>
-          {t("product.saveChanges")}
-        </Button>
-      </div>
+      <SaveBar
+        dirty={dirty}
+        saving={pending}
+        onSave={save}
+        saveLabel={t("product.saveChanges")}
+        savingLabel={t("common.saving")}
+        unsavedLabel={t("common.unsavedChanges")}
+        saved={message?.type === "ok"}
+        savedLabel={t("common.saved")}
+        error={message?.type === "err" ? message.text : null}
+      />
     </div>
   );
 }

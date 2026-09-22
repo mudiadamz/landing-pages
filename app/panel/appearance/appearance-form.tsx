@@ -11,6 +11,7 @@ import {
   type PaletteTokens,
 } from "@/lib/palette";
 import { Button } from "@/components/ui/button";
+import { SaveBar } from "@/components/ui/save-bar";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
 
@@ -43,6 +44,9 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
   const [tokens, setTokens] = useState<PaletteTokens>(initial.tokens);
   const [saving, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const dirty =
+    preset !== initial.preset ||
+    JSON.stringify(tokens) !== JSON.stringify(initial.tokens);
 
   const choose = (key: string) => {
     setPreset(key);
@@ -166,18 +170,17 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button size="md" onClick={save} disabled={saving}>
-          {saving ? t("common.saving") : t("panel.savePalette")}
-        </Button>
-        {msg && (
-          <span
-            className={`text-sm ${msg.ok ? "text-[var(--primary)]" : "text-red-600 dark:text-red-400"}`}
-          >
-            {msg.text}
-          </span>
-        )}
-      </div>
+      <SaveBar
+        dirty={dirty}
+        saving={saving}
+        onSave={save}
+        saveLabel={t("panel.savePalette")}
+        savingLabel={t("common.saving")}
+        unsavedLabel={t("common.unsavedChanges")}
+        saved={!!msg?.ok}
+        savedLabel={msg?.ok ? msg.text : t("panel.paletteSaved")}
+        error={msg && !msg.ok ? msg.text : null}
+      />
     </div>
   );
 }

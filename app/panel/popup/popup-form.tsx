@@ -72,7 +72,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
           type="checkbox"
           checked={cfg.enabled}
           onChange={(e) => set("enabled", e.target.checked)}
-          className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+          className="mt-0.5 h-5 w-5 accent-[var(--primary)]"
         />
         <span className="text-sm">
           <span className="font-medium text-foreground">{t("panel.popupEnable")}</span>
@@ -158,7 +158,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
             type="checkbox"
             checked={cfg.exitIntent}
             onChange={(e) => set("exitIntent", e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+            className="mt-0.5 h-5 w-5 accent-[var(--primary)]"
           />
           <span className="text-sm">
             <span className="font-medium text-foreground">{t("panel.popupExit")}</span>
@@ -194,7 +194,7 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
         <label className="flex items-start gap-2">
           <input type="checkbox" checked={cfg.emailCapture}
             onChange={(e) => set("emailCapture", e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-[var(--primary)]" />
+            className="mt-0.5 h-5 w-5 accent-[var(--primary)]" />
           <span className="text-sm">
             <span className="font-medium text-foreground">{t("panel.popupAskEmail")}</span>
             <span className="mt-0.5 block text-xs text-[var(--muted)]">

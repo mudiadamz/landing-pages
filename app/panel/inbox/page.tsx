@@ -4,6 +4,7 @@ import { requireFeature } from "@/lib/actions/profiles";
 import { getReceivedEmailsForAdmin, getReceivedEmailById } from "@/lib/actions/received-emails";
 import { DeleteEmailButton } from "./delete-email-button";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { translator } from "@/lib/i18n";
 import { SUPPORT_CONTACT } from "@/lib/constants";
 import { requestLocale } from "@/lib/i18n/request";
@@ -41,12 +42,10 @@ export default async function InboxPage({ searchParams }: Props) {
       <PanelPageHeader backHref="/panel" title={t("panel.titleInbox", { address: SUPPORT_CONTACT.email })} />
 
       {emails.length === 0 ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-          <p className="text-sm text-[var(--muted)]">{t("panel.noInboxEmails")}</p>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            {t("panel.inboxEmpty", { address: SUPPORT_CONTACT.email })}
-          </p>
-        </div>
+        <EmptyState
+          title={t("panel.noInboxEmails")}
+          description={t("panel.inboxEmpty", { address: SUPPORT_CONTACT.email })}
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className={`lg:col-span-1 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm max-h-[70vh] flex flex-col ${detail ? "hidden lg:flex" : ""}`}>

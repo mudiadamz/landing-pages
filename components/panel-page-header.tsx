@@ -47,7 +47,9 @@ export async function PanelPageHeader({
           href={backHref}
           // -ml-2 pulls the padding back out to the page edge, so the row starts
           // where the title would have without giving up the 44px touch target.
-          className="-ml-2 flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground"
+          // md:hidden — on desktop the sidebar is always visible, so a back arrow
+          // is redundant (audit); on mobile the sidebar is a drawer, so it stays.
+          className="-ml-2 flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:hidden"
         >
           <span aria-hidden>←</span>
           <span className="sr-only sm:not-sr-only">{back}</span>

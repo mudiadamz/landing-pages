@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { SaveBar } from "@/components/ui/save-bar";
 import { uploadLibraryAsset } from "@/lib/actions/assets";
 import { updateHero } from "@/lib/actions/site-settings";
 import { DEFAULT_HERO, type HeroConfig, type HeroFeature, type HeroIcon } from "@/lib/hero-config";
@@ -30,6 +30,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const dirty = JSON.stringify(hero) !== JSON.stringify(initialHero);
 
   function set<K extends keyof HeroConfig>(key: K, value: HeroConfig[K]) {
     setHero((h) => ({ ...h, [key]: value }));
@@ -188,26 +189,27 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3 pt-2 border-t border-[var(--border)]">
-        <Button size="md" onClick={handleSave} loading={pending} disabled={pending || uploading}>
-          {pending ? t("common.saving") : t("common.save")}
-        </Button>
-        <button
-          type="button"
-          className="text-sm text-[var(--muted)] hover:text-foreground"
-          onClick={() => {
-            setHero(DEFAULT_HERO);
-            setStatus(null);
-          }}
-        >
-          {t("content.resetDefaults")}
-        </button>
-        <Link href="/" target="_blank" className="text-sm text-[var(--muted)] hover:text-foreground ml-auto">
-          {t("content.viewHomepage")}
-        </Link>
-        {status?.error && <span className="text-sm text-red-600">{status.error}</span>}
-        {status?.ok && <span className="text-sm text-green-600">{t("common.saved")}</span>}
-      </div>
+      <SaveBar
+        dirty={dirty}
+        saving={pending}
+        onSave={handleSave}
+        saveLabel={t("common.save")}
+        savingLabel={t("common.saving")}
+        unsavedLabel={t("common.unsavedChanges")}
+        saved={!!status?.ok}
+        savedLabel={t("common.saved")}
+        error={status?.error ?? null}
+        onReset={() => {
+          setHero(DEFAULT_HERO);
+          setStatus(null);
+        }}
+        resetLabel={t("content.resetDefaults")}
+        extra={
+          <Link href="/" target="_blank" className="text-sm text-[var(--muted)] hover:text-foreground">
+            {t("content.viewHomepage")}
+          </Link>
+        }
+      />
     </div>
   );
 }

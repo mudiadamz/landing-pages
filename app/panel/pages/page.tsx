@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { listPages } from "@/lib/actions/pages";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { NewPageButton } from "./new-page-button";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
@@ -34,9 +35,7 @@ export default async function PagesIndex() {
       </p>
 
       {pages.length === 0 ? (
-        <p className="rounded-2xl bg-[var(--accent-subtle)] px-6 py-12 text-center text-sm text-[var(--muted)]">
-          {t("panel.noPages")}
-        </p>
+        <EmptyState title={t("panel.noPages")} action={<NewPageButton />} />
       ) : (
         <ul className="space-y-2">
           {pages.map((p) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -24,6 +24,12 @@ export function AssetLibraryModal({
 }) {
   const t = useT();
   const [mounted, setMounted] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Move focus into the dialog when it opens, so keyboard/AT users land inside it
+  // instead of behind it (WCAG 2.4.3 / 4.1.2). Esc-to-close already works.
+  useEffect(() => {
+    if (open) dialogRef.current?.focus();
+  }, [open]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -89,6 +95,7 @@ export function AssetLibraryModal({
 
   if (!mounted || !open) return null;
 
+
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
@@ -97,10 +104,12 @@ export function AssetLibraryModal({
         aria-hidden
       />
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Assets"
-        className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
+        className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl focus:outline-none"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3 p-5 border-b border-[var(--border)]">

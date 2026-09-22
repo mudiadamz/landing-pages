@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { SaveBar } from "@/components/ui/save-bar";
 import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 import { updateSiteContent } from "@/lib/actions/site-settings";
 import { uploadLibraryAsset } from "@/lib/actions/assets";
@@ -198,6 +198,8 @@ async function sampleTopColor(url: string): Promise<string> {
   // one nav entry, and a shareable link to "the FAQ tab" is not a thing anyone
   // has ever needed.
   const [tab, setTab] = useState<"founder" | "pages" | "buyer" | "legal" | "footer">("founder");
+
+  const dirty = JSON.stringify(content) !== JSON.stringify(initialContent);
 
   function handleSave() {
     startTransition(async () => {
@@ -831,26 +833,27 @@ async function sampleTopColor(url: string): Promise<string> {
       )}
 
       {/* Actions */}
-      <div className="sticky bottom-0 flex items-center gap-3 border-t border-[var(--border)] bg-[var(--background)] py-3">
-        <Button size="md" onClick={handleSave} loading={pending} disabled={pending}>
-          {pending ? t("common.saving") : t("common.save")}
-        </Button>
-        <button
-          type="button"
-          className="text-sm text-[var(--muted)] hover:text-foreground"
-          onClick={() => {
-            setContent(DEFAULT_CONTENT);
-            setStatus(null);
-          }}
-        >
-          {t("content.resetDefaults")}
-        </button>
-        <Link href="/" target="_blank" className="ml-auto text-sm text-[var(--muted)] hover:text-foreground">
-          {t("content.viewHomepage")}
-        </Link>
-        {status?.error && <span className="text-sm text-red-600">{status.error}</span>}
-        {status?.ok && <span className="text-sm text-green-600">{t("common.saved")}</span>}
-      </div>
+      <SaveBar
+        dirty={dirty}
+        saving={pending}
+        onSave={handleSave}
+        saveLabel={t("common.save")}
+        savingLabel={t("common.saving")}
+        unsavedLabel={t("common.unsavedChanges")}
+        saved={!!status?.ok}
+        savedLabel={t("common.saved")}
+        error={status?.error ?? null}
+        onReset={() => {
+          setContent(DEFAULT_CONTENT);
+          setStatus(null);
+        }}
+        resetLabel={t("content.resetDefaults")}
+        extra={
+          <Link href="/" target="_blank" className="text-sm text-[var(--muted)] hover:text-foreground">
+            {t("content.viewHomepage")}
+          </Link>
+        }
+      />
     </div>
   );
 }

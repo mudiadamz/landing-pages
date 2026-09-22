@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SiteLogo } from "@/components/site-logo";
 import { BrandMark } from "@/components/brand-mark";
@@ -90,13 +91,23 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
     ],
   },
   {
-    labelKey: "panel.navGroupSite",
+    // Split out of the old 9-item "Situs" group: the storefront's identity and
+    // structure — where it lives and what it is called.
+    labelKey: "panel.navGroupBranding",
     items: [
       { href: "/panel/sites", labelKey: "panel.navDomains", icon: GlobeIcon, adminOnly: true },
       // Directly after Domain: same object, opposite half. Domain is the plumbing
       // (hostname, DNS, on/off), this is the content (name, logo, template, niche).
       { href: "/panel/branding", labelKey: "panel.navBranding", icon: BadgeIcon, adminOnly: true },
       { href: "/panel/categories", labelKey: "panel.navCategories", icon: TagIcon, feature: "categories" },
+      { href: "/panel/links", labelKey: "panel.navLinks", icon: ChainIcon, adminOnly: true },
+    ],
+  },
+  {
+    // The other half of the old "Situs" group: the pages and copy the storefront
+    // shows.
+    labelKey: "panel.navGroupContent",
+    items: [
       { href: "/panel/hero", labelKey: "panel.navHero", icon: HeroIcon, feature: "hero" },
       { href: "/panel/content", labelKey: "panel.navContent", icon: DocIcon, feature: "content" },
       // Beside Konten situs: same job, different surface — that one is homepage
@@ -106,7 +117,6 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       // Other places the owner exists, not other storefronts this app serves —
       // those are "Domain" above.
       { href: "/panel/pages", labelKey: "panel.navPages", icon: PageIcon, adminOnly: true },
-      { href: "/panel/links", labelKey: "panel.navLinks", icon: ChainIcon, adminOnly: true },
     ],
   },
   {
@@ -322,6 +332,32 @@ function NavContent({
   const t = useT();
   const pathname = usePathname();
 
+  // Collapsible groups (audit: 26 items, ~14 fit before scrolling). State is
+  // persisted so a rarely-opened group stays folded across visits. Only applies
+  // in the expanded sidebar — the icon rail has no group headings to fold.
+  const [foldedGroups, setFoldedGroups] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("panel-folded-groups");
+      if (raw) setFoldedGroups(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const toggleGroup = (key: string) => {
+    setFoldedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem("panel-folded-groups", JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
   const isVisible = (item: NavItem) => {
     if (item.everyone) return true;
     if (item.adminOnly) return accountType === "company";
@@ -337,18 +373,32 @@ function NavContent({
           const visibleItems = group.items.filter(isVisible);
           if (visibleItems.length === 0) return null;
 
+          const folded = !collapsed && foldedGroups.has(group.labelKey);
           return (
             <div key={group.labelKey}>
               {/* A group heading in a 64px rail is a truncated word, so it goes.
-                  The gap between groups still carries the grouping. */}
-              <p
-                className={`mb-1 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70 ${
+                  In the expanded sidebar it doubles as a fold toggle. The gap
+                  between groups still carries the grouping in the rail. */}
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.labelKey)}
+                aria-expanded={!folded}
+                className={`mb-1 flex w-full items-center justify-between gap-2 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70 transition-colors hover:text-[var(--muted)] ${
                   collapsed ? "md:hidden" : ""
                 }`}
               >
-                {t(group.labelKey)}
-              </p>
-              <div className="flex flex-col gap-0.5">
+                <span className="truncate">{t(group.labelKey)}</span>
+                <svg
+                  className={`h-3 w-3 shrink-0 transition-transform ${folded ? "-rotate-90" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div className={`flex flex-col gap-0.5 ${folded ? "hidden" : ""}`}>
                 {visibleItems.map((item) => {
                   // Exact for /panel — as a prefix it would light up on every page.
                   // Elsewhere the trailing slash keeps /panel/product off /panel/products.

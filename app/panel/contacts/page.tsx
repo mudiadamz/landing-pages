@@ -5,6 +5,7 @@ import { getContactsForAdmin } from "@/lib/actions/contacts";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 import { PanelPageHeader } from "@/components/panel-page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -39,9 +40,10 @@ export default async function ContactsPage() {
       />
 
       {contacts.length === 0 ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-          {t("panel.noContacts")}
-        </div>
+        <EmptyState
+          title={t("panel.noContacts")}
+          description={t("panel.contactsEmpty")}
+        />
       ) : (
         <>
           <div className="sm:hidden space-y-3">

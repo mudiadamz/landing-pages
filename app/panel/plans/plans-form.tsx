@@ -121,7 +121,7 @@ export function PlansForm({
               setEnabled(e.target.checked);
               setStatus(null);
             }}
-            className="h-4 w-4 accent-[var(--primary)]"
+            className="h-5 w-5 accent-[var(--primary)]"
           />
           {t("plan.showToVisitors")}
         </label>
@@ -166,7 +166,7 @@ export function PlansForm({
                     type="checkbox"
                     checked={m.visible}
                     onChange={(e) => setMetaField(def.key, "visible", e.target.checked)}
-                    className="h-4 w-4 accent-[var(--primary)]"
+                    className="h-5 w-5 accent-[var(--primary)]"
                   />
                   {t("plan.tierVisible")}
                 </label>
@@ -253,7 +253,7 @@ export function PlansForm({
                   type="checkbox"
                   checked={l.chatWebSearch}
                   onChange={(e) => setLimit(def.key, "chatWebSearch", e.target.checked)}
-                  className="h-4 w-4 accent-[var(--primary)]"
+                  className="h-5 w-5 accent-[var(--primary)]"
                 />
                 {t("plan.colWeb")}
               </label>

@@ -1,20 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { updateTracking } from "@/lib/actions/site-settings";
-import { Button } from "@/components/ui/button";
+import { SaveBar } from "@/components/ui/save-bar";
 import { useT } from "@/lib/i18n/client";
-
-function SubmitButton() {
-  const t = useT();
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" size="md" loading={pending} disabled={pending} className="hover:opacity-90 disabled:opacity-60">
-      {pending ? t("common.saving") : t("common.save")}
-    </Button>
-  );
-}
 
 export function TrackingForm({
   initialGtmId,
@@ -28,7 +17,7 @@ export function TrackingForm({
   siteId: string;
 }) {
   const t = useT();
-  const [state, formAction] = useActionState(
+  const [state, formAction, pending] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, formData: FormData) => {
       const gtmId = (formData.get("gtmId") as string) ?? "";
       const tawkPropertyId = (formData.get("tawkPropertyId") as string) ?? "";
@@ -40,6 +29,18 @@ export function TrackingForm({
   const [gtmId, setGtmId] = useState(initialGtmId);
   const [tawkPropertyId, setTawkPropertyId] = useState(initialTawkPropertyId);
   const [tawkWidgetId, setTawkWidgetId] = useState(initialTawkWidgetId);
+  const dirty =
+    gtmId !== initialGtmId ||
+    tawkPropertyId !== initialTawkPropertyId ||
+    tawkWidgetId !== initialTawkWidgetId;
+
+  function handleSave() {
+    const fd = new FormData();
+    fd.set("gtmId", gtmId);
+    fd.set("tawkPropertyId", tawkPropertyId);
+    fd.set("tawkWidgetId", tawkWidgetId);
+    formAction(fd);
+  }
 
   // No effect syncing these back from props: the page renders this form with
   // `key={site.id}`, so switching storefront remounts it with fresh initial
@@ -120,11 +121,17 @@ export function TrackingForm({
         <p className="mt-1 text-xs text-[var(--muted)]">{t("panel.tawkEmptyHint")}</p>
       </div>
 
-      <div className="flex items-center gap-3">
-        <SubmitButton />
-        {state?.error && <span className="text-sm text-red-600">{state.error}</span>}
-        {state?.ok && <span className="text-sm text-green-600">{t("common.saved")}</span>}
-      </div>
+      <SaveBar
+        dirty={dirty}
+        saving={pending}
+        onSave={handleSave}
+        saveLabel={t("common.save")}
+        savingLabel={t("common.saving")}
+        unsavedLabel={t("common.unsavedChanges")}
+        saved={!!state?.ok}
+        savedLabel={t("common.saved")}
+        error={state?.error ?? null}
+      />
     </form>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getMyFavorites } from "@/lib/actions/likes";
+import { EmptyState } from "@/components/ui/empty-state";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -24,19 +25,18 @@ export default async function FavoritesPage() {
       </div>
 
       {favorites.length === 0 ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 sm:p-12 text-center shadow-sm">
-          <p className="text-sm text-[var(--muted)]">
-            {t("panel.noFavorites")}
-          </p>
-          <div className="mt-4 flex justify-center">
+        <EmptyState
+          title={t("panel.noFavoritesYet")}
+          description={t("panel.noFavoritesHint")}
+          action={
             <Link
               href="/"
               className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] transition-transform active:scale-95"
             >
               {t("panel.dashBrowse")}
             </Link>
-          </div>
-        </div>
+          }
+        />
       ) : (
         <ul className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm divide-y divide-[var(--border)]">
           {favorites.map((p) => {

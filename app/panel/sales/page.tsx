@@ -6,6 +6,7 @@ import { getCustomers, type CustomerRow } from "@/lib/actions/admin";
 import { CustomerPurchasesButton } from "./customer-purchases";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
+import { EmptyState } from "@/components/ui/empty-state";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -153,7 +154,7 @@ async function RecentSales({ rows }: { rows: RecentSale[] }) {
       </h2>
 
       {rows.length === 0 ? (
-        <Empty>{t("sales.noTransactions")}</Empty>
+        <EmptyState title={t("sales.noTransactions")} />
       ) : (
         <>
           <ul className="space-y-3 sm:hidden">
@@ -223,7 +224,18 @@ async function PerProduct({ data }: { data: SalesOverview }) {
       </h2>
 
       {data.products.length === 0 ? (
-        <Empty>{t("sales.noProducts")}</Empty>
+        <EmptyState
+          title={t("sales.noProducts")}
+          description={t("sales.noProductsHint")}
+          action={
+            <Link
+              href="/panel/product/new"
+              className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] transition-transform active:scale-95"
+            >
+              {t("panel.createNewProduct")}
+            </Link>
+          }
+        />
       ) : (
         <>
           <ul className="space-y-3 sm:hidden">
@@ -295,7 +307,7 @@ async function Customers({ customers }: { customers: CustomerRow[] }) {
       </h2>
 
       {customers.length === 0 ? (
-        <Empty>{t("sales.noCustomers")}</Empty>
+        <EmptyState title={t("sales.noCustomers")} />
       ) : (
         <>
           <ul className="space-y-3 sm:hidden">
@@ -411,13 +423,5 @@ async function RevokedTag() {
     <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[0.6875rem] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
       {t("sales.revokedTag")}
     </span>
-  );
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center shadow-sm">
-      <p className="text-sm text-[var(--muted)]">{children}</p>
-    </div>
   );
 }
