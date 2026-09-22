@@ -134,11 +134,13 @@ describe("lp_profiles — setiap kolom sudah diputuskan", () => {
   const USER_INSERTS = ["full_name", "id"];
   const SERVICE_ONLY = [
     "account_type",
+    "business_id",
     "email",
     "email_verified_at",
     "exclude_from_stats",
     "id",
     "is_active",
+    "is_platform",
     "plan",
     "plan_expires_at",
   ];

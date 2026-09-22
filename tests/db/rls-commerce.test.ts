@@ -234,7 +234,7 @@ describe("lp_landing_pages — mengubah produk", () => {
     // UPDATE and INSERT are granted column by column (everything except the
     // list below). A column added later is therefore NOT writable until someone
     // grants it — the avatar_url trap. This makes that decision loud.
-    const SERVICE_ONLY = ["id", "like_count", "rating", "sold_count", "view_count"];
+    const SERVICE_ONLY = ["business_id", "id", "like_count", "rating", "sold_count", "view_count"];
     for (const priv of ["UPDATE", "INSERT"]) {
       const { rows } = await sql<{ c: string }>(
         `select c.column_name as c from information_schema.columns c

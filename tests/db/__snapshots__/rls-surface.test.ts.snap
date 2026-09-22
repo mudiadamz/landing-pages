@@ -69,6 +69,30 @@ exports[`permukaan keamanan > grant tulis per kolom untuk authenticated (tabel y
 exports[`permukaan keamanan > setiap policy di tabel lp_ 1`] = `
 [
   {
+    "check": "true",
+    "cmd": "ALL",
+    "policyname": "Service role manages lp_business_ledger",
+    "roles": "service_role",
+    "tablename": "lp_business_ledger",
+    "using": "true",
+  },
+  {
+    "check": "true",
+    "cmd": "ALL",
+    "policyname": "Service role manages lp_business_members",
+    "roles": "service_role",
+    "tablename": "lp_business_members",
+    "using": "true",
+  },
+  {
+    "check": "true",
+    "cmd": "ALL",
+    "policyname": "Service role manages lp_businesses",
+    "roles": "service_role",
+    "tablename": "lp_businesses",
+    "using": "true",
+  },
+  {
     "check": "((auth.uid() = user_id) AND (EXISTS ( SELECT 1
    FROM lp_chat_messages m
   WHERE ((m.id = lp_chat_attachments.message_id) AND (m.user_id = auth.uid())))))",
