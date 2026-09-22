@@ -67,6 +67,9 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
 
   return (
     <div className="space-y-5">
+      {/* Live preview — the popup as configured (audit). */}
+      <PopupPreview cfg={cfg} label={t("panel.livePreview")} />
+
       <label className="flex items-start gap-2">
         <input
           type="checkbox"
@@ -252,6 +255,56 @@ export function PopupForm({ initial, siteId }: { initial: PopupBanner; siteId: s
             {msg.text}
           </span>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A live rendering of the promo popup as configured. The real popup only appears
+ * when enabled AND an image is set; this preview says so rather than pretending.
+ */
+function PopupPreview({ cfg, label }: { cfg: PopupBanner; label: string }) {
+  const wouldShow = cfg.enabled && !!cfg.imageUrl;
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-2">
+        <span className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">{label}</span>
+        {!wouldShow && (
+          <span className="text-[0.625rem] text-[var(--muted)]">
+            {cfg.enabled ? "—" : "off"}
+          </span>
+        )}
+      </div>
+      <div className="flex justify-center p-5 sm:p-8">
+        <div className="w-full max-w-xs overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)] shadow-lg">
+          {cfg.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cfg.imageUrl} alt={cfg.alt} className="h-32 w-full object-cover" />
+          ) : (
+            <div className="flex h-24 items-center justify-center bg-[var(--accent-subtle)] text-xs text-[var(--muted)]">
+              —
+            </div>
+          )}
+          <div className="space-y-2 p-4 text-center">
+            {cfg.eyebrow && (
+              <p className="text-[0.625rem] font-medium uppercase tracking-wider text-[var(--muted)]">{cfg.eyebrow}</p>
+            )}
+            {cfg.title && <p className="text-sm font-semibold text-foreground">{cfg.title}</p>}
+            {cfg.body && <p className="text-xs text-[var(--muted)]">{cfg.body}</p>}
+            {cfg.emailCapture && (
+              <div className="h-8 rounded-lg border border-[var(--border)] bg-[var(--card)]" />
+            )}
+            {cfg.ctaLabel && (
+              <div className="rounded-lg bg-[var(--primary)] px-3 py-2 text-xs font-semibold text-[var(--primary-foreground)]">
+                {cfg.ctaLabel}
+              </div>
+            )}
+            {cfg.dismissLabel && (
+              <p className="text-[0.6875rem] text-[var(--muted)]">{cfg.dismissLabel}</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

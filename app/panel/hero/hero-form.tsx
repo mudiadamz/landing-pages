@@ -71,6 +71,9 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
 
   return (
     <div className="space-y-6">
+      {/* Live preview — reflects the draft as you type (audit). */}
+      <HeroPreview hero={hero} label={t("panel.livePreview")} />
+
       {/* Badge */}
       <div>
         <label className={labelCls} htmlFor="hero-badge">Badge</label>
@@ -210,6 +213,89 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
           </Link>
         }
       />
+    </div>
+  );
+}
+
+/* Inline markup used by the real hero: *text* = brand highlight, ~text~ = accent. */
+function renderMarkup(text: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  const re = /(\*[^*]+\*|~[^~]+~)/g;
+  let last = 0;
+  let key = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const tok = m[0];
+    const inner = tok.slice(1, -1);
+    out.push(
+      <span key={key++} className={tok.startsWith("*") ? "text-[var(--primary)]" : "italic text-[var(--primary)] underline decoration-2 underline-offset-4"}>
+        {inner}
+      </span>,
+    );
+    last = m.index + tok.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+/**
+ * A compact, live rendering of the hero draft. Not the real HomeHero (that is an
+ * async server component); a faithful-enough client mirror so copy, markup and
+ * CTAs can be judged without leaving the editor.
+ */
+function HeroPreview({ hero, label }: { hero: HeroConfig; label: string }) {
+  const empty = !hero.heading && !hero.subheading && !hero.primaryLabel;
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-2">
+        <span className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">{label}</span>
+      </div>
+      <div className="p-5 sm:p-8">
+        {empty ? (
+          <p className="py-6 text-center text-sm text-[var(--muted)]">—</p>
+        ) : (
+          <div className="mx-auto max-w-xl text-center">
+            {hero.badge && (
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] px-3 py-1 text-xs text-[var(--muted)]">
+                <span className="h-2 w-2 rounded-full bg-[var(--accent-cool)]" />
+                {hero.badge.replace(/\{count\}/g, "12")}
+              </span>
+            )}
+            {hero.heading && (
+              <h2 className="text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
+                {renderMarkup(hero.heading)}
+              </h2>
+            )}
+            {hero.subheading && (
+              <p className="mt-3 text-sm text-[var(--muted)] sm:text-base">{renderMarkup(hero.subheading)}</p>
+            )}
+            {(hero.primaryLabel || hero.secondaryLabel) && (
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                {hero.primaryLabel && (
+                  <span className="rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-[var(--primary-foreground)]">
+                    {hero.primaryLabel}
+                  </span>
+                )}
+                {hero.secondaryLabel && (
+                  <span className="rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm font-medium text-foreground">
+                    {hero.secondaryLabel}
+                  </span>
+                )}
+              </div>
+            )}
+            {hero.features.length > 0 && (
+              <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-[var(--muted)]">
+                {hero.features.map((f, i) => (
+                  <span key={i} className="font-medium text-foreground">
+                    {f.title} <span className="font-normal text-[var(--muted)]">{f.subtitle}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

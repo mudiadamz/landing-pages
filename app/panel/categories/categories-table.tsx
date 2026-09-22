@@ -194,6 +194,11 @@ export function CategoriesTable({ initialCategories }: Props) {
             </div>
           ),
         )}
+        {categories.length === 0 && (
+          <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted)]">
+            {t("panel.noCategories")}
+          </p>
+        )}
       </div>
 
       {/* Desktop table */}

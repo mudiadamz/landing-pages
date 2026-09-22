@@ -393,6 +393,10 @@ export const en: Record<keyof typeof id, string> = {
   "panel.becomePublisher": "Become a publisher",
   "panel.heroLinkPlaceholder": "#templates or https://…",
   "panel.customJsPlaceholder": "// Example: console.log('hello');",
+  "panel.livePreview": "Live preview",
+  "panel.customJsWarning": "A bad script can break every public page. Test on the storefront after saving.",
+  "panel.customJsEnabled": "Active on every public page",
+  "panel.customJsSaveConfirm": "Save Custom JS? This script runs on every public page.",
   "analytics.excludedIps": "Excluded IPs",
   "analytics.logins": "Sign-ins",
   "analytics.pageviews": "Pageviews",
@@ -1152,6 +1156,11 @@ export const en: Record<keyof typeof id, string> = {
   "panel.rolePublisherNote": "Already included: purchases, their own products, their product stats.",
   "panel.roleCustomerNote": "Already included: the purchase list.",
   "panel.adminFullAccess": "Admins always have full access to every feature (not configurable).",
+  "panel.roleColFeature": "Feature",
+  "panel.roleLegend": "Company & Agent always have every site feature. Locked rows cannot be delegated.",
+  "panel.roleReasonCompany": "Company only",
+  "panel.roleReasonEveryone": "All accounts",
+  "panel.roleReasonSeller": "Sellers",
   "panel.showConfirm":
     "Show this product on the site? It will appear on the homepage and be reachable by visitors.",
   "panel.hideConfirm":

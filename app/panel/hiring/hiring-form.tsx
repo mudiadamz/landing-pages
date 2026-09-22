@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Tabs } from "@/components/ui/tabs";
 import { updateHiringContent } from "@/lib/actions/site-settings";
 import { DEFAULT_HIRING, type HiringContent, type HiringQuestion } from "@/lib/hiring-config";
 import { useT } from "@/lib/i18n/client";
@@ -85,6 +86,7 @@ function StringList({
 export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId: string }) {
   const t = useT();
   const [draft, setDraft] = useState<HiringContent>(initial);
+  const [tab, setTab] = useState("lowongan");
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -122,6 +124,19 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
 
   return (
     <div className="space-y-5">
+      <Tabs
+        items={[
+          { key: "lowongan", label: t("hiring.adHeading") },
+          { key: "cta", label: t("hiring.ctaCard") },
+          { key: "tes", label: t("hiring.testHeading"), badge: draft.questions.length },
+        ]}
+        active={tab}
+        onChange={setTab}
+        ariaLabel={t("hiring.adHeading")}
+      />
+
+      {tab === "lowongan" && (
+        <>
       <section className={sectionCls}>
         <label className="flex cursor-pointer items-start gap-3">
           <input
@@ -226,7 +241,10 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
           />
         </div>
       </section>
+        </>
+      )}
 
+      {tab === "cta" && (
       <section className={sectionCls}>
         <h2 className="text-sm font-semibold tracking-tight text-foreground">{t("hiring.ctaCard")}</h2>
         <div>
@@ -259,7 +277,10 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
           />
         </div>
       </section>
+      )}
 
+      {tab === "tes" && (
+        <>
       <section className={sectionCls}>
         <h2 className="text-sm font-semibold tracking-tight text-foreground">{t("hiring.testHeading")}</h2>
         <div>
@@ -300,9 +321,15 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
         )}
 
         {draft.questions.map((q, qi) => (
-          <div key={q.id} className="space-y-2 rounded-xl border border-[var(--border)] p-3">
+          <details key={q.id} className="rounded-xl border border-[var(--border)] [&[open]>summary]:border-b [&[open]>summary]:border-[var(--border)]">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-sm">
+              <span className="shrink-0 tabular-nums text-xs text-[var(--muted)]">{qi + 1}.</span>
+              <span className="min-w-0 flex-1 truncate text-foreground">
+                {q.question || t("hiring.questionPlaceholder")}
+              </span>
+            </summary>
+            <div className="space-y-2 p-3">
             <div className="flex items-start gap-2">
-              <span className="mt-2 shrink-0 text-xs tabular-nums text-[var(--muted)]">{qi + 1}.</span>
               <textarea
                 rows={2}
                 value={q.question}
@@ -357,9 +384,12 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
                 {t("hiring.addOption")}
               </AddButton>
             </div>
-          </div>
+            </div>
+          </details>
         ))}
       </section>
+        </>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button size="md" onClick={save} disabled={pending} loading={pending}>

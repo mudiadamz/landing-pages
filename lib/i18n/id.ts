@@ -381,6 +381,10 @@ export const id = {
   "panel.becomePublisher": "Jadi publisher",
   "panel.heroLinkPlaceholder": "#templates atau https://…",
   "panel.customJsPlaceholder": "// Contoh: console.log('hello');",
+  "panel.livePreview": "Pratinjau langsung",
+  "panel.customJsWarning": "Script yang salah bisa merusak semua halaman publik. Uji di storefront setelah menyimpan.",
+  "panel.customJsEnabled": "Aktif di semua halaman publik",
+  "panel.customJsSaveConfirm": "Simpan Custom JS? Script ini berjalan di semua halaman publik.",
   "analytics.excludedIps": "IP dikecualikan",
   "analytics.logins": "Login",
   "analytics.pageviews": "Pageview",
@@ -1142,6 +1146,11 @@ export const id = {
   "panel.rolePublisherNote": "Sudah otomatis: pembelian, produk sendiri, stats produknya.",
   "panel.roleCustomerNote": "Sudah otomatis: daftar pembelian.",
   "panel.adminFullAccess": "Admin selalu punya akses penuh ke semua fitur (tidak dapat diubah).",
+  "panel.roleColFeature": "Fitur",
+  "panel.roleLegend": "Company & Agent selalu punya semua fitur situs. Baris terkunci tidak bisa didelegasikan.",
+  "panel.roleReasonCompany": "Hanya Company",
+  "panel.roleReasonEveryone": "Semua akun",
+  "panel.roleReasonSeller": "Penjual",
   "panel.showConfirm":
     "Tampilkan produk ini di frontend? Produk akan muncul di homepage & bisa diakses pengunjung.",
   "panel.hideConfirm":

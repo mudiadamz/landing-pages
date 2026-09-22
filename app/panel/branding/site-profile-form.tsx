@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SaveBar } from "@/components/ui/save-bar";
+import { Tabs } from "@/components/ui/tabs";
 import { FileUploadCard } from "@/components/file-upload-card";
 import { updateSiteProfile, uploadSiteBrandImage } from "@/lib/actions/sites";
 import {
@@ -64,6 +65,7 @@ export function SiteProfileForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [draft, setDraft] = useState<SiteProfileInput>(initial);
+  const [tab, setTab] = useState<"identity" | "look" | "catalog">("identity");
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
 
@@ -93,9 +95,18 @@ export function SiteProfileForm({
 
   return (
     <div className="space-y-4">
+      <Tabs
+        items={[
+          { key: "identity", label: t("sites.identityHeading") },
+          { key: "look", label: "Tampilan" },
+          { key: "catalog", label: t("panel.catalogNiche") },
+        ]}
+        active={tab}
+        onChange={(k) => setTab(k as typeof tab)}
+      />
 
-
-      {/* 1 — Identity */}
+      {tab === "identity" && (
+      /* 1 — Identity */
       <section className={CARD}>
         <header>
           <h2 className="text-sm font-semibold text-foreground">{t("sites.identityHeading")}</h2>
@@ -189,7 +200,10 @@ export function SiteProfileForm({
           </p>
         </div>
       </section>
+      )}
 
+      {tab === "look" && (
+      <>
       {/* 2 — Look */}
       <section className={CARD}>
         <header>
@@ -332,8 +346,11 @@ export function SiteProfileForm({
           })}
         </div>
       </section>
+      </>
+      )}
 
-      {/* 3 — Catalog */}
+      {tab === "catalog" && (
+      /* 3 — Catalog */
       <section className={CARD}>
         <header>
           <h2 className="text-sm font-semibold text-foreground">{t("panel.catalogNiche")}</h2>
@@ -370,6 +387,7 @@ export function SiteProfileForm({
           {t("sites.wholeCatalogNote")}
         </p>
       </section>
+      )}
 
       <SaveBar
         dirty={dirty}

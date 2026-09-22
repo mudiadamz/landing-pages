@@ -426,6 +426,23 @@ export function UsersTable({
             <div className="mt-3 flex flex-wrap items-start gap-2">
               <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
               <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
+              <button
+                type="button"
+                onClick={() => toggleStats(u)}
+                disabled={updating === u.id}
+                title={
+                  u.exclude_from_stats
+                    ? t("panel.statsExcludedHint")
+                    : t("panel.statsCountedHint")
+                }
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
+                  u.exclude_from_stats
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
+                    : "bg-[var(--background)] text-[var(--muted)] hover:text-foreground"
+                }`}
+              >
+                {u.exclude_from_stats ? t("panel.excluded") : t("panel.counted")}
+              </button>
               {showSiteRole && (
                 <SiteFlags
                   user={u}
