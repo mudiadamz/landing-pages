@@ -52,6 +52,17 @@ function cmpDate(a: StorageFile, b: StorageFile): number {
   return a.updatedAt.localeCompare(b.updatedAt);
 }
 
+/** Friendly names for the internal bucket ids the audit found exposed raw. */
+const BUCKET_LABELS: Record<string, string> = {
+  "landing-assets": "Aset situs",
+  "publisher-kyc": "Dokumen KYC publisher",
+  "hiring-cv": "CV pelamar",
+  "chat-attachments": "Lampiran chat",
+};
+function bucketLabel(bucket: string): string {
+  return BUCKET_LABELS[bucket] ?? bucket;
+}
+
 /** Split "a/b/c.png" into its folder and file name. Root files get "". */
 function splitPath(path: string): { dir: string; name: string } {
   const i = path.lastIndexOf("/");
@@ -98,7 +109,7 @@ function buildTree(rows: StorageFile[]): TreeNode[] {
     segments.pop(); // the file name itself is not a folder level
     const size = f.size ?? 0;
 
-    let cur = nodeAt(f.bucket, f.bucket, null);
+    let cur = nodeAt(f.bucket, bucketLabel(f.bucket), null);
     cur.count += 1;
     cur.size += size;
 
@@ -224,7 +235,7 @@ export function StorageManager({
             <option value="all">Semua bucket ({files.length})</option>
             {buckets.map((b) => (
               <option key={b} value={b}>
-                {b} ({counts.get(b) ?? 0})
+                {bucketLabel(b)} ({counts.get(b) ?? 0})
               </option>
             ))}
           </select>
