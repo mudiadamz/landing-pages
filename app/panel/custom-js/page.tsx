@@ -8,6 +8,10 @@ import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
+export async function generateMetadata() {
+  return { title: translator(await requestLocale())("panel.titleCustomJs") };
+}
+
 export default async function CustomJsPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("custom-js");

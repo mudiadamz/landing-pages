@@ -15,6 +15,10 @@ import { requestLocale } from "@/lib/i18n/request";
  * renders — a footer tagline has one place it can go. These are pages a person
  * invents: they get a URL, a title, and no code knows their names.
  */
+export async function generateMetadata() {
+  return { title: translator(await requestLocale())("panel.navPages") };
+}
+
 export default async function PagesIndex() {
   const t = translator(await requestLocale());
   if (!(await requireSiteAdmin())) redirect("/panel");

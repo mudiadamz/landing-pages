@@ -285,7 +285,7 @@ export const id = {
   "panel.noFiles": "Tidak ada file.",
   "panel.open": "Buka",
   "panel.deleteFile": "Hapus file",
-  "panel.taglinePlaceholder": "Resep rumahan yang beneran jadi",
+  "panel.taglinePlaceholder": "Contoh: Aset digital siap pakai",
   "panel.seoDescription": "Deskripsi (SEO)",
   "panel.seoPlaceholder": "Kalimat yang tampil di hasil pencarian Google…",
   "panel.seoHint":
@@ -304,9 +304,9 @@ export const id = {
   "sites.identityNotHere": "— bukan di sini. Referensi lengkap:",
   "sites.newDomainIntro":
     "Hostname dan nama dulu. Setelah tersimpan Anda langsung dibawa ke Identitas situs untuk logo, template, palet, dan niche.",
-  "sites.hostPlaceholder": "resepku.com",
+  "sites.hostPlaceholder": "tokosaya.com",
   "sites.hostHint": "Tanpa https:// dan tanpa garis miring. Boleh subdomain.",
-  "sites.namePlaceholder": "Resepku",
+  "sites.namePlaceholder": "Contoh: Toko Digital Saya",
   "sites.inactiveHint": "Kalau dimatikan, domain ini menampilkan situs utama — bukan halaman error.",
   "panel.sortTitleAsc": "Judul A–Z",
   "panel.sortTitleDesc": "Judul Z–A",
@@ -810,7 +810,7 @@ export const id = {
   "analytics.excludedIntroAfter": ". Menambahkan IP juga menghapus sesi lamanya.",
   "analytics.myIpNote": "IP saya",
   "analytics.excludeMyIp": "Kecualikan IP saya ({ip})",
-  "analytics.myIpBefore": "IP kamu",
+  "analytics.myIpBefore": "IP Anda",
   "analytics.myIpAfter": "sudah dikecualikan.",
   "analytics.noExcludedIps": "Belum ada IP yang dikecualikan.",
   "analytics.staleSessionCount": "{count} sesi lama · hapus",
@@ -1181,7 +1181,7 @@ export const id = {
   "panel.gtmHeading": "Google Tag Manager",
   "panel.gtmIntroBefore": "Masukkan ID container GTM (format",
   "panel.gtmIntroAfter":
-    "). Skrip GTM dimuat di semua halaman publik (di-skip di /panel). Dari GTM kamu bisa mengelola GA4, Meta Pixel, dan tag lain tanpa mengubah kode.",
+    "). Skrip GTM dimuat di semua halaman publik (di-skip di /panel). Dari GTM Anda bisa mengelola GA4, Meta Pixel, dan tag lain tanpa mengubah kode.",
   "panel.gtmEnvBefore": "Catatan:",
   "panel.gtmEnvAfter": "diset di environment — dipakai sebagai fallback bila field ini dikosongkan.",
 

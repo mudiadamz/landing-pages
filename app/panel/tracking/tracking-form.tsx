@@ -110,7 +110,7 @@ export function TrackingForm({
               name="tawkWidgetId"
               value={tawkWidgetId}
               onChange={(e) => setTawkWidgetId(e.target.value)}
-              placeholder="1jjkdht1t"
+              placeholder="Contoh: 1a2b3c4d5"
               autoComplete="off"
               spellCheck={false}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
