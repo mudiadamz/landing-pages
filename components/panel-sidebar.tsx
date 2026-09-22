@@ -19,6 +19,8 @@ type Props = {
   canSell?: boolean;
   /** Eligible to open a Business (not platform, not already a member) → apply link. */
   canApplyBusiness?: boolean;
+  /** Runs a Business (owner/admin) → sees the money/KYC page. */
+  isBusinessManager?: boolean;
   pendingActions?: number;
   features?: FeatureKey[];
   /**
@@ -44,6 +46,8 @@ type NavItem = {
   platformOnly?: boolean;
   /** Shown only to users eligible to open a Business (Fase 4 signup). */
   applyOnly?: boolean;
+  /** Shown only to a Business owner/admin (Fase 3 money page). */
+  businessManagerOnly?: boolean;
   /** Match the path exactly — for /panel, which is a prefix of every other route. */
   exact?: boolean;
   /** Opens a popup instead of navigating. */
@@ -77,6 +81,7 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       { href: "/panel/purchases", labelKey: "panel.navPurchases", icon: ReceiptIcon, everyone: true },
       { href: "/panel/favorites", labelKey: "panel.navFavorites", icon: HeartIcon, everyone: true },
       { href: "/panel/apply-business", labelKey: "panel.navApplyBusiness", icon: BadgeIcon, applyOnly: true },
+      { href: "/panel/business", labelKey: "panel.navMyBusiness", icon: BadgeIcon, businessManagerOnly: true },
     ],
   },
   {
@@ -336,6 +341,7 @@ function NavContent({
   features = [],
   canSell,
   canApplyBusiness = false,
+  isBusinessManager = false,
   pendingActions = 0,
   collapsed = false,
   onItemClick,
@@ -346,6 +352,7 @@ function NavContent({
   features?: FeatureKey[];
   canSell?: boolean;
   canApplyBusiness?: boolean;
+  isBusinessManager?: boolean;
   pendingActions?: number;
   /** Desktop rail. Every rule below is `md:`-scoped — the mobile drawer is always full. */
   collapsed?: boolean;
@@ -384,6 +391,7 @@ function NavContent({
   const isVisible = (item: NavItem) => {
     if (item.platformOnly) return !!isPlatform;
     if (item.applyOnly) return !!canApplyBusiness;
+    if (item.businessManagerOnly) return !!isBusinessManager;
     if (item.everyone) return true;
     if (item.adminOnly) return accountType === "company";
     if (item.sellerOnly) return !!canSell;
@@ -565,6 +573,7 @@ export function PanelSidebar({
   isPlatform,
   canSell,
   canApplyBusiness,
+  isBusinessManager,
   pendingActions,
   features,
   brand,
@@ -654,6 +663,7 @@ export function PanelSidebar({
             features={features}
             canSell={canSell}
             canApplyBusiness={canApplyBusiness}
+            isBusinessManager={isBusinessManager}
             pendingActions={pendingActions}
             collapsed={collapsed}
             onItemClick={close}

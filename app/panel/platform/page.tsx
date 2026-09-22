@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requirePlatform } from "@/lib/actions/profiles";
 import { listBusinessesForPlatform } from "@/lib/actions/platform";
@@ -78,7 +79,9 @@ export default async function PlatformPage() {
               {businesses.map((b) => (
                 <tr key={b.id} className="border-b border-[var(--border)] last:border-0">
                   <td className="px-4 py-2.5">
-                    <span className="font-medium text-foreground">{b.name}</span>
+                    <Link href={`/panel/platform/${b.id}`} className="font-medium text-foreground hover:underline">
+                      {b.name}
+                    </Link>
                     <span className="ml-2 font-mono text-xs text-[var(--muted)]">{b.slug}</span>
                   </td>
                   <td className="px-3 py-2.5 text-[var(--muted)]">

@@ -18,6 +18,9 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 const HOLD_DAYS = 14;
 
+/** Smallest payout the Platform will record, in the ledger's integer unit (Rp). */
+export const MIN_PAYOUT = 50_000;
+
 /**
  * Resolve the selling business from the product (or the storefront it sold on),
  * then write the sale + commission rows. Returns the business id it credited, or
@@ -84,4 +87,39 @@ export async function recordSale(
     },
   ]);
   return businessId;
+}
+
+export type BusinessBalances = {
+  /** SUM of every row — the business's true balance (obligations included). */
+  total: number;
+  /** Matured & withdrawable: rows past their hold, minus payouts/refunds/commission. */
+  available: number;
+  /** Still on hold (refund window not yet closed). total = available + pending. */
+  pending: number;
+};
+
+/**
+ * Balances from the ledger, never a stored column (docs/plans/multi-business-saas.md).
+ *
+ * Maturity is computed by TIME, not a background job: a sale row is "available"
+ * once its `available_at` has passed. Payout/refund/adjustment rows carry no hold
+ * (`available_at` null) so they count immediately — a refund must bite the balance
+ * the moment it is recorded, and a payout must not be double-spendable.
+ */
+export async function businessBalances(db: Admin, businessId: string): Promise<BusinessBalances> {
+  const { data } = await db
+    .from("lp_business_ledger")
+    .select("amount_cents, available_at")
+    .eq("business_id", businessId);
+
+  const now = Date.now();
+  let total = 0;
+  let available = 0;
+  for (const r of data ?? []) {
+    const amt = Number(r.amount_cents) || 0;
+    total += amt;
+    const at = r.available_at ? new Date(r.available_at as string).getTime() : 0;
+    if (!r.available_at || at <= now) available += amt;
+  }
+  return { total, available, pending: total - available };
 }

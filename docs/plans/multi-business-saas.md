@@ -150,7 +150,7 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | 0 | Tabel `lp_businesses` / `lp_business_members` / `lp_business_ledger`; `business_id` nullable + `is_platform`; backfill 1 business default. **Nol perubahan perilaku.** | ✅ |
 | 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
 | 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id) + **user & storage** (view lintas-business = Platform-only). | ✅ |
-| 3 | Ledger + komisi + hold (recording) ✅ · **payout + refund + KYC (pergerakan uang) ⬜ — sengaja belum, butuh review** | 🟡 recording saja |
+| 3 | Ledger + komisi + hold ✅ · **KYC (ajukan/approve) + payout (catat, min + KYC-gated) + refund (catat) ✅ — pencatatan & workflow, TANPA API disbursement (transfer bank manual)** · integrasi disbursement (Duitku/Xendit) ⬜ | ✅ recording + workflow |
 | 4 | Panel Platform (overview + saldo ledger) ✅ · **signup business (approval-gated) + onboarding + provisioning domain saat approve** ✅ · notifikasi email approve/reject ⬜ | ✅ signup + approval |
 | 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |
 

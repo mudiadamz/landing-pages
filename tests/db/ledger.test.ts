@@ -55,4 +55,40 @@ describe("business ledger", () => {
     );
     expect(Number(rows[0].bal)).toBe(0);
   });
+
+  it("saldo tersedia mengecualikan entri yang masih hold (available_at di masa depan)", async () => {
+    const biz = await business(10);
+    await sql(
+      `insert into public.lp_business_ledger (business_id, kind, amount_cents, status, available_at) values
+         ($1,'sale',100000,'pending', now() - interval '1 day'),
+         ($1,'commission',-10000,'pending', now() - interval '1 day'),
+         ($1,'sale',50000,'pending', now() + interval '14 days')`,
+      [biz],
+    );
+    // available = matured rows only (available_at null or <= now) — mirrors businessBalances()
+    const { rows } = await sql<{ total: string; avail: string }>(
+      `select coalesce(sum(amount_cents),0)::bigint total,
+              coalesce(sum(amount_cents) filter (where available_at is null or available_at <= now()),0)::bigint avail
+         from public.lp_business_ledger where business_id=$1`,
+      [biz],
+    );
+    expect(Number(rows[0].total)).toBe(140000);
+    expect(Number(rows[0].avail)).toBe(90000); // the 50k on-hold sale is excluded
+  });
+
+  it("refund mengurangi saldo seketika (tanpa hold)", async () => {
+    const biz = await business(0);
+    await sql(
+      `insert into public.lp_business_ledger (business_id, kind, amount_cents, status) values
+         ($1,'sale',100000,'available'),
+         ($1,'refund',-30000,'available')`,
+      [biz],
+    );
+    const { rows } = await sql<{ bal: string }>(
+      "select coalesce(sum(amount_cents),0)::bigint bal from public.lp_business_ledger where business_id=$1",
+      [biz],
+    );
+    expect(Number(rows[0].bal)).toBe(70000);
+  });
+
 });

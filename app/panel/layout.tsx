@@ -91,13 +91,18 @@ export default async function PanelLayout({
   // to a business) may apply to open one. Membership is the eligibility check —
   // the seeded owners/admins from the old model already have a row.
   let canApplyBusiness = false;
-  if (user && !profile?.is_platform) {
+  let isBusinessManager = false;
+  if (user) {
     const { data: membership } = await createAdminClient()
       .from("lp_business_members")
-      .select("business_id")
+      .select("business_id, role")
       .eq("user_id", user.id)
       .limit(1);
-    canApplyBusiness = !membership || membership.length === 0;
+    const row = membership?.[0];
+    // Manager = runs a business (owner/admin) → sees the money/KYC page.
+    isBusinessManager = row?.role === "owner" || row?.role === "admin";
+    // Eligible to apply = a plain user with no business, and not the operator.
+    canApplyBusiness = !profile?.is_platform && !row;
   }
 
   // Feature access drives which admin areas appear in the nav.
@@ -142,6 +147,7 @@ export default async function PanelLayout({
         isPlatform={!!profile?.is_platform}
         canSell={!!canSell}
         canApplyBusiness={canApplyBusiness}
+        isBusinessManager={isBusinessManager}
         pendingActions={pendingActions}
         features={features}
         brand={brand}
