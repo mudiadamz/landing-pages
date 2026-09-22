@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureSiteMembership } from "@/lib/actions/profiles";
 import { createAdminClient } from "@/lib/db/admin";
+import { recordSale } from "@/lib/ledger";
 import { grantBundleItems } from "@/lib/bundle";
 import { validateDuitkuCallback } from "@/lib/duitku";
 import { sendPurchaseConfirmationEmail } from "@/lib/email";
@@ -111,6 +112,22 @@ export async function POST(req: NextRequest) {
       // bukan hanya saat insert berhasil: baris yang sudah ada berarti callback
       // yang dikirim ulang, dan keanggotaannya tetap harus benar. Idempoten.
       if (siteId) await ensureSiteMembership(userId, siteId);
+
+      // Business ledger (docs/plans/multi-business-saas.md, Fase 3): record the
+      // sale + commission only on a genuinely NEW purchase. Bookkeeping only, and
+      // wrapped so a ledger failure can never break the payment confirmation.
+      if (!error) {
+        try {
+          await recordSale(db, {
+            landingPageId,
+            siteId,
+            amount: Number(amount) || 0,
+            orderRef: merchantOrderId,
+          });
+        } catch (e) {
+          console.error("ledger recordSale failed (non-fatal):", e);
+        }
+      }
 
       if (error) {
         if (error.code === "23505") {
