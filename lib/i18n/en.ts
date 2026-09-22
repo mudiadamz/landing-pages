@@ -144,6 +144,8 @@ export const en: Record<keyof typeof id, string> = {
   "panel.roleAgent": "Agent",
   "panel.rolePublisher": "Publisher",
   "panel.roleCustomer": "Customer",
+  "panel.navGroupPlatform": "Platform",
+  "panel.navPlatform": "All businesses",
   "panel.navGroupMain": "Main",
   "panel.navGroupSelling": "Selling",
   "panel.navGroupUsers": "People",

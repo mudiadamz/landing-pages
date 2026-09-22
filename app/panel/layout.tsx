@@ -125,6 +125,7 @@ export default async function PanelLayout({
       />
       <PanelSidebar
         accountType={profile?.account_type}
+        isPlatform={!!profile?.is_platform}
         canSell={!!canSell}
         pendingActions={pendingActions}
         features={features}

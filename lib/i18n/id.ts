@@ -133,6 +133,8 @@ export const id = {
   "panel.roleAgent": "Agent",
   "panel.rolePublisher": "Publisher",
   "panel.roleCustomer": "Customer",
+  "panel.navGroupPlatform": "Platform",
+  "panel.navPlatform": "Semua business",
   "panel.navGroupMain": "Utama",
   "panel.navGroupSelling": "Jualan",
   "panel.navGroupUsers": "Pengguna",

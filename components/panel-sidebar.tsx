@@ -15,6 +15,7 @@ import type { MessageKey } from "@/lib/i18n";
 type AccountType = "company" | "agent" | "customer";
 type Props = {
   accountType?: AccountType;
+  isPlatform?: boolean;
   canSell?: boolean;
   pendingActions?: number;
   features?: FeatureKey[];
@@ -37,6 +38,8 @@ type NavItem = {
   sellerOnly?: boolean;
   publisherToo?: boolean;
   adminOnly?: boolean;
+  /** Platform operator only (cross-business), docs/plans/multi-business-saas.md. */
+  platformOnly?: boolean;
   /** Match the path exactly — for /panel, which is a prefix of every other route. */
   exact?: boolean;
   /** Opens a popup instead of navigating. */
@@ -56,6 +59,13 @@ type NavItem = {
  * logo, which is not a thing most people try.
  */
 const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
+  {
+    // Cross-business operator tier — only the Platform sees this.
+    labelKey: "panel.navGroupPlatform",
+    items: [
+      { href: "/panel/platform", labelKey: "panel.navPlatform", icon: GlobeIcon, platformOnly: true },
+    ],
+  },
   {
     labelKey: "panel.navGroupMain",
     items: [
@@ -317,6 +327,7 @@ function ImageIcon({ className }: { className?: string }) {
 
 function NavContent({
   accountType,
+  isPlatform = false,
   features = [],
   canSell,
   pendingActions = 0,
@@ -325,6 +336,7 @@ function NavContent({
   onOpenAssets,
 }: {
   accountType?: AccountType;
+  isPlatform?: boolean;
   features?: FeatureKey[];
   canSell?: boolean;
   pendingActions?: number;
@@ -363,6 +375,7 @@ function NavContent({
   };
 
   const isVisible = (item: NavItem) => {
+    if (item.platformOnly) return !!isPlatform;
     if (item.everyone) return true;
     if (item.adminOnly) return accountType === "company";
     if (item.sellerOnly) return !!canSell;
@@ -541,6 +554,7 @@ function NavContent({
 
 export function PanelSidebar({
   accountType,
+  isPlatform,
   canSell,
   pendingActions,
   features,
@@ -627,6 +641,7 @@ export function PanelSidebar({
         >
           <NavContent
             accountType={accountType}
+            isPlatform={isPlatform}
             features={features}
             canSell={canSell}
             pendingActions={pendingActions}

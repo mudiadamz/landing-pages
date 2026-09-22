@@ -50,6 +50,11 @@ export async function requireAdmin() {
   return profile?.account_type === "company";
 }
 
+/** Platform operator saja (docs/plans/multi-business-saas.md) — lintas business. */
+export async function requirePlatform() {
+  return !!(await getProfile())?.is_platform;
+}
+
 /**
  * Boleh membuat & menjual produk **di mana pun**.
  *

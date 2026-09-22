@@ -145,7 +145,7 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
 | 2 | Isolasi **katalog** per business (baca via filter eksplisit + cache key; create set business_id). User/storage isolation + kategori/related = sisa. | ✅ katalog (lihat catatan) |
 | 3 | Ledger + komisi + hold (recording) ✅ · **payout + refund + KYC (pergerakan uang) ⬜ — sengaja belum, butuh review** | 🟡 recording saja |
-| 4 | Signup business (approval-gated), onboarding + domain, panel Platform kelola semua business. | ⬜ |
+| 4 | Panel Platform (overview semua business + saldo ledger, read-only) ✅ · signup business (approval-gated) + onboarding + domain ⬜ | 🟡 overview saja |
 | 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |
 
 ---
