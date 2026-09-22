@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
-import { requireAdmin, requireFeature, requireSiteAdmin } from "@/lib/actions/profiles";
+import { requireAdmin, requireFeature, requireSiteAdmin, requirePlatform } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
 import { normalizeAccountType } from "@/lib/profile-utils";
 import { normalizePlan } from "@/lib/plans";
@@ -15,8 +15,12 @@ async function getCaller() {
   } = await db.auth.getUser();
   if (!user) return { user: null, isAdmin: false, hasUsers: false };
 
-  const [isAdmin, hasUsers] = await Promise.all([requireAdmin(), requireFeature("users")]);
-  return { user, isAdmin, hasUsers };
+  const [isAdmin, hasUsers, isPlatform] = await Promise.all([
+    requireAdmin(),
+    requireFeature("users"),
+    requirePlatform(),
+  ]);
+  return { user, isAdmin, hasUsers, isPlatform };
 }
 
 const PROFILE_COLUMNS =
@@ -31,14 +35,18 @@ const PROFILE_COLUMNS =
  * "user situs ini" akan berarti dua hal berbeda tergantung siapa yang bertanya.
  */
 export async function GET(req: Request) {
-  const { user, isAdmin, hasUsers } = await getCaller();
+  const { user, hasUsers, isPlatform } = await getCaller();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const admin = createAdminClient();
   const wantsAll = new URL(req.url).searchParams.get("scope") === "all";
 
-  if (wantsAll && isAdmin) {
+  // The cross-business "all users" view is the Platform's alone (multi-business,
+  // docs/plans/multi-business-saas.md). A business admin who asks for scope=all
+  // falls through to the site-scoped list of the business's own storefront —
+  // per-site membership already keeps one business's users out of another's.
+  if (wantsAll && isPlatform) {
     const { data, error } = await admin
       .from("lp_profiles")
       .select(PROFILE_COLUMNS)

@@ -142,7 +142,7 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       { href: "/panel/tracking", labelKey: "panel.navTracking", icon: TargetIcon, adminOnly: true },
       { href: "/panel/custom-js", labelKey: "panel.navCustomJs", icon: CodeIcon, feature: "custom-js" },
       { href: "/panel/popup", labelKey: "panel.navPopup", icon: PopupIcon, adminOnly: true },
-      { href: "/panel/storage", labelKey: "panel.navStorage", icon: DatabaseIcon, adminOnly: true },
+      { href: "/panel/storage", labelKey: "panel.navStorage", icon: DatabaseIcon, platformOnly: true },
     ],
   },
 ];

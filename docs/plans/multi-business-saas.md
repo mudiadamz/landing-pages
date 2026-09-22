@@ -110,8 +110,14 @@ business/payout, multi-domain + Caddy on-demand TLS + `/api/tls-check`.
 >   (satu user hanya memiliki produk di business-nya). Jadi TIDAK menambah RLS
 >   restrictive baca (yang tadi merusak cache) — isolasi baca di lapisan aplikasi.
 >
-> **Sisa (belum diisolasi):** kategori (`lp_landing_page_categories`), related/bundle
-> products, dan user/storage. Minor untuk 1-business; harus ditutup sebelum
+> **User & storage (DITERAPKAN 2026-09-22):** view "semua user lintas-business"
+> (`/api/admin/users?scope=all`) dan file manager Storage (`/panel/storage`,
+> `listAllStorageFiles`/`deleteStorageFile`) kini di-gate `requirePlatform` — bukan
+> `requireAdmin` — karena keduanya menembus batas business. Isolasi customer biasa
+> sudah lewat keanggotaan situs (`site_id → business`); TIDAK ditambah filter
+> `profile.business_id` karena customer boleh jadi anggota beberapa business.
+>
+> **Sisa (belum diisolasi):** related/bundle products (minor). Harus ditutup sebelum
 > business ke-2 benar-benar live (Fase 4).
 
 ---
@@ -143,7 +149,7 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 |---|---|---|
 | 0 | Tabel `lp_businesses` / `lp_business_members` / `lp_business_ledger`; `business_id` nullable + `is_platform`; backfill 1 business default. **Nol perubahan perilaku.** | ✅ |
 | 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
-| 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id). User/storage isolation = sisa. | ✅ katalog penuh |
+| 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id) + **user & storage** (view lintas-business = Platform-only). | ✅ |
 | 3 | Ledger + komisi + hold (recording) ✅ · **payout + refund + KYC (pergerakan uang) ⬜ — sengaja belum, butuh review** | 🟡 recording saja |
 | 4 | Panel Platform (overview semua business + saldo ledger, read-only) ✅ · signup business (approval-gated) + onboarding + domain ⬜ | 🟡 overview saja |
 | 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |

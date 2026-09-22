@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/db/admin";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requirePlatform } from "@/lib/actions/profiles";
 
 export type StorageFile = {
   bucket: string;
@@ -79,7 +79,7 @@ async function walk(
  * MAX_FILES; `truncated` signals the cap was hit.
  */
 export async function listAllStorageFiles(): Promise<StorageListing> {
-  if (!(await requireAdmin())) return { files: [], buckets: [], truncated: false, error: "Forbidden" };
+  if (!(await requirePlatform())) return { files: [], buckets: [], truncated: false, error: "Forbidden" };
 
   const admin = createAdminClient();
   const { data: buckets, error } = await admin.storage.listBuckets();
@@ -111,7 +111,7 @@ export async function deleteStorageFile(
   bucket: string,
   path: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Forbidden" };
+  if (!(await requirePlatform())) return { ok: false, error: "Forbidden" };
   if (!bucket || !path) return { ok: false, error: "Bucket/path wajib diisi" };
 
   const admin = createAdminClient();

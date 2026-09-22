@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/actions/profiles";
+import { requirePlatform } from "@/lib/actions/profiles";
 import { listAllStorageFiles } from "@/lib/actions/storage-admin";
 import { StorageManager } from "./storage-manager";
 import { PanelPageHeader } from "@/components/panel-page-header";
@@ -10,7 +10,7 @@ export const metadata = { title: "Storage" };
 
 export default async function StoragePage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requirePlatform())) redirect("/panel");
 
   const { files, buckets, truncated, error } = await listAllStorageFiles();
 
