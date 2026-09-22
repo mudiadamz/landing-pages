@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
+import { isCanonicalRequest, canonicalOrigin, editingSite } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
 import { paletteOptions } from "@/lib/palette";
 import { LOCALE_OPTIONS } from "@/lib/i18n/locales";
@@ -21,7 +21,7 @@ export default async function NewSitePage() {
   if (!(await requireAdmin())) redirect("/panel");
   if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/sites/new`);
 
-  const categories = await getCategories();
+  const categories = await getCategories((await editingSite()).business_id);
   const rootCategories = categories.filter((c) => !c.parent_id);
   const canonicalHost = canonicalOrigin().replace(/^https?:\/\//, "");
 

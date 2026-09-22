@@ -43,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Cached anon-client reads — safe to call at build/revalidate time.
   const [categories, pages] = await Promise.all([
-    getCategories(),
+    getCategories(site.business_id),
     getLandingPagesForHomepage(),
   ]);
 

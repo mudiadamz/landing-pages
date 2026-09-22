@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { currentSite } from "@/lib/site-resolve";
 import { getPublishedPage } from "@/lib/actions/pages";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 
@@ -41,9 +42,10 @@ export default async function EditorialPageRoute({
 }) {
   const { slug } = await params;
   const db = await createClient();
+  const site = await currentSite();
   const [{ data: { user } }, categories, page] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
     getPublishedPage(slug),
   ]);
   if (!page) notFound();

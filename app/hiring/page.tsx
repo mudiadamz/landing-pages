@@ -6,6 +6,7 @@ import { getHiringContent } from "@/lib/actions/site-settings";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { currentSite } from "@/lib/site-resolve";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { Button } from "@/components/ui/button";
 
@@ -20,9 +21,10 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function HiringPage() {
   const db = await createClient();
+  const site = await currentSite();
   const [{ data: { user } }, categories, hiring, locale] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
     getHiringContent(),
     requestLocale(),
   ]);

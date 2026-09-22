@@ -33,10 +33,8 @@ export default async function BrandingPage() {
   // app/panel/layout.tsx already keeps admin routes on the canonical origin.
   if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/branding`);
 
-  const [site, categories] = await Promise.all([
-    editingSite(),
-    getCategories(),
-  ]);
+  const site = await editingSite();
+  const categories = await getCategories(site.business_id);
   const rootCategories = categories.filter((c) => !c.parent_id);
 
   return (

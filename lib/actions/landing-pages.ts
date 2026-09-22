@@ -418,20 +418,32 @@ export async function updateLandingPageSettings(
   revalidatePath("/");
 }
 
-export const getCategories = unstable_cache(
-  async (): Promise<LandingPageCategory[]> => {
+const getCachedCategories = unstable_cache(
+  async (businessId: string | null): Promise<LandingPageCategory[]> => {
     const db = createAnonClient();
-    const { data, error } = await db
+    let query = db
       .from("lp_landing_page_categories")
       .select("id, name, slug, icon, parent_id")
       .order("sort_order", { ascending: true });
-
+    // Business isolation (null = unconfigured/fallback: no filter).
+    if (businessId) query = query.eq("business_id", businessId);
+    const { data, error } = await query;
     if (error) return [];
     return (data ?? []) as LandingPageCategory[];
   },
   ["categories"],
   { revalidate: 60, tags: ["categories"] },
 );
+
+/**
+ * Categories for a storefront/panel. `businessId` (from currentSite/editingSite)
+ * is part of the cache key + filter so each business sees only its own — passed
+ * in, because a cached function cannot read the request (docs/plans/multi-business-saas.md).
+ * Omitted = no filter (single-business / fallback), so existing behaviour holds.
+ */
+export function getCategories(businessId?: string | null): Promise<LandingPageCategory[]> {
+  return getCachedCategories(businessId ?? null);
+}
 
 export type HomepageSort = "newest" | "popular";
 
@@ -791,12 +803,15 @@ export async function getRelatedProducts(
   const categoryIds = [parent.id, ...cats.filter((c) => c.parent_id === parent.id).map((c) => c.id)];
 
   const db = createAnonClient();
-  const { data, error } = await db
+  const site = await currentSite();
+  let related = db
     .from("lp_landing_pages")
     .select("id, title, slug, price, price_discount, is_free, thumbnail_url, thumbnail_landscape_url")
     .eq("published", true)
     .in("category_id", categoryIds)
-    .neq("id", currentId)
+    .neq("id", currentId);
+  if (site.business_id) related = related.eq("business_id", site.business_id);
+  const { data, error } = await related
     .order("featured", { ascending: false })
     .order("sold_count", { ascending: false, nullsFirst: false })
     .limit(limit);
@@ -816,11 +831,14 @@ export async function getProductsByIds(ids: string[]): Promise<RelatedProduct[]>
   if (clean.length === 0) return [];
 
   const db = createAnonClient();
-  const { data, error } = await db
+  const site = await currentSite();
+  let query = db
     .from("lp_landing_pages")
     .select("id, title, slug, price, price_discount, is_free, thumbnail_url")
     .eq("published", true)
     .in("id", clean);
+  if (site.business_id) query = query.eq("business_id", site.business_id);
+  const { data, error } = await query;
 
   if (error || !data) return [];
   // Preserve the seller's chosen order (the DB doesn't guarantee it).

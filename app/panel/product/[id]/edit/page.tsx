@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById, getCategories, getLandingPagesForUser } from "@/lib/actions/landing-pages";
+import { editingSite } from "@/lib/site-resolve";
 import { ProductEditForm } from "./product-edit-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,10 @@ export default async function EditPage({
   if (!canSell) redirect("/panel");
 
   const { id } = await params;
+  const site = await editingSite();
   const [page, categories, myProducts] = await Promise.all([
     getLandingPageById(id),
-    getCategories(),
+    getCategories(site.business_id),
     getLandingPagesForUser(),
   ]);
   if (!page) notFound();

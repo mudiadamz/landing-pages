@@ -15,7 +15,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const categories = await getCategories();
+  const categories = await getCategories((await currentSite()).business_id);
   const cat = categories.find((c) => c.slug === slug);
   if (!cat) return { title: translator(await requestLocale())("home.categoryNotFound") };
   // Brand comes from the layout title template, per domain.
@@ -37,10 +37,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     data: { user },
   } = await db.auth.getUser();
 
-  const [site, pages, categories, reviews, reviewCounts, locale] = await Promise.all([
-    currentSite(),
+  const site = await currentSite();
+  const [pages, categories, reviews, reviewCounts, locale] = await Promise.all([
     getLandingPagesForHomepage(slug, sort),
-    getCategories(),
+    getCategories(site.business_id),
     getPublicReviews(),
     getReviewCounts(),
     requestLocale(),

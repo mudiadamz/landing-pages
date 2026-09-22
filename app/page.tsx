@@ -56,11 +56,11 @@ export default async function Home({ searchParams }: Props) {
   const {
     data: { user },
   } = await db.auth.getUser();
-  const [site, listing, categories, reviews, reviewCounts, hero, content, otherLinks, socialUrls, locale] =
+  const site = await currentSite();
+  const [listing, categories, reviews, reviewCounts, hero, content, otherLinks, socialUrls, locale] =
     await Promise.all([
-    currentSite(),
     getHomepageListing({ sort, q, page, categorySlugs }),
-    getCategories(),
+    getCategories(site.business_id),
     getPublicReviews(),
     getReviewCounts(),
     getHero(),

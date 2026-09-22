@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { redirect } from "next/navigation";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { editingSite } from "@/lib/site-resolve";
 import { NewProductModeTabs } from "./mode-tabs";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
@@ -17,7 +18,7 @@ export default async function NewPagePage() {
   const canSell = await canSellProducts();
   if (!canSell) redirect("/panel");
 
-  const categories = await getCategories();
+  const categories = await getCategories((await editingSite()).business_id);
 
   const current = 1; // this page is always step 1; step 2 is the edit page
 

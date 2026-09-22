@@ -4,6 +4,7 @@ import { requestLocale } from "@/lib/i18n/request";
 import { Button } from "@/components/ui/button";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPagesForUser, getCategories } from "@/lib/actions/landing-pages";
+import { editingSite } from "@/lib/site-resolve";
 import { ProductList } from "../product-list";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
@@ -18,9 +19,10 @@ export default async function PanelPage() {
 
 async function SellerPanel() {
   const t = translator(await requestLocale());
+  const site = await editingSite();
   const [pages, categories, scope] = await Promise.all([
     getLandingPagesForUser(),
-    getCategories(),
+    getCategories(site.business_id),
     panelScope(),
   ]);
 

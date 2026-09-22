@@ -20,10 +20,10 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Data loader; the storefront's template decides how the sections look. */
 export default async function CategoriesPage() {
   const db = await createClient();
-  const [{ data: { user } }, site, categories] = await Promise.all([
+  const site = await currentSite();
+  const [{ data: { user } }, categories] = await Promise.all([
     db.auth.getUser(),
-    currentSite(),
-    getCategories(),
+    getCategories(site.business_id),
   ]);
 
   return (

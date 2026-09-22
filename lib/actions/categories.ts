@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/db/server";
 import { requireAdmin, requireFeature } from "./profiles";
+import { editingSite } from "@/lib/site-resolve";
 
 export type CategoryRow = {
   id: string;
@@ -87,7 +88,7 @@ export async function createCategory(
 
   const { data, error } = await db
     .from("lp_landing_page_categories")
-    .insert({ name: name.trim(), slug: normalizedSlug, sort_order, icon, parent_id })
+    .insert({ name: name.trim(), slug: normalizedSlug, sort_order, icon, parent_id, business_id: (await editingSite()).business_id })
     .select("id")
     .single();
 

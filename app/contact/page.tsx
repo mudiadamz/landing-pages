@@ -3,6 +3,7 @@ import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { currentSite } from "@/lib/site-resolve";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { SocialLinks } from "@/components/social-links";
 import { getSocialUrls, getSiteContent } from "@/lib/actions/site-settings";
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default async function ContactPage() {
   const t = translator(await requestLocale());
   const db = await createClient();
+  const site = await currentSite();
   const [
     { data: { user } },
     categories,
@@ -24,7 +26,7 @@ export default async function ContactPage() {
     content,
   ] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
     getSocialUrls(),
     getSiteContent(),
   ]);

@@ -3,6 +3,7 @@ import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { Button } from "@/components/ui/button";
 import { getCategories, getLandingPageForCheckout } from "@/lib/actions/landing-pages";
+import { currentSite } from "@/lib/site-resolve";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { PurchaseTracker } from "@/components/purchase-tracker";
 
@@ -19,12 +20,13 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
   const { slug } = await params;
   const { resultCode, merchantOrderId } = await searchParams;
   const db = await createClient();
+  const site = await currentSite();
   const [
     { data: { user } },
     categories,
   ] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
   ]);
 
   const success = resultCode === "00";

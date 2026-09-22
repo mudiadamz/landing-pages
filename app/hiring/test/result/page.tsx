@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { currentSite } from "@/lib/site-resolve";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 
 export const metadata: Metadata = {
@@ -14,9 +15,10 @@ export default async function HiringTestResultPage({ searchParams }: Props) {
   const { name } = await searchParams;
 
   const db = await createClient();
+  const site = await currentSite();
   const [{ data: { user } }, categories] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
   ]);
 
   return (

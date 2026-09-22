@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { currentSite } from "@/lib/site-resolve";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { notFound } from "next/navigation";
 import { getHiringContent } from "@/lib/actions/site-settings";
@@ -16,9 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HiringTestPage() {
   const db = await createClient();
+  const site = await currentSite();
   const [{ data: { user } }, categories, hiring, locale] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
     getHiringContent(),
     requestLocale(),
   ]);

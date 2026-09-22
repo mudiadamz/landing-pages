@@ -21,6 +21,7 @@ import { applySiteName, type LegalKey } from "@/lib/legal-config";
  */
 export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
   const db = await createClient();
+  const site = await currentSite();
   const [
     {
       data: { user },
@@ -30,12 +31,11 @@ export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
     locale,
   ] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
     getLegalContent(),
     requestLocale(),
   ]);
   const t = translator(locale);
-  const site = await currentSite();
   const raw = legal[pageKey];
   const page = {
     ...raw,

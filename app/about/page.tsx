@@ -4,6 +4,7 @@ import { requestLocale } from "@/lib/i18n/request";
 import Image from "next/image";
 import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
+import { currentSite } from "@/lib/site-resolve";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { SupportContactImages } from "@/components/support-contact-images";
@@ -16,13 +17,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AboutPage() {
   const t = translator(await requestLocale());
   const db = await createClient();
+  const site = await currentSite();
   const [
     { data: { user } },
     categories,
     content,
   ] = await Promise.all([
     db.auth.getUser(),
-    getCategories(),
+    getCategories(site.business_id),
     getSiteContent(),
   ]);
   const { founder } = content;
