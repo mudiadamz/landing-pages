@@ -4,9 +4,18 @@ import { useActionState } from "react";
 import { updateCustomJs } from "@/lib/actions/site-settings";
 import { useEffect, useState } from "react";
 import { SaveBar } from "@/components/ui/save-bar";
+import type { CustomJsVersion } from "@/lib/custom-js";
 import { useT } from "@/lib/i18n/client";
 
-export function CustomJsForm({ initialScript, siteId }: { initialScript: string; siteId: string }) {
+export function CustomJsForm({
+  initialScript,
+  history = [],
+  siteId,
+}: {
+  initialScript: string;
+  history?: CustomJsVersion[];
+  siteId: string;
+}) {
   const t = useT();
   const [state, formAction, pending] = useActionState(
     async (_prev: { ok: boolean; error?: string } | null, formData: FormData) => {
@@ -63,6 +72,38 @@ export function CustomJsForm({ initialScript, siteId }: { initialScript: string;
         className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-base sm:text-sm font-mono text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         spellCheck={false}
       />
+
+      {history.length > 0 && (
+        <details className="rounded-lg border border-[var(--border)] bg-[var(--background)]">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-foreground">
+            {t("panel.customJsHistory", { count: history.length })}
+          </summary>
+          <ul className="divide-y divide-[var(--border)] border-t border-[var(--border)]">
+            {history.map((v, i) => (
+              <li key={i} className="flex items-center gap-3 px-3 py-2 text-sm">
+                <span className="shrink-0 text-xs text-[var(--muted)]">
+                  {v.at ? new Date(v.at).toLocaleString() : `v${history.length - i}`}
+                </span>
+                <code className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--muted)]">
+                  {v.script.slice(0, 80) || "—"}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScript(v.script);
+                    setEnabled(v.script.trim().length > 0);
+                  }}
+                  className="shrink-0 rounded-md border border-[var(--border)] px-2 py-1 text-xs font-medium text-foreground hover:border-[var(--primary)]"
+                >
+                  {t("panel.customJsRestore")}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="px-3 py-2 text-xs text-[var(--muted)]">{t("panel.customJsRestoreHint")}</p>
+        </details>
+      )}
+
       <SaveBar
         dirty={dirty}
         saving={pending}

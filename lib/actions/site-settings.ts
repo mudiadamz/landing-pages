@@ -7,6 +7,12 @@ import { createClient } from "@/lib/db/server";
 import { requireFeature, requireAdmin, requireSiteAdmin } from "./profiles";
 import { normalizeRolePermissions, type RolePermissions } from "@/lib/role-permissions";
 import { DEFAULT_HERO, normalizeHero, type HeroConfig } from "@/lib/hero-config";
+import {
+  parseCustomJs,
+  serializeCustomJs,
+  withNewCustomJs,
+  type CustomJsRecord,
+} from "@/lib/custom-js";
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
 import { DEFAULT_LEGAL, normalizeLegal, type LegalContent } from "@/lib/legal-config";
 import { DEFAULT_HIRING, normalizeHiring, type HiringContent } from "@/lib/hiring-config";
@@ -516,7 +522,9 @@ const readCustomJs = unstable_cache(
         .eq("site_id", siteId)
         .eq("key", CUSTOM_JS_KEY)
         .maybeSingle();
-      return (data?.value as string) ?? "";
+      // Public site gets the ACTIVE script only; the version record (if any) is
+      // unwrapped here so nothing downstream needs to know about history.
+      return parseCustomJs(data?.value as string | null).script;
     } catch {
       return "";
     }
@@ -529,6 +537,20 @@ export async function getCustomJs(siteId?: string): Promise<string> {
   return readCustomJs(siteId ?? (await currentSiteId()));
 }
 
+/** Panel-only: the active script plus its version history. Uncached (edited rarely,
+ *  and the editor must always see the latest). Gated like the feature it edits. */
+export async function getCustomJsRecord(siteId?: string): Promise<CustomJsRecord> {
+  if (!(await requireFeature("custom-js"))) return { script: "", history: [] };
+  const db = await createClient();
+  const { data } = await db
+    .from("lp_site_settings")
+    .select("value")
+    .eq("site_id", siteId ?? (await currentSiteId()))
+    .eq("key", CUSTOM_JS_KEY)
+    .maybeSingle();
+  return parseCustomJs(data?.value as string | null);
+}
+
 export async function updateCustomJs(
   script: string,
   siteId?: string,
@@ -537,11 +559,21 @@ export async function updateCustomJs(
   if (!isAdmin) return { ok: false, error: "Akses ditolak." };
 
   const db = await createClient();
+  const id = siteId ?? (await currentSiteId());
+  // Read the current record so the outgoing script is kept in history.
+  const { data: existing } = await db
+    .from("lp_site_settings")
+    .select("value")
+    .eq("site_id", id)
+    .eq("key", CUSTOM_JS_KEY)
+    .maybeSingle();
+  const record = withNewCustomJs(parseCustomJs(existing?.value as string | null), script);
+
   const { error } = await db.from("lp_site_settings").upsert(
     {
-      site_id: siteId ?? (await currentSiteId()),
+      site_id: id,
       key: CUSTOM_JS_KEY,
-      value: script.trim(),
+      value: serializeCustomJs(record),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "site_id,key" },

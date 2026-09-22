@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireFeature } from "@/lib/actions/profiles";
-import { getCustomJs } from "@/lib/actions/site-settings";
+import { getCustomJsRecord } from "@/lib/actions/site-settings";
 import { editingSite } from "@/lib/site-resolve";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { CustomJsForm } from "./custom-js-form";
@@ -18,7 +18,7 @@ export default async function CustomJsPage() {
   if (!ok) redirect("/panel");
 
   const site = await editingSite();
-  const initialScript = await getCustomJs(site.id);
+  const record = await getCustomJsRecord(site.id);
 
   return (
     <div className="space-y-6">
@@ -30,7 +30,12 @@ export default async function CustomJsPage() {
         <p className="text-sm text-[var(--muted)] mb-4">
           {t("panel.customJsIntro")}
         </p>
-        <CustomJsForm key={site.id} initialScript={initialScript} siteId={site.id} />
+        <CustomJsForm
+          key={site.id}
+          initialScript={record.script}
+          history={record.history}
+          siteId={site.id}
+        />
       </div>
     </div>
   );

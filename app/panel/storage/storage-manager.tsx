@@ -63,6 +63,11 @@ function bucketLabel(bucket: string): string {
   return BUCKET_LABELS[bucket] ?? bucket;
 }
 
+/** Buckets holding personal / private data (KYC IDs, CVs, chat uploads). Storage
+ *  is already Company-only, but these are flagged so an admin knows what they are
+ *  looking at before opening them. */
+const SENSITIVE_BUCKETS = new Set(["publisher-kyc", "hiring-cv", "chat-attachments"]);
+
 /** Split "a/b/c.png" into its folder and file name. Root files get "". */
 function splitPath(path: string): { dir: string; name: string } {
   const i = path.lastIndexOf("/");
@@ -235,7 +240,7 @@ export function StorageManager({
             <option value="all">Semua bucket ({files.length})</option>
             {buckets.map((b) => (
               <option key={b} value={b}>
-                {bucketLabel(b)} ({counts.get(b) ?? 0})
+                {bucketLabel(b)}{SENSITIVE_BUCKETS.has(b) ? " · sensitif" : ""} ({counts.get(b) ?? 0})
               </option>
             ))}
           </select>
@@ -357,6 +362,11 @@ function TreeFolder({
         <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground" title={node.name}>
           {node.name}
         </span>
+        {depth === 0 && SENSITIVE_BUCKETS.has(node.key) && (
+          <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[0.625rem] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+            Sensitif
+          </span>
+        )}
         <span className="shrink-0 text-[0.6875rem] text-[var(--muted)]">
           {t("panel.fileCount", { count: node.count, size: formatBytes(node.size) })}
         </span>

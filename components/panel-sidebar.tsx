@@ -69,7 +69,10 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
     labelKey: "panel.navGroupSelling",
     items: [
       { href: "/panel/products", labelKey: "panel.navProducts", icon: LayoutIcon, sellerOnly: true },
-      { href: "#assets", labelKey: "panel.navAssets", icon: ImageIcon, sellerOnly: true, action: "assets" },
+      // A real page (/panel/assets), not a modal: it was the only nav entry that
+      // opened a dialog, and it overlapped the Storage file manager. Sellers get
+      // the asset library here; Storage stays the Company-only file admin.
+      { href: "/panel/assets", labelKey: "panel.navAssets", icon: ImageIcon, sellerOnly: true },
       { href: "/panel/sales", labelKey: "panel.navSales", icon: ChartIcon, feature: "stats", publisherToo: true },
     ],
   },
