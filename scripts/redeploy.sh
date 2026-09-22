@@ -44,7 +44,7 @@ mkdir -p "$STATE_DIR"
 # they never appear here; their NEXT_PUBLIC_* lines are folded in separately.
 source_manifest() {
   { git ls-files; git ls-files --others --exclude-standard; } 2>/dev/null \
-    | grep -vE '^(docs/|tests/|\.claude/|\.cursor/|\.github/|\.deploy-state/)' \
+    | grep -vE '^(docs/|tests/|scripts/|\.githooks/|\.claude/|\.cursor/|\.github/|\.deploy-state/)' \
     | grep -vE '(\.md|\.test\.[jt]sx?|\.spec\.[jt]sx?)$' \
     | sort -u
 }

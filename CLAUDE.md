@@ -102,11 +102,15 @@ Ringkasan yang paling sering dilanggar:
   on-demand TLS, dan bertanya ke `/api/tls-check` (jawabannya dari `lp_sites`)
   sebelum menerbitkan sertifikat. `NEXT_PUBLIC_*` disulih saat **build** — ganti
   nilainya berarti build ulang, bukan restart.
-- Selesai task → **commit** tanpa diminta. `git push` **diizinkan** sejak
-  2026-09-19 (allow rule `Bash(git push:*)` di `~/.claude/settings.json`), tapi
-  tetap hanya kalau diminta — selesai ≠ siap terbit. Aturan lama "push diblokir
-  deny rule + PreToolUse hook" **tidak pernah benar-benar ada** mekanismenya;
-  yang menahan cuma kalimat ini.
+- **Selesai mengubah kode → jalankan rutin `scripts/ship.sh "pesan"`** (sejak
+  2026-09-22, permintaan Adam): (1) naikkan versi, (2) rebuild + restart, (3)
+  commit + push — tanpa diminta lagi tiap selesai. Ketiganya sudah otomatis:
+  versi dinaikkan oleh hook `.githooks/pre-commit`; rebuild/restart oleh
+  `scripts/redeploy.sh` (REBUILD/RESTART/NOOP sesuai yang berubah); push ke
+  `origin` (allow rule `Bash(git push:*)` di `~/.claude/settings.json`) dengan
+  retry. Push butuh kredensial GitHub (gh auth / PAT / SSH) yang harus disiapkan
+  sekali di mesin ini. Aturan lama "push hanya kalau diminta" **diganti** oleh
+  rutin ini.
 - **Author commit selalu Adam, bukan Claude.** Commit pakai
   `git -c user.email=mudi.adamz@gmail.com -c user.name=mudiadamz` (Vercel dulu
   menolak email lain — lihat memory), dan **tanpa trailer `Co-Authored-By:
