@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Auto-increment the semver PATCH in package.json on every commit, and stage the
+# change so it rides along in the same commit. Wired via `core.hooksPath`
+# (set by the package.json "prepare" script, or manually:
+#   git config core.hooksPath .githooks
+#
+# Skips during merge/rebase/cherry-pick so replayed commits don't each re-bump.
+set -euo pipefail
+
+GIT_DIR="$(git rev-parse --git-dir)"
+if [ -f "$GIT_DIR/MERGE_HEAD" ] || [ -d "$GIT_DIR/rebase-merge" ] || \
+   [ -d "$GIT_DIR/rebase-apply" ] || [ -f "$GIT_DIR/CHERRY_PICK_HEAD" ]; then
+  exit 0
+fi
+
+# Resolve repo root so the hook works from any subdirectory.
+ROOT="$(git rev-parse --show-toplevel)"
+node "$ROOT/scripts/bump-version.mjs"
+git add "$ROOT/package.json"

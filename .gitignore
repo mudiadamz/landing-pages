@@ -50,3 +50,4 @@ next-env.d.ts
 # Sisa lokal Supabase CLI (project-ref, pooler-url) — dipakai runbook cutover,
 # dihapus bersama project Supabase.
 /supabase/
+.deploy-state/

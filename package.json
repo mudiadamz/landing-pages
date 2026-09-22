@@ -1,10 +1,11 @@
 {
   "name": "landing_pages",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "preinstall": "node scripts/only-pnpm.mjs",
+    "prepare": "git config core.hooksPath .githooks || true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
