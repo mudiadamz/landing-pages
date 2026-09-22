@@ -441,7 +441,7 @@ const getCachedCategories = unstable_cache(
  * in, because a cached function cannot read the request (docs/plans/multi-business-saas.md).
  * Omitted = no filter (single-business / fallback), so existing behaviour holds.
  */
-export function getCategories(businessId?: string | null): Promise<LandingPageCategory[]> {
+export async function getCategories(businessId?: string | null): Promise<LandingPageCategory[]> {
   return getCachedCategories(businessId ?? null);
 }
 
