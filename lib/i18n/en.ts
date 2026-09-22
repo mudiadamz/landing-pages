@@ -137,9 +137,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.moveDown": "Move down",
   "panel.removeLink": "Remove link",
   "panel.tabSocial": "Social media",
-  "panel.tabSocialSub": "Address for each network",
   "panel.tabOther": "Other links",
-  "panel.tabOtherSub": "Your other sites",
 
   /* panel: sidebar */
   "panel.roleAdmin": "Company",
@@ -288,8 +286,6 @@ export const en: Record<keyof typeof id, string> = {
   "panel.noContacts": "No contact messages yet.",
   "panel.contactsEmpty": "Messages from the form at /contact show up here.",
   "panel.favoritesIntro": "The products you liked.",
-  "panel.noFavorites":
-    "No favourites yet. Tap the ❤ on a product page to keep it here.",
   "panel.noFavoritesHint": "Tap the ❤ on a product page to keep it here.",
   "panel.invoiceThanks": "Thank you for your purchase.",
   "panel.invoiceAuto": "This invoice was generated automatically by Storefront.",
@@ -709,15 +705,10 @@ export const en: Record<keyof typeof id, string> = {
 
   /* panel: konten situs */
   "content.tabFounder": "Founder",
-  "content.tabFounderSub": "Photo, name & credibility card",
   "content.tabPages": "Pages",
-  "content.tabPagesSub": "About & Contact",
   "content.tabBuyer": "Buyer info",
-  "content.tabBuyerSub": "How to buy, support & FAQ",
   "content.tabLegal": "Terms",
-  "content.tabLegalSub": "Licence & publisher terms",
   "content.tabFooter": "Footer",
-  "content.tabFooterSub": "Tagline at the foot of the page",
   "content.founderCard": "Founder card",
   "content.founderCardIntro":
     "The maker-credibility card shown on the homepage, category pages, and checkout.",
@@ -1156,9 +1147,6 @@ export const en: Record<keyof typeof id, string> = {
   "panel.ratingRequired": "Pick a rating of at least 1 star",
   "panel.updateReview": "Update review",
   "panel.sendReview": "Send review",
-  "panel.rolePublisherNote": "Already included: purchases, their own products, their product stats.",
-  "panel.roleCustomerNote": "Already included: the purchase list.",
-  "panel.adminFullAccess": "Admins always have full access to every feature (not configurable).",
   "panel.roleColFeature": "Feature",
   "panel.roleLegend": "Company & Agent always have every site feature. Locked rows cannot be delegated.",
   "panel.roleReasonCompany": "Company only",
@@ -1395,7 +1383,6 @@ export const en: Record<keyof typeof id, string> = {
   "home.comingSoon": "Coming soon",
   "content.contactPageLink": "Contact page",
   "home.publishedCount": "{count} products published · ",
-  "content.supportContactAlt": "{label} support contact",
 
   "home.bestSelling": "Best selling",
 

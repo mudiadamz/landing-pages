@@ -5,6 +5,7 @@ import { unstable_noStore, unstable_cache, revalidatePath } from "next/cache";
 import { createAnonClient } from "@/lib/db/anon";
 import { createClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
+import { setBusinessContext } from "@/lib/backend/tenant";
 import {
   normalizeAccountType,
   normalizePublisherStatus,
@@ -39,6 +40,8 @@ export type Profile = {
   email_verified_at: string | null;
   /** Public URL of their picture, or null — the initial letter is the fallback. */
   avatar_url: string | null;
+  /** Platform operator — bypasses business scoping (docs/plans/multi-business-saas.md). */
+  is_platform: boolean;
 };
 
 /** Company saja. Tanpa cadangan kalau profilnya tidak ada. */
@@ -228,17 +231,21 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data, error } = await db
     .from("lp_profiles")
-    .select("id, full_name, account_type, email_verified_at, avatar_url")
+    .select("id, full_name, account_type, email_verified_at, avatar_url, is_platform")
     .eq("id", user.id)
     .single();
 
   if (error || !data) return null;
+  // Carry the platform flag into the request so the DB layer can let Platform
+  // bypass business scoping (Fase 2 policies read is_platform()).
+  setBusinessContext({ isPlatform: !!data.is_platform });
   return {
     id: data.id,
     full_name: data.full_name ?? null,
     account_type: normalizeAccountType(data.account_type),
     email_verified_at: data.email_verified_at ?? null,
     avatar_url: data.avatar_url ?? null,
+    is_platform: !!data.is_platform,
   } as Profile;
 });
 

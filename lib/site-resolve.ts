@@ -6,6 +6,7 @@ import { createClient as createServerClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
 import { normalizeAccountType } from "@/lib/profile-utils";
+import { setBusinessContext } from "@/lib/backend/tenant";
 import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
 
 /**
@@ -46,10 +47,12 @@ export type Site = {
   active: boolean;
   /** UI language. Must be a Locale in lib/i18n; the DB CHECK keeps them in step. */
   locale: Locale;
+  /** Which Business owns this storefront (docs/plans/multi-business-saas.md). */
+  business_id: string | null;
 };
 
 const SITE_COLUMNS =
-  "id, host, name, tagline, description, category_ids, template, palette, logo_url, icon_url, is_canonical, active, locale";
+  "id, host, name, tagline, description, category_ids, template, palette, logo_url, icon_url, is_canonical, active, locale, business_id";
 
 /**
  * Used when lp_sites is empty or unreachable — a fresh database, or the migration
@@ -72,6 +75,7 @@ const FALLBACK_SITE: Site = {
   is_canonical: true,
   active: true,
   locale: DEFAULT_LOCALE,
+  business_id: null,
 };
 
 function anonClient() {
@@ -160,8 +164,11 @@ export async function currentHost(): Promise<string> {
 export async function currentSite(): Promise<Site> {
   const host = await currentHost();
   const match = host ? await safeSiteByHost(host) : null;
-  if (match && match.active) return match;
-  return (await safeCanonicalSite()) ?? FALLBACK_SITE;
+  const site = match && match.active ? match : ((await safeCanonicalSite()) ?? FALLBACK_SITE);
+  // Thread this storefront's business into the request so the DB layer scopes to
+  // it (docs/plans/multi-business-saas.md).
+  setBusinessContext({ businessId: site.business_id });
+  return site;
 }
 
 export async function currentSiteId(): Promise<string> {
@@ -228,13 +235,16 @@ export const editingSite = cache(async (): Promise<Site> => {
   // adalah pintu masuk ke storefront orang lain. Situs yang tidak boleh
   // dibuka jatuh ke situs pertama yang boleh — bukan ke kanonik, yang justru
   // situs yang paling mungkin bukan miliknya.
-  const match = wanted ? allowed.find((s) => s.id === wanted) : undefined;
-  if (match) return match;
-  if (allowed.length) return allowed.find((s) => s.is_canonical) ?? allowed[0];
-  // Bukan anggota situs mana pun (dan bukan platform admin). Panel tetap harus
-  // merender sesuatu — layar-layarnya punya gate sendiri.
-  const all = await listSites();
-  return all.find((s) => s.is_canonical) ?? all[0] ?? FALLBACK_SITE;
+  let site = wanted ? allowed.find((s) => s.id === wanted) : undefined;
+  if (!site && allowed.length) site = allowed.find((s) => s.is_canonical) ?? allowed[0];
+  if (!site) {
+    // Bukan anggota situs mana pun (dan bukan platform admin). Panel tetap harus
+    // merender sesuatu — layar-layarnya punya gate sendiri.
+    const all = await listSites();
+    site = all.find((s) => s.is_canonical) ?? all[0] ?? FALLBACK_SITE;
+  }
+  setBusinessContext({ businessId: site.business_id });
+  return site;
 });
 
 /**

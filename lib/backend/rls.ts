@@ -1,5 +1,6 @@
 import type pg from "pg";
 import { pool } from "./pool";
+import { businessContext } from "./tenant";
 
 /**
  * Run database work as a particular caller, with row-level security applied.
@@ -27,10 +28,16 @@ export async function withRls<T>(who: Who, fn: (client: pg.PoolClient) => Promis
     await client.query("begin");
     const role = roleOf(who);
     const claims = typeof who === "object" ? { sub: who.uid, role } : { role };
-    await client.query("select set_config('role', $1, true), set_config('request.jwt.claims', $2, true)", [
-      role,
-      JSON.stringify(claims),
-    ]);
+    // Business context alongside the role/jwt: which business this request is
+    // for, and whether the caller is Platform (bypasses business scoping). Both
+    // transaction-local, like the role. Fase 1 only SETS them — no RLS reads
+    // them yet — so this is inert until Fase 2's policies land.
+    const ctx = businessContext();
+    await client.query(
+      `select set_config('role', $1, true), set_config('request.jwt.claims', $2, true),
+              set_config('app.business_id', $3, true), set_config('app.is_platform', $4, true)`,
+      [role, JSON.stringify(claims), ctx.businessId ?? "", ctx.isPlatform ? "on" : "off"],
+    );
     const out = await fn(client);
     await client.query("commit");
     return out;

@@ -22,6 +22,7 @@ const SITE: Site = {
   is_canonical: false,
   active: true,
   locale: "en",
+  business_id: null,
 };
 
 describe("normalizeLocale", () => {

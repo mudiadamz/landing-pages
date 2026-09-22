@@ -77,9 +77,11 @@ describe("normalizeHiring", () => {
     expect(out.questions[1].answer).toBe(0);
   });
 
-  it("keeps the enabled flag, including when it is off", () => {
+  it("keeps the enabled flag, and defaults off (hiring demo disabled)", () => {
+    expect(normalizeHiring({ enabled: true }).enabled).toBe(true);
     expect(normalizeHiring({ enabled: false }).enabled).toBe(false);
-    expect(normalizeHiring({}).enabled).toBe(true);
+    // Default is off — a fresh site ships no vacancy (audit Tahap 1).
+    expect(normalizeHiring({}).enabled).toBe(false);
   });
 
   it("ships a {count} placeholder in both counted sentences", () => {

@@ -165,7 +165,9 @@ describe("dictionary integrity", () => {
     // splits them: "Source" for the analytics column, "Sources" for the list.
     Sumber: ["analytics.source", "chat.sources"],
     // Re-check a domain's DNS vs re-send a chat message that failed.
-    "Coba lagi": ["sites.tryAgain", "chat.retry"],
+    "Coba lagi": ["common.retry", "sites.tryAgain", "chat.retry"],
+    Pulihkan: ["panel.customJsRestore", "sales.restore"],
+    Founder: ["content.tabFounder", "content.rolePlaceholder"],
     // The 404 page's way out vs the enquiry route for a plan with no price on it.
     // English is already free to split them ("Contact us" / "Get in touch").
     "Hubungi kami": ["notFound.contact", "plan.contactUs"],

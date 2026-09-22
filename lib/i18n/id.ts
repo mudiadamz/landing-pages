@@ -126,9 +126,7 @@ export const id = {
   "panel.moveDown": "Turunkan",
   "panel.removeLink": "Hapus link",
   "panel.tabSocial": "Media sosial",
-  "panel.tabSocialSub": "Alamat tiap jaringan",
   "panel.tabOther": "Link lainnya",
-  "panel.tabOtherSub": "Situs lain milik Anda",
 
   /* panel: sidebar */
   "panel.roleAdmin": "Company",
@@ -275,8 +273,6 @@ export const id = {
   "panel.noContacts": "Belum ada pesan kontak.",
   "panel.contactsEmpty": "Pesan dari form di /contact akan muncul di sini.",
   "panel.favoritesIntro": "Produk yang Anda sukai.",
-  "panel.noFavorites":
-    "Belum ada favorit. Ketuk ikon ❤ di halaman produk untuk menyimpannya di sini.",
   "panel.noFavoritesHint": "Ketuk ikon ❤ di halaman produk untuk menyimpannya di sini.",
   "panel.invoiceThanks": "Terima kasih atas pembelian Anda.",
   "panel.invoiceAuto": "Invoice ini dibuat secara otomatis oleh sistem Storefront.",
@@ -699,15 +695,10 @@ export const id = {
 
   /* panel: konten situs */
   "content.tabFounder": "Founder",
-  "content.tabFounderSub": "Foto, nama & kartu kredibilitas",
   "content.tabPages": "Halaman",
-  "content.tabPagesSub": "Tentang & Kontak",
   "content.tabBuyer": "Info pembeli",
-  "content.tabBuyerSub": "Cara beli, support & FAQ",
   "content.tabLegal": "Ketentuan",
-  "content.tabLegalSub": "Lisensi & syarat publisher",
   "content.tabFooter": "Footer",
-  "content.tabFooterSub": "Tagline di kaki halaman",
   "content.founderCard": "Kartu founder",
   "content.founderCardIntro":
     "Kartu bukti pembuat yang tampil di homepage, halaman kategori, dan checkout.",
@@ -1146,9 +1137,6 @@ export const id = {
   "panel.ratingRequired": "Pilih rating minimal 1 bintang",
   "panel.updateReview": "Update review",
   "panel.sendReview": "Kirim review",
-  "panel.rolePublisherNote": "Sudah otomatis: pembelian, produk sendiri, stats produknya.",
-  "panel.roleCustomerNote": "Sudah otomatis: daftar pembelian.",
-  "panel.adminFullAccess": "Admin selalu punya akses penuh ke semua fitur (tidak dapat diubah).",
   "panel.roleColFeature": "Fitur",
   "panel.roleLegend": "Company & Agent selalu punya semua fitur situs. Baris terkunci tidak bisa didelegasikan.",
   "panel.roleReasonCompany": "Hanya Company",
@@ -1385,7 +1373,6 @@ export const id = {
   "home.comingSoon": "Segera hadir",
   "content.contactPageLink": "halaman Kontak",
   "home.publishedCount": "{count} produk diterbitkan · ",
-  "content.supportContactAlt": "{label} kontak support",
 
   "home.bestSelling": "Terlaris",
 

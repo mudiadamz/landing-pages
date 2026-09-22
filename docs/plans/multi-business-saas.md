@@ -112,7 +112,7 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | Fase | Isi | Status |
 |---|---|---|
 | 0 | Tabel `lp_businesses` / `lp_business_members` / `lp_business_ledger`; `business_id` nullable + `is_platform`; backfill 1 business default. **Nol perubahan perilaku.** | ✅ |
-| 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ⬜ |
+| 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
 | 2 | Isolasi katalog/user/storage per business; nyalakan RLS `business_id`. | ⬜ |
 | 3 | Ledger + komisi + hold + payout + KYC business (reuse publisher-KYC). | ⬜ |
 | 4 | Signup business (approval-gated), onboarding + domain, panel Platform kelola semua business. | ⬜ |
