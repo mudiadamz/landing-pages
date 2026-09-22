@@ -32,15 +32,25 @@ export default async function SitesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">{t("panel.navDomains")}</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          {t("sites.domainsIntro")}{" "}
-          <Link href="/panel/branding" className="text-[var(--primary)] hover:underline">
-            {t("sites.identity")}
-          </Link>
-          .
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">{t("panel.navDomains")}</h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            {t("sites.domainsIntro")}{" "}
+            <Link href="/panel/branding" className="text-[var(--primary)] hover:underline">
+              {t("sites.identity")}
+            </Link>
+            .
+          </p>
+        </div>
+        {/* Guided path: domain → template/palette → identity → niche → go-live, all
+            in one flow, versus the quick two-field add below. */}
+        <Link
+          href="/panel/sites/new"
+          className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[var(--primary)] px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+        >
+          + Storefront baru (panduan)
+        </Link>
       </div>
 
       <SitesManager
