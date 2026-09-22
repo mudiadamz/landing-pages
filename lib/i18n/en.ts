@@ -234,7 +234,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.popupEnable": "Enable the popup banner",
   "panel.popupEnableHint":
     "Shown on product preview pages. Without an image the popup never appears.",
-  "panel.popupImage": "Header image (WebP, optional)",
+  "panel.popupImage": "Header image (WebP, required)",
   "panel.popupHref": "Destination link",
   "panel.popupHrefPlaceholder": "/preview/product-name or https://…",
   "panel.popupAlt": "Alt text",
@@ -276,6 +276,8 @@ export const en: Record<keyof typeof id, string> = {
   "panel.notVerified": "Not verified",
   "panel.verified": "Verified",
   "panel.noUsers": "No users found.",
+  "panel.usersLoadError": "Failed to load users.",
+  "common.retry": "Try again",
   "panel.excludeStatsHint": "This user's visits are not counted in Analytics",
   "panel.countStats": "Count in statistics",
   "panel.changeRole": "Change role",
@@ -945,7 +947,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.text": "Text",
   "panel.popupUploaded": "Uploaded — {width}×{height}px. Remember to Save.",
   "panel.popupImageHint":
-    "Optional — without an image the popup uses the built-in rain + flowers illustration (zero requests). If you do set one: real WebP, {max} KB max.",
+    "Required to show the popup — without an image it never appears. Real WebP, {max} KB max.",
   "panel.imageReady": "Image ready",
   "panel.popupEmailNoteBefore": "Addresses are stored in",
   "panel.popupEmailNoteAfter": "Turned off, the button uses the “Target link” above.",
@@ -1217,6 +1219,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.rolesIntro":
     "Choose which admin features each role can reach. A user inherits access from their role — change a user's role on the Users page.",
   "panel.usersScopeHint": "Members of {host}. Removing someone from the site does not delete their account.",
+  "panel.usersScopeHintNoSite": "Members of the current site. Removing someone from the site does not delete their account.",
   "panel.siteFlags": "On this site",
   "panel.removeFromSite": "Remove from site",
   "panel.removeFromSiteConfirm": "Remove {name} from this site? Their account and purchases stay — they only lose access to this site.",

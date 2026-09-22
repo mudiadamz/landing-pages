@@ -55,8 +55,8 @@ export const DEFAULT_LEGAL: LegalContent = {
   privacy: {
     title: "Kebijakan Privasi",
     description:
-      "Kebijakan privasi Storefront. Cara kami mengumpulkan, menggunakan, dan melindungi informasi Anda.",
-    body: `<p>Privasi Anda penting bagi kami. Kebijakan ini menjelaskan cara kami mengumpulkan, menggunakan, membagikan, dan melindungi informasi Anda saat menggunakan layanan Storefront. Kami berusaha mengikuti prinsip Undang-Undang Pelindungan Data Pribadi (UU PDP) Indonesia.</p>
+      "Kebijakan privasi {{site}}. Cara kami mengumpulkan, menggunakan, dan melindungi informasi Anda.",
+    body: `<p>Privasi Anda penting bagi kami. Kebijakan ini menjelaskan cara kami mengumpulkan, menggunakan, membagikan, dan melindungi informasi Anda saat menggunakan layanan {{site}}. Kami berusaha mengikuti prinsip Undang-Undang Pelindungan Data Pribadi (UU PDP) Indonesia.</p>
 <h2>Informasi yang Kami Kumpulkan</h2>
 <ul>
 <li><strong>Data akun</strong> — nama dan email saat Anda mendaftar.</li>
@@ -90,7 +90,7 @@ export const DEFAULT_LEGAL: LegalContent = {
 
   terms: {
     title: "Ketentuan Layanan",
-    description: "Ketentuan layanan Storefront. Syarat dan ketentuan penggunaan produk digital.",
+    description: "Ketentuan layanan {{site}}. Syarat dan ketentuan penggunaan produk digital.",
     body: `<p>Dengan menggunakan layanan kami, Anda setuju dengan ketentuan ini. Mohon baca dengan saksama.</p>
 <h2>Penggunaan Layanan</h2>
 <p>Anda setuju menggunakan platform produk digital kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.</p>
@@ -106,7 +106,7 @@ export const DEFAULT_LEGAL: LegalContent = {
   refund: {
     title: "Kebijakan Pengembalian Dana",
     description:
-      "Kebijakan pengembalian dana Storefront. Garansi 7 hari untuk file rusak atau tidak sesuai deskripsi.",
+      "Kebijakan pengembalian dana {{site}}. Garansi 7 hari untuk file rusak atau tidak sesuai deskripsi.",
     body: `<p>Produk kami berupa template HTML dan digital assets yang dikirim secara digital. Karena itu, setiap produk bisa Anda <a href="/">preview gratis</a> secara lengkap sebelum membeli—jadi Anda tahu persis apa yang Anda dapat.</p>
 <h2>Garansi 7 hari</h2>
 <p>Kami memberi garansi 7 hari sejak tanggal pembelian. Jika file yang Anda terima <strong>rusak, tidak lengkap, atau tidak sesuai dengan deskripsi/preview</strong>, kami akan memperbaikinya, atau—jika tidak bisa diperbaiki—mengembalikan dana Anda sepenuhnya.</p>
@@ -147,4 +147,13 @@ export function normalizeLegal(raw: unknown): LegalContent {
     refund: page("refund"),
     updatedAt: stamp,
   };
+}
+
+/**
+ * Resolve the `{{site}}` placeholder used by the default legal copy to the live
+ * storefront name. Author-edited copy simply has no token to replace, so this
+ * is a no-op there.
+ */
+export function applySiteName<T extends string>(text: T, siteName: string): string {
+  return text.replace(/\{\{site\}\}/g, siteName || "situs ini");
 }

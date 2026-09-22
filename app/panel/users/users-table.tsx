@@ -50,15 +50,32 @@ export function UsersTable({
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [verifyFilter, setVerifyFilter] = useState<VerifyFilter>("all");
 
+  // Error kept apart from "empty": a failed fetch must not read as "no members",
+  // which is exactly the bug that made an API 500 look like an empty site.
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+    setLoadError(false);
     fetch(allSites ? "/api/admin/users?scope=all" : "/api/admin/users")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setUsers(data);
+      .then(async (r) => {
+        const data = await r.json().catch(() => null);
+        if (cancelled) return;
+        if (r.ok && Array.isArray(data)) setUsers(data);
+        else setLoadError(true);
       })
-      .finally(() => setLoading(false));
-  }, [allSites]);
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [allSites, reloadKey]);
 
   /**
    * Dua saklar, bukan satu dropdown role.
@@ -430,10 +447,23 @@ export function UsersTable({
             </div>
           </div>
         ))}
-        {filtered.length === 0 && (
-          <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted)]">
-            {t("panel.noUsers")}
-          </p>
+        {loadError ? (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center text-sm">
+            <p className="text-red-700 dark:text-red-400">{t("panel.usersLoadError")}</p>
+            <button
+              type="button"
+              onClick={() => setReloadKey((k) => k + 1)}
+              className="mt-3 inline-flex min-h-[36px] items-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm font-medium text-foreground hover:border-[var(--primary)]"
+            >
+              {t("common.retry")}
+            </button>
+          </div>
+        ) : (
+          filtered.length === 0 && (
+            <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted)]">
+              {t("panel.noUsers")}
+            </p>
+          )
         )}
       </div>
 
@@ -538,12 +568,27 @@ export function UsersTable({
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {loadError ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
-                    {t("panel.noUsers")}
+                  <td colSpan={6} className="px-4 py-8 text-center">
+                    <span className="text-red-700 dark:text-red-400">{t("panel.usersLoadError")}</span>
+                    <button
+                      type="button"
+                      onClick={() => setReloadKey((k) => k + 1)}
+                      className="ml-3 inline-flex min-h-[32px] items-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-sm font-medium text-foreground hover:border-[var(--primary)]"
+                    >
+                      {t("common.retry")}
+                    </button>
                   </td>
                 </tr>
+              ) : (
+                filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
+                      {t("panel.noUsers")}
+                    </td>
+                  </tr>
+                )
               )}
             </tbody>
           </table>

@@ -30,7 +30,9 @@ export default async function UsersPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">{t("panel.userList")}</h1>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          {t("panel.usersScopeHint", { host: site.host })}
+          {site.host
+            ? t("panel.usersScopeHint", { host: site.host })
+            : t("panel.usersScopeHintNoSite")}
         </p>
       </div>
       <PublisherApplications initial={applications} />

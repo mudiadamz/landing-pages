@@ -108,8 +108,15 @@ export function SiteProfileForm({
         <header>
           <h2 className="text-sm font-semibold text-foreground">{t("sites.identityHeading")}</h2>
           <p className="mt-0.5 text-xs text-[var(--muted)]">
-            {t("sites.identityIntro")}{" "}
-            <span className="font-mono text-foreground">{host}</span>.
+            {t("sites.identityIntro")}
+            {host ? (
+              <>
+                {" "}
+                <span className="font-mono text-foreground">{host}</span>.
+              </>
+            ) : (
+              "."
+            )}
           </p>
         </header>
 

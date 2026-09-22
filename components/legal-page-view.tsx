@@ -4,7 +4,8 @@ import { getLegalContent } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
-import type { LegalKey } from "@/lib/legal-config";
+import { currentSite } from "@/lib/site-resolve";
+import { applySiteName, type LegalKey } from "@/lib/legal-config";
 
 /**
  * The body of /privacy, /terms and /refund.
@@ -34,7 +35,13 @@ export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
     requestLocale(),
   ]);
   const t = translator(locale);
-  const page = legal[pageKey];
+  const site = await currentSite();
+  const raw = legal[pageKey];
+  const page = {
+    ...raw,
+    title: applySiteName(raw.title, site.name),
+    body: applySiteName(raw.body, site.name),
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -72,12 +79,16 @@ export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
 
 /** Metadata for a legal route, from the same stored copy. */
 export async function legalMetadata(pageKey: LegalKey) {
-  const legal = await getLegalContent();
+  const [legal, site] = await Promise.all([getLegalContent(), currentSite()]);
   const page = legal[pageKey];
-  const fallback = page.body
+  const body = applySiteName(page.body, site.name);
+  const fallback = body
     .replace(/<[^>]*>/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 155);
-  return { title: page.title, description: page.description.trim() || fallback };
+  return {
+    title: applySiteName(page.title, site.name),
+    description: applySiteName(page.description, site.name).trim() || fallback,
+  };
 }

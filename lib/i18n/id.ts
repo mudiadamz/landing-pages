@@ -222,7 +222,7 @@ export const id = {
   "panel.heroImagePlaceholder": "Tempel URL gambar atau unggah di bawah",
   "panel.popupEnable": "Aktifkan popup banner",
   "panel.popupEnableHint": "Tampil di halaman preview produk. Tanpa gambar, popup tidak pernah muncul.",
-  "panel.popupImage": "Gambar header (WebP, opsional)",
+  "panel.popupImage": "Gambar header (WebP, wajib)",
   "panel.popupHref": "Link tujuan",
   "panel.popupHrefPlaceholder": "/preview/nama-produk atau https://…",
   "panel.popupAlt": "Teks alternatif",
@@ -263,6 +263,8 @@ export const id = {
   "panel.notVerified": "Belum verifikasi",
   "panel.verified": "Sudah verifikasi",
   "panel.noUsers": "Tidak ada user ditemukan.",
+  "panel.usersLoadError": "Gagal memuat daftar user.",
+  "common.retry": "Coba lagi",
   "panel.excludeStatsHint": "Kunjungan user ini tidak dihitung di Analytics",
   "panel.countStats": "Hitung statistik",
   "panel.changeRole": "Ubah role",
@@ -935,7 +937,7 @@ export const id = {
   "panel.text": "Teks",
   "panel.popupUploaded": "Terunggah — {width}×{height}px. Jangan lupa Simpan.",
   "panel.popupImageHint":
-    "Opsional — tanpa gambar, popup memakai ilustrasi hujan + bunga bawaan (nol request). Kalau diisi: wajib WebP asli, maksimal {max} KB.",
+    "Wajib untuk menampilkan popup — tanpa gambar, popup tidak pernah muncul. WebP asli, maksimal {max} KB.",
   "panel.imageReady": "Gambar siap",
   "panel.popupEmailNoteBefore": "Alamat disimpan di",
   "panel.popupEmailNoteAfter": "Kalau dimatikan, tombol memakai “Link tujuan” di atas.",
@@ -1207,6 +1209,7 @@ export const id = {
   "panel.rolesIntro":
     "Atur fitur admin mana yang bisa diakses tiap role. User mewarisi akses dari role-nya — ubah role user di halaman Users.",
   "panel.usersScopeHint": "Anggota situs {host}. Menghapus dari situs tidak menghapus akunnya.",
+  "panel.usersScopeHintNoSite": "Anggota situs yang sedang dilihat. Menghapus dari situs tidak menghapus akunnya.",
   "panel.siteFlags": "Di situs ini",
   "panel.removeFromSite": "Keluarkan dari situs",
   "panel.removeFromSiteConfirm": "Keluarkan {name} dari situs ini? Akunnya tetap ada beserta pembeliannya — dia hanya kehilangan akses ke situs ini.",
@@ -1620,7 +1623,7 @@ export const id = {
   "plan.upgrade": "Upgrade",
   "plan.showToVisitors": "Tampilkan paket ke pengunjung",
   "plan.showToVisitorsNote":
-    "Mati: /upgrade tidak ada lagi di domain ini, dan semua tombol Upgrade ikut hilang \u2014 di dialog preferensi, di tembok kuota harian, dan di chip pencarian web. Paket yang sudah dibeli tetap berlaku.",
+    "Nyala: halaman /upgrade tampil dan semua tombol Upgrade muncul. Mati: /upgrade tidak ada lagi di domain ini, dan semua tombol Upgrade ikut hilang \u2014 di dialog preferensi, di tembok kuota harian, dan di chip pencarian web. Paket yang sudah dibeli tetap berlaku.",
   "plan.noneVisible": "Belum ada tier yang ditampilkan, jadi halaman harga tetap tidak bisa dibuka.",
   "plan.tierName": "Nama tier",
   "plan.tierNote": "Satu baris untuk halaman harga",

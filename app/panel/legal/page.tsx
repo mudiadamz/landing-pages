@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getLegalContent } from "@/lib/actions/site-settings";
+import { applySiteName, LEGAL_KEYS } from "@/lib/legal-config";
 import { editingSite } from "@/lib/site-resolve";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { PanelPageHeader } from "@/components/panel-page-header";
@@ -18,7 +19,18 @@ export default async function LegalSettingsPage() {
   if (!ok) redirect("/panel");
 
   const site = await editingSite();
-  const legal = await getLegalContent(site.id);
+  const stored = await getLegalContent(site.id);
+  // Show the resolved site name in the editor, not the raw {{site}} token the
+  // default copy carries — the admin edits real text from here.
+  const legal = { ...stored };
+  for (const key of LEGAL_KEYS) {
+    legal[key] = {
+      ...stored[key],
+      title: applySiteName(stored[key].title, site.name),
+      description: applySiteName(stored[key].description, site.name),
+      body: applySiteName(stored[key].body, site.name),
+    };
+  }
 
   return (
     <div className="space-y-6">

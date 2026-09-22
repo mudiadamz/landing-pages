@@ -57,6 +57,11 @@ export async function GET(req: Request) {
   }
 
   const site = await editingSite();
+  // No resolved site (empty database, or a fallback with no id) means there are
+  // no members to list — an empty result, never a query against site_id = '',
+  // which Postgres rejects as an invalid uuid and would surface as a 500 that
+  // the table then mislabels as "no users".
+  if (!site.id) return NextResponse.json([]);
   // Dua tabel, karena sejak model account_type keduanya menjawab hal berbeda:
   // keanggotaan = "customer di sini", keagenan = "yang mengelola sini".
   const [{ data: members, error: memberErr }, { data: agents }] = await Promise.all([
