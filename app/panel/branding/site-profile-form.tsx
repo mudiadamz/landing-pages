@@ -182,7 +182,7 @@ export function SiteProfileForm({
             />
           </div>
           <p className="text-xs text-[var(--muted)]">
-            Dikosongkan = pakai lambang ADM.UIUX. Perubahan ikon baru terlihat di tab
+            Dikosongkan = pakai lambang Storefront. Perubahan ikon baru terlihat di tab
             setelah browser membuang cache favicon-nya — coba hard reload atau tab baru.
           </p>
         </div>

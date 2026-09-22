@@ -93,7 +93,7 @@ export type ChromeProps = {
   /**
    * This storefront's name, logo and icon. REQUIRED, not defaulted: the shared
    * header is a client component and cannot resolve the site itself, and an
-   * optional brand would let a new surface quietly render the ADM.UIUX mark on
+   * optional brand would let a new surface quietly render the Storefront mark on
    * somebody else's domain. Callers pass siteBrand(site); the TemplateHeader
    * dispatcher resolves it for the pages that don't already hold the site row.
    */
@@ -196,7 +196,7 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     key: "default",
     label: "Marketplace",
     description:
-      "Tampilan ADM.UIUX sekarang: hero besar, grid kartu 3 kolom, testimoni, FAQ. Cocok untuk katalog campuran — template, aset, ebook.",
+      "Tampilan Storefront sekarang: hero besar, grid kartu 3 kolom, testimoni, FAQ. Cocok untuk katalog campuran — template, aset, ebook.",
     Home: DefaultHome,
     // The chrome the live site already ships. Untouched on purpose.
     Header: SiteHeader,

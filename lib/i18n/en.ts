@@ -284,7 +284,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.noFavorites":
     "No favourites yet. Tap the ❤ on a product page to keep it here.",
   "panel.invoiceThanks": "Thank you for your purchase.",
-  "panel.invoiceAuto": "This invoice was generated automatically by ADM.UIUX.",
+  "panel.invoiceAuto": "This invoice was generated automatically by Storefront.",
   "panel.storageTruncated": "The list is capped. Use search to narrow it down.",
   "panel.storageBucket": "Bucket",
   "panel.sortBy": "Sort by",
@@ -1442,7 +1442,7 @@ export const en: Record<keyof typeof id, string> = {
   "contact.sendMessage": "Send a message",
 
   "about.metaDescription":
-    "About ADM.UIUX — ready-made digital products: templates, landing pages, and digital assets.",
+    "About Storefront — ready-made digital products: templates, landing pages, and digital assets.",
   "about.myNameIs": "My name is",
   "home.allCategories": "All categories",
   "home.allCategoriesMeta": "Browse every category and sub-category of digital products.",

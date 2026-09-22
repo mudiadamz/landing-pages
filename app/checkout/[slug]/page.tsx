@@ -179,7 +179,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     description: metaDescription,
     ...(heroThumb ? { image: [heroThumb] } : {}),
     url: canonicalUrl,
-    brand: { "@type": "Brand", name: "ADM.UIUX" },
+    brand: { "@type": "Brand", name: "Storefront" },
     offers: {
       "@type": "Offer",
       price: showAsFree ? 0 : displayPrice,

@@ -1,5 +1,5 @@
 // Inline brand mark, kept in sync with app/icon.svg (the favicon).
-// Rendered next to the "ADM.UIUX" wordmark in the site header + panel sidebar.
+// Rendered next to the brand wordmark in the site header + panel sidebar.
 export function BrandMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg
@@ -18,9 +18,7 @@ export function BrandMark({ className = "h-6 w-6" }: { className?: string }) {
         fontWeight="700"
         fill="white"
         textAnchor="middle"
-      >
-        A
-      </text>
+      >S</text>
     </svg>
   );
 }

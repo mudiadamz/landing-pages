@@ -91,7 +91,7 @@ export async function sendVerificationEmail(opts: {
   const base = (
     opts.origin?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://admuiux.com"
+    "http://localhost:3000"
   ).replace(/\/$/, "");
   const link = `${base}/auth/verify-email?token=${encodeURIComponent(token)}`;
   const from = process.env.RESEND_FROM ?? "onboarding@resend.dev";
@@ -102,16 +102,16 @@ export async function sendVerificationEmail(opts: {
     await resend.emails.send({
       from,
       to: opts.to,
-      subject: "Verifikasi email Anda — ADM.UIUX",
+      subject: "Verifikasi email Anda — Storefront",
       html: `
         <h1>Verifikasi email</h1>
         <p>${greeting}</p>
         <p>Klik tombol di bawah untuk memastikan alamat email ini benar milik Anda.</p>
         <p><a href="${link}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Verifikasi sekarang</a></p>
         <p style="color:#666;font-size:12px">Link berlaku 24 jam. Kalau tombol tidak jalan, buka link ini:<br>${link}</p>
-        <p style="color:#666;font-size:12px">Kalau Anda tidak membuat akun di ADM.UIUX, abaikan email ini.</p>
+        <p style="color:#666;font-size:12px">Kalau Anda tidak membuat akun di Storefront, abaikan email ini.</p>
         <hr>
-        <p style="color:#666;font-size:12px">ADM.UIUX — Landing Page &amp; Digital Assets</p>
+        <p style="color:#666;font-size:12px">Storefront — Landing Page &amp; Digital Assets</p>
       `,
     });
     return true;

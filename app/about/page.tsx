@@ -53,8 +53,8 @@ export default async function AboutPage() {
             <div className="flex items-center gap-4 mb-8">
               <div className="relative w-[100px] h-[100px] shrink-0 rounded-2xl overflow-hidden border border-[var(--border)] shadow-lg bg-[var(--card)]">
                 <Image
-                  src="/logo-adm-100.webp"
-                  alt="ADM.UIUX"
+                  src="/icon.svg"
+                  alt="Storefront"
                   width={100}
                   height={100}
                   className="object-contain p-1"

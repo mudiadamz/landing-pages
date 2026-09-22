@@ -6,7 +6,7 @@
  * values can also come from the build's environment.
  *
  * Tawk lives here rather than in the component because the ids used to be
- * hardcoded ADM.UIUX ones — which meant every niche storefront on this
+ * hardcoded Storefront ones — which meant every niche storefront on this
  * deployment opened a support chat belonging to a different business. Same
  * class of leak as a shared favicon, and the same fix: it is per-site data.
  */

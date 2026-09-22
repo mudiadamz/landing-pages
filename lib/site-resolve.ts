@@ -38,7 +38,7 @@ export type Site = {
   template: string;
   /** Palette preset key; validated against lib/palette PALETTE_PRESETS. */
   palette: string;
-  /** Wide wordmark for the header. NULL = the ADM.UIUX mark. */
+  /** Wide wordmark for the header. NULL = the Storefront mark. */
   logo_url: string | null;
   /** Square mark: browser tab, PWA, iOS home screen, bio avatar. NULL = default. */
   icon_url: string | null;
@@ -61,7 +61,7 @@ const SITE_COLUMNS =
 const FALLBACK_SITE: Site = {
   id: "",
   host: "",
-  name: "ADM.UIUX",
+  name: "Storefront",
   tagline: null,
   description: null,
   category_ids: [],
@@ -202,7 +202,7 @@ export async function currentOrigin(): Promise<string> {
  * links are built outside any request.
  */
 export function canonicalOrigin(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 }
 
 /**

@@ -37,7 +37,7 @@ export type SiteAppearance = {
   name: string;
   /** Two letters, drawn when there is no icon we can rasterise. */
   initials: string;
-  /** Square mark to centre on generated art. Falls back to the ADM.UIUX default. */
+  /** Square mark to centre on generated art. Falls back to the Storefront default. */
   iconUrl: string;
   /** False when `iconUrl` is that fallback rather than this storefront's own upload. */
   hasOwnIcon: boolean;

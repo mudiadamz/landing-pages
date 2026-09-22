@@ -271,7 +271,7 @@ export const id = {
   "panel.noFavorites":
     "Belum ada favorit. Ketuk ikon ❤ di halaman produk untuk menyimpannya di sini.",
   "panel.invoiceThanks": "Terima kasih atas pembelian Anda.",
-  "panel.invoiceAuto": "Invoice ini dibuat secara otomatis oleh sistem ADM.UIUX.",
+  "panel.invoiceAuto": "Invoice ini dibuat secara otomatis oleh sistem Storefront.",
   "panel.storageTruncated":
     "Daftar dipangkas pada batas maksimum. Pakai pencarian untuk mempersempit.",
   "panel.storageBucket": "Bucket",
@@ -1432,7 +1432,7 @@ export const id = {
   "contact.sendMessage": "Kirim pesan",
 
   "about.metaDescription":
-    "Tentang ADM.UIUX — produk digital siap pakai: template, landing page, dan aset digital.",
+    "Tentang Storefront — produk digital siap pakai: template, landing page, dan aset digital.",
   "about.myNameIs": "Nama saya",
   "home.allCategories": "Semua Kategori",
   "home.allCategoriesMeta": "Jelajahi semua kategori dan sub-kategori produk digital.",

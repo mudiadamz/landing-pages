@@ -7,7 +7,7 @@ import type { ChromeProps } from "../registry";
  * A bookshop masthead, not a marketplace toolbar.
  *
  * Differences that matter for the niche, rather than restyling for its own sake:
- * the wordmark is the SITE's name (a niche storefront is not ADM.UIUX), categories
+ * the wordmark is the SITE's name (a niche storefront is not Storefront), categories
  * are plain inline text instead of icon chips in a swipeable rail (a shelf has
  * sections, not app-store filters), and there is no hamburger drawer — a niche
  * catalogue has few enough sections to show them all, and the row wraps on

@@ -124,7 +124,7 @@ export const DEFAULT_CONTENT: SiteContent = {
 
   aboutHeading: "Tentang",
   aboutParagraphs: [
-    "ADM.UIUX membantumu menemukan, melihat preview, dan membeli produk digital siap pakai — mulai dari landing page, template, hingga aset digital lainnya. Mau yang gratis atau premium, jelajahi koleksi kami dan mulai dalam hitungan menit.",
+    "Storefront membantumu menemukan, melihat preview, dan membeli produk digital siap pakai — mulai dari landing page, template, hingga aset digital lainnya. Mau yang gratis atau premium, jelajahi koleksi kami dan mulai dalam hitungan menit.",
     "Buat akun untuk menyimpan pembelian dan mengakses panel untuk mengelola kontenmu. Kami fokus pada kesederhanaan dan kualitas.",
   ],
   aboutAuthorHeading: "Tentang penulis",
@@ -166,7 +166,7 @@ export const DEFAULT_CONTENT: SiteContent = {
   faqHeading: "FAQ",
   faqs: [
     {
-      q: "Apa saja yang dijual di ADM.UIUX?",
+      q: "Apa saja yang dijual di Storefront?",
       a: "Produk digital siap pakai — mulai dari landing page dan template HTML, hingga aset digital lainnya. Semua bisa di-preview gratis sebelum beli, lalu langsung dipakai sesuai kebutuhan.",
     },
     {

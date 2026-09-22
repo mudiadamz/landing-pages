@@ -9,8 +9,8 @@ import { t } from "@/lib/i18n";
 /**
  * A colophon, not a sitemap.
  *
- * The shared footer ends with a hardcoded "© ADM.UIUX", which is simply wrong on a
- * storefront that isn't ADM.UIUX — this one uses the site's own name. It also drops
+ * The shared footer ends with a hardcoded "© Storefront", which is simply wrong on a
+ * storefront that isn't Storefront — this one uses the site's own name. It also drops
  * the social row and the Hiring link: both belong to the parent brand, not to a
  * niche shop, and Hiring in particular is an odd thing to advertise on a bookshelf.
  *

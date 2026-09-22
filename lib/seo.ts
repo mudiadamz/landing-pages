@@ -2,7 +2,7 @@ import { richTextToPlain } from "@/lib/html-sanitize";
 
 /** Canonical site origin. Falls back to the production domain, never a placeholder. */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com"
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 ).replace(/\/$/, "");
 
 /**

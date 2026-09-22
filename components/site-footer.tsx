@@ -87,7 +87,7 @@ export async function SiteFooter() {
         </div>
         <div className="mt-8 flex flex-col items-center gap-3 border-t border-[var(--border)] pt-6 text-sm text-[var(--muted)] sm:flex-row sm:justify-between">
           <span>
-            © {new Date().getFullYear()} {site.name || "ADM.UIUX"}
+            © {new Date().getFullYear()} {site.name || "Storefront"}
           </span>
           <LanguageSwitcher current={locale} label={t("nav.language", undefined, locale)} />
         </div>

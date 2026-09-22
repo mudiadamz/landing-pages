@@ -8,7 +8,7 @@ import { brandInitials, type SiteBrand } from "@/lib/site-brand";
  *   logo uploaded  the image alone — a wordmark already contains the name, and
  *                  printing it again beside the image reads as a mistake
  *   icon only      the square mark plus the site name as text
- *   neither        the built-in ADM.UIUX mark plus the site name
+ *   neither        the built-in Storefront mark plus the site name
  *
  * A plain <img>, not next/image, on purpose: a logo may be an SVG, and the image
  * optimiser refuses SVG unless dangerouslyAllowSVG is turned on globally — which
@@ -69,7 +69,7 @@ export function SiteLogo({
  * The square mark on its own, circle-masked — the profile photo on a link-in-bio
  * page, where there is no header to put a wordmark in.
  *
- * Falls back to initials rather than to the ADM.UIUX mark: a bio page whose avatar
+ * Falls back to initials rather than to the Storefront mark: a bio page whose avatar
  * is a different company's logo is worse than one showing two letters.
  */
 export function BrandAvatar({

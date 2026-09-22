@@ -17,7 +17,7 @@ import { isTawkHidden } from "@/lib/tawk-visibility";
  *
  * The ids come from this storefront's own tracking settings (/panel/tracking,
  * lib/tracking-config.ts) and arrive as props. They used to be hardcoded
- * ADM.UIUX values, which meant every niche domain on this one deployment opened
+ * Storefront values, which meant every niche domain on this one deployment opened
  * a support chat belonging to a different business — the same leak a shared
  * favicon or splash screen would be, and it is fixed the same way: per site.
  */

@@ -19,7 +19,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const next = safeNextPath(params.next) ?? undefined;
   // The storefront being served, not the canonical one. This line used to read
-  // "ADM.UIUX" on every domain — the sign-in box for a niche storefront named a
+  // "Storefront" on every domain — the sign-in box for a niche storefront named a
   // company the visitor had never heard of, which is both wrong and alarming on
   // the one screen where you're about to type a password.
   const brand = siteBrand(await currentSite());

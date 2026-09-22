@@ -447,7 +447,7 @@ export function SiteWizard({
             <h2 className="text-sm font-semibold text-foreground">Identitas</h2>
             <p className="mt-0.5 text-xs text-[var(--muted)]">
               Tagline, deskripsi SEO, dan logo/ikon. Semua opsional — kosong = pakai
-              bawaan ADM.UIUX.
+              bawaan Storefront.
             </p>
           </header>
 

@@ -71,7 +71,7 @@ export const DEFAULT_HIRING: HiringContent = {
 
   metaTitle: "Hiring — Landing Page Creator",
   metaDescription:
-    "Bergabung dengan ADM.UIUX sebagai Landing Page Creator. Remote, fleksibel, dan kreatif.",
+    "Bergabung dengan Storefront sebagai Landing Page Creator. Remote, fleksibel, dan kreatif.",
 
   badge: "Open Position",
   title: "Landing Page Creator",
@@ -82,7 +82,7 @@ export const DEFAULT_HIRING: HiringContent = {
 
   scopeHeading: "Scope pekerjaan",
   scopeBody:
-    "Membuat landing page dari brief atau referensi. Output berupa file HTML/CSS/JS yang bersih, responsif, dan siap pakai. Landing page akan dipublikasikan di platform ADM.UIUX.",
+    "Membuat landing page dari brief atau referensi. Output berupa file HTML/CSS/JS yang bersih, responsif, dan siap pakai. Landing page akan dipublikasikan di platform Storefront.",
 
   requirementsHeading: "Kualifikasi",
   requirements: [
@@ -97,7 +97,7 @@ export const DEFAULT_HIRING: HiringContent = {
   benefits: [
     "Full remote — kerja dari mana saja",
     "Waktu fleksibel",
-    "Portofolio dipublikasikan di platform ADM.UIUX",
+    "Portofolio dipublikasikan di platform Storefront",
     "Support dan feedback langsung dari tim",
   ],
 

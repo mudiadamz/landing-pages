@@ -17,7 +17,7 @@ import {
  * apple-touch-icon + Share sheet) but still reads name/theme.
  *
  * Per storefront, so a niche domain installs under its own name, mark AND
- * colours instead of ADM.UIUX's. Reading the host makes this route dynamic,
+ * colours instead of Storefront's. Reading the host makes this route dynamic,
  * which is fine: it is one tiny JSON response fetched once per install prompt,
  * not on every page view.
  */
@@ -62,7 +62,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
  *                 launcher's circle crop takes wallpaper-coloured padding
  *                 instead of the logo's corners.
  *
- * A storefront with no upload of its own gets the ADM.UIUX default the same way
+ * A storefront with no upload of its own gets the Storefront default the same way
  * the rest of the branding does.
  */
 function manifestIcons(uploaded: string | null, version: string): MetadataRoute.Manifest["icons"] {

@@ -14,7 +14,7 @@ import { sendMetaReadEvent, READ_THRESHOLD_MS } from "@/lib/meta-capi";
  * event id so the two dedupe.
  */
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://admuiux.com").replace(/\/$/, "");
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
 function clientIp(req: Request): string | null {
   const xff = req.headers.get("x-forwarded-for");

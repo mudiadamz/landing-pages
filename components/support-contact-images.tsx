@@ -1,12 +1,4 @@
-import Image from "next/image";
-import { translator } from "@/lib/i18n";
-import { requestLocale } from "@/lib/i18n/request";
-
-const CONTACT_IMAGES = {
-  email: "/admuiux-email.png",
-  phone: "/admuiux-phone.png",
-  address: "/admuiux-address.png",
-} as const;
+import { SUPPORT_CONTACT } from "@/lib/constants";
 
 const LABELS = {
   email: "Email",
@@ -14,23 +6,25 @@ const LABELS = {
   address: "Alamat",
 } as const;
 
-/** Gambar kontak support tanpa link agar tidak di-crawl bot. Tampilan vertikal: label lalu gambar. */
+/**
+ * Support contact block. Renders whatever of SUPPORT_CONTACT (lib/constants.ts)
+ * is filled in — nothing by default, so a fresh/rebranded deployment shows no
+ * placeholder contact. Set your business email/phone/address in lib/constants.ts.
+ * (Named for its former image-based form; now plain text.)
+ */
 export async function SupportContactImages() {
-  const t = translator(await requestLocale());
+  const entries = (Object.keys(LABELS) as (keyof typeof LABELS)[])
+    .map((key) => [key, SUPPORT_CONTACT[key]] as const)
+    .filter(([, value]) => !!value);
+
+  if (entries.length === 0) return null;
+
   return (
-    <div className="flex flex-col gap-6">
-      {(Object.keys(CONTACT_IMAGES) as (keyof typeof CONTACT_IMAGES)[]).map((key) => (
-        <div key={key} className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      {entries.map(([key, value]) => (
+        <div key={key} className="flex flex-col gap-0.5">
           <span className="text-sm font-medium text-foreground">{LABELS[key]}</span>
-          <span className="inline-block">
-            <Image
-              src={CONTACT_IMAGES[key]}
-              alt={t("content.supportContactAlt", { label: LABELS[key] })}
-              width={280}
-              height={80}
-              className="h-auto w-full max-w-[280px] object-contain"
-            />
-          </span>
+          <span className="text-sm text-[var(--muted)]">{value}</span>
         </div>
       ))}
     </div>

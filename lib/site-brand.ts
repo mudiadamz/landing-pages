@@ -15,7 +15,7 @@ import type { Locale } from "@/lib/i18n";
  *            Android — a wordmark there is an unreadable smear
  *
  * Either may be null, and null is the common case: it means this storefront has
- * no art of its own and falls back to the ADM.UIUX defaults below.
+ * no art of its own and falls back to the Storefront defaults below.
  */
 export type SiteBrand = {
   name: string;
@@ -32,7 +32,7 @@ export type SiteBrand = {
 };
 
 /** Shipped in public/. Also what an unconfigured deployment serves. */
-export const DEFAULT_BRAND_NAME = "ADM.UIUX";
+export const DEFAULT_BRAND_NAME = "Storefront";
 export const DEFAULT_ICON = "/icon.svg";
 export const DEFAULT_ICON_192 = "/icon-192.png";
 export const DEFAULT_ICON_512 = "/icon-512.png";

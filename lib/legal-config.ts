@@ -9,8 +9,8 @@
  * "legal_content", per site.
  *
  * Per site is the point of the change, not a side effect. A second storefront on
- * this deployment was previously serving ADM.UIUX's privacy policy, naming
- * ADM.UIUX's sub-processors and ADM.UIUX's contact address, as its own — which is
+ * this deployment was previously serving Storefront's privacy policy, naming
+ * Storefront's sub-processors and Storefront's contact address, as its own — which is
  * wrong in a way that matters more than a typo.
  *
  * Kept out of the "use server" action file so plain (non-async) values can be
@@ -55,8 +55,8 @@ export const DEFAULT_LEGAL: LegalContent = {
   privacy: {
     title: "Kebijakan Privasi",
     description:
-      "Kebijakan privasi ADM.UIUX. Cara kami mengumpulkan, menggunakan, dan melindungi informasi Anda.",
-    body: `<p>Privasi Anda penting bagi kami. Kebijakan ini menjelaskan cara kami mengumpulkan, menggunakan, membagikan, dan melindungi informasi Anda saat menggunakan layanan ADM.UIUX. Kami berusaha mengikuti prinsip Undang-Undang Pelindungan Data Pribadi (UU PDP) Indonesia.</p>
+      "Kebijakan privasi Storefront. Cara kami mengumpulkan, menggunakan, dan melindungi informasi Anda.",
+    body: `<p>Privasi Anda penting bagi kami. Kebijakan ini menjelaskan cara kami mengumpulkan, menggunakan, membagikan, dan melindungi informasi Anda saat menggunakan layanan Storefront. Kami berusaha mengikuti prinsip Undang-Undang Pelindungan Data Pribadi (UU PDP) Indonesia.</p>
 <h2>Informasi yang Kami Kumpulkan</h2>
 <ul>
 <li><strong>Data akun</strong> — nama dan email saat Anda mendaftar.</li>
@@ -84,13 +84,13 @@ export const DEFAULT_LEGAL: LegalContent = {
 <h2>Keamanan Data</h2>
 <p>Kami menerapkan langkah keamanan yang sesuai (enkripsi saat transit, kontrol akses) untuk melindungi data pribadi Anda mengikuti praktik standar industri.</p>
 <h2>Hak Anda</h2>
-<p>Sesuai UU PDP, Anda berhak mengakses, memperbaiki, dan menghapus data pribadi Anda, menarik persetujuan, serta meminta pembatasan pemrosesan. Untuk menggunakan hak ini, hubungi kami di <a href="mailto:admin@admuiux.com">admin@admuiux.com</a>.</p>
-<p>Untuk pertanyaan terkait kebijakan ini, hubungi kami lewat <a href="mailto:admin@admuiux.com">admin@admuiux.com</a> atau <a href="/contact">halaman Kontak</a>.</p>`,
+<p>Sesuai UU PDP, Anda berhak mengakses, memperbaiki, dan menghapus data pribadi Anda, menarik persetujuan, serta meminta pembatasan pemrosesan. Untuk menggunakan hak ini, hubungi kami di <a href="/contact">halaman Kontak</a>.</p>
+<p>Untuk pertanyaan terkait kebijakan ini, hubungi kami lewat <a href="/contact">halaman Kontak</a> atau <a href="/contact">halaman Kontak</a>.</p>`,
   },
 
   terms: {
     title: "Ketentuan Layanan",
-    description: "Ketentuan layanan ADM.UIUX. Syarat dan ketentuan penggunaan produk digital.",
+    description: "Ketentuan layanan Storefront. Syarat dan ketentuan penggunaan produk digital.",
     body: `<p>Dengan menggunakan layanan kami, Anda setuju dengan ketentuan ini. Mohon baca dengan saksama.</p>
 <h2>Penggunaan Layanan</h2>
 <p>Anda setuju menggunakan platform produk digital kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.</p>
@@ -106,7 +106,7 @@ export const DEFAULT_LEGAL: LegalContent = {
   refund: {
     title: "Kebijakan Pengembalian Dana",
     description:
-      "Kebijakan pengembalian dana ADM.UIUX. Garansi 7 hari untuk file rusak atau tidak sesuai deskripsi.",
+      "Kebijakan pengembalian dana Storefront. Garansi 7 hari untuk file rusak atau tidak sesuai deskripsi.",
     body: `<p>Produk kami berupa template HTML dan digital assets yang dikirim secara digital. Karena itu, setiap produk bisa Anda <a href="/">preview gratis</a> secara lengkap sebelum membeli—jadi Anda tahu persis apa yang Anda dapat.</p>
 <h2>Garansi 7 hari</h2>
 <p>Kami memberi garansi 7 hari sejak tanggal pembelian. Jika file yang Anda terima <strong>rusak, tidak lengkap, atau tidak sesuai dengan deskripsi/preview</strong>, kami akan memperbaikinya, atau—jika tidak bisa diperbaiki—mengembalikan dana Anda sepenuhnya.</p>

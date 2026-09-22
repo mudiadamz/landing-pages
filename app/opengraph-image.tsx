@@ -14,7 +14,7 @@ export const contentType = "image/png";
 /**
  * The default social card, per storefront.
  *
- * It used to be one image with "ADM.UIUX" and "admuiux.com" baked into it, which
+ * It used to be one image with "Storefront" and "admuiux.com" baked into it, which
  * every domain shared — so a link to a niche storefront previewed on WhatsApp or
  * Facebook as somebody else's brand. Reading the host makes this route dynamic;
  * that is the same trade app/manifest.ts makes, and a social card is fetched by

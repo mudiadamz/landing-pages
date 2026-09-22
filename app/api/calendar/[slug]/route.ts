@@ -101,11 +101,11 @@ export async function GET(
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//ADM.UIUX//Landing Pages//EN",
+    "PRODID:-//Storefront//Landing Pages//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:lp-${slug}-${start}@admuiux.com`,
+    `UID:lp-${slug}-${start}@localhost`,
     `DTSTAMP:${utcStamp(new Date())}`,
     `DTSTART:${start}`,
     end ? `DTEND:${end}` : null,

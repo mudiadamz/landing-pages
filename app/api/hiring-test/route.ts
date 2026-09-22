@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
   const adminHtml = `
     <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
       <h2 style="margin-bottom:4px">Hasil Tes Pelamar</h2>
-      <p style="color:#666;margin-top:0">ADM.UIUX</p>
+      <p style="color:#666;margin-top:0">Storefront</p>
       <p><strong>Nama:</strong> ${name}<br><strong>Email:</strong> ${email}</p>
       <p style="font-size:32px;font-weight:700;color:${scoreColor};margin:8px 0">${score} / ${total}</p>
       ${cvSection}
@@ -96,19 +96,19 @@ export async function POST(request: NextRequest) {
         ${detailRows}
       </table>
       <hr style="margin-top:24px">
-      <p style="color:#666;font-size:12px">ADM.UIUX — Landing Page & Digital Assets</p>
+      <p style="color:#666;font-size:12px">Storefront — Landing Page & Digital Assets</p>
     </div>
   `;
 
   const applicantHtml = `
     <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
       <h2 style="margin-bottom:4px">Lamaran Terkirim</h2>
-      <p style="color:#666;margin-top:0">ADM.UIUX</p>
+      <p style="color:#666;margin-top:0">Storefront</p>
       <p>Halo <strong>${name}</strong>,</p>
       <p>Terima kasih sudah mengisi tes dan mengirimkan CV kamu untuk posisi <strong>Landing Page Creator</strong>.</p>
       <p>Lamaran kamu sudah kami terima. Tim kami akan me-review dan menghubungi kamu jika sesuai.</p>
       <hr style="margin-top:24px">
-      <p style="color:#666;font-size:12px">ADM.UIUX — Landing Page & Digital Assets</p>
+      <p style="color:#666;font-size:12px">Storefront — Landing Page & Digital Assets</p>
     </div>
   `;
 
@@ -121,12 +121,12 @@ export async function POST(request: NextRequest) {
       resend.emails.send({
         from,
         to: email,
-        subject: "Lamaran Terkirim — Landing Page Creator | ADM.UIUX",
+        subject: "Lamaran Terkirim — Landing Page Creator | Storefront",
         html: applicantHtml,
       }),
       resend.emails.send({
         from,
-        to: "admin@admuiux.com",
+        to: "admin@example.com",
         subject: `Hasil Tes Pelamar — ${name} (${score}/${total})`,
         html: adminHtml,
       }),

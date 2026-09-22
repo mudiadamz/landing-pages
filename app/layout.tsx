@@ -97,7 +97,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * Declared here rather than by file convention — and app/icon.svg + app/favicon.ico
  * were MOVED to public/ to make that possible. Those filenames are a build-time
  * convention: Next emits their link tags for every response, and a build-time
- * asset cannot vary by host, so a niche domain would have worn the ADM.UIUX mark
+ * asset cannot vary by host, so a niche domain would have worn the Storefront mark
  * in its tab no matter what this function returned. In public/ they are ordinary
  * static files, referenced below as the fallback and still served at /favicon.ico
  * for browsers that ask for it without being told to.
@@ -261,12 +261,11 @@ export default async function RootLayout({
           data={{
             "@context": "https://schema.org",
             "@type": "Organization",
-            name: site.name || "ADM.UIUX",
+            name: site.name || "Storefront",
             url: origin,
             // Absolute, as schema.org requires. A site's own upload is already an
             // absolute Supabase URL; the fallback needs the origin prefixed.
-            logo: site.logo_url || site.icon_url || `${origin}/logo-adm-100.jpg`,
-            email: "admin@admuiux.com",
+            logo: site.logo_url || site.icon_url || `${origin}${DEFAULT_ICON}`,
           }}
         />
         <Suspense fallback={null}>

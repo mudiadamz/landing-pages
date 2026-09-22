@@ -20,7 +20,7 @@ type Props = {
    * The storefront this panel is being SERVED on — not the one the switcher below
    * is editing. A buyer opens "Pembelian saya" on the domain they bought from
    * (sessions don't cross domains), so the shell has to wear that domain's name.
-   * It said ADM.UIUX everywhere, which on a niche storefront is a stranger's brand.
+   * It said Storefront everywhere, which on a niche storefront is a stranger's brand.
    */
   brand: SiteBrand;
 };

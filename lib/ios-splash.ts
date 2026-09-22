@@ -10,8 +10,8 @@
  * The images are RENDERED PER REQUEST by /api/splash rather than shipped as
  * files in public/. They used to be 34 PNGs baked from public/icon-512.png at
  * build time — which is a build-time asset, and a build-time asset cannot vary
- * by host, so every niche domain launched under the ADM.UIUX mark on the
- * ADM.UIUX background. Same reason app/icon.svg had to move to public/ for the
+ * by host, so every niche domain launched under the Storefront mark on the
+ * Storefront background. Same reason app/icon.svg had to move to public/ for the
  * favicon to follow the storefront (see docs/multi-domain.md).
  *
  * Portrait only: the app's manifest locks orientation to portrait.

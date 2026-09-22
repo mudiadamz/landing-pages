@@ -13,7 +13,7 @@ import type { TemplateProps } from "../registry";
  * portrait covers instead of 16:9 preview shots (a book has a cover, not a
  * screenshot), no hero illustration — the shelf IS the hero, so the first screen
  * is stock rather than a pitch — and no founder-credibility block, which is
- * ADM.UIUX branding and would be a stranger's face on someone else's storefront.
+ * Storefront branding and would be a stranger's face on someone else's storefront.
  *
  * Header and footer are shared with every template on purpose: navigation,
  * categories and sign-in should not be re-learned per domain.

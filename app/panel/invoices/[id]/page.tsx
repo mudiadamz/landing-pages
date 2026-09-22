@@ -60,9 +60,11 @@ export default async function InvoiceDetailPage({ params }: Props) {
             </p>
           </div>
           <div className="text-sm sm:text-right">
-            <p className="font-semibold text-foreground">ADM.UIUX</p>
+            <p className="font-semibold text-foreground">Storefront</p>
             <p className="text-[var(--muted)]">{t("panel.invoiceTagline")}</p>
-            <p className="text-[var(--muted)]">{SUPPORT_CONTACT.email}</p>
+            {SUPPORT_CONTACT.email && (
+              <p className="text-[var(--muted)]">{SUPPORT_CONTACT.email}</p>
+            )}
           </div>
         </div>
 
