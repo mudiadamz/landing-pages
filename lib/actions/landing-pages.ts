@@ -9,7 +9,7 @@ import { createAnonClient } from "@/lib/db/anon";
 import { createClient } from "@/lib/db/server";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
-import { currentSite } from "@/lib/site-resolve";
+import { currentSite, editingSite } from "@/lib/site-resolve";
 import { panelScope } from "@/lib/site-scope";
 
 export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable" | "excerpt";
@@ -185,11 +185,14 @@ export async function getLandingPageBySlug(slug: string) {
   const {
     data: { user },
   } = await db.auth.getUser();
-  const { data, error } = await db
+  const site = await currentSite();
+  let q = db
     .from("lp_landing_pages")
     .select("id, title, slug, html_content, preview_type, preview_url, preview_url_dark, preview_cut_percent, preview_purged_at, story_pdf_url, story_pdf_url_dark, story_epub_url, like_count, related_product_ids, next_product_id, available_at, thumbnail_url, published, user_id")
-    .eq("slug", slug)
-    .single();
+    .eq("slug", slug);
+  // A slug resolves only within this storefront's business (Fase 2).
+  if (site.business_id) q = q.eq("business_id", site.business_id);
+  const { data, error } = await q.single();
 
   if (error || !data) return null;
   // Hidden pages 404 for everyone except their owner (so the admin can preview).
@@ -313,6 +316,10 @@ export async function createLandingPage(
       slug: normalizedSlug,
       html_content,
       user_id: user.id,
+      // The product belongs to the panel's business (Fase 2). Set explicitly
+      // rather than via a current_business() default, because a server action
+      // may not have resolved the site — the explicit value is race-proof.
+      business_id: (await editingSite()).business_id,
       category_id: category_id?.trim() || null,
       // Step 1 only creates a draft — the product stays hidden from public
       // listings until the seller explicitly publishes it (from the panel).
@@ -437,7 +444,7 @@ export async function getLandingPagesForHomepage(
   // unstable_cache refuses headers(), and the argument is what makes the cache key
   // differ per domain — without it one storefront would serve another's catalog.
   const site = await currentSite();
-  return getCachedHomepagePages(slug, sort, site.category_ids ?? []);
+  return getCachedHomepagePages(slug, sort, site.category_ids ?? [], site.business_id);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -479,6 +486,14 @@ type ListingArgs = {
   sort: HomepageSort;
   q: string;
   page: number;
+  /**
+   * Which business's catalog to show (docs/plans/multi-business-saas.md, Fase 2).
+   * Resolved from the storefront's site outside any cache and passed in — like
+   * categoryIds — so it is part of the cache key AND the query filter, which is
+   * what makes isolation cache-safe (the ambient-GUC approach was not). null =
+   * unconfigured/fallback: no filter, so a single-business deployment is unchanged.
+   */
+  businessId?: string | null;
 };
 
 /**
@@ -487,7 +502,7 @@ type ListingArgs = {
  * `count: "exact"` rather than counting a second time: the pager needs a total
  * and PostgREST returns it in the same round trip.
  */
-async function queryListing({ categoryIds, sort, q, page }: ListingArgs): Promise<HomepageListing> {
+async function queryListing({ categoryIds, sort, q, page, businessId }: ListingArgs): Promise<HomepageListing> {
   const db = createAnonClient();
   const from = (page - 1) * HOMEPAGE_PAGE_SIZE;
 
@@ -499,6 +514,9 @@ async function queryListing({ categoryIds, sort, q, page }: ListingArgs): Promis
     )
     .eq("published", true)
     .order("featured", { ascending: false });
+
+  // Business isolation: only this storefront's business. null = unconfigured.
+  if (businessId) query = query.eq("business_id", businessId);
 
   query =
     sort === "popular"
@@ -541,8 +559,8 @@ async function queryListing({ categoryIds, sort, q, page }: ListingArgs): Promis
  * category) is a small, known key space and is cached as before.
  */
 const getCachedListing = unstable_cache(
-  async (categoryIds: string[] | null, sort: HomepageSort, page: number) =>
-    queryListing({ categoryIds, sort, q: "", page }),
+  async (categoryIds: string[] | null, sort: HomepageSort, page: number, businessId: string | null) =>
+    queryListing({ categoryIds, sort, q: "", page, businessId }),
   ["homepage-listing"],
   { revalidate: 60, tags: ["categories", "homepage-pages"] },
 );
@@ -572,10 +590,10 @@ export async function getHomepageListing(opts: {
   }
 
   return q
-    ? queryListing({ categoryIds, sort, q, page })
-    : // categoryIds is part of the key (I2): without it, two different chip
-      // selections would share one cached page.
-      getCachedListing(categoryIds, sort, page);
+    ? queryListing({ categoryIds, sort, q, page, businessId: site.business_id })
+    : // categoryIds + businessId are part of the key: without them, two different
+      // chip selections — or two businesses — would share one cached page.
+      getCachedListing(categoryIds, sort, page, site.business_id);
 }
 
 /**
@@ -626,6 +644,7 @@ const getCachedHomepagePages = unstable_cache(
     slug: string,
     sort: HomepageSort,
     siteCategoryIds: string[],
+    businessId: string | null,
   ): Promise<LandingPagePublic[]> => {
     const db = createAnonClient();
 
@@ -673,6 +692,9 @@ const getCachedHomepagePages = unstable_cache(
       .eq("published", true)
       .order("featured", { ascending: false });
 
+    // Business isolation (null = unconfigured/fallback: no filter).
+    if (businessId) query = query.eq("business_id", businessId);
+
     query =
       sort === "popular"
         ? query.order("sold_count", { ascending: false, nullsFirst: false })
@@ -703,11 +725,13 @@ export async function getLandingPageForCheckout(slug: string) {
   const {
     data: { user },
   } = await db.auth.getUser();
-  const { data, error } = await db
+  const site = await currentSite();
+  let q = db
     .from("lp_landing_pages")
     .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids, thumbnail_landscape_url, thumbnail_extra_urls")
-    .eq("slug", slug)
-    .single();
+    .eq("slug", slug);
+  if (site.business_id) q = q.eq("business_id", site.business_id);
+  const { data, error } = await q.single();
 
   if (error || !data) return null;
   // Hidden pages can't be checked out by the public; the owner still can (preview).

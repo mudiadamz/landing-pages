@@ -96,10 +96,23 @@ business/payout, multi-domain + Caddy on-demand TLS + `/api/tls-check`.
 > **Desain ulang yang direkomendasikan:** jangan andalkan GUC untuk *baca*.
 > Teruskan `businessId` secara **eksplisit** sebagai argumen fungsi baca katalog
 > (jadi bagian **cache key** `unstable_cache` + filter `.eq("business_id", …)`),
-> di-resolve dari `currentSite()` sebelum dipanggil. GUC + RLS restrictive tetap
-> dipakai sebagai **pertahanan lapis kedua** untuk tulis dan jalur non-cache.
-> Ini menyentuh lapisan baca katalog (`lib/actions/landing-pages.ts` dan cache-nya)
-> — pekerjaan hati-hati, sebaiknya di-review, bukan burst otomatis.
+> di-resolve dari `currentSite()` sebelum dipanggil.
+>
+> **DITERAPKAN (2026-09-22, terverifikasi dengan 2 business nyata):**
+> - `queryListing`/`getCachedListing`/`getHomepageListing`, `getCachedHomepagePages`,
+>   `getLandingPageBySlug`, `getLandingPageForCheckout` semua menerima/menyaring
+>   `site.business_id` (null = fallback: tanpa filter, jadi deployment 1-business
+>   tak berubah). Sitemap ikut ter-scope lewat `getLandingPagesForHomepage`.
+> - `createLandingPage` menyetel `business_id = (await editingSite()).business_id`
+>   secara eksplisit (bukan default `current_business()`, karena server action
+>   mungkin belum me-resolve situs).
+> - Tulis lintas-business sudah dicegah policy "Owners …" yang berbasis `user_id`
+>   (satu user hanya memiliki produk di business-nya). Jadi TIDAK menambah RLS
+>   restrictive baca (yang tadi merusak cache) — isolasi baca di lapisan aplikasi.
+>
+> **Sisa (belum diisolasi):** kategori (`lp_landing_page_categories`), related/bundle
+> products, dan user/storage. Minor untuk 1-business; harus ditutup sebelum
+> business ke-2 benar-benar live (Fase 4).
 
 ---
 
@@ -130,7 +143,7 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 |---|---|---|
 | 0 | Tabel `lp_businesses` / `lp_business_members` / `lp_business_ledger`; `business_id` nullable + `is_platform`; backfill 1 business default. **Nol perubahan perilaku.** | ✅ |
 | 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
-| 2 | Isolasi katalog/user/storage per business; nyalakan RLS `business_id`. | ⚠️ perlu desain ulang (lihat catatan) |
+| 2 | Isolasi **katalog** per business (baca via filter eksplisit + cache key; create set business_id). User/storage isolation + kategori/related = sisa. | ✅ katalog (lihat catatan) |
 | 3 | Ledger + komisi + hold + payout + KYC business (reuse publisher-KYC). | ⬜ |
 | 4 | Signup business (approval-gated), onboarding + domain, panel Platform kelola semua business. | ⬜ |
 | 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |
