@@ -95,10 +95,11 @@ export function LegalForm({
       {LEGAL_KEYS.map((key) => (
         <div key={key} className={tab === key ? "space-y-4" : "hidden"}>
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor={`legal-${key}-title`} className="block text-sm font-medium text-foreground">
               {t("content.pageTitle")}
             </label>
             <input
+              id={`legal-${key}-title`}
               value={draft[key].title}
               onChange={(e) => setField(key, "title", e.target.value)}
               className={input}
@@ -106,10 +107,11 @@ export function LegalForm({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor={`legal-${key}-description`} className="block text-sm font-medium text-foreground">
               {t("legal.metaDescription")}
             </label>
             <textarea
+              id={`legal-${key}-description`}
               rows={2}
               value={draft[key].description}
               onChange={(e) => setField(key, "description", e.target.value)}

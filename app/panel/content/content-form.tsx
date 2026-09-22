@@ -377,7 +377,7 @@ async function sampleTopColor(url: string): Promise<string> {
           />
 
           <div>
-            <label className={labelCls}>{t("content.toolbarColor")}</label>
+            <label className={labelCls} htmlFor="content-toolbar-color">{t("content.toolbarColor")}</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -387,6 +387,7 @@ async function sampleTopColor(url: string): Promise<string> {
                 className="h-11 w-12 shrink-0 cursor-pointer rounded-lg border border-[var(--border)] bg-[var(--background)] p-1"
               />
               <input
+                id="content-toolbar-color"
                 className={inputCls}
                 value={content.founder.coverThemeColor}
                 onChange={(e) => setFounder({ coverThemeColor: e.target.value })}
@@ -402,8 +403,9 @@ async function sampleTopColor(url: string): Promise<string> {
               /pas_foto.png, a file in public/, and there is no way to reach that — or
               any other already-hosted image — through an upload control. */}
           <div>
-            <label className={labelCls}>{t("content.orPasteUrl")}</label>
+            <label className={labelCls} htmlFor="content-photo-url">{t("content.orPasteUrl")}</label>
             <input
+              id="content-photo-url"
               className={inputCls}
               value={content.founder.photoUrl}
               onChange={(e) => {
@@ -429,8 +431,9 @@ async function sampleTopColor(url: string): Promise<string> {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelCls}>{t("content.name")}</label>
+            <label className={labelCls} htmlFor="content-founder-name">{t("content.name")}</label>
             <input
+              id="content-founder-name"
               className={inputCls}
               value={content.founder.name}
               onChange={(e) => setFounder({ name: e.target.value })}
@@ -449,8 +452,9 @@ async function sampleTopColor(url: string): Promise<string> {
             </label>
           </div>
           <div>
-            <label className={labelCls}>{t("content.role")}</label>
+            <label className={labelCls} htmlFor="content-founder-role">{t("content.role")}</label>
             <input
+              id="content-founder-role"
               className={inputCls}
               value={content.founder.role}
               onChange={(e) => setFounder({ role: e.target.value })}
@@ -459,8 +463,9 @@ async function sampleTopColor(url: string): Promise<string> {
           </div>
         </div>
         <div>
-          <label className={labelCls}>{t("content.bio")}</label>
+          <label className={labelCls} htmlFor="content-founder-bio">{t("content.bio")}</label>
           <textarea
+            id="content-founder-bio"
             className={inputCls}
             rows={2}
             value={content.founder.bio}
@@ -469,8 +474,9 @@ async function sampleTopColor(url: string): Promise<string> {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelCls}>{t("content.contactLabel")}</label>
+            <label className={labelCls} htmlFor="content-contact-label">{t("content.contactLabel")}</label>
             <input
+              id="content-contact-label"
               className={inputCls}
               value={content.founder.contactLabel}
               onChange={(e) => setFounder({ contactLabel: e.target.value })}
@@ -478,8 +484,9 @@ async function sampleTopColor(url: string): Promise<string> {
             />
           </div>
           <div>
-            <label className={labelCls}>{t("content.contactHref")}</label>
+            <label className={labelCls} htmlFor="content-contact-href">{t("content.contactHref")}</label>
             <input
+              id="content-contact-href"
               className={inputCls}
               value={content.founder.contactHref}
               onChange={(e) => setFounder({ contactHref: e.target.value })}
@@ -499,8 +506,9 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.aboutPage")}</SectionTitle>
         <div>
-          <label className={labelCls}>{t("content.pageTitle")}</label>
+          <label className={labelCls} htmlFor="content-about-heading">{t("content.pageTitle")}</label>
           <input
+            id="content-about-heading"
             className={inputCls}
             value={content.aboutHeading}
             onChange={(e) => set("aboutHeading", e.target.value)}
@@ -514,6 +522,7 @@ async function sampleTopColor(url: string): Promise<string> {
                 className={inputCls}
                 rows={3}
                 value={text}
+                aria-label={`${t("content.paragraphs")} ${i + 1}`}
                 onChange={(e) =>
                   set(
                     "aboutParagraphs",
@@ -536,8 +545,9 @@ async function sampleTopColor(url: string): Promise<string> {
           </AddButton>
         </div>
         <div>
-          <label className={labelCls}>{t("content.authorBlockTitle")}</label>
+          <label className={labelCls} htmlFor="content-about-author-heading">{t("content.authorBlockTitle")}</label>
           <input
+            id="content-about-author-heading"
             className={inputCls}
             value={content.aboutAuthorHeading}
             onChange={(e) => set("aboutAuthorHeading", e.target.value)}
@@ -552,16 +562,18 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.contactPage")}</SectionTitle>
         <div>
-          <label className={labelCls}>{t("content.pageTitle")}</label>
+          <label className={labelCls} htmlFor="content-contact-heading">{t("content.pageTitle")}</label>
           <input
+            id="content-contact-heading"
             className={inputCls}
             value={content.contactHeading}
             onChange={(e) => set("contactHeading", e.target.value)}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("content.intro")}</label>
+          <label className={labelCls} htmlFor="content-contact-intro">{t("content.intro")}</label>
           <textarea
+            id="content-contact-intro"
             className={inputCls}
             rows={2}
             value={content.contactIntro}
@@ -576,16 +588,18 @@ async function sampleTopColor(url: string): Promise<string> {
           {t("content.supportContactHint")}
         </p>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="content-support-contact-heading">{t("panel.title")}</label>
           <input
+            id="content-support-contact-heading"
             className={inputCls}
             value={content.supportContactHeading}
             onChange={(e) => set("supportContactHeading", e.target.value)}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("content.intro")}</label>
+          <label className={labelCls} htmlFor="content-support-contact-intro">{t("content.intro")}</label>
           <textarea
+            id="content-support-contact-intro"
             className={inputCls}
             rows={2}
             value={content.supportContactIntro}
@@ -602,8 +616,9 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.howToBuy")}</SectionTitle>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="content-howto-heading">{t("panel.title")}</label>
           <input
+            id="content-howto-heading"
             className={inputCls}
             value={content.howToHeading}
             onChange={(e) => set("howToHeading", e.target.value)}
@@ -619,12 +634,14 @@ async function sampleTopColor(url: string): Promise<string> {
                   value={s.label}
                   onChange={(e) => setStep(i, { label: e.target.value })}
                   placeholder={t("content.stepLabel")}
+                  aria-label={`${t("content.stepLabel")} ${i + 1}`}
                 />
                 <input
                   className={inputCls}
                   value={s.text}
                   onChange={(e) => setStep(i, { text: e.target.value })}
                   placeholder={t("content.stepText")}
+                  aria-label={`${t("content.stepText")} ${i + 1}`}
                 />
               </div>
               <RemoveButton onClick={() => set("howToSteps", content.howToSteps.filter((_, idx) => idx !== i))} />
@@ -639,16 +656,18 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.supportPromise")}</SectionTitle>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="content-support-heading">{t("panel.title")}</label>
           <input
+            id="content-support-heading"
             className={inputCls}
             value={content.supportHeading}
             onChange={(e) => set("supportHeading", e.target.value)}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("content.opening")}</label>
+          <label className={labelCls} htmlFor="content-support-intro">{t("content.opening")}</label>
           <textarea
+            id="content-support-intro"
             className={inputCls}
             rows={2}
             value={content.supportIntro}
@@ -663,6 +682,7 @@ async function sampleTopColor(url: string): Promise<string> {
                 className={inputCls}
                 value={p}
                 onChange={(e) => setStr("supportPoints", i, e.target.value)}
+                aria-label={`${t("content.bullets")} ${i + 1}`}
               />
               <RemoveButton onClick={() => removeStr("supportPoints", i)} />
             </div>
@@ -670,8 +690,9 @@ async function sampleTopColor(url: string): Promise<string> {
           <AddButton onClick={() => addStr("supportPoints")}>{t("content.addBullet")}</AddButton>
         </div>
         <div>
-          <label className={labelCls}>{t("content.closing")}</label>
+          <label className={labelCls} htmlFor="content-support-outro">{t("content.closing")}</label>
           <textarea
+            id="content-support-outro"
             className={inputCls}
             rows={2}
             value={content.supportOutro}
@@ -683,8 +704,9 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.faq")}</SectionTitle>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="content-faq-heading">{t("panel.title")}</label>
           <input
+            id="content-faq-heading"
             className={inputCls}
             value={content.faqHeading}
             onChange={(e) => set("faqHeading", e.target.value)}
@@ -699,6 +721,7 @@ async function sampleTopColor(url: string): Promise<string> {
                   value={f.q}
                   onChange={(e) => setFaq(i, { q: e.target.value })}
                   placeholder={t("content.question")}
+                  aria-label={`${t("content.question")} ${i + 1}`}
                 />
                 <textarea
                   className={inputCls}
@@ -706,6 +729,7 @@ async function sampleTopColor(url: string): Promise<string> {
                   value={f.a}
                   onChange={(e) => setFaq(i, { a: e.target.value })}
                   placeholder={t("content.answer")}
+                  aria-label={`${t("content.answer")} ${i + 1}`}
                 />
               </div>
               <RemoveButton onClick={() => set("faqs", content.faqs.filter((_, idx) => idx !== i))} />
@@ -725,8 +749,9 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.license")}</SectionTitle>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="content-license-heading">{t("panel.title")}</label>
           <input
+            id="content-license-heading"
             className={inputCls}
             value={content.licenseHeading}
             onChange={(e) => set("licenseHeading", e.target.value)}
@@ -741,6 +766,7 @@ async function sampleTopColor(url: string): Promise<string> {
                 rows={3}
                 value={p}
                 onChange={(e) => setStr("licenseParagraphs", i, e.target.value)}
+                aria-label={`${t("content.paragraphs")} ${i + 1}`}
               />
               <RemoveButton onClick={() => removeStr("licenseParagraphs", i)} />
             </div>
@@ -756,8 +782,9 @@ async function sampleTopColor(url: string): Promise<string> {
           {t("content.publisherTermsIntro")}
         </p>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="content-publisher-terms-heading">{t("panel.title")}</label>
           <input
+            id="content-publisher-terms-heading"
             className={inputCls}
             value={content.publisherTermsHeading}
             onChange={(e) => set("publisherTermsHeading", e.target.value)}
@@ -773,6 +800,7 @@ async function sampleTopColor(url: string): Promise<string> {
                 value={term}
                 onChange={(e) => setStr("publisherTerms", i, e.target.value)}
                 placeholder={t("content.publisherTermPlaceholder")}
+                aria-label={`${t("content.publisherTerms")} ${i + 1}`}
               />
               <RemoveButton onClick={() => removeStr("publisherTerms", i)} />
             </div>
@@ -789,8 +817,9 @@ async function sampleTopColor(url: string): Promise<string> {
       <section className={sectionCls}>
         <SectionTitle>{t("content.tabFooter")}</SectionTitle>
         <div>
-          <label className={labelCls}>{t("content.footerTagline")}</label>
+          <label className={labelCls} htmlFor="content-footer-tagline">{t("content.footerTagline")}</label>
           <textarea
+            id="content-footer-tagline"
             className={inputCls}
             rows={2}
             value={content.footerTagline}

@@ -121,10 +121,11 @@ export function SiteProfileForm({
         </header>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">
+          <label htmlFor="site-name" className="block text-sm font-medium text-foreground">
             {t("sites.siteName")} <span className="text-red-500">*</span>
           </label>
           <input
+            id="site-name"
             type="text"
             value={draft.name}
             onChange={(e) => set("name", e.target.value)}
@@ -134,8 +135,9 @@ export function SiteProfileForm({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">Tagline</label>
+          <label htmlFor="site-tagline" className="block text-sm font-medium text-foreground">Tagline</label>
           <input
+            id="site-tagline"
             type="text"
             value={draft.tagline}
             onChange={(e) => set("tagline", e.target.value)}
@@ -153,8 +155,9 @@ export function SiteProfileForm({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-foreground">{t("panel.seoDescription")}</label>
+          <label htmlFor="site-description" className="block text-sm font-medium text-foreground">{t("panel.seoDescription")}</label>
           <textarea
+            id="site-description"
             value={draft.description}
             onChange={(e) => set("description", e.target.value)}
             rows={3}

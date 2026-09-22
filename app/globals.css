@@ -814,12 +814,47 @@ a, button {
   touch-action: manipulation;
 }
 
-/* Form controls - consistent focus and borders */
-input:focus, textarea:focus, button:focus-visible {
-  outline: none;
-}
+/* Form controls - consistent borders */
 input, textarea, select {
   border-radius: 0.5rem;
+}
+
+/* Dimmer placeholders so an empty field never reads as a filled one — the audit
+   found realistic-looking placeholders (e.g. an example Widget ID) mistaken for
+   real values. */
+input::placeholder, textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.65;
+}
+
+/* Thin, unobtrusive scrollbar for tall panes like the panel sidebar, instead of
+   the OS scrollbar-with-arrows showing inside the chrome. */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
+  border-radius: 9999px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Visible keyboard focus (WCAG 2.4.7 / 2.4.11). A solid 2px ring with offset,
+   replacing the low-opacity green shadow that was hard to see on dark surfaces.
+   :focus-visible so a mouse click doesn't ring, but keyboard/AT navigation always
+   does. */
+:where(a, button, input, select, textarea, summary, [role="button"], [role="tab"], [role="checkbox"], [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline-offset: 1px;
 }
 
 /* Animations */

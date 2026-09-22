@@ -123,8 +123,9 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
                 className="h-9 w-12 shrink-0 cursor-pointer rounded border border-[var(--border)] bg-transparent"
               />
               <div className="min-w-0 flex-1">
-                <label className="block text-xs text-[var(--muted)]">{t(f.labelKey)}</label>
+                <label htmlFor={`palette-${f.key}`} className="block text-xs text-[var(--muted)]">{t(f.labelKey)}</label>
                 <input
+                  id={`palette-${f.key}`}
                   type="text"
                   value={tokens[f.key]}
                   onChange={(e) => editToken(f.key, e.target.value)}

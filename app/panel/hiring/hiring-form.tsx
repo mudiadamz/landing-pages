@@ -47,12 +47,14 @@ function StringList({
   addLabel,
   removeLabel,
   placeholder,
+  itemLabel,
 }: {
   items: string[];
   onChange: (next: string[]) => void;
   addLabel: string;
   removeLabel: string;
   placeholder?: string;
+  itemLabel?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -61,6 +63,7 @@ function StringList({
           <input
             value={item}
             placeholder={placeholder}
+            aria-label={itemLabel ? `${itemLabel} ${i + 1}` : undefined}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
             className={inputCls}
           />
@@ -140,17 +143,18 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelCls}>{t("hiring.badge")}</label>
-            <input value={draft.badge} onChange={(e) => set("badge", e.target.value)} className={inputCls} />
+            <label className={labelCls} htmlFor="hiring-badge">{t("hiring.badge")}</label>
+            <input id="hiring-badge" value={draft.badge} onChange={(e) => set("badge", e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>{t("hiring.jobTitle")}</label>
-            <input value={draft.title} onChange={(e) => set("title", e.target.value)} className={inputCls} />
+            <label className={labelCls} htmlFor="hiring-title">{t("hiring.jobTitle")}</label>
+            <input id="hiring-title" value={draft.title} onChange={(e) => set("title", e.target.value)} className={inputCls} />
           </div>
         </div>
         <div>
-          <label className={labelCls}>{t("hiring.intro")}</label>
+          <label className={labelCls} htmlFor="hiring-intro">{t("hiring.intro")}</label>
           <textarea
+            id="hiring-intro"
             rows={3}
             value={draft.intro}
             onChange={(e) => set("intro", e.target.value)}
@@ -164,22 +168,25 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
             onChange={(next) => set("tags", next)}
             addLabel={t("hiring.addTag")}
             removeLabel={t("common.delete")}
+            itemLabel={t("hiring.tags")}
           />
         </div>
       </section>
 
       <section className={sectionCls}>
         <div>
-          <label className={labelCls}>{t("hiring.scopeHeading")}</label>
+          <label className={labelCls} htmlFor="hiring-scope-heading">{t("hiring.scopeHeading")}</label>
           <input
+            id="hiring-scope-heading"
             value={draft.scopeHeading}
             onChange={(e) => set("scopeHeading", e.target.value)}
             className={inputCls}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("hiring.scopeBody")}</label>
+          <label className={labelCls} htmlFor="hiring-scope-body">{t("hiring.scopeBody")}</label>
           <textarea
+            id="hiring-scope-body"
             rows={3}
             value={draft.scopeBody}
             onChange={(e) => set("scopeBody", e.target.value)}
@@ -187,8 +194,9 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
           />
         </div>
         <div>
-          <label className={labelCls}>{t("hiring.requirementsHeading")}</label>
+          <label className={labelCls} htmlFor="hiring-requirements-heading">{t("hiring.requirementsHeading")}</label>
           <input
+            id="hiring-requirements-heading"
             value={draft.requirementsHeading}
             onChange={(e) => set("requirementsHeading", e.target.value)}
             className={`${inputCls} mb-2`}
@@ -198,11 +206,13 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
             onChange={(next) => set("requirements", next)}
             addLabel={t("hiring.addRequirement")}
             removeLabel={t("common.delete")}
+            itemLabel={t("hiring.requirementsHeading")}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("hiring.benefitsHeading")}</label>
+          <label className={labelCls} htmlFor="hiring-benefits-heading">{t("hiring.benefitsHeading")}</label>
           <input
+            id="hiring-benefits-heading"
             value={draft.benefitsHeading}
             onChange={(e) => set("benefitsHeading", e.target.value)}
             className={`${inputCls} mb-2`}
@@ -212,6 +222,7 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
             onChange={(next) => set("benefits", next)}
             addLabel={t("hiring.addBenefit")}
             removeLabel={t("common.delete")}
+            itemLabel={t("hiring.benefitsHeading")}
           />
         </div>
       </section>
@@ -219,16 +230,18 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
       <section className={sectionCls}>
         <h2 className="text-sm font-semibold tracking-tight text-foreground">{t("hiring.ctaCard")}</h2>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="hiring-cta-heading">{t("panel.title")}</label>
           <input
+            id="hiring-cta-heading"
             value={draft.ctaHeading}
             onChange={(e) => set("ctaHeading", e.target.value)}
             className={inputCls}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("panel.text")}</label>
+          <label className={labelCls} htmlFor="hiring-cta-body">{t("panel.text")}</label>
           <textarea
+            id="hiring-cta-body"
             rows={2}
             value={draft.ctaBody}
             onChange={(e) => set("ctaBody", e.target.value)}
@@ -237,8 +250,9 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
           <p className="mt-1 text-xs text-[var(--muted)]">{t("hiring.countHint")}</p>
         </div>
         <div>
-          <label className={labelCls}>{t("product.ctaLabelField")}</label>
+          <label className={labelCls} htmlFor="hiring-cta-button">{t("product.ctaLabelField")}</label>
           <input
+            id="hiring-cta-button"
             value={draft.ctaButton}
             onChange={(e) => set("ctaButton", e.target.value)}
             className={inputCls}
@@ -249,16 +263,18 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
       <section className={sectionCls}>
         <h2 className="text-sm font-semibold tracking-tight text-foreground">{t("hiring.testHeading")}</h2>
         <div>
-          <label className={labelCls}>{t("panel.title")}</label>
+          <label className={labelCls} htmlFor="hiring-test-title">{t("panel.title")}</label>
           <input
+            id="hiring-test-title"
             value={draft.testTitle}
             onChange={(e) => set("testTitle", e.target.value)}
             className={inputCls}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("hiring.testIntro")}</label>
+          <label className={labelCls} htmlFor="hiring-test-intro">{t("hiring.testIntro")}</label>
           <textarea
+            id="hiring-test-intro"
             rows={3}
             value={draft.testIntro}
             onChange={(e) => set("testIntro", e.target.value)}
@@ -292,6 +308,7 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
                 value={q.question}
                 onChange={(e) => setQuestion(qi, { question: e.target.value })}
                 placeholder={t("hiring.questionPlaceholder")}
+                aria-label={`${t("hiring.questionPlaceholder")} ${qi + 1}`}
                 className={`${inputCls} resize-y`}
               />
               <RemoveButton
@@ -321,6 +338,7 @@ export function HiringForm({ initial, siteId }: { initial: HiringContent; siteId
                       })
                     }
                     placeholder={t("hiring.optionPlaceholder")}
+                    aria-label={`${t("hiring.optionPlaceholder")} ${oi + 1}`}
                     className={inputCls}
                   />
                   <RemoveButton

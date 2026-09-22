@@ -15,6 +15,7 @@ import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { requestLocale } from "@/lib/i18n/request";
+import { translator } from "@/lib/i18n";
 
 /**
  * Panel routes a CUSTOMER needs, so they work on every storefront.
@@ -105,6 +106,13 @@ export default async function PanelLayout({
     <LocaleProvider locale={locale}>
     <PanelChrome defaultCollapsed={collapsed}>
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
+      {/* Skip link: keyboard users bypass the 26-item sidebar (WCAG 2.4.1). */}
+      <a
+        href="#panel-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:border focus:border-[var(--border)] focus:bg-[var(--card)] focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground"
+      >
+        {translator(locale)("panel.skipToContent")}
+      </a>
       {/* Panel palette (/panel/appearance). Rendered here so it exists only on
           panel routes, but the selectors are :root / html.dark — dialogs portal
           to document.body, and a wrapper class would leave them uncoloured. */}
@@ -135,7 +143,7 @@ export default async function PanelLayout({
         />
         <EmailVerifyNotice />
         {user && !emailVerified && <EmailConfirmBanner email={user.email ?? null} />}
-        <main className="flex-1 min-w-0 max-w-5xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 md:mx-0">
+        <main id="panel-main" className="flex-1 min-w-0 max-w-5xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 md:mx-0">
           {children}
         </main>
       </div>

@@ -72,8 +72,9 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
     <div className="space-y-6">
       {/* Badge */}
       <div>
-        <label className={labelCls}>Badge</label>
+        <label className={labelCls} htmlFor="hero-badge">Badge</label>
         <input
+          id="hero-badge"
           className={inputCls}
           value={hero.badge}
           onChange={(e) => set("badge", e.target.value)}
@@ -83,8 +84,9 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
 
       {/* Heading */}
       <div>
-        <label className={labelCls}>{t("panel.heroHeading")}</label>
+        <label className={labelCls} htmlFor="hero-heading">{t("panel.heroHeading")}</label>
         <textarea
+          id="hero-heading"
           className={inputCls}
           rows={2}
           value={hero.heading}
@@ -95,8 +97,9 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
 
       {/* Subheading */}
       <div>
-        <label className={labelCls}>Deskripsi</label>
+        <label className={labelCls} htmlFor="hero-subheading">Deskripsi</label>
         <textarea
+          id="hero-subheading"
           className={inputCls}
           rows={3}
           value={hero.subheading}
@@ -107,20 +110,20 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
       {/* CTAs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>{t("panel.heroCta1Text")}</label>
-          <input className={inputCls} value={hero.primaryLabel} onChange={(e) => set("primaryLabel", e.target.value)} />
+          <label className={labelCls} htmlFor="hero-cta1-text">{t("panel.heroCta1Text")}</label>
+          <input id="hero-cta1-text" className={inputCls} value={hero.primaryLabel} onChange={(e) => set("primaryLabel", e.target.value)} />
         </div>
         <div>
-          <label className={labelCls}>{t("panel.heroCta1Link")}</label>
-          <input className={inputCls} value={hero.primaryHref} onChange={(e) => set("primaryHref", e.target.value)} placeholder="#templates" />
+          <label className={labelCls} htmlFor="hero-cta1-link">{t("panel.heroCta1Link")}</label>
+          <input id="hero-cta1-link" className={inputCls} value={hero.primaryHref} onChange={(e) => set("primaryHref", e.target.value)} placeholder="#templates" />
         </div>
         <div>
-          <label className={labelCls}>{t("panel.heroCta2Text")}</label>
-          <input className={inputCls} value={hero.secondaryLabel} onChange={(e) => set("secondaryLabel", e.target.value)} />
+          <label className={labelCls} htmlFor="hero-cta2-text">{t("panel.heroCta2Text")}</label>
+          <input id="hero-cta2-text" className={inputCls} value={hero.secondaryLabel} onChange={(e) => set("secondaryLabel", e.target.value)} />
         </div>
         <div>
-          <label className={labelCls}>{t("panel.heroCta2Link")}</label>
-          <input className={inputCls} value={hero.secondaryHref} onChange={(e) => set("secondaryHref", e.target.value)} placeholder={t("panel.heroLinkPlaceholder")} />
+          <label className={labelCls} htmlFor="hero-cta2-link">{t("panel.heroCta2Link")}</label>
+          <input id="hero-cta2-link" className={inputCls} value={hero.secondaryHref} onChange={(e) => set("secondaryHref", e.target.value)} placeholder={t("panel.heroLinkPlaceholder")} />
         </div>
       </div>
 
@@ -134,6 +137,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
                 className={inputCls}
                 value={f.icon}
                 onChange={(e) => setFeature(i, { icon: e.target.value as HeroIcon })}
+                aria-label={`Ikon ${i + 1}`}
               >
                 {ICON_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -141,8 +145,8 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
                   </option>
                 ))}
               </select>
-              <input className={inputCls} value={f.title} onChange={(e) => setFeature(i, { title: e.target.value })} placeholder={t("panel.title")} />
-              <input className={inputCls} value={f.subtitle} onChange={(e) => setFeature(i, { subtitle: e.target.value })} placeholder={t("panel.heroSubtitle")} />
+              <input className={inputCls} value={f.title} onChange={(e) => setFeature(i, { title: e.target.value })} placeholder={t("panel.title")} aria-label={`${t("panel.title")} ${i + 1}`} />
+              <input className={inputCls} value={f.subtitle} onChange={(e) => setFeature(i, { subtitle: e.target.value })} placeholder={t("panel.heroSubtitle")} aria-label={`${t("panel.heroSubtitle")} ${i + 1}`} />
             </div>
           ))}
         </div>
@@ -150,7 +154,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
 
       {/* Image */}
       <div>
-        <label className={labelCls}>{t("panel.heroImage")}</label>
+        <label className={labelCls} htmlFor="hero-image-url">{t("panel.heroImage")}</label>
         <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
           <div className="w-40 h-28 rounded-lg border border-[var(--border)] bg-[var(--background)] flex items-center justify-center overflow-hidden shrink-0">
             {hero.imageUrl ? (
@@ -162,6 +166,7 @@ export function HeroForm({ initialHero, siteId }: { initialHero: HeroConfig; sit
           </div>
           <div className="flex-1 space-y-2">
             <input
+              id="hero-image-url"
               className={inputCls}
               value={hero.imageUrl}
               onChange={(e) => set("imageUrl", e.target.value)}

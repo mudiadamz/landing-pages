@@ -119,7 +119,10 @@ export function PanelTopbar({
 
           {menuOpen && (
             <div
-              role="menu"
+              // Not role="menu": this dropdown mixes a profile link with a
+              // language and theme toggle, so it isn't a menuitem list and must
+              // not claim to be one (WCAG 4.1.2). Labelled region instead.
+              role="group"
               aria-label={t("panel.accountMenu")}
               className="absolute right-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-lg"
             >

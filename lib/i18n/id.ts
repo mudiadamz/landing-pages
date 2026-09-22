@@ -263,6 +263,7 @@ export const id = {
   "panel.notVerified": "Belum verifikasi",
   "panel.verified": "Sudah verifikasi",
   "panel.noUsers": "Tidak ada user ditemukan.",
+  "panel.skipToContent": "Lewati ke konten",
   "panel.usersLoadError": "Gagal memuat daftar user.",
   "common.retry": "Coba lagi",
   "panel.excludeStatsHint": "Kunjungan user ini tidak dihitung di Analytics",

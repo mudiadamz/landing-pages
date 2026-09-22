@@ -551,7 +551,7 @@ export function PanelSidebar({
             paling lebar; dan filter ada gunanya di sebelah data yang difilter. */}
 
         <div
-          className={`flex flex-1 flex-col overflow-y-auto px-3 pb-[env(safe-area-inset-bottom)] ${
+          className={`thin-scrollbar flex flex-1 flex-col overflow-y-auto px-3 pb-[env(safe-area-inset-bottom)] ${
             collapsed ? "md:px-2" : ""
           }`}
         >

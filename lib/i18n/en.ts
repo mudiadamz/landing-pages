@@ -276,6 +276,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.notVerified": "Not verified",
   "panel.verified": "Verified",
   "panel.noUsers": "No users found.",
+  "panel.skipToContent": "Skip to content",
   "panel.usersLoadError": "Failed to load users.",
   "common.retry": "Try again",
   "panel.excludeStatsHint": "This user's visits are not counted in Analytics",
