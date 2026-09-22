@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SocialForm } from "./social-form";
 import { LinksForm } from "./links-form";
+import { Tabs } from "@/components/ui/tabs";
 import type { OtherLink } from "@/lib/actions/site-settings";
 import type { SocialUrls } from "@/lib/social";
 import { useT } from "@/lib/i18n/client";
@@ -26,33 +27,17 @@ export function LinksTabs({
   const t = useT();
   const [tab, setTab] = useState<"social" | "other">("social");
 
-  const button = (key: "social" | "other", label: string, sub: string) => {
-    const active = tab === key;
-    return (
-      <button
-        type="button"
-        onClick={() => setTab(key)}
-        aria-pressed={active}
-        className={`flex-1 rounded-xl px-4 py-3 text-left transition-colors ${
-          active
-            ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-            : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
-        }`}
-      >
-        <span className="block text-sm font-semibold">{label}</span>
-        <span className={`mt-0.5 block text-xs ${active ? "opacity-80" : "text-[var(--muted)]"}`}>
-          {sub}
-        </span>
-      </button>
-    );
-  };
-
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row">
-        {button("social", t("panel.tabSocial"), t("panel.tabSocialSub"))}
-        {button("other", t("panel.tabOther"), t("panel.tabOtherSub"))}
-      </div>
+      <Tabs
+        items={[
+          { key: "social", label: t("panel.tabSocial") },
+          { key: "other", label: t("panel.tabOther") },
+        ]}
+        active={tab}
+        onChange={(k) => setTab(k as "social" | "other")}
+        ariaLabel={t("panel.navLinks")}
+      />
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
         {tab === "social" ? (

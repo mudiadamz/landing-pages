@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SiteLogo } from "@/components/site-logo";
 import { BrandMark } from "@/components/brand-mark";
+import { MenuSearch, type MenuSearchItem } from "@/components/menu-search";
 import { usePanelChrome } from "@/components/panel-chrome";
 import type { SiteBrand } from "@/lib/site-brand";
 import type { FeatureKey } from "@/lib/features";
@@ -366,9 +367,25 @@ function NavContent({
     return true;
   };
 
+  // Flat list of the menus this user can actually reach, for Cmd/Ctrl-K search.
+  // Skips action entries (Assets opens a modal, has no route).
+  const searchItems: MenuSearchItem[] = navGroups.flatMap((group) =>
+    group.items
+      .filter((item) => isVisible(item) && !item.action && !item.external)
+      .map((item) => ({ label: t(item.labelKey), href: item.href, group: t(group.labelKey) })),
+  );
+
   return (
     <>
       <nav aria-label={t("panel.menu")} className="flex flex-col gap-5 py-3">
+        {/* Menu search — hidden in the icon rail, where there is no room for it. */}
+        <div className={collapsed ? "md:hidden" : ""}>
+          <MenuSearch
+            items={searchItems}
+            label={t("panel.searchMenu")}
+            placeholder={t("panel.searchMenuPlaceholder")}
+          />
+        </div>
         {navGroups.map((group) => {
           const visibleItems = group.items.filter(isVisible);
           if (visibleItems.length === 0) return null;

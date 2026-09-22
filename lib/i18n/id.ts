@@ -373,6 +373,8 @@ export const id = {
   "panel.accountMenu": "Menu akun",
   "panel.themeLabel": "Tema",
   "panel.menu": "Menu panel",
+  "panel.searchMenu": "Cari menu",
+  "panel.searchMenuPlaceholder": "Ketik nama menu…",
   "panel.backToProduct": "Kembali ke produk",
   "panel.epubQuickPreview": "preview 30% isi buku",
   "panel.epubFile": "File EPUB",

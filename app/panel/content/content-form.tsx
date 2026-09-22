@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { SaveBar } from "@/components/ui/save-bar";
+import { Tabs } from "@/components/ui/tabs";
 import { FileUploadCard, type FileMeta } from "@/components/file-upload-card";
 import { updateSiteContent } from "@/lib/actions/site-settings";
 import { uploadLibraryAsset } from "@/lib/actions/assets";
@@ -213,83 +214,18 @@ async function sampleTopColor(url: string): Promise<string> {
           fields were built. Seven sections in one 600-line scroll meant the
           FAQ lived below three screens of founder card, and nobody scrolls
           a settings page looking for a field they cannot see. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <button
-          type="button"
-          onClick={() => setTab("founder")}
-          aria-pressed={tab === "founder"}
-          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
-            tab === "founder"
-              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
-          }`}
-        >
-          <span className="block text-sm font-semibold">{t("content.tabFounder")}</span>
-          <span className={`mt-0.5 block text-xs ${tab === "founder" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            {t("content.tabFounderSub")}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("pages")}
-          aria-pressed={tab === "pages"}
-          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
-            tab === "pages"
-              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
-          }`}
-        >
-          <span className="block text-sm font-semibold">{t("content.tabPages")}</span>
-          <span className={`mt-0.5 block text-xs ${tab === "pages" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            {t("content.tabPagesSub")}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("buyer")}
-          aria-pressed={tab === "buyer"}
-          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
-            tab === "buyer"
-              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
-          }`}
-        >
-          <span className="block text-sm font-semibold">{t("content.tabBuyer")}</span>
-          <span className={`mt-0.5 block text-xs ${tab === "buyer" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            {t("content.tabBuyerSub")}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("legal")}
-          aria-pressed={tab === "legal"}
-          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
-            tab === "legal"
-              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
-          }`}
-        >
-          <span className="block text-sm font-semibold">{t("content.tabLegal")}</span>
-          <span className={`mt-0.5 block text-xs ${tab === "legal" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            {t("content.tabLegalSub")}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("footer")}
-          aria-pressed={tab === "footer"}
-          className={`rounded-xl px-3 py-2.5 text-left transition-colors ${
-            tab === "footer"
-              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-              : "bg-[var(--accent-subtle)] text-foreground hover:bg-[var(--primary)]/15"
-          }`}
-        >
-          <span className="block text-sm font-semibold">{t("content.tabFooter")}</span>
-          <span className={`mt-0.5 block text-xs ${tab === "footer" ? "opacity-80" : "text-[var(--muted)]"}`}>
-            {t("content.tabFooterSub")}
-          </span>
-        </button>
-      </div>
+      <Tabs
+        items={[
+          { key: "founder", label: t("content.tabFounder") },
+          { key: "pages", label: t("content.tabPages") },
+          { key: "buyer", label: t("content.tabBuyer") },
+          { key: "legal", label: t("content.tabLegal") },
+          { key: "footer", label: t("content.tabFooter") },
+        ]}
+        active={tab}
+        onChange={(k) => setTab(k as typeof tab)}
+        ariaLabel={t("panel.navContent")}
+      />
 
       {tab === "founder" && (
         <div className="space-y-6">

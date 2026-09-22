@@ -385,6 +385,8 @@ export const en: Record<keyof typeof id, string> = {
   "panel.accountMenu": "Account menu",
   "panel.themeLabel": "Theme",
   "panel.menu": "Panel menu",
+  "panel.searchMenu": "Search menu",
+  "panel.searchMenuPlaceholder": "Type a menu name…",
   "panel.backToProduct": "Back to the product",
   "panel.epubQuickPreview": "preview 30% of the book",
   "panel.epubFile": "EPUB file",
