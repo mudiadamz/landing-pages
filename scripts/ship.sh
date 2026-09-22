@@ -24,6 +24,21 @@ fi
 # 1. Rebuild + restart as needed (fails loud, before any commit).
 scripts/redeploy.sh
 
+# 1b. Health gate: never commit/push a build that isn't actually serving. This
+# catches the case where redeploy was a NOOP (e.g. state seeded) but the running
+# build is broken or missing — a non-async 'use server' export, say, that tsc
+# passes but the production build rejects.
+health=""
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  health="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:3000/ || true)"
+  [ "$health" = "200" ] && break
+  sleep 1
+done
+if [ "$health" != "200" ]; then
+  echo "!! app is not serving 200 on localhost:3000 (got '${health:-none}') — refusing to commit a broken build" >&2
+  exit 1
+fi
+
 # 2. Commit. The .githooks/pre-commit hook bumps the version and stages it.
 git add -A
 if git diff --cached --quiet; then
