@@ -70,16 +70,19 @@ export const DEFAULT_POPUP: PopupBanner = {
   delayMs: 8000,
   exitIntent: true,
 
-  eyebrow: "dari penulisnya",
-  title: "suka sama ceritanya?",
-  body: "aku nulis cerita kayak gini pelan-pelan, sepenuh hati. kalau kamu mau aku kabari tiap ada bab atau buku baru, tinggalin email kamu aja ya.",
-  ctaLabel: "kabari aku ya",
+  // No placeholder copy: the popup ships disabled and empty. Configure it in
+  // /panel/popup. dismissLabel keeps a neutral close label so an enabled-but-
+  // unfilled popup still has a working dismiss.
+  eyebrow: "",
+  title: "",
+  body: "",
+  ctaLabel: "",
   emailCapture: true,
-  instagramUrl: "https://instagram.com/admuiux",
-  instagramLabel: "atau ikutin ceritanya di instagram",
-  dismissLabel: "nanti aja",
-  doneTitle: "makasih ya 🌧️",
-  doneBody: "nanti aku kabari kalau ada cerita baru.",
+  instagramUrl: "",
+  instagramLabel: "",
+  dismissLabel: "Tutup",
+  doneTitle: "",
+  doneBody: "",
 };
 
 /** Trimmed, capped, and falling back to the default when blanked. */

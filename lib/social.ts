@@ -12,12 +12,13 @@ export type SocialUrls = Record<SocialKey, string>;
 
 export const SOCIAL_KEYS: SocialKey[] = ["threads", "tiktok", "instagram", "youtube"];
 
-/** What the site shipped with, so nothing disappeared the day this became editable. */
+/** Empty by default: a storefront shows no social icons until its own handles
+ *  are set in /panel/links. No placeholder accounts ship in code. */
 export const DEFAULT_SOCIAL_URLS: SocialUrls = {
-  threads: "https://www.threads.com/adm.uiux",
-  tiktok: "https://tiktok.com/@adm.uiux",
-  instagram: "https://instagram.com/adm.uiux",
-  youtube: "https://youtube.com/@admuiux",
+  threads: "",
+  tiktok: "",
+  instagram: "",
+  youtube: "",
 };
 
 /**

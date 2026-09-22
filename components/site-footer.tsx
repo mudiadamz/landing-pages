@@ -42,9 +42,11 @@ export async function SiteFooter() {
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="space-y-4">
-            <p className="text-sm text-[var(--muted)] max-w-md">
-              {content.footerTagline}
-            </p>
+            {content.footerTagline && (
+              <p className="text-sm text-[var(--muted)] max-w-md">
+                {content.footerTagline}
+              </p>
+            )}
             <div>
               <p className="text-xs font-medium text-foreground mb-2">{t("panel.tabSocial", {}, locale)}</p>
               <SocialLinks

@@ -709,15 +709,15 @@ export const id = {
   "content.toolbarColorHint":
     "Warna bar atas Safari/Chrome di homepage, diambil otomatis dari bagian atas cover saat diunggah. Kosongkan = ikut warna halaman.",
   "content.orPasteUrl": "Atau tempel path / URL",
-  "content.photoUrlPlaceholder": "/pas_foto.png atau https://…",
+  "content.photoUrlPlaceholder": "/founder.jpg atau https://…",
   "content.photoUrlHint":
-    "Boleh file di public/ — /pas_foto.png itu nilai bawaannya. Dikosongkan = pakai inisial nama.",
+    "Boleh file di public/ atau URL publik. Dikosongkan = pakai inisial nama.",
   "content.initialsFallback": "Tanpa foto, kartu memakai inisial ini.",
   "content.name": "Nama",
   "content.verifiedBadge": "Centang biru",
   "content.verifiedBadgeHint": "Tampilkan centang setelah nama",
   "content.role": "Peran / jabatan",
-  "content.rolePlaceholder": "Founder · software developer 15+ tahun",
+  "content.rolePlaceholder": "Founder",
   "content.bio": "Deskripsi singkat",
   "content.contactLabel": "Teks link kontak",
   "content.contactLabelPlaceholder": "Hubungi langsung",
@@ -1329,7 +1329,7 @@ export const id = {
 
   "checkout.guaranteeTitle": "Garansi 7 hari uang kembali.",
   "checkout.guaranteeBody":
-    "Nggak cocok atau file bermasalah? Aku perbaiki atau kembalikan dana — dijamin langsung oleh Adam.",
+    "Nggak cocok atau file bermasalah? Aku perbaiki atau kembalikan dana — dijamin.",
   "checkout.securePayment": "Pembayaran aman lewat Duitku",
   "checkout.readMore": "Selengkapnya",
   "reviews.verifiedBuyer": "Pembeli terverifikasi",
@@ -1432,7 +1432,7 @@ export const id = {
   "contact.sendMessage": "Kirim pesan",
 
   "about.metaDescription":
-    "Tentang ADM.UIUX dan Adam Mudianto. Produk digital siap pakai, software developer 15+ tahun.",
+    "Tentang ADM.UIUX — produk digital siap pakai: template, landing page, dan aset digital.",
   "about.myNameIs": "Nama saya",
   "home.allCategories": "Semua Kategori",
   "home.allCategoriesMeta": "Jelajahi semua kategori dan sub-kategori produk digital.",

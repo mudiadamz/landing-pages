@@ -68,27 +68,33 @@ export default async function AboutPage() {
               {content.aboutParagraphs.map((text, i) => (
                 <p key={i}>{text}</p>
               ))}
-              <div className="pt-6 border-t border-[var(--border)]">
-                <h2 className="text-base font-semibold text-foreground mb-3">{content.aboutAuthorHeading}</h2>
-                <div className="flex flex-col sm:flex-row gap-4 items-start">
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card)]">
-                    {/* The founder card, not a second copy of it: the photo, the
-                        name and the sentence all come from /panel/content, so
-                        this page cannot describe a different person than the
-                        homepage does. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={founder.photoUrl || "/pas_foto.png"}
-                      alt={founder.name}
-                      className="object-cover w-full h-full"
-                    />
+              {/* Only when an author is configured (/panel/content). Off by
+                  default, so a fresh site shows no placeholder author. */}
+              {founder.enabled && founder.name && (
+                <div className="pt-6 border-t border-[var(--border)]">
+                  <h2 className="text-base font-semibold text-foreground mb-3">{content.aboutAuthorHeading}</h2>
+                  <div className="flex flex-col sm:flex-row gap-4 items-start">
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card)]">
+                      {/* The founder card, not a second copy of it: the photo, the
+                          name and the sentence all come from /panel/content, so
+                          this page cannot describe a different person than the
+                          homepage does. */}
+                      {founder.photoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={founder.photoUrl}
+                          alt={founder.name}
+                          className="object-cover w-full h-full"
+                        />
+                      )}
+                    </div>
+                    <p className="flex-1 mt-0">
+                      {t("about.myNameIs")} <strong className="text-foreground">{founder.name}</strong>
+                      {founder.role ? ` — ${founder.role}.` : "."} {founder.bio}
+                    </p>
                   </div>
-                  <p className="flex-1 mt-0">
-                    {t("about.myNameIs")} <strong className="text-foreground">{founder.name}</strong>
-                    {founder.role ? ` — ${founder.role}.` : "."} {founder.bio}
-                  </p>
                 </div>
-              </div>
+              )}
               <div className="pt-6 mt-6 border-t border-[var(--border)]">
                 <h2 className="text-base font-semibold text-foreground mb-3">
                   {content.supportContactHeading}

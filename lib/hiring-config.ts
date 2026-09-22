@@ -65,7 +65,9 @@ export type HiringContent = {
 };
 
 export const DEFAULT_HIRING: HiringContent = {
-  enabled: true,
+  // Off by default: no demo vacancy or skill-test quiz on a fresh site. The
+  // /hiring link and pages stay hidden until turned on in /panel/hiring.
+  enabled: false,
 
   metaTitle: "Hiring — Landing Page Creator",
   metaDescription:

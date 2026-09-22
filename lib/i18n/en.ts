@@ -719,15 +719,15 @@ export const en: Record<keyof typeof id, string> = {
   "content.toolbarColorHint":
     "The colour of the Safari/Chrome top bar on the homepage, taken automatically from the top of the cover when it is uploaded. Leave empty to follow the page colour.",
   "content.orPasteUrl": "Or paste a path / URL",
-  "content.photoUrlPlaceholder": "/pas_foto.png or https://…",
+  "content.photoUrlPlaceholder": "/founder.jpg or https://…",
   "content.photoUrlHint":
-    "A file in public/ works — /pas_foto.png is the default. Left empty = the name's initial is used.",
+    "A file in public/ or a public URL works. Left empty = the name's initial is used.",
   "content.initialsFallback": "Without a photo, the card uses this initial.",
   "content.name": "Name",
   "content.verifiedBadge": "Blue check",
   "content.verifiedBadgeHint": "Show a check after the name",
   "content.role": "Role / job title",
-  "content.rolePlaceholder": "Founder · software developer, 15+ years",
+  "content.rolePlaceholder": "Founder",
   "content.bio": "Short description",
   "content.contactLabel": "Contact link text",
   "content.contactLabelPlaceholder": "Get in touch",
@@ -1339,7 +1339,7 @@ export const en: Record<keyof typeof id, string> = {
 
   "checkout.guaranteeTitle": "7-day money-back guarantee.",
   "checkout.guaranteeBody":
-    "Not a fit, or a problem with the file? I fix it or refund you — guaranteed by Adam personally.",
+    "Not a fit, or a problem with the file? I fix it or refund you — guaranteed.",
   "checkout.securePayment": "Secure payment via Duitku",
   "checkout.readMore": "Read more",
   "reviews.verifiedBuyer": "Verified buyer",
@@ -1442,7 +1442,7 @@ export const en: Record<keyof typeof id, string> = {
   "contact.sendMessage": "Send a message",
 
   "about.metaDescription":
-    "About ADM.UIUX and Adam Mudianto. Ready-made digital products, 15+ years a software developer.",
+    "About ADM.UIUX — ready-made digital products: templates, landing pages, and digital assets.",
   "about.myNameIs": "My name is",
   "home.allCategories": "All categories",
   "home.allCategoriesMeta": "Browse every category and sub-category of digital products.",

@@ -104,18 +104,20 @@ export type SiteContent = {
 };
 
 export const DEFAULT_CONTENT: SiteContent = {
-  footerTagline:
-    "ADM.UIUX — produk digital siap pakai. By Adam Mudianto, software developer 15+ tahun.",
+  // Empty: no placeholder tagline. Footer hides it until set in /panel/content.
+  footerTagline: "",
 
+  // Disabled + blank by default: the author/founder card names a real person, so
+  // it ships off with no placeholder identity. Enable and fill it in /panel/content.
   founder: {
-    enabled: true,
-    name: "Adam Mudianto",
-    role: "Founder · software developer 15+ tahun",
-    bio: "setiap template dibuat & dirawat sendiri. Ada pertanyaan sebelum beli?",
-    photoUrl: "/pas_foto.png",
+    enabled: false,
+    name: "",
+    role: "",
+    bio: "",
+    photoUrl: "",
     contactLabel: "Hubungi langsung",
     contactHref: "/contact",
-    verified: true,
+    verified: false,
     coverUrl: "",
     coverThemeColor: "",
   },

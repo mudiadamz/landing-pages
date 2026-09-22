@@ -105,31 +105,39 @@ export async function HomeHero({ hero = DEFAULT_HERO, templateCount }: HomeHeroP
             </div>
           )}
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1] text-foreground">
-            {renderMarkup(hero.heading)}
-          </h1>
+          {hero.heading && (
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1] text-foreground">
+              {renderMarkup(hero.heading)}
+            </h1>
+          )}
 
-          <p className="mt-5 text-base sm:text-lg text-[var(--muted)] leading-relaxed">
-            {renderMarkup(hero.subheading)}
-          </p>
+          {hero.subheading && (
+            <p className="mt-5 text-base sm:text-lg text-[var(--muted)] leading-relaxed">
+              {renderMarkup(hero.subheading)}
+            </p>
+          )}
 
-          <div className="mt-7 flex flex-wrap justify-center lg:justify-start gap-3">
-            <Button
-              size="lg"
-              href={hero.primaryHref}
-              rightIcon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              }
-              className="gap-2 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99]"
-            >
-              {hero.primaryLabel}
-            </Button>
-            {hero.secondaryLabel && (
-              <HeroVideoButton label={hero.secondaryLabel} href={hero.secondaryHref} />
-            )}
-          </div>
+          {(hero.primaryLabel || hero.secondaryLabel) && (
+            <div className="mt-7 flex flex-wrap justify-center lg:justify-start gap-3">
+              {hero.primaryLabel && (
+                <Button
+                  size="lg"
+                  href={hero.primaryHref}
+                  rightIcon={
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  }
+                  className="gap-2 shadow-lg shadow-[var(--primary)]/25 hover:shadow-xl hover:shadow-[var(--primary)]/30 hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  {hero.primaryLabel}
+                </Button>
+              )}
+              {hero.secondaryLabel && (
+                <HeroVideoButton label={hero.secondaryLabel} href={hero.secondaryHref} />
+              )}
+            </div>
+          )}
 
           <div className="mt-8 hidden lg:grid lg:grid-cols-4 gap-x-4 gap-y-5 max-w-md mx-auto lg:mx-0">
             {hero.features.map((f, i) => (

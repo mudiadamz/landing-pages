@@ -21,21 +21,18 @@ export type HeroConfig = {
   imageUrl: string;
 };
 
+// Empty by default: a fresh storefront has no hero copy until it is set in
+// /panel/hero. The home template hides the hero entirely while it is empty
+// (see lib/templates/default/home.tsx), so there is no placeholder to remove.
 export const DEFAULT_HERO: HeroConfig = {
-  badge: "{count} produk siap pakai · preview gratis",
-  heading: "Produk digital siap pakai, live hari ini — ~tanpa ngoding.~",
-  subheading:
-    "Preview dulu *gratis*, tanpa daftar. Sukai? Bayar via QRIS, langsung download dan pakai hari ini. Garansi 7 hari uang kembali — dijamin langsung oleh Adam.",
-  primaryLabel: "Lihat produk",
-  primaryHref: "#templates",
-  secondaryLabel: "Bagaimana cara beli?",
-  secondaryHref: "https://www.youtube.com/watch?v=I7qTv6460nU",
-  features: [
-    { icon: "shield", title: "Garansi 7 hari", subtitle: "uang kembali" },
-    { icon: "qr", title: "Bayar QRIS", subtitle: "e-wallet" },
-    { icon: "infinity", title: "Akses selamanya", subtitle: "tanpa langganan" },
-    { icon: "user", title: "Dibuat sendiri", subtitle: "oleh Adam" },
-  ],
+  badge: "",
+  heading: "",
+  subheading: "",
+  primaryLabel: "",
+  primaryHref: "",
+  secondaryLabel: "",
+  secondaryHref: "",
+  features: [],
   imageUrl: "",
 };
 

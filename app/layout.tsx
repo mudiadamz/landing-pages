@@ -46,7 +46,7 @@ const aumanDisplay = localFont({
 });
 
 const DEFAULT_DESCRIPTION =
-  "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar. By Adam Mudianto, software developer 15+ tahun. Support 1 bulan.";
+  "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar.";
 
 /**
  * Per-domain, because one deployment serves several niche storefronts: the brand
@@ -74,11 +74,10 @@ export async function generateMetadata(): Promise<Metadata> {
       "landing page",
       "template HTML",
       "HTML template",
-      "Adam Mudianto",
       name,
     ],
-    authors: [{ name: "Adam Mudianto", url: origin }],
-    creator: "Adam Mudianto",
+    authors: [{ name, url: origin }],
+    creator: name,
     openGraph: {
       type: "website",
       locale: "id_ID",
@@ -268,7 +267,6 @@ export default async function RootLayout({
             // absolute Supabase URL; the fallback needs the origin prefixed.
             logo: site.logo_url || site.icon_url || `${origin}/logo-adm-100.jpg`,
             email: "admin@admuiux.com",
-            founder: { "@type": "Person", name: "Adam Mudianto" },
           }}
         />
         <Suspense fallback={null}>

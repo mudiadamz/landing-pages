@@ -35,7 +35,11 @@ export function DefaultHome({
       <SiteHeader user={user} brand={siteBrand(site)} categories={categories} />
 
       <main className="flex-1 relative">
-        <HomeHero hero={hero} templateCount={pages.length} />
+        {/* Hidden until the storefront sets a hero in /panel/hero — no blank
+            placeholder hero on a fresh site. */}
+        {(hero.heading || hero.subheading || hero.primaryLabel) && (
+          <HomeHero hero={hero} templateCount={pages.length} />
+        )}
 
         {pages.length === 0 ? (
           <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
