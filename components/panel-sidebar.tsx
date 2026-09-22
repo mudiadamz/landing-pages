@@ -17,6 +17,8 @@ type Props = {
   accountType?: AccountType;
   isPlatform?: boolean;
   canSell?: boolean;
+  /** Eligible to open a Business (not platform, not already a member) → apply link. */
+  canApplyBusiness?: boolean;
   pendingActions?: number;
   features?: FeatureKey[];
   /**
@@ -40,6 +42,8 @@ type NavItem = {
   adminOnly?: boolean;
   /** Platform operator only (cross-business), docs/plans/multi-business-saas.md. */
   platformOnly?: boolean;
+  /** Shown only to users eligible to open a Business (Fase 4 signup). */
+  applyOnly?: boolean;
   /** Match the path exactly — for /panel, which is a prefix of every other route. */
   exact?: boolean;
   /** Opens a popup instead of navigating. */
@@ -72,6 +76,7 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       { href: "/panel", labelKey: "panel.navDashboard", icon: HomeIcon, everyone: true, exact: true },
       { href: "/panel/purchases", labelKey: "panel.navPurchases", icon: ReceiptIcon, everyone: true },
       { href: "/panel/favorites", labelKey: "panel.navFavorites", icon: HeartIcon, everyone: true },
+      { href: "/panel/apply-business", labelKey: "panel.navApplyBusiness", icon: BadgeIcon, applyOnly: true },
     ],
   },
   {
@@ -330,6 +335,7 @@ function NavContent({
   isPlatform = false,
   features = [],
   canSell,
+  canApplyBusiness = false,
   pendingActions = 0,
   collapsed = false,
   onItemClick,
@@ -339,6 +345,7 @@ function NavContent({
   isPlatform?: boolean;
   features?: FeatureKey[];
   canSell?: boolean;
+  canApplyBusiness?: boolean;
   pendingActions?: number;
   /** Desktop rail. Every rule below is `md:`-scoped — the mobile drawer is always full. */
   collapsed?: boolean;
@@ -376,6 +383,7 @@ function NavContent({
 
   const isVisible = (item: NavItem) => {
     if (item.platformOnly) return !!isPlatform;
+    if (item.applyOnly) return !!canApplyBusiness;
     if (item.everyone) return true;
     if (item.adminOnly) return accountType === "company";
     if (item.sellerOnly) return !!canSell;
@@ -556,6 +564,7 @@ export function PanelSidebar({
   accountType,
   isPlatform,
   canSell,
+  canApplyBusiness,
   pendingActions,
   features,
   brand,
@@ -644,6 +653,7 @@ export function PanelSidebar({
             isPlatform={isPlatform}
             features={features}
             canSell={canSell}
+            canApplyBusiness={canApplyBusiness}
             pendingActions={pendingActions}
             collapsed={collapsed}
             onItemClick={close}

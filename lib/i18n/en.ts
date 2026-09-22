@@ -157,6 +157,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.navDashboard": "Dashboard",
   "panel.navPurchases": "My purchases",
   "panel.navFavorites": "Favourites",
+  "panel.navApplyBusiness": "Become a business",
   "panel.navProducts": "Digital products",
   "panel.navAssets": "Assets",
   "panel.navSales": "Sales",

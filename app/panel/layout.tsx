@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { isCanonicalRequest, canonicalOrigin, currentSite } from "@/lib/site-resolve";
 import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures, canSellOnCurrentSite } from "@/lib/actions/profiles";
@@ -86,6 +87,19 @@ export default async function PanelLayout({
   // whether the address was ever proven.
   const emailVerified = !!profile?.email_verified_at;
 
+  // Fase 4 signup: a plain customer (not the platform operator, not already tied
+  // to a business) may apply to open one. Membership is the eligibility check —
+  // the seeded owners/admins from the old model already have a row.
+  let canApplyBusiness = false;
+  if (user && !profile?.is_platform) {
+    const { data: membership } = await createAdminClient()
+      .from("lp_business_members")
+      .select("business_id")
+      .eq("user_id", user.id)
+      .limit(1);
+    canApplyBusiness = !membership || membership.length === 0;
+  }
+
   // Feature access drives which admin areas appear in the nav.
   const features = await getAccessibleFeatures();
 
@@ -127,6 +141,7 @@ export default async function PanelLayout({
         accountType={profile?.account_type}
         isPlatform={!!profile?.is_platform}
         canSell={!!canSell}
+        canApplyBusiness={canApplyBusiness}
         pendingActions={pendingActions}
         features={features}
         brand={brand}

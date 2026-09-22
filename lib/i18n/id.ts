@@ -146,6 +146,7 @@ export const id = {
   "panel.navDashboard": "Dashboard",
   "panel.navPurchases": "Pembelian saya",
   "panel.navFavorites": "Favorit",
+  "panel.navApplyBusiness": "Daftar business",
   "panel.navProducts": "Produk digital",
   "panel.navAssets": "Assets",
   "panel.navSales": "Penjualan",

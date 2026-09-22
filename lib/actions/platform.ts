@@ -11,6 +11,9 @@ export type BusinessRow = {
   commission_pct: number;
   kyc_status: string;
   created_at: string;
+  contact_email: string | null;
+  desired_host: string | null;
+  note: string | null;
   members: number;
   balance: number;
   pending: number;
@@ -28,7 +31,7 @@ export async function listBusinessesForPlatform(): Promise<BusinessRow[]> {
   const [{ data: businesses }, { data: ledger }, { data: members }] = await Promise.all([
     admin
       .from("lp_businesses")
-      .select("id, name, slug, business_type, status, plan, commission_pct, kyc_status, created_at")
+      .select("id, name, slug, business_type, status, plan, commission_pct, kyc_status, created_at, contact_email, desired_host, note")
       .order("created_at", { ascending: true }),
     admin.from("lp_business_ledger").select("business_id, amount_cents, status"),
     admin.from("lp_business_members").select("business_id"),
@@ -58,6 +61,9 @@ export async function listBusinessesForPlatform(): Promise<BusinessRow[]> {
     commission_pct: Number(b.commission_pct) || 0,
     kyc_status: b.kyc_status as string,
     created_at: b.created_at as string,
+    contact_email: (b.contact_email as string | null) ?? null,
+    desired_host: (b.desired_host as string | null) ?? null,
+    note: (b.note as string | null) ?? null,
     members: memberCount.get(b.id as string) ?? 0,
     balance: balance.get(b.id as string) ?? 0,
     pending: pending.get(b.id as string) ?? 0,
