@@ -51,7 +51,7 @@ describe("lp_profiles — membaca", () => {
     // bisa membatalkan keputusannya — itu tetap butuh satu langkah sengaja.
     const platform = await makeUser({ standing: "platform" });
     const customer = await makeUser();
-    const bizAdmin = await makeUser({ standing: "admin" });
+    const bizAdmin = await makeUser({ standing: "staff" });
     const otherPlatform = await makeUser({ standing: "platform" });
     const seen = await as({ uid: platform }, () =>
       sql<{ id: string }>("select id from lp_profiles where id = any($1)", [
@@ -218,9 +218,8 @@ describe("lp_get_my_profile_role — diturunkan, bukan dibaca", () => {
     expect(await roleOf(await makeUser({ standing: "platform" }))).toBe("company");
   });
 
-  it("owner & admin sebuah business → 'agent'", async () => {
+  it("owner sebuah business → 'agent'", async () => {
     expect(await roleOf(await makeUser({ standing: "owner" }))).toBe("agent");
-    expect(await roleOf(await makeUser({ standing: "admin" }))).toBe("agent");
   });
 
   it("staff → 'customer': dia bekerja di business, tidak mengelolanya", async () => {

@@ -270,38 +270,25 @@ export const listMemberSites = cache(async (): Promise<Site[]> => {
 
   const admin = createAdminClient();
   /*
-   * Situs yang punya urusan kerja dengan orang ini: yang dimiliki BUSINESS-nya,
-   * yang dia KELOLA (Agent), dan yang dia boleh JUALI (publisher).
+   * Situs yang punya urusan kerja dengan orang ini: yang dimiliki BUSINESS-nya.
    *
-   * Business-nya masuk sejak Fase 5: itu yang menggantikan "Agent" global lama —
-   * pengelola sebuah business melihat seluruh storefront business itu tanpa harus
-   * didaftarkan satu per satu di lp_site_agents.
+   * Satu sumber sekarang. Dulu ada dua lagi — keagenan situs (lp_site_agents)
+   * dan izin jual per situs (is_publisher) — dan keduanya hilang waktu peran
+   * dipangkas jadi empat: keanggotaan business sudah menjawab keduanya.
    *
-   * Keanggotaan biasa tidak masuk — "saya pernah beli di sini" bukan alasan
-   * membuka cakupan panel. Tapi izin jual iya: tanpa itu, seorang publisher di
-   * situs B akan selalu jatuh ke situs kanonik dan izin jualnya tidak pernah
-   * berlaku di panel. Ketahuan waktu mengujinya, bukan waktu menulisnya.
+   * Keanggotaan situs biasa tetap tidak masuk: "saya pernah beli di sini" bukan
+   * alasan membuka cakupan panel.
    */
-  const [{ data: profile }, { data: memberships }, { data: agentRows }, { data: publisherRows }] =
-    await Promise.all([
-      admin.from("lp_profiles").select("is_platform").eq("id", user.id).maybeSingle(),
-      admin.from("lp_business_members").select("business_id").eq("user_id", user.id),
-      admin.from("lp_site_agents").select("site_id").eq("user_id", user.id),
-      admin
-        .from("lp_site_members")
-        .select("site_id")
-        .eq("user_id", user.id)
-        .eq("is_publisher", true),
-    ]);
+  const [{ data: profile }, { data: memberships }] = await Promise.all([
+    admin.from("lp_profiles").select("is_platform").eq("id", user.id).maybeSingle(),
+    admin.from("lp_business_members").select("business_id").eq("user_id", user.id),
+  ]);
   // Platform melihat semuanya: dia yang membuat situsnya, dan mengunci dirinya di
   // luar domain yang baru dibuat adalah cara bodoh kehilangan akses.
   if (profile?.is_platform) return all;
 
   const myBusinesses = new Set((memberships ?? []).map((m) => m.business_id as string));
-  const mine = new Set(
-    [...(agentRows ?? []), ...(publisherRows ?? [])].map((r) => r.site_id as string),
-  );
-  return all.filter((s) => mine.has(s.id) || (s.business_id && myBusinesses.has(s.business_id)));
+  return all.filter((s) => !!s.business_id && myBusinesses.has(s.business_id));
 });
 
 /**

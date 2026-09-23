@@ -104,15 +104,15 @@ describe("lp_contacts — formulir kontak", () => {
       (await as(who, () => sql("select id from lp_contacts where name = 'Rahasia'"))).rowCount;
     expect(await seen("anon")).toBe(0);
     expect(await seen({ uid: await makeUser() })).toBe(0);
-    expect(await seen({ uid: await makeUser({ standing: "admin" }) })).toBe(0);
+    expect(await seen({ uid: await makeUser({ standing: "staff" }) })).toBe(0);
     expect(await seen({ uid: await makeUser({ standing: "platform" }) })).toBe(1);
   });
 });
 
 describe("lp_product_events — analitik per produk", () => {
   it("pemilik produk membaca eventnya; penjual lain tidak; tidak ada yang menulis lewat API", async () => {
-    const owner = await makeUser({ standing: "admin" });
-    const rival = await makeUser({ standing: "admin" });
+    const owner = await makeUser({ standing: "staff" });
+    const rival = await makeUser({ standing: "staff" });
     const p = await makeProduct(owner);
     await sql("insert into lp_product_events (landing_page_id, kind) values ($1, 'view')", [p]);
     const seen = async (uid: string) =>

@@ -28,7 +28,6 @@ export const BUCKETS: Record<string, BucketConfig> = {
     fileSizeLimit: 52428800,
     allowedMimeTypes: ["application/zip", "application/x-zip-compressed", "application/pdf", "application/epub+zip"],
   },
-  "publisher-kyc": { public: false, fileSizeLimit: 5242880, allowedMimeTypes: ["image/jpeg"] },
   "chat-attachments": {
     public: false,
     fileSizeLimit: 8388608,
@@ -129,7 +128,7 @@ export async function allowed(who: Who, action: Action, bucket: string, name: st
     case "chat-attachments":
       return owner && action !== "update";
     default:
-      // publisher-kyc, hiring-cv: service role only.
+      // hiring-cv: service role only.
       return false;
   }
 }

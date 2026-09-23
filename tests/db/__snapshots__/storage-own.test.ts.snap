@@ -47,12 +47,5 @@ exports[`konfigurasi bucket > dipatok — nilainya disalin dari storage.buckets 
     "fileSizeLimit": 52428800,
     "public": false,
   },
-  "publisher-kyc": {
-    "allowedMimeTypes": [
-      "image/jpeg",
-    ],
-    "fileSizeLimit": 5242880,
-    "public": false,
-  },
 }
 `;

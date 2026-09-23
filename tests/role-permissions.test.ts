@@ -18,15 +18,15 @@ import {
  */
 
 describe("matriks per-business", () => {
-  it("default: admin dapat semuanya — persis yang dipunya Agent sebelum Fase 5", () => {
-    // Setiap Agent lama jadi business admin lewat backfill. Default yang lebih
-    // ketat = mengambil menu dari orang yang kemarin punya, tanpa ada yang
-    // memutuskan itu.
-    expect([...DEFAULT_BUSINESS_ROLE_PERMISSIONS.admin].sort()).toEqual([...ALL_FEATURE_KEYS].sort());
+  it("default: staff tidak dapat apa-apa — owner yang memutuskan, bukan bawaan", () => {
+    // "Kamu tidak diberi apa-apa sampai seseorang memutuskan" adalah arah yang
+    // benar untuk akses yang didelegasikan. Tidak ada yang dirugikan: belum ada
+    // satu pun akun staff waktu default ini ditulis.
+    expect(DEFAULT_BUSINESS_ROLE_PERMISSIONS.staff).toEqual([]);
   });
 
-  it("default: staff tidak dapat apa-apa — perannya baru, tidak ada yang dirugikan", () => {
-    expect(DEFAULT_BUSINESS_ROLE_PERMISSIONS.staff).toEqual([]);
+  it("staff satu-satunya tingkat yang bisa diatur — owner selalu punya semuanya", () => {
+    expect(Object.keys(DEFAULT_BUSINESS_ROLE_PERMISSIONS)).toEqual(["staff"]);
   });
 
   it("belum pernah diatur (null/bukan objek) → default", () => {
@@ -38,33 +38,31 @@ describe("matriks per-business", () => {
   it("daftar kosong yang TERSIMPAN menang atas default", () => {
     // "Owner mencentang-lepas semuanya" adalah keputusan. Jatuh ke default di
     // sini akan membatalkannya diam-diam, dan layarnya akan terlihat benar.
-    expect(normalizeBusinessRolePermissions({ admin: [], staff: [] })).toEqual({
-      admin: [],
-      staff: [],
-    });
+    expect(normalizeBusinessRolePermissions({ staff: [] })).toEqual({ staff: [] });
   });
 
-  it("satu peran tersimpan, satu belum → yang belum pakai default", () => {
-    expect(normalizeBusinessRolePermissions({ admin: ["users"] })).toEqual({
-      admin: ["users"],
-      staff: DEFAULT_BUSINESS_ROLE_PERMISSIONS.staff,
+  it("peran 'admin' yang tersimpan dari model lama diabaikan, bukan dibawa ikut", () => {
+    // JSON lama masih boleh ada di database; membuangnya di sini adalah cara
+    // peran itu berhenti berarti apa-apa.
+    expect(normalizeBusinessRolePermissions({ admin: ["users"], staff: ["hero"] })).toEqual({
+      staff: ["hero"],
     });
   });
 
   it("kunci fitur yang tidak dikenal dibuang, bukan diteruskan", () => {
-    expect(normalizeBusinessRolePermissions({ admin: ["users", "nope", 3], staff: ["hero"] })).toEqual({
-      admin: ["users"],
+    expect(normalizeBusinessRolePermissions({ staff: ["hero", "nope", 3] })).toEqual({
       staff: ["hero"],
     });
   });
 });
 
-describe("matriks per-situs tidak ikut berubah", () => {
-  it("default customer & publisher tetap kosong", () => {
-    expect(DEFAULT_ROLE_PERMISSIONS).toEqual({ customer: [], publisher: [] });
-    expect(normalizeRolePermissions({ publisher: ["stats", "salah"] })).toEqual({
-      customer: [],
-      publisher: ["stats"],
+describe("matriks per-situs", () => {
+  it("customer satu-satunya baris yang tersisa; publisher dibuang", () => {
+    expect(DEFAULT_ROLE_PERMISSIONS).toEqual({ customer: [] });
+    // Baris publisher yang masih tersimpan dari model lama tidak boleh
+    // diam-diam tetap memberi fitur ke siapa pun.
+    expect(normalizeRolePermissions({ customer: ["stats"], publisher: ["users"] })).toEqual({
+      customer: ["stats"],
     });
   });
 });

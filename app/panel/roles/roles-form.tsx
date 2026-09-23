@@ -19,16 +19,16 @@ import type { MessageKey } from "@/lib/i18n";
  * delegatable ones (audit: the rest were invisible, so it was unclear whether
  * they were always-locked or always-open).
  *
- * Six columns since Fase 5, on two axes that are saved to two different places:
+ * Four columns — one per standing — on two axes saved to two different places:
  *
  *   Platform, Owner   fixed ✓ — neither can be locked out of what they operate
- *   Admin, Staff      per BUSINESS      → lp_businesses.role_permissions
- *   Publisher, Customer  per SITE       → lp_site_settings "role_permissions"
+ *   Staff             per BUSINESS  → lp_businesses.role_permissions
+ *   Customer          per SITE      → lp_site_settings "role_permissions"
  *
  * kind decides how a row reads:
  *   everyone     every account has it (Dashboard, purchases, favourites)
- *   seller       anyone who can sell (Platform, business members, verified publisher)
- *   delegatable  Platform & Owner always; the other four are toggles
+ *   seller       anyone who can sell (Platform and any business member)
+ *   delegatable  Platform & Owner always; Staff and Customer are the toggles
  *   company      Platform only, never delegated (the locked rows)
  */
 type Kind = "everyone" | "seller" | "delegatable" | "company";
@@ -78,7 +78,7 @@ function FixedNo() {
 
 type Col = "platform" | "owner" | BusinessConfigurableRole | ConfigurableRole;
 
-const BUSINESS_COLS: Col[] = ["admin", "staff"];
+const BUSINESS_COLS: Col[] = ["staff"];
 const isBusinessCol = (c: Col): c is BusinessConfigurableRole =>
   (BUSINESS_COLS as string[]).includes(c);
 
@@ -170,9 +170,7 @@ export function RolesForm({
   const cols: { key: Col; label: string }[] = [
     { key: "platform", label: t("panel.rolePlatform") },
     { key: "owner", label: t("panel.roleOwner") },
-    { key: "admin", label: t("panel.roleBizAdmin") },
     { key: "staff", label: t("panel.roleStaff") },
-    { key: "publisher", label: t("panel.rolePublisher") },
     { key: "customer", label: t("panel.roleCustomer") },
   ];
 
@@ -184,7 +182,7 @@ export function RolesForm({
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
-        <table className="w-full min-w-[760px] text-sm">
+        <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
               <th className="px-4 py-3 font-medium">{t("panel.roleColFeature")}</th>

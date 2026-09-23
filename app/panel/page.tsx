@@ -37,11 +37,11 @@ export default async function PanelPage() {
 
   // Publishers get their own-products view and never the site-wide one, matching
   // the split /panel/sales already enforces.
-  // Publisher melihat produknya sendiri, bukan angka seluruh situs — pembagian
-  // yang sama dengan /panel/sales. Izin publisher itu per situs sekarang.
+  // Staff melihat produknya sendiri, bukan angka seluruh situs — pembagian yang
+  // sama dengan /panel/sales. Owner dan Platform melihat angka penuh.
   const standing = await currentSiteStanding();
   const wantsGlobal =
-    (await requireFeature("stats")) && !(standing?.isPublisher && !standing.isAgent);
+    (await requireFeature("stats")) && standing?.businessRole !== "staff";
 
   const [purchases, favorites, sellerStats, globalStats] = await Promise.all([
     getPurchasesForUser(),

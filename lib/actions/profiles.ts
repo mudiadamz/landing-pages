@@ -6,12 +6,7 @@ import { createAnonClient } from "@/lib/db/anon";
 import { createClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { setBusinessContext } from "@/lib/backend/tenant";
-import {
-  normalizeBusinessRole,
-  normalizePublisherStatus,
-  type BusinessRole,
-  type PublisherStatus,
-} from "@/lib/profile-utils";
+import { normalizeBusinessRole, type BusinessRole } from "@/lib/profile-utils";
 import { ALL_FEATURE_KEYS, type FeatureKey } from "@/lib/features";
 import {
   canManageSite,
@@ -78,10 +73,9 @@ export async function requirePlatform() {
  * Boleh membuat & menjual produk **di mana pun**.
  *
  * Platform dan siapa pun yang tergabung di sebuah business — termasuk staff,
- * karena menjual memang pekerjaannya. Seorang publisher tidak lolos di sini
- * karena izinnya terikat pada satu situs; dia lewat `canSellOnCurrentSite(siteId)`.
- * Gate yang tidak menyebut situs tidak bisa menjawab pertanyaan yang jawabannya
- * per situs.
+ * karena menjual memang pekerjaannya. `canSellOnCurrentSite(siteId)` versi
+ * per-situsnya: ia menanyakan business PEMILIK situs itu, jadi anggota business
+ * lain tidak ikut lolos di storefront orang.
  */
 export async function canSellProducts() {
   const profile = await getProfile();
@@ -91,12 +85,11 @@ export async function canSellProducts() {
 /* -------------------------------------------------------------------------- *
  * Kedudukan di sebuah situs.
  *
- * Empat tabel menjawab empat hal berbeda, dan sengaja tidak diringkas jadi satu
- * "role": lp_profiles.is_platform = operator platform, lp_business_members =
- * perannya di business PEMILIK situs ini, lp_site_agents = situs yang dia kelola,
- * lp_site_members = situs tempat dia jadi customer (dan apakah dia publisher di
- * situ). Meringkasnya jadi satu nilai adalah persis yang dulu membuat "publisher"
- * tersimpan di dua tempat sekaligus.
+ * Tiga fakta dari tiga tempat: lp_profiles.is_platform = operator platform,
+ * lp_business_members = perannya di business PEMILIK situs ini, lp_site_members
+ * = dia pembeli di sini. Sejak peran dipangkas jadi empat, lp_site_agents dan
+ * is_publisher tidak ada lagi — keduanya menjawab pertanyaan yang sekarang
+ * dijawab seluruhnya oleh peran business.
  * -------------------------------------------------------------------------- */
 
 /**
@@ -111,20 +104,12 @@ export async function canSellProducts() {
  */
 const readStanding = cache(
   async (userId: string, siteId: string, isPlatform: boolean): Promise<SiteStanding> => {
-    const empty: SiteStanding = {
-      isPlatform,
-      businessRole: null,
-      isAgent: false,
-      isMember: false,
-      isPublisher: false,
-    };
+    const empty: SiteStanding = { isPlatform, businessRole: null, isMember: false };
     if (!userId || !siteId) return empty;
     const admin = createAdminClient();
-    const [{ data: site }, { data: agent }, { data: member }] = await Promise.all([
+    const [{ data: site }, { data: member }] = await Promise.all([
       admin.from("lp_sites").select("business_id").eq("id", siteId).maybeSingle(),
-      admin.from("lp_site_agents").select("user_id")
-        .eq("user_id", userId).eq("site_id", siteId).maybeSingle(),
-      admin.from("lp_site_members").select("is_publisher")
+      admin.from("lp_site_members").select("user_id")
         .eq("user_id", userId).eq("site_id", siteId).maybeSingle(),
     ]);
 
@@ -140,13 +125,7 @@ const readStanding = cache(
       businessRole = normalizeBusinessRole(membership?.role);
     }
 
-    return {
-      isPlatform,
-      businessRole,
-      isAgent: !!agent,
-      isMember: !!member,
-      isPublisher: !!member?.is_publisher,
-    };
+    return { isPlatform, businessRole, isMember: !!member };
   },
 );
 
@@ -178,8 +157,9 @@ export async function canSellOnCurrentSite(siteId?: string): Promise<boolean> {
  * Catat orang ini sebagai customer situs ini, kalau belum.
  *
  * Idempoten: callback Duitku memang dikirim ulang, dan baris yang sudah ada
- * tidak boleh ditimpa — `is_publisher` seseorang tidak boleh direset jadi false
- * gara-gara dia membeli lagi. Karena itu `ignoreDuplicates`, bukan upsert.
+ * tidak boleh ditimpa — baris keanggotaan menyimpan siapa yang mengundang dan
+ * kapan, dan itu tidak boleh hilang gara-gara dia membeli lagi. Karena itu
+ * `ignoreDuplicates`, bukan upsert.
  *
  * Best-effort di semua pemanggilnya: keanggotaan yang gagal tercatat adalah satu
  * baris yang hilang, sementara melempar error di sini berarti signup gagal atau
@@ -286,17 +266,15 @@ export async function getBusinessRolePermissions(
  * Fitur yang bisa dicapai orang ini di situs yang sedang dibuka — GABUNGAN dari
  * setiap jalan masuk yang dia punya, bukan yang pertama cocok.
  *
- * Empat jalan, dan seseorang boleh punya lebih dari satu (owner sebuah business
- * yang juga publisher di storefront lain, misalnya). Mengambil yang pertama
- * cocok berarti menambah peran bisa MENGURANGI izin, yang tidak akan pernah
- * ditebak siapa pun.
+ * Tiga jalan, dan seseorang boleh punya lebih dari satu (staff di business ini
+ * yang juga pembeli di sini). Mengambil yang pertama cocok berarti menambah
+ * peran bisa MENGURANGI izin, yang tidak akan pernah ditebak siapa pun.
  *
  *   Platform                      semuanya
  *   owner business pemilik situs  semuanya (owner tidak bisa dikunci dari
  *                                 business-nya sendiri — lihat lib/role-permissions)
- *   admin/staff business itu      dari matriks business
- *   Agent situs itu               semuanya untuk situs itu (delegasi per-situs lama)
- *   sisanya                       dari matriks situs, baris publisher/customer
+ *   staff business itu            dari matriks business
+ *   sisanya                       dari matriks situs, baris customer
  */
 async function accessibleFeatures(): Promise<FeatureKey[]> {
   const profile = await getProfile();
@@ -304,18 +282,18 @@ async function accessibleFeatures(): Promise<FeatureKey[]> {
   if (profile.is_platform) return [...ALL_FEATURE_KEYS];
 
   const standing = await currentSiteStanding();
-  if (standing?.businessRole === "owner" || standing?.isAgent) return [...ALL_FEATURE_KEYS];
+  if (standing?.businessRole === "owner") return [...ALL_FEATURE_KEYS];
 
   const granted = new Set<FeatureKey>();
 
-  if (standing?.businessRole === "admin" || standing?.businessRole === "staff") {
+  if (standing?.businessRole === "staff") {
     const site = await editingSite();
     const bizPerms = await getBusinessRolePermissions(site.business_id);
-    for (const k of bizPerms[standing.businessRole]) granted.add(k);
+    for (const k of bizPerms.staff) granted.add(k);
   }
 
   const sitePerms = await getRolePermissions();
-  for (const k of sitePerms[standing?.isPublisher ? "publisher" : "customer"]) granted.add(k);
+  for (const k of sitePerms.customer) granted.add(k);
 
   return [...granted];
 }
@@ -323,7 +301,7 @@ async function accessibleFeatures(): Promise<FeatureKey[]> {
 /**
  * Access check for an admin feature. The Platform has everything; otherwise the
  * feature must be granted by one of the matrices — per business (/panel/roles,
- * kolom Admin/Staff) or per site (kolom Publisher/Customer).
+ * kolom Staff) or per site (kolom Customer).
  */
 export async function requireFeature(feature: FeatureKey): Promise<boolean> {
   return (await accessibleFeatures()).includes(feature);
@@ -374,179 +352,15 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   } as Profile;
 });
 
-/**
- * Customer applies to become a publisher. Sets status to "pending" so an admin
- * can review it (role stays "customer" until approved). Idempotent-ish: only
- * customers who are not already pending/approved may apply.
- */
-/** Bytes of a `data:image/jpeg;base64,...` string, or null if it isn't one. */
-function decodeJpegDataUrl(value: unknown): Buffer | null {
-  if (typeof value !== "string") return null;
-  const m = value.match(/^data:image\/jpe?g;base64,([A-Za-z0-9+/=]+)$/);
-  if (!m) return null;
-  const buf = Buffer.from(m[1], "base64");
-  // Real JPEG, and within the bucket's own 5MB ceiling.
-  if (buf.length < 1024 || buf.length > 5 * 1024 * 1024) return null;
-  if (buf[0] !== 0xff || buf[1] !== 0xd8) return null;
-  return buf;
-}
-
-/**
- * Submit a publisher application with the two identity photos.
+/*
+ * The publisher application used to live here: a customer uploaded a KTP photo
+ * and a selfie, and an admin promoted them to "may sell on this storefront".
  *
- * The photos arrive as data URLs and are written with the service role, so the
- * `publisher-kyc` bucket needs no storage policy at all — no signed-in user,
- * the applicant included, can read or overwrite an ID photo through the public
- * API. Only this action writes them and only the admin screen reads them.
+ * Gone with the four-role rework. Somebody who wants to sell registers a
+ * Business — which already has KYC, a ledger and payouts — and is then owner of
+ * it, or is invited into one as staff. One road instead of two that had to be
+ * kept agreeing with each other.
  */
-/** What the applicant fills in alongside the two identity photos. */
-export type PublisherApplication = {
-  /** Must match the KTP — the admin compares it against the photo. */
-  realName: string;
-  /** Public store name. May differ from the legal name; that is the point. */
-  displayName: string;
-  /** Where the applicant currently lives — often not the KTP address. */
-  address: string;
-  bankName: string;
-  bankHolder: string;
-  bankAccount: string;
-  /** The terms checkbox. Rejected server-side when false. */
-  acceptedTerms: boolean;
-};
-
-export async function applyAsPublisher(
-  ktp?: string,
-  selfie?: string,
-  application?: PublisherApplication,
-): Promise<{ ok: boolean; error?: string }> {
-  const db = await createClient();
-  const {
-    data: { user },
-  } = await db.auth.getUser();
-  if (!user) return { ok: false, error: "Belum masuk." };
-
-  const ktpBytes = decodeJpegDataUrl(ktp);
-  const selfieBytes = decodeJpegDataUrl(selfie);
-  if (!ktpBytes) return { ok: false, error: "Foto KTP belum diambil." };
-  if (!selfieBytes) return { ok: false, error: "Foto selfie belum diambil." };
-
-  // Validated here, not only in the form: this is a server action, so the
-  // client-side disabled button is a convenience, not a control.
-  const trim = (s: string | undefined) => (s ?? "").trim().replace(/\s+/g, " ");
-  const realName = trim(application?.realName);
-  const displayName = trim(application?.displayName);
-  // Newlines are meaningful in an address, so collapse spaces per line rather
-  // than flattening the whole thing into one run.
-  const address = (application?.address ?? "")
-    .split("\n")
-    .map((l) => l.trim().replace(/[ \t]+/g, " "))
-    .filter(Boolean)
-    .join("\n");
-  const bankName = trim(application?.bankName);
-  const bankHolder = trim(application?.bankHolder);
-  const bankAccount = trim(application?.bankAccount);
-
-  if (realName.length < 3) return { ok: false, error: "Nama sesuai KTP wajib diisi." };
-  if (displayName.length < 3) return { ok: false, error: "Nama toko wajib diisi." };
-  if (address.length < 10)
-    return { ok: false, error: "Alamat tempat tinggal wajib diisi selengkapnya." };
-  if (address.length > 400) return { ok: false, error: "Alamat terlalu panjang." };
-  if (!bankName) return { ok: false, error: "Nama bank wajib diisi." };
-  if (!bankHolder) return { ok: false, error: "Nama pemilik rekening wajib diisi." };
-  if (!bankAccount) return { ok: false, error: "Nomor rekening wajib diisi." };
-  if (!application?.acceptedTerms)
-    return { ok: false, error: "Anda harus menyetujui ketentuan publisher." };
-
-  // Guard against the field lengths a free-text form invites. Generous caps —
-  // the aim is to stop abuse, not to second-guess unusual but valid names.
-  const tooLong = [realName, displayName, bankName, bankHolder, bankAccount].some(
-    (v) => v.length > 120,
-  );
-  if (tooLong) return { ok: false, error: "Isian terlalu panjang (maksimal 120 karakter)." };
-
-  // Pengajuan sekarang milik pasangan (orang, situs): dia melamar jadi publisher
-  // DI SITUS yang sedang dia buka, bukan di seluruh platform.
-  const siteId = await currentSiteId();
-  const { data: membership } = await createAdminClient()
-    .from("lp_site_members")
-    .select("is_publisher, publisher_status")
-    .eq("user_id", user.id)
-    .eq("site_id", siteId)
-    .maybeSingle();
-
-  const standing = await currentSiteStanding(siteId);
-  const status = normalizePublisherStatus(membership?.publisher_status);
-
-  // Anyone who may already sell here has nothing to apply FOR. Asked of the
-  // standing at THIS site rather than of a global account type (Fase 5): a
-  // business owner is not automatically a seller on somebody else's storefront.
-  if (standing?.isPlatform) return { ok: false, error: "Platform tidak perlu mengajukan." };
-  if (standing?.businessRole || standing?.isAgent)
-    return { ok: false, error: "Pengelola business tidak perlu mengajukan." };
-  if (membership?.is_publisher || status === "approved")
-    return { ok: false, error: "Anda sudah jadi publisher di situs ini." };
-  if (status === "pending") return { ok: false, error: "Pengajuan Anda sedang ditinjau." };
-
-  // Privileged write: authenticated users cannot update publisher_status on their
-  // own row (column grant), so this transition runs through the service-role
-  // client. Still safe — the action authenticated the user and only touches
-  // their own id, keeping status at "pending" (admin decides approval).
-  const admin = createAdminClient();
-
-  // Timestamped names so a re-application never overwrites the photos an admin
-  // may still be looking at, and so a stale signed URL can't resolve to a new
-  // person's document.
-  const stamp = Date.now();
-  const ktpPath = `${user.id}/ktp-${stamp}.jpg`;
-  const selfiePath = `${user.id}/selfie-${stamp}.jpg`;
-
-  for (const [path, bytes] of [
-    [ktpPath, ktpBytes],
-    [selfiePath, selfieBytes],
-  ] as const) {
-    const { error: upErr } = await admin.storage
-      .from("publisher-kyc")
-      .upload(path, bytes, { contentType: "image/jpeg", upsert: false });
-    if (upErr) {
-      console.error("applyAsPublisher upload error:", upErr);
-      return { ok: false, error: "Gagal mengunggah foto. Coba lagi." };
-    }
-  }
-
-  // Pengajuan mendarat di KEANGGOTAAN situs ini, bukan di profil. upsert, bukan
-  // update: orang boleh mengajukan di situs yang belum pernah dia beli apa pun,
-  // dan barisnya belum tentu ada.
-  const { error } = await admin
-    .from("lp_site_members")
-    .upsert({
-      site_id: siteId,
-      user_id: user.id,
-      publisher_status: "pending",
-      publisher_applied_at: new Date().toISOString(),
-      publisher_ktp_path: ktpPath,
-      publisher_selfie_path: selfiePath,
-      publisher_real_name: realName,
-      publisher_address: address,
-      publisher_display_name: displayName,
-      publisher_bank_name: bankName,
-      publisher_bank_holder: bankHolder,
-      publisher_bank_account: bankAccount,
-      // Recorded as a timestamp so acceptance can be audited against the terms
-      // text that was in force at that moment.
-      publisher_terms_accepted_at: new Date().toISOString(),
-      // A fresh application starts with a clean slate.
-      publisher_reject_note: null,
-      publisher_reviewed_at: null,
-      publisher_reviewed_by: null,
-    }, { onConflict: "site_id,user_id" });
-
-  if (error) {
-    console.error("applyAsPublisher error:", error);
-    return { ok: false, error: "Gagal mengirim pengajuan." };
-  }
-  revalidatePath("/panel/profile");
-  return { ok: true };
-}
 
 export type ProfileWithUser = {
   id: string;
@@ -554,8 +368,6 @@ export type ProfileWithUser = {
   /** Kedudukan platform-wide, diturunkan (Fase 5) — bukan lagi satu kolom. */
   is_platform: boolean;
   business_role: BusinessRole | null;
-  /** Status pengajuan publisher DI SITUS yang sedang dibuka. */
-  publisher_status: PublisherStatus;
   email: string | null;
 };
 
@@ -609,16 +421,6 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
     business_role: normalizeBusinessRole(membership?.[0]?.role),
     // Status pengajuan hidup di keanggotaan sekarang, dan keanggotaan itu
     // per-situs — jadi yang dilaporkan adalah status di situs yang sedang dibuka.
-    publisher_status: normalizePublisherStatus(
-      (
-        await createAdminClient()
-          .from("lp_site_members")
-          .select("publisher_status")
-          .eq("user_id", data.id)
-          .eq("site_id", await currentSiteId())
-          .maybeSingle()
-      ).data?.publisher_status,
-    ),
     email: user.email ?? null,
   };
 }
@@ -661,7 +463,7 @@ export async function imageUploadLimit(): Promise<{ bytes: number; label: string
 const AVATAR_MAX_BYTES = 512 * 1024;
 
 /**
- * Set the signed-in user's picture. Any role: a buyer, a publisher and an admin
+ * Set the signed-in user's picture. Any role: a buyer, a staff member and the
  * all reach the same profile screen and all get the same control.
  *
  * Uses the service-role client, so the gate is explicit (I6): the path is built

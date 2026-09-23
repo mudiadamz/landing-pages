@@ -199,56 +199,47 @@ Ringkasan yang paling sering dilanggar:
   Signup Google langsung terverifikasi (lihat trigger `lp_handle_new_user`). Selama belum
   verified, `EmailConfirmBanner` selalu tampil di `/panel`; admin melihat statusnya +
   filter "Belum verifikasi" di `/panel/users`.
-- **Kedudukan: Platform, lalu peran di sebuah Business.** `lp_profiles.account_type`
-  **sudah tidak ada** (pensiun di Fase 5,
-  [`docs/plans/multi-business-saas.md`](docs/plans/multi-business-saas.md); model
-  lamanya & riwayat keputusannya di
-  [`docs/plans/hierarchical-users.md`](docs/plans/hierarchical-users.md)). Satu
-  jenis akun global tidak bisa menjawab pertanyaan yang sebenarnya ditanyakan
-  tiap layar — "boleh apa dia DI SINI" — dan begitu ada business kedua, setiap
-  "Agent" jadi Agent di semua business sekaligus.
-  - **`lp_profiles.is_platform`** = operator SaaS-nya. Menggantikan "Company".
-  - **`lp_business_members(business_id, user_id, role)`** = `owner | admin | staff`,
-    **per business**. Menggantikan "Agent".
-  - Tidak dua-duanya = pembeli biasa. Menggantikan "Customer".
-  - **`lp_site_agents(site_id, user_id)`** = delegasi PER SITUS di dalam sebuah
-    business. Tetap ada; satu situs boleh punya beberapa Agent.
-  - **`lp_site_members(site_id, user_id, is_publisher, publisher_*)`** = customer
-    situs itu. Tabel ini **tidak menyimpan role**. `is_publisher` = customer ini
-    boleh menjual **di situs ini**; berkas KYC-nya ada di baris yang sama, jadi
-    verifikasinya per storefront. **Publisher tetap bukan jenis akun.**
-  - Platform lintas situs dan tidak perlu baris di mana pun: dia yang membuat
-    situsnya, dan mengunci dirinya di luar domain baru adalah cara bodoh
-    kehilangan akses.
+- **EMPAT kedudukan, tidak lebih** (permintaan Adam, 2026-09-23):
+  | kedudukan | di database |
+  |---|---|
+  | **Platform** | `lp_profiles.is_platform` |
+  | **Business owner** | `lp_business_members.role = 'owner'` |
+  | **Staff** | `lp_business_members.role = 'staff'` — sub-akun business itu |
+  | **Customer** | bukan keduanya |
+  - **`lp_site_members`** = pembeli sebuah situs. Tidak menyimpan role dan tidak
+    lagi menyimpan izin jual.
+  - **Yang DIHAPUS**, dan kenapa: `account_type` global (Fase 5), lalu
+    **publisher** (`is_publisher` + berkas KYC-nya) dan **Agent situs**
+    (`lp_site_agents`) — keduanya menjawab hal yang sama ("boleh jualan /
+    mengurus di situs ini") lewat tabel sendiri-sendiri, dan sejak ada
+    pendaftaran Business (Fase 4) pertanyaan itu punya satu jawaban: daftarkan
+    business-nya, lalu ajak orangnya sebagai staff. Peran `admin` ikut pergi —
+    yang tersisa owner (mengatur) dan staff (bekerja).
+  - Konsekuensi yang disengaja: perorangan **tidak lagi "dinaikkan jadi penjual"**
+    di satu storefront. Dia mendaftarkan Business, yang memang sudah punya KYC,
+    ledger, dan payout sendiri. Bucket `publisher-kyc` ikut pensiun.
   - Izin dijawab satu tempat: `lib/site-membership.ts` (`canManageSite`,
-    `canSellOnSite`) di atas `SiteStanding` — **empat** fakta dari empat tabel,
-    sengaja tidak diringkas jadi satu "role". Meringkasnya itu yang dulu membuat
-    "publisher" tersimpan di dua tempat sekaligus.
+    `canSellOnSite`) di atas `SiteStanding` — **tiga** fakta dari tiga tabel.
   - **`SiteStanding.businessRole` selalu peran di business PEMILIK SITUS INI**,
     bukan peran global si pemanggil. Owner sebuah business bukan siapa-siapa di
-    storefront orang lain, dan itu seluruh alasan Fase 5 ada.
+    storefront orang lain.
   - Di database, `lp_get_my_profile_role()` masih mengembalikan
-    `company | agent | customer` — sebelas policy memanggilnya — tapi sejak Fase 5
-    nilainya **diturunkan** (`is_platform` → company, owner/admin → agent, sisanya
-    customer), bukan dibaca dari kolom.
+    `company | agent | customer` — sebelas policy memanggilnya — tapi nilainya
+    **diturunkan**: `is_platform` → company, owner → agent, sisanya customer.
+    `lp_manages_site()` dan `lp_can_sell()` ditulis ulang ke model baru.
 - **Empat gate, jangan tertukar** (`lib/actions/profiles.ts`):
-  - `requireAdmin()` / `requirePlatform()` — Platform. Untuk aksi yang **tidak
-    boleh didelegasikan**: buat/hapus situs, hapus akun, ban, angkat operator
-    Platform. Keduanya menanyakan hal yang sama; dua nama karena pemanggilnya
-    menyebut niat yang berbeda.
-  - `requireSiteAdmin(siteId?)` — owner/admin business pemilik situs itu, atau
-    Agent situs itu (Platform selalu lolos). **Wajib menerima `siteId` yang
-    dikirim klien**, bukan situs yang kebetulan sedang dilihat.
-  - `canSellProducts()` — Platform & anggota business mana pun (staff ikut:
-    menjual memang pekerjaannya), tanpa menyebut situs.
-    `canSellOnCurrentSite(siteId)` versi per-situsnya, dan **itu yang dipakai
-    untuk publisher** — izin jualnya terikat satu situs, jadi gate yang tidak
-    menyebut situs tidak bisa menjawabnya.
+  - `requireAdmin()` / `requirePlatform()` — Platform. Aksi yang **tidak boleh
+    didelegasikan**: buat/hapus situs, hapus akun, ban, angkat operator Platform.
+  - `requireSiteAdmin(siteId?)` — Platform atau **owner** business pemilik situs
+    itu. **Wajib menerima `siteId` yang dikirim klien**, bukan situs yang
+    kebetulan sedang dilihat.
+  - `canSellProducts()` — Platform & anggota business mana pun (**staff ikut**:
+    menjual memang pekerjaannya). `canSellOnCurrentSite(siteId)` versi
+    per-situsnya, dan ia menanyakan business PEMILIK situs itu.
   - `requireFeature(key)` — **gabungan** dari tiap jalan masuk yang dia punya,
-    bukan yang pertama cocok: Platform & owner selalu lolos, admin/staff lewat
-    matriks business, Agent situs itu lolos, sisanya lewat matriks situs. Ambil
-    yang pertama cocok dan menambah peran bisa MENGURANGI izin. Nav panel
-    digambar dari `getAccessibleFeatures()`.
+    bukan yang pertama cocok: Platform & owner selalu lolos, staff lewat matriks
+    business, sisanya lewat matriks situs. Ambil yang pertama cocok dan menambah
+    peran bisa MENGURANGI izin. Nav panel digambar dari `getAccessibleFeatures()`.
 - **Dua shell panel, satu set route.** `/panel` melayani dua audiens yang nyaris
   tidak beririsan: business menjangkau 26 layar, customer menjangkau empat. Jadi
   yang bercabang **shell-nya**, bukan route-nya — halaman yang sama dirender di
@@ -256,7 +247,7 @@ Ringkasan yang paling sering dilanggar:
   - Aturannya di `lib/panel-shell.ts` (`isCustomerOnly`), dipakai sekali di
     `app/panel/layout.tsx`. Ditulis sebagai daftar hal yang **tidak** bisa dia
     lakukan: bukan Platform, tanpa peran business, tidak boleh jual di situs ini
-    (itu mencakup publisher & Agent situs), dan nol fitur terdelegasi. **Satu
+    (yaitu: bukan anggota business pemiliknya), dan nol fitur terdelegasi. **Satu
     kemampuan saja sudah cukup untuk tetap dapat sidebar** — salah ke arah itu
     cuma memalukan, salah ke arah sebaliknya mencabut menu yang kemarin ada.
   - Customer → `components/account-shell.tsx`: topbar + empat tab
@@ -293,34 +284,25 @@ Ringkasan yang paling sering dilanggar:
   (`ADMIN_FEATURES`: stats, users, categories, contacts, inbox, hero, content, legal,
   hiring, custom-js). **Dua matriks, dua sumbu, sengaja tidak digabung**
   (`lib/role-permissions.ts`, keduanya diedit di `/panel/roles`):
-  - **per SITUS** — `customer | publisher`, di `lp_site_settings` key
+  - **per SITUS** — `customer`, di `lp_site_settings` key
     `role_permissions`, dibaca lewat `getRolePermissions(siteId)` yang ter-cache
     (tag `role-permissions`). Dengan baris kanonik sebagai cadangan, jadi situs
     yang belum pernah mengaturnya tidak kehilangan delegasi.
-  - **per BUSINESS** — `admin | staff`, di kolom `lp_businesses.role_permissions`,
+  - **per BUSINESS** — `staff`, di kolom `lp_businesses.role_permissions`,
     dibaca lewat `getBusinessRolePermissions()`. Owner tidak ada di matriksnya:
     owner yang bisa dikunci dari business-nya sendiri itu tiket support, bukan
-    fitur. Default (belum pernah diatur) = admin semuanya, staff kosong — persis
-    yang dipunya Agent sebelum Fase 5.
-- **Publisher (KYC)**: user melamar di `/panel/publisher` — nama legal, foto KTP +
-  selfie, alamat, rekening bank, persetujuan syarat — lalu
-  `lp_site_members.publisher_status` **situs itu** jadi `pending`. Ditulis dengan
-  service-role karena user tidak boleh menaikkan statusnya sendiri. Admin
-  menyetujui/menolak (`lib/actions/admin.ts`); `approved` menyalakan
-  `lp_site_members.is_publisher` untuk situs itu — **bukan** mengubah jenis akun.
-  Status ∈ `{none, pending, approved, rejected}`. Semua kolom `publisher_*` ada di
-  `lp_site_members` sejak `20260903000000`; di `lp_profiles` sudah tidak ada.
-- **Publisher hanya melihat miliknya sendiri**: pemisahan penjualan ada di
-  `lib/actions/sales.ts` (satu read yang sudah di-scope per-role), **bukan** di
-  halaman — supaya angka global tidak bisa diraih dengan merender komponen lain.
+    fitur. Default (belum pernah diatur) = staff kosong: owner yang memutuskan
+    apa yang bisa dicapai orang yang baru dia ajak.
+- **Staff hanya melihat penjualannya sendiri**: pemisahan ada di
+  `lib/actions/sales.ts` (satu read yang sudah di-scope), **bukan** di halaman —
+  supaya angka seluruh business tidak bisa diraih dengan merender komponen lain.
 - Customer melihat pembelian, invoice, review.
 - **Hapus user** (`DELETE /api/admin/users`, tombol di `/panel/users`): Platform
   saja — beda dari **keluarkan dari situs** (`fromSite: true`) yang boleh
   dilakukan pengelola situs dan hanya mencabut satu baris keanggotaan — ban itu kontrol yang bisa dibatalkan dan boleh didelegasikan, hapus tidak.
   Ditolak untuk: diri sendiri, akun Platform (cabut statusnya dulu), dan akun yang
   **masih punya produk** — `lp_landing_pages.user_id` cascade, jadi menghapus
-  pemiliknya ikut menghapus katalog beserta filenya. Foto KTP/selfie di bucket
-  `publisher-kyc` dihapus eksplisit (Storage tidak punya FK yang bisa cascade).
+  pemiliknya ikut menghapus katalog beserta filenya.
 - **Menghapus user tidak menghapus uangnya.** `lp_purchases.user_id` dan
   `lp_plan_orders.user_id` sekarang **nullable + `ON DELETE SET NULL`**
   (migration `20260829000000`): baris penjualannya tetap ada tanpa nama, jadi omzet,

@@ -471,14 +471,6 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ 1`] = `
   {
     "check": "",
     "cmd": "SELECT",
-    "policyname": "Agents read own site links",
-    "roles": "public",
-    "tablename": "lp_site_agents",
-    "using": "(auth.uid() = user_id)",
-  },
-  {
-    "check": "",
-    "cmd": "SELECT",
     "policyname": "Members read own memberships",
     "roles": "public",
     "tablename": "lp_site_members",

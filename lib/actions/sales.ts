@@ -62,14 +62,13 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
   const profile = await getProfile();
   if (!profile) return null;
 
-  // "Hanya produk saya" berlaku untuk publisher DI SITUS yang sedang dilihat —
-  // izin jualnya per situs sekarang, jadi cakupan angkanya ikut.
+  // "Hanya produk saya" berlaku untuk STAFF: mereka menjual di dalam business
+  // orang lain, jadi angka yang mereka lihat adalah angka mereka sendiri.
   const standing = await currentSiteStanding();
   // A publisher who is nobody else here sees only their own numbers. Since Fase 5
   // the "nobody else" half is asked of this site: Platform, and anyone who runs
   // the business that owns it, get the global figures.
-  const sellerOnly =
-    !!standing?.isPublisher && !standing.isAgent && !standing.businessRole && !profile.is_platform;
+  const sellerOnly = standing?.businessRole === "staff" && !profile.is_platform;
   const global = !sellerOnly && (await requireFeature("stats"));
   if (!global && !sellerOnly) return null;
 

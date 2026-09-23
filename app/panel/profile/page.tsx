@@ -7,15 +7,10 @@ import { createClient } from "@/lib/db/server";
 import { signOut } from "@/lib/actions/auth";
 import { getPurchasesForUser } from "@/lib/actions/purchases";
 import { getMyFavorites } from "@/lib/actions/likes";
-import {
-  normalizePublisherStatus,
-  standingLabel,
-  type PublisherStatus,
-} from "@/lib/profile-utils";
+import { standingLabel } from "@/lib/profile-utils";
 import { getProfile } from "@/lib/actions/profiles";
 import { ProfileForm } from "./profile-form";
 import { AvatarForm } from "./avatar-form";
-import { PublisherCard } from "./publisher-card";
 import { VerifyEmailRow } from "./verify-email-row";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
@@ -43,19 +38,6 @@ function formatDate(value?: string | null) {
 
 // textKey, not text: this map is module scope, so a resolved string here would
 // be whichever language rendered first for every request after it.
-const PUBLISHER_BADGE: Record<PublisherStatus, { textKey: MessageKey; className: string } | null> = {
-  none: null,
-  approved: null, // already carried by the role badge
-  pending: {
-    textKey: "panel.publisherPending",
-    className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  },
-  rejected: {
-    textKey: "panel.publisherRejected",
-    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  },
-};
-
 export default async function ProfilePage() {
   const t = translator(await requestLocale());
   const db = await createClient();
@@ -84,22 +66,11 @@ export default async function ProfilePage() {
     isPlatform: !!me?.is_platform,
     businessRole: me?.business_role ?? null,
   };
-  // Berkas & status pengajuan ada di keanggotaan situs ini sekarang.
-  const { data: membership } = await createAdminClient()
-    .from("lp_site_members")
-    .select(
-      "publisher_status, publisher_reject_note, publisher_display_name, publisher_real_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at, publisher_applied_at",
-    )
-    .eq("user_id", user.id)
-    .eq("site_id", await currentSiteId())
-    .maybeSingle();
-  const publisherStatus = normalizePublisherStatus(membership?.publisher_status);
   const fullName =
     row?.full_name?.trim() || (user.user_metadata?.full_name as string | undefined)?.trim() || "";
   const email = user.email ?? null;
   const avatarUrl = row?.avatar_url ?? "";
   const verified = !!row?.email_verified_at;
-  const publisherBadge = PUBLISHER_BADGE[publisherStatus];
 
   const roleClass = standing.isPlatform
     ? "bg-[var(--primary)]/15 text-[var(--primary)]"
@@ -125,13 +96,6 @@ export default async function ProfilePage() {
               <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${roleClass}`}>
                 {standingLabel(standing)}
               </span>
-              {publisherBadge && (
-                <span
-                  className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${publisherBadge.className}`}
-                >
-                  {t(publisherBadge.textKey)}
-                </span>
-              )}
               <span className="text-xs text-[var(--muted)]">
                 Bergabung {formatDate(user.created_at)}
               </span>
@@ -159,31 +123,6 @@ export default async function ProfilePage() {
           <p className="mt-0.5 text-xs text-[var(--primary)]">{t("panel.viewAll")}</p>
         </Link>
       </div>
-
-      {/* Publisher */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
-        <header className="border-b border-[var(--border)] bg-[var(--background)]/50 p-4 sm:px-6">
-          <h2 className="text-base font-semibold text-foreground">{t("panel.rolePublisher")}</h2>
-          <p className="mt-0.5 text-sm text-[var(--muted)]">{t("panel.publisherStatusIntro")}</p>
-        </header>
-        <div className="p-4 sm:p-6">
-          <PublisherCard
-            standing={standing}
-            status={publisherStatus}
-            info={{
-              displayName: membership?.publisher_display_name ?? null,
-              realName: membership?.publisher_real_name ?? null,
-              address: membership?.publisher_address ?? null,
-              bankName: membership?.publisher_bank_name ?? null,
-              bankHolder: membership?.publisher_bank_holder ?? null,
-              bankAccount: membership?.publisher_bank_account ?? null,
-              termsAcceptedAt: membership?.publisher_terms_accepted_at ?? null,
-              appliedAt: membership?.publisher_applied_at ?? null,
-              rejectNote: membership?.publisher_reject_note ?? null,
-            }}
-          />
-        </div>
-      </section>
 
       {/* Email + verification, next to the address it concerns. */}
       <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">

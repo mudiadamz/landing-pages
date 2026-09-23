@@ -14,58 +14,51 @@ import { managesBusiness, type BusinessRole } from "@/lib/profile-utils";
 /**
  * Kedudukan seseorang di satu situs, sesudah semua tabelnya dibaca.
  *
- * Empat fakta dari empat tempat, sengaja tidak diringkas jadi satu "role":
- * `lp_profiles.is_platform`, peran di business PEMILIK SITUS INI
- * (`lp_business_members`), keagenan (`lp_site_agents`), dan izin jual di baris
- * keanggotaan (`lp_site_members`). Meringkasnya jadi satu nilai adalah persis
- * yang membuat model sebelumnya menyimpan "publisher" di dua tempat.
+ * Tiga fakta sekarang, bukan lima: sejak peran disederhanakan jadi empat,
+ * `isAgent` (lp_site_agents) dan `isPublisher` (lp_site_members.is_publisher)
+ * sudah tidak ada. Keduanya menjawab "boleh jualan/mengurus di situs ini" —
+ * pertanyaan yang sekarang dijawab seluruhnya oleh `businessRole`.
  *
  * `businessRole` sengaja per-situs, bukan global: yang ditanyakan selalu "dia
- * pengelola business yang memiliki situs INI?", dan sejak business kedua ada,
- * jawabannya berbeda per situs (Fase 5).
+ * pengelola business yang memiliki situs INI?", dan sejak ada business kedua
+ * jawabannya berbeda per situs.
  */
 export type SiteStanding = {
-  /** Operator platform — lolos di mana pun. Dulu `accountType === "company"`. */
+  /** Operator platform — lolos di mana pun. */
   isPlatform: boolean;
-  /** Perannya di business yang MEMILIKI situs ini, atau null. Dulu "Agent" global. */
+  /** Perannya di business yang MEMILIKI situs ini, atau null. */
   businessRole: BusinessRole | null;
-  /** Ada baris di `lp_site_agents` untuk situs ini. */
-  isAgent: boolean;
-  /** Ada baris di `lp_site_members` untuk situs ini. */
+  /** Ada baris di `lp_site_members` untuk situs ini — dia pembeli di sini. */
   isMember: boolean;
-  /** `lp_site_members.is_publisher` — boleh menjual DI SITUS INI. */
-  isPublisher: boolean;
 };
 
 /**
- * Boleh mengurus situs ini: kontennya, setelannya, dan customer-nya.
+ * Boleh mengurus situs ini: kontennya, setelannya, customer-nya.
  *
  * Platform menang tanpa perlu terdaftar di mana pun: dia yang membuat situsnya,
  * dan mengunci dirinya di luar domain yang baru dibuat adalah cara bodoh untuk
- * kehilangan akses. Owner & admin business pemiliknya juga lolos — situs itu
- * memang milik business mereka; staff tidak (dia bekerja di dalamnya, bukan
- * mengaturnya).
+ * kehilangan akses. Selain itu hanya **owner** business pemiliknya — staff
+ * bekerja di dalam business, tidak mengaturnya.
  */
 export function canManageSite(s: SiteStanding | null): boolean {
   if (!s) return false;
-  return s.isPlatform || managesBusiness(s.businessRole) || s.isAgent;
+  return s.isPlatform || managesBusiness(s.businessRole);
 }
 
 /**
  * Boleh membuat & menjual produk di situs ini.
  *
- * Lebih longgar daripada mengurus: staff sebuah business ikut lolos — menjual
- * adalah pekerjaannya. Dan jalan terakhir adalah inti model lama yang tetap
- * berlaku: seorang Customer yang disetujui sebagai publisher **di situs itu**
- * boleh menjual di situ, tanpa jadi anggota business mana pun.
+ * Lebih longgar daripada mengurus: **staff ikut**, karena menjual memang
+ * pekerjaannya. Di luar business pemilik situs tidak ada jalan lain — itu yang
+ * dulu diisi "publisher", dan penggantinya adalah mendaftarkan business sendiri.
  */
 export function canSellOnSite(s: SiteStanding | null): boolean {
   if (!s) return false;
-  return s.isPlatform || s.businessRole !== null || s.isAgent || s.isPublisher;
+  return s.isPlatform || s.businessRole !== null;
 }
 
 /** Punya urusan apa pun dengan situs ini? Bukan siapa-siapa = tidak boleh apa-apa. */
 export function belongsToSite(s: SiteStanding | null): boolean {
   if (!s) return false;
-  return s.isPlatform || s.businessRole !== null || s.isAgent || s.isMember;
+  return s.isPlatform || s.businessRole !== null || s.isMember;
 }

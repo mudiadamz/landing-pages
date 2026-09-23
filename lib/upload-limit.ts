@@ -5,7 +5,7 @@ export const MAX_UPLOAD_LABEL = "10 MB";
 /**
  * Images uploaded by anyone who is not an admin.
  *
- * Only images. A publisher's DELIVERABLE — the ZIP, PDF or EPUB they actually
+ * Only images. A seller's DELIVERABLE — the ZIP, PDF or EPUB they actually
  * sell — keeps the 10 MB cap, because capping that at 2 MB would stop them
  * selling most books. What this bounds is the pictures: a thumbnail, a hero, an
  * asset in the library, none of which render above a few hundred pixels, so a

@@ -84,8 +84,7 @@ export async function GET(req: Request) {
       (data ?? []).map((r) => ({
         ...r,
         business_role: roles.get(r.id as string) ?? null,
-        is_agent: null,
-        is_publisher: null,
+        is_member: null,
       })),
     );
   }
@@ -96,19 +95,16 @@ export async function GET(req: Request) {
   // which Postgres rejects as an invalid uuid and would surface as a 500 that
   // the table then mislabels as "no users".
   if (!site.id) return NextResponse.json([]);
-  // Dua tabel, karena keduanya menjawab hal berbeda:
-  // keanggotaan = "customer di sini", keagenan = "yang mengelola sini".
-  const [{ data: members, error: memberErr }, { data: agents }] = await Promise.all([
-    admin.from("lp_site_members").select("user_id, is_publisher").eq("site_id", site.id),
-    admin.from("lp_site_agents").select("user_id").eq("site_id", site.id),
-  ]);
+  // One table now: since the roles were cut to four, "who belongs to this site"
+  // is just its membership rows. Selling and managing are answered by business
+  // membership, which is read per user below.
+  const { data: members, error: memberErr } = await admin
+    .from("lp_site_members")
+    .select("user_id")
+    .eq("site_id", site.id);
   if (memberErr) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
 
-  const publisherById = new Map(
-    (members ?? []).map((m) => [m.user_id as string, !!m.is_publisher]),
-  );
-  const agentIds = new Set((agents ?? []).map((a) => a.user_id as string));
-  const ids = [...new Set([...publisherById.keys(), ...agentIds])];
+  const ids = [...new Set((members ?? []).map((m) => m.user_id as string))];
   if (!ids.length) return NextResponse.json([]);
   const { data, error } = await admin
     .from("lp_profiles")
@@ -131,8 +127,7 @@ export async function GET(req: Request) {
     (data ?? []).map((r) => ({
       ...r,
       business_role: roles.get(r.id as string) ?? null,
-      is_agent: agentIds.has(r.id),
-      is_publisher: publisherById.get(r.id) ?? false,
+      is_member: true,
     })),
   );
 }
@@ -205,7 +200,7 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, businessRole, isPlatform, excludeFromStats, plan, isAgent, isPublisher, email } =
+  const { userId, active, businessRole, isPlatform, excludeFromStats, plan, email } =
     body as {
       userId?: string;
       active?: boolean;
@@ -218,10 +213,6 @@ export async function PATCH(req: Request) {
       isPlatform?: boolean;
       excludeFromStats?: boolean;
       plan?: string;
-      /** Mengelola situs yang sedang dilihat. */
-      isAgent?: boolean;
-      /** Boleh menjual di situs yang sedang dilihat. */
-      isPublisher?: boolean;
       /** Undang akun yang sudah ada jadi customer situs ini. */
       email?: string;
     };
@@ -244,83 +235,12 @@ export async function PATCH(req: Request) {
 
   const admin = createAdminClient();
 
-  /**
-   * Dua saklar per-situs, menggantikan satu "role situs".
-   *
-   *   isAgent      → baris di lp_site_agents  (mengelola situs ini)
-   *   isPublisher  → flag di lp_site_members  (boleh menjual di situs ini)
-   *
-   * Sengaja terpisah dari `businessRole`/`isPlatform` di bawah: yang ini per
-   * situs, yang itu kedudukan di business / di platform. Satu kontrol untuk
-   * semuanya berarti pengelola satu situs bisa mengangkat dirinya jadi Platform
-   * lewat layar yang sama.
+  /*
+   * The two per-site switches used to live here: isAgent (a row in
+   * lp_site_agents) and isPublisher (a flag on lp_site_members). Both are gone
+   * with the four-role rework — "may sell / may manage here" is now answered
+   * entirely by membership of the business that owns the site, set below.
    */
-  if (typeof isAgent === "boolean" || typeof isPublisher === "boolean") {
-    const site = await editingSite();
-    if (!(await requireSiteAdmin(site.id))) {
-      return NextResponse.json({ error: "Bukan Agent situs ini." }, { status: 403 });
-    }
-    if (selfEdit) {
-      // Menurunkan diri sendiri berarti mengunci diri di luar situs yang sedang
-      // Anda kelola, dan tidak ada tombol untuk membatalkannya.
-      return NextResponse.json({ error: "Tidak bisa mengubah diri sendiri." }, { status: 400 });
-    }
-    const guard = await guardPlatformAdminTarget(admin, userId, isAdmin);
-    if (guard) return guard;
-
-    if (typeof isAgent === "boolean") {
-      const { error } = isAgent
-        ? await admin
-            .from("lp_site_agents")
-            .upsert({ site_id: site.id, user_id: userId, invited_by: user.id }, {
-              onConflict: "site_id,user_id",
-              ignoreDuplicates: true,
-            })
-        : await admin
-            .from("lp_site_agents")
-            .delete()
-            .eq("site_id", site.id)
-            .eq("user_id", userId);
-      if (error) {
-        console.error("set agent error:", error);
-        return NextResponse.json({ error: "Gagal mengubah status Agent." }, { status: 500 });
-      }
-      // Jadi Agent tidak menghapus keanggotaannya: dia tetap boleh membeli di
-      // situs yang dia kelola, dan pembeliannya tetap tercatat sebagai miliknya.
-      if (isAgent) {
-        await admin
-          .from("lp_site_members")
-          .upsert({ site_id: site.id, user_id: userId, invited_by: user.id }, {
-            onConflict: "site_id,user_id",
-            ignoreDuplicates: true,
-          });
-      }
-    }
-
-    if (typeof isPublisher === "boolean") {
-      const { error } = await admin
-        .from("lp_site_members")
-        .upsert(
-          {
-            site_id: site.id,
-            user_id: userId,
-            is_publisher: isPublisher,
-            // Disetujui lewat tombol ini berarti disetujui — statusnya ikut,
-            // supaya layar pengajuan tidak menampilkan "menunggu" untuk orang
-            // yang sudah boleh berjualan.
-            publisher_status: isPublisher ? "approved" : "none",
-            publisher_reviewed_at: new Date().toISOString(),
-            publisher_reviewed_by: user.id,
-          },
-          { onConflict: "site_id,user_id" },
-        );
-      if (error) {
-        console.error("set publisher error:", error);
-        return NextResponse.json({ error: "Gagal mengubah izin jual." }, { status: 500 });
-      }
-    }
-    return NextResponse.json({ success: true });
-  }
 
   /**
    * Peran di sebuah BUSINESS — Platform saja (Fase 5, menggantikan accountType).
@@ -485,9 +405,6 @@ export async function PATCH(req: Request) {
  *       list is not something to discover afterwards.
  *   reviews, likes, chat history, sessions  cascade, and should: they are the
  *       person, not the transaction.
- *   publisher-kyc photos  removed explicitly. An ID card and a selfie are the
- *       most sensitive thing this app stores, and Storage has no foreign key to
- *       cascade them.
  */
 export async function DELETE(req: Request) {
   const { user, isAdmin } = await getCaller();
@@ -578,27 +495,5 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Gagal menghapus user." }, { status: 500 });
   }
 
-  // After the account is gone, not before: if this ran first and the delete then
-  // failed, an existing publisher would have lost the documents an admin still
-  // needs to review. Best effort — a leftover file is worth logging, not worth
-  // resurrecting an account for.
-  await removeKycFiles(admin, userId);
-
   return NextResponse.json({ success: true });
-}
-
-async function removeKycFiles(
-  admin: ReturnType<typeof createAdminClient>,
-  userId: string,
-): Promise<void> {
-  try {
-    // Uploads are timestamped (see applyAsPublisher), so a re-application leaves
-    // older pairs behind — list the folder rather than deleting the two paths
-    // the profile happened to point at last.
-    const { data: files } = await admin.storage.from("publisher-kyc").list(userId);
-    if (!files?.length) return;
-    await admin.storage.from("publisher-kyc").remove(files.map((f) => `${userId}/${f.name}`));
-  } catch (e) {
-    console.error("removeKycFiles error:", e);
-  }
 }

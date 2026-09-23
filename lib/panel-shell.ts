@@ -15,7 +15,7 @@ export type PanelCapabilities = {
   isPlatform: boolean;
   /** Role in the business that owns the storefront being edited, or null. */
   businessRole: string | null;
-  /** May create/sell products HERE — covers publishers and site agents. */
+  /** May create/sell products HERE — i.e. belongs to the business that owns it. */
   canSell: boolean;
   /** Admin features reachable, from either permission matrix. */
   featureCount: number;

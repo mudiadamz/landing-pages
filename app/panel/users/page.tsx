@@ -4,9 +4,7 @@ import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { requireFeature, requireAdmin, requireSiteAdmin } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
-import { getPublisherApplications } from "@/lib/actions/admin";
 import { UsersTable } from "./users-table";
-import { PublisherApplications } from "./publisher-applications";
 
 export default async function UsersPage() {
   const t = translator(await requestLocale());
@@ -17,11 +15,10 @@ export default async function UsersPage() {
   //   isAdmin      platform — boleh ubah role platform, paket, ban, hapus akun
   //   isSiteAdmin  situs ini — boleh kelola keanggotaannya
   //   site         situs yang sedang dilihat, untuk judulnya
-  const [isAdmin, isSiteAdmin, site, applications] = await Promise.all([
+  const [isAdmin, isSiteAdmin, site] = await Promise.all([
     requireAdmin(),
     requireSiteAdmin(),
     editingSite(),
-    getPublisherApplications(),
   ]);
 
   return (
@@ -35,7 +32,6 @@ export default async function UsersPage() {
             : t("panel.usersScopeHintNoSite")}
         </p>
       </div>
-      <PublisherApplications initial={applications} />
       <UsersTable isAdmin={isAdmin} isSiteAdmin={isSiteAdmin} />
     </div>
   );

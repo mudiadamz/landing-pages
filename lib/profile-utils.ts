@@ -1,29 +1,34 @@
 /**
- * Siapa seseorang, platform-wide — penerus `lp_profiles.account_type`
- * (docs/plans/multi-business-saas.md, Fase 5).
+ * Siapa seseorang, platform-wide.
  *
- * Jenis akun global sudah pensiun. Yang menggantikannya dua fakta yang tersimpan
- * di tempat yang benar:
+ * EMPAT kedudukan, tidak lebih (permintaan Adam, 2026-09-23):
  *
- *   Platform      `lp_profiles.is_platform` — operator SaaS-nya. Dulu "Company".
- *   Business role `lp_business_members.role` — owner | admin | staff, PER
- *                 business. Dulu "Agent", yang sebetulnya selalu berarti
- *                 "mengelola punya siapa", cuma tidak punya tempat menyimpan
- *                 "punya siapa"-nya.
- *   (tidak dua-duanya) pembeli biasa. Dulu "Customer".
+ *   Platform        operator SaaS-nya        `lp_profiles.is_platform`
+ *   Business owner  pemilik sebuah business  `lp_business_members.role = 'owner'`
+ *   Staff           sub-akun business itu    `lp_business_members.role = 'staff'`
+ *   Customer        pembeli — bukan keduanya
  *
- * Alasan pindahnya: satu jenis akun global tidak bisa menjawab pertanyaan yang
- * sebenarnya ditanyakan setiap layar — "boleh apa dia DI SINI". Selama izinnya
- * global, menambah business kedua berarti setiap Agent jadi Agent di semua
- * business sekaligus.
+ * Yang dihapus, dan kenapa:
  *
- * "Publisher" tetap bukan jenis akun: itu flag pada keanggotaan situs
- * (`lp_site_members.is_publisher`), seperti sebelumnya.
+ * - **`account_type` global** (company/agent/customer) sudah pensiun lebih dulu
+ *   di Fase 5: satu nilai global tidak bisa menjawab pertanyaan yang sebenarnya
+ *   ditanyakan tiap layar — "boleh apa dia DI SINI". Begitu ada business kedua,
+ *   setiap "Agent" jadi Agent di semua business sekaligus.
+ * - **Publisher** (`lp_site_members.is_publisher` + berkas KYC-nya) dan **Agent
+ *   situs** (`lp_site_agents`). Keduanya menjawab hal yang sama — "orang ini
+ *   boleh jualan / mengurus di situs ini" — lewat tabel masing-masing. Sejak ada
+ *   pendaftaran Business (Fase 4) pertanyaan itu sudah punya satu jawaban:
+ *   daftarkan business-nya, lalu ajak orangnya sebagai staff. Tiga jalan yang
+ *   harus dijaga tetap sepakat adalah tiga tempat untuk tidak sepakat.
+ * - **Peran business `admin`.** Dua tingkat pengelola di atas `staff` tidak
+ *   pernah dipakai; yang tersisa `owner` (mengatur) dan `staff` (bekerja).
+ *
+ * Konsekuensinya sengaja: perorangan tidak lagi "dinaikkan jadi penjual" di satu
+ * storefront. Dia mendaftarkan Business — yang memang sudah punya alur KYC,
+ * ledger, dan payout sendiri.
  */
 
-export type BusinessRole = "owner" | "admin" | "staff";
-
-export type PublisherStatus = "none" | "pending" | "approved" | "rejected";
+export type BusinessRole = "owner" | "staff";
 
 /** Kedudukan platform-wide seseorang. Dua fakta, bukan satu nilai yang diringkas. */
 export type Standing = {
@@ -33,39 +38,36 @@ export type Standing = {
   businessRole: BusinessRole | null;
 };
 
-const ROLES = new Set<string>(["owner", "admin", "staff"]);
+const ROLES = new Set<string>(["owner", "staff"]);
 
 /**
  * Peran business yang dikenali, atau null.
  *
- * Nilai lama ikut dibaca supaya baris yang belum sempat dimigrasi tidak
- * diam-diam kehilangan tingkatannya: `company` → owner, `agent` → admin. Itu
- * pemetaan yang sama dengan yang dipakai backfill Fase 0/5.
+ * Nilai lama ikut dibaca supaya baris yang belum sempat dimigrasi tidak jatuh
+ * jadi bukan-siapa-siapa: `company` → owner, dan `agent`/`admin` → **staff**.
+ *
+ * Yang lama diturunkan, bukan dinaikkan. Saat dua peran digabung jadi satu,
+ * menebak ke atas memberi orang izin yang tidak pernah diputuskan siapa pun;
+ * menebak ke bawah paling banter bikin dia minta dinaikkan. (Praktis nol baris
+ * kena: waktu peran ini disederhanakan tidak ada satu pun `admin` di database.)
  */
 export function normalizeBusinessRole(value: unknown): BusinessRole | null {
   const s = String(value ?? "").trim().toLowerCase();
   if (ROLES.has(s)) return s as BusinessRole;
   if (s === "company") return "owner";
-  if (s === "agent") return "admin";
+  if (s === "agent" || s === "admin") return "staff";
   return null;
 }
 
-export function normalizePublisherStatus(value: unknown): PublisherStatus {
-  const s = String(value ?? "").trim().toLowerCase();
-  if (s === "pending" || s === "approved" || s === "rejected") return s;
-  return "none";
-}
-
-/** Boleh mengurus business-nya: owner & admin. Staff bekerja di dalamnya, tidak mengaturnya. */
+/** Boleh mengurus business-nya: owner saja. Staff bekerja di dalamnya, tidak mengaturnya. */
 export function managesBusiness(role: BusinessRole | null): boolean {
-  return role === "owner" || role === "admin";
+  return role === "owner";
 }
 
 /** Nama yang ditampilkan untuk sebuah kedudukan. */
 export function standingLabel(s: Standing): string {
   if (s.isPlatform) return "Platform";
   if (s.businessRole === "owner") return "Owner";
-  if (s.businessRole === "admin") return "Admin";
   if (s.businessRole === "staff") return "Staff";
   return "Customer";
 }

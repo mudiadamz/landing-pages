@@ -50,7 +50,7 @@ async function makeUser(standing: "seller" | "customer"): Promise<string> {
       "select id from lp_businesses order by created_at limit 1",
     );
     await raw.query(
-      "insert into lp_business_members (business_id, user_id, role) values ($1, $2, 'admin') on conflict do nothing",
+      "insert into lp_business_members (business_id, user_id, role) values ($1, $2, 'staff') on conflict do nothing",
       [biz[0].id, rows[0].id],
     );
   }
@@ -184,20 +184,15 @@ describe("chat-attachments — lampiran percakapan", () => {
   });
 });
 
-describe("publisher-kyc & hiring-cv — hanya server", () => {
-  it("publisher-kyc: pemohon pun tidak bisa mengunggah; server bisa, JPEG saja, ≤ 5 MB", async () => {
-    expect((await customer.from("publisher-kyc").upload(`${customerId}/ktp.jpg`, bytes(8, "image/jpeg"))).error).not.toBeNull();
-    expect((await service.from("publisher-kyc").upload(`${customerId}/ktp-${uid()}.jpg`, bytes(8, "image/jpeg"))).error).toBeNull();
-    expect((await service.from("publisher-kyc").upload(`${customerId}/k.png`, bytes(8, "image/png"))).error).not.toBeNull();
-    expect((await service.from("publisher-kyc").upload(`${customerId}/b.jpg`, bytes(6 * 1024 * 1024, "image/jpeg"))).error).not.toBeNull();
-  });
-
-  it("hiring-cv: server mengunggah PDF; bukan PDF ditolak; tidak ada jalan publik", async () => {
-    const name = `${Date.now()}_uji-${uid().slice(0, 6)}.pdf`;
-    expect((await service.from("hiring-cv").upload(name, bytes(8, "application/pdf"))).error).toBeNull();
-    expect((await service.from("hiring-cv").upload("cv.png", bytes(8, "image/png"))).error).not.toBeNull();
-    expect((await pub("hiring-cv", name)).status).toBe(404);
-    expect((await customer.from("hiring-cv").download(name)).error).not.toBeNull();
+describe("hiring-cv — hanya server", () => {
+  it("hiring-cv: pelamar pun tidak bisa membaca CV orang lain; server bisa menulis", async () => {
+    // publisher-kyc used to be tested beside this one. The bucket went with the
+    // publisher role: holding a stranger's ID for a flow that no longer exists
+    // is personal data kept for no reason.
+    const name = `${uid()}.pdf`;
+    expect((await service.from("hiring-cv").upload(name, bytes(64, "application/pdf"))).error).toBeNull();
+    expect((await customer.from("hiring-cv").upload(`x-${name}`, bytes(64, "application/pdf"))).error).not.toBeNull();
+    expect((await anon.from("hiring-cv").upload(`y-${name}`, bytes(64, "application/pdf"))).error).not.toBeNull();
   });
 });
 

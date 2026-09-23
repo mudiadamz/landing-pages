@@ -115,7 +115,7 @@ export type ProductStatRow = {
   /** Of `sold`, how many have had access revoked. */
   revoked: number;
 };
-export type PublisherStats = {
+export type MyProductStats = {
   totalProducts: number;
   totalSales: number;
   totalRevenue: number;
@@ -126,7 +126,7 @@ export type PublisherStats = {
 
 /**
  * Sales stats scoped to the current seller's OWN products (by user_id). Used by
- * the publisher stats view. Reads via the service-role client because a seller
+ * the seller's own stats view. Reads via the service-role client because a seller
  * isn't the buyer on lp_purchases, so RLS would hide their products' sales.
  *
  * `sold` and `revenue` deliberately COUNT revoked rows: revoking is an access
@@ -135,9 +135,9 @@ export type PublisherStats = {
  * revoked share is reported alongside and surfaced in red, the same way the
  * site-wide purchases card does it.
  */
-export async function getMyProductStats(): Promise<PublisherStats | null> {
+export async function getMyProductStats(): Promise<MyProductStats | null> {
   const profile = await getProfile();
-  // Company & Agent selalu; publisher hanya untuk situs tempat izinnya berlaku.
+  // Platform & anggota business; angkanya selalu produk miliknya sendiri.
   const standing = await currentSiteStanding();
   if (!profile || !canSellOnSite(standing)) return null;
 
@@ -180,182 +180,13 @@ export async function getMyProductStats(): Promise<PublisherStats | null> {
   };
 }
 
-export type PublisherApplication = {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  publisher_applied_at: string | null;
-  /** Legal name to compare against the KTP photo. Admin-facing only. */
-  real_name: string | null;
-  /** The public store name the applicant chose. */
-  display_name: string | null;
-  /** Current residential address. Admin-facing only. */
-  address: string | null;
-  bank_name: string | null;
-  bank_holder: string | null;
-  /** Payout account. Admin-facing only. */
-  bank_account: string | null;
-  /** When the publisher terms were accepted; null for pre-terms applications. */
-  terms_accepted_at: string | null;
-  /** Short-lived signed URLs for the identity photos; null if never submitted. */
-  ktp_url: string | null;
-  selfie_url: string | null;
-};
-
-/** How long a KYC photo link stays valid — long enough to review, not to keep. */
-const KYC_URL_TTL_SECONDS = 10 * 60;
-
-/**
- * Pending publisher applications, oldest first — for the admin review screen.
+/*
+ * The publisher review desk used to live here: pending applications, approve,
+ * reject, and the KTP/selfie cleanup that went with a rejection.
  *
- * The identity photos live in a private bucket with no storage policies at all,
- * so they are reachable only through signed URLs minted here, behind the same
- * admin check as the rest of the row. Applications submitted before the KYC
- * step existed simply have no photos.
+ * Gone with the four-role rework. Nobody is promoted to seller on a storefront
+ * any more — they register a Business, which has its own KYC and approval queue
+ * at /panel/platform. The identity photos and the `publisher-kyc` bucket went
+ * with it: holding a stranger's ID for a flow that no longer exists is personal
+ * data kept for no reason.
  */
-export async function getPublisherApplications(): Promise<PublisherApplication[]> {
-  const isAdmin = await requireFeature("users");
-  if (!isAdmin) return [];
-
-  // Pengajuan situs INI saja. Pengajuan itu milik
-  // pasangan (orang, situs) — daftar lintas situs akan menampilkan orang yang
-  // bukan urusan Agent ini.
-  const site = await editingSite();
-  const db = createAdminClient();
-  const { data, error } = await db
-    .from("lp_site_members")
-    .select(
-      "user_id, publisher_applied_at, publisher_ktp_path, publisher_selfie_path, publisher_real_name, publisher_display_name, publisher_address, publisher_bank_name, publisher_bank_holder, publisher_bank_account, publisher_terms_accepted_at",
-    )
-    .eq("site_id", site.id)
-    .eq("publisher_status", "pending")
-    .order("publisher_applied_at", { ascending: true });
-
-  if (error || !data?.length) return [];
-
-  // Nama & email tetap di profil: itu milik orangnya, bukan milik pengajuan.
-  const { data: profiles } = await db
-    .from("lp_profiles")
-    .select("id, full_name, email")
-    .in("id", data.map((r) => r.user_id));
-  const byId = new Map((profiles ?? []).map((p) => [p.id as string, p]));
-
-  const sign = async (path: string | null) => {
-    if (!path) return null;
-    const { data: signed } = await db.storage
-      .from("publisher-kyc")
-      .createSignedUrl(path, KYC_URL_TTL_SECONDS);
-    return signed?.signedUrl ?? null;
-  };
-
-  return Promise.all(
-    data.map(async (r) => ({
-      id: r.user_id as string,
-      full_name: byId.get(r.user_id as string)?.full_name ?? null,
-      email: byId.get(r.user_id as string)?.email ?? null,
-      publisher_applied_at: r.publisher_applied_at ?? null,
-      real_name: r.publisher_real_name ?? null,
-      address: r.publisher_address ?? null,
-      display_name: r.publisher_display_name ?? null,
-      bank_name: r.publisher_bank_name ?? null,
-      bank_holder: r.publisher_bank_holder ?? null,
-      bank_account: r.publisher_bank_account ?? null,
-      terms_accepted_at: r.publisher_terms_accepted_at ?? null,
-      ktp_url: await sign(r.publisher_ktp_path ?? null),
-      selfie_url: await sign(r.publisher_selfie_path ?? null),
-    })),
-  );
-}
-
-/** Approve an application: promote the user to publisher. */
-export async function approvePublisher(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireFeature("users");
-  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
-  if (!userId) return { ok: false, error: "User tidak valid." };
-
-  // Persetujuan berlaku DI SATU SITUS: pengajuan itu milik pasangan
-  // (orang, situs). Menyetujui di sini tidak membuka
-  // izin jual di storefront lain, dan memang tidak seharusnya.
-  const site = await editingSite();
-  const db = createAdminClient();
-  const { error } = await db
-    .from("lp_site_members")
-    .update({
-      is_publisher: true,
-      publisher_status: "approved",
-      publisher_reviewed_at: new Date().toISOString(),
-      publisher_reviewed_by: (await getProfile())?.id ?? null,
-      publisher_reject_note: null,
-    })
-    .eq("user_id", userId)
-    .eq("site_id", site.id)
-    .eq("publisher_status", "pending");
-
-  if (error) {
-    console.error("approvePublisher error:", error);
-    return { ok: false, error: "Gagal menyetujui." };
-  }
-  revalidatePath("/panel/users");
-  return { ok: true };
-}
-
-/** Reject an application: keep the user a customer, mark as rejected. */
-export async function rejectPublisher(
-  userId: string,
-  note?: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const isAdmin = await requireFeature("users");
-  if (!isAdmin) return { ok: false, error: "Akses ditolak." };
-  if (!userId) return { ok: false, error: "User tidak valid." };
-
-  const db = createAdminClient();
-  const reviewer = await getProfile();
-
-  const { data: row, error } = await db
-    .from("lp_site_members")
-    .update({
-      is_publisher: false,
-      publisher_status: "rejected",
-      publisher_reviewed_at: new Date().toISOString(),
-      publisher_reviewed_by: reviewer?.id ?? null,
-      publisher_reject_note: note?.trim().slice(0, 500) || null,
-    })
-    .eq("user_id", userId)
-    .eq("site_id", (await editingSite()).id)
-    .eq("publisher_status", "pending")
-    .select("publisher_ktp_path, publisher_selfie_path")
-    .maybeSingle();
-
-  if (error) {
-    console.error("rejectPublisher error:", error);
-    return { ok: false, error: "Gagal menolak." };
-  }
-
-  // Drop the ID photos on rejection. They were collected to answer one question,
-  // that question has been answered, and keeping a stranger's KTP on a decision
-  // that went against them is a liability with no upside — a re-application
-  // takes fresh photos anyway. Approvals keep theirs as the record of the check.
-  const paths = [row?.publisher_ktp_path, row?.publisher_selfie_path].filter(
-    Boolean,
-  ) as string[];
-  if (paths.length) {
-    const { error: rmErr } = await db.storage.from("publisher-kyc").remove(paths);
-    if (rmErr) console.error("rejectPublisher photo cleanup error:", rmErr);
-    else {
-      // The paths live on the membership row —
-      // the same row updated above. They used to be cleared on lp_profiles,
-      // where the columns no longer exist, so the update failed unread and the
-      // application kept pointing at photos that had just been deleted.
-      const { error: clearErr } = await db
-        .from("lp_site_members")
-        .update({ publisher_ktp_path: null, publisher_selfie_path: null })
-        .eq("user_id", userId)
-        .eq("site_id", (await editingSite()).id);
-      if (clearErr) console.error("rejectPublisher path cleanup error:", clearErr);
-    }
-  }
-
-  revalidatePath("/panel/users");
-  revalidatePath("/panel/profile");
-  return { ok: true };
-}

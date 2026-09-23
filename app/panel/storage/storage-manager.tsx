@@ -55,7 +55,6 @@ function cmpDate(a: StorageFile, b: StorageFile): number {
 /** Friendly names for the internal bucket ids the audit found exposed raw. */
 const BUCKET_LABELS: Record<string, string> = {
   "landing-assets": "Aset situs",
-  "publisher-kyc": "Dokumen KYC publisher",
   "hiring-cv": "CV pelamar",
   "chat-attachments": "Lampiran chat",
 };
@@ -66,7 +65,7 @@ function bucketLabel(bucket: string): string {
 /** Buckets holding personal / private data (KYC IDs, CVs, chat uploads). Storage
  *  is already Company-only, but these are flagged so an admin knows what they are
  *  looking at before opening them. */
-const SENSITIVE_BUCKETS = new Set(["publisher-kyc", "hiring-cv", "chat-attachments"]);
+const SENSITIVE_BUCKETS = new Set(["hiring-cv", "chat-attachments"]);
 
 /** Split "a/b/c.png" into its folder and file name. Root files get "". */
 function splitPath(path: string): { dir: string; name: string } {

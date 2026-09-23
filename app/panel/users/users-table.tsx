@@ -41,10 +41,8 @@ type UserRow = {
   /** Plan key as stored. `plan_expires_at` null means it does not lapse. */
   plan?: string | null;
   plan_expires_at?: string | null;
-  /** Mengelola situs yang sedang dilihat. null = tampilan lintas situs. */
-  is_agent?: boolean | null;
-  /** Boleh menjual di situs yang sedang dilihat. */
-  is_publisher?: boolean | null;
+  /** Anggota situs yang sedang dilihat. null = tampilan lintas situs. */
+  is_member?: boolean | null;
 };
 
 export function UsersTable({
@@ -101,27 +99,6 @@ export function UsersTable({
    * disimpan di dua tabel, dan seseorang bisa keduanya sekaligus. Satu dropdown
    * memaksa keduanya jadi pilihan yang saling meniadakan, yang bukan modelnya.
    */
-  async function toggleSiteFlag(user: UserRow, field: "isAgent" | "isPublisher", next: boolean) {
-    const key = field === "isAgent" ? "is_agent" : "is_publisher";
-    const prev = user[key];
-    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, [key]: next } : u)));
-    setUpdating(user.id);
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, [field]: next }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error ?? t("panel.roleChangeFailed"));
-        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, [key]: prev } : u)));
-      }
-    } finally {
-      setUpdating(null);
-    }
-  }
-
   async function removeFromSite(user: UserRow) {
     if (!confirm(t("panel.removeFromSiteConfirm", { name: user.full_name || user.email || "user" }))) {
       return;
@@ -419,7 +396,6 @@ export function UsersTable({
           <option value="all">{t("panel.allRoles")}</option>
           <option value="platform">{t("panel.rolePlatform")}</option>
           <option value="owner">{t("panel.roleOwner")}</option>
-          <option value="admin">{t("panel.roleBizAdmin")}</option>
           <option value="staff">{t("panel.roleStaff")}</option>
           <option value="">{t("panel.roleCustomer")}</option>
         </select>
@@ -490,14 +466,6 @@ export function UsersTable({
               >
                 {u.exclude_from_stats ? t("panel.excluded") : t("panel.counted")}
               </button>
-              {showSiteRole && (
-                <SiteFlags
-                  user={u}
-                  canEdit={isSiteAdmin}
-                  disabled={updating === u.id}
-                  onToggle={toggleSiteFlag}
-                />
-              )}
               {showSiteRole && isSiteAdmin && (
                 <button
                   type="button"
@@ -540,11 +508,6 @@ export function UsersTable({
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("content.name")}</th>
                 <th className="text-left px-4 py-3 font-medium text-[var(--muted)]">{t("sales.email")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.role")}</th>
-                {showSiteRole && (
-                  <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">
-                    {t("panel.siteFlags")}
-                  </th>
-                )}
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("plan.colPlan")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.verification")}</th>
                 <th className="text-center px-4 py-3 font-medium text-[var(--muted)]">{t("panel.status")}</th>
@@ -568,16 +531,6 @@ export function UsersTable({
                   <td className="px-4 py-3 text-center">
                     <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeStanding} />
                   </td>
-                  {showSiteRole && (
-                    <td className="px-4 py-3 text-center">
-                      <SiteFlags
-                        user={u}
-                        canEdit={isSiteAdmin}
-                        disabled={updating === u.id}
-                        onToggle={toggleSiteFlag}
-                      />
-                    </td>
-                  )}
                   <td className="px-4 py-3 text-center">
                     <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
                   </td>
@@ -709,52 +662,6 @@ function PlanControl({
   );
 }
 
-/**
- * Dua kotak centang, bukan satu dropdown.
- *
- * "Mengelola situs ini" (Agent) dan "boleh menjual di situs ini" (publisher)
- * disimpan di dua tabel dan bisa berlaku bersamaan. Satu dropdown memaksa
- * keduanya jadi pilihan yang saling meniadakan, dan itu bukan modelnya.
- */
-function SiteFlags({
-  user,
-  canEdit,
-  disabled,
-  onToggle,
-}: {
-  user: UserRow;
-  canEdit: boolean;
-  disabled: boolean;
-  onToggle: (user: UserRow, field: "isAgent" | "isPublisher", next: boolean) => void;
-}) {
-  const t = useT();
-  if (user.is_agent === null || user.is_agent === undefined) {
-    return <span className="text-xs text-[var(--muted)]">—</span>;
-  }
-  const box = (
-    field: "isAgent" | "isPublisher",
-    checked: boolean,
-    label: string,
-  ) => (
-    <label className="inline-flex items-center gap-1.5 text-xs text-[var(--muted)]">
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled || !canEdit}
-        onChange={(e) => onToggle(user, field, e.target.checked)}
-        className="h-3.5 w-3.5 rounded border-[var(--border)] accent-[var(--primary)] disabled:opacity-50"
-      />
-      {label}
-    </label>
-  );
-  return (
-    <span className="inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-      {box("isAgent", !!user.is_agent, t("panel.roleAgent"))}
-      {box("isPublisher", !!user.is_publisher, t("panel.rolePublisher"))}
-    </span>
-  );
-}
-
 function RoleControl({
   user,
   canEdit,
@@ -863,7 +770,7 @@ function RoleBadge({ value }: { value: StandingValue }) {
   const cls =
     value === "platform"
       ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-      : value === "owner" || value === "admin"
+      : value === "owner"
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
         : value === "staff"
           ? "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300"
@@ -873,11 +780,9 @@ function RoleBadge({ value }: { value: StandingValue }) {
       ? t("panel.rolePlatform")
       : value === "owner"
         ? t("panel.roleOwner")
-        : value === "admin"
-          ? t("panel.roleBizAdmin")
-          : value === "staff"
-            ? t("panel.roleStaff")
-            : t("panel.roleCustomer");
+        : value === "staff"
+          ? t("panel.roleStaff")
+          : t("panel.roleCustomer");
   return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{label}</span>;
 }
 

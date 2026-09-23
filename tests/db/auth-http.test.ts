@@ -234,7 +234,7 @@ describe("tindakan admin", () => {
     // A seller is a business member since Fase 5 — lp_can_sell() reads that.
     await raw.query(
       `insert into lp_business_members (business_id, user_id, role)
-       select id, $1, 'admin' from lp_businesses order by created_at limit 1
+       select id, $1, 'staff' from lp_businesses order by created_at limit 1
        on conflict do nothing`,
       [seller.id],
     );

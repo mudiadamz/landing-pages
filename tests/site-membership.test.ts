@@ -7,17 +7,15 @@ import { managesBusiness, normalizeBusinessRole, standingLabel } from "@/lib/pro
  * merender dan justru menampilkan LEBIH banyak data — persis bentuk kegagalan
  * yang docs/architecture.md §6 bilang tidak akan kelihatan di layar.
  *
- * Sejak Fase 5 kedudukan bukan lagi satu `account_type` global: Platform ada di
- * `is_platform`, dan peran business selalu dibaca terhadap business PEMILIK SITUS
- * INI. Perbedaan itu yang paling layak diuji di sini — owner sebuah business
- * bukan siapa-siapa di storefront orang lain.
+ * Empat kedudukan, tidak lebih: Platform · owner · staff · customer. "Publisher"
+ * dan "Agent situs" sudah tidak ada — keduanya dulu menjawab "boleh jualan /
+ * mengurus di situs ini", dan itu sekarang dijawab seluruhnya oleh peran di
+ * business PEMILIK situs itu.
  */
 const at = (o: Partial<SiteStanding> = {}): SiteStanding => ({
   isPlatform: false,
   businessRole: null,
-  isAgent: false,
   isMember: false,
-  isPublisher: false,
   ...o,
 });
 
@@ -28,57 +26,45 @@ describe("canManageSite", () => {
     expect(canManageSite(at({ isPlatform: true }))).toBe(true);
   });
 
-  it("owner & admin business pemilik situs boleh; staff tidak", () => {
+  it("owner business pemilik situs boleh; staff TIDAK", () => {
     expect(canManageSite(at({ businessRole: "owner" }))).toBe(true);
-    expect(canManageSite(at({ businessRole: "admin" }))).toBe(true);
-    // Staff bekerja DI DALAM business, bukan mengaturnya.
+    // Staff bekerja DI DALAM business, bukan mengaturnya. Kalau staff ikut
+    // lolos di sini, "sub-akun" jadi sinonim "pemilik".
     expect(canManageSite(at({ businessRole: "staff" }))).toBe(false);
   });
 
   it("peran business TIDAK ikut ke storefront business lain", () => {
-    // Inti Fase 5: businessRole di-resolve terhadap pemilik situs ini, jadi
-    // seorang owner yang membuka situs orang lain sampai ke sini sebagai null.
+    // businessRole di-resolve terhadap pemilik situs ini, jadi seorang owner
+    // yang membuka situs orang lain sampai ke sini sebagai null.
     expect(canManageSite(at({ businessRole: null }))).toBe(false);
   });
 
-  it("Agent hanya di situs tempat dia terdaftar", () => {
-    expect(canManageSite(at({ isAgent: true }))).toBe(true);
-  });
-
-  it("customer, publisher, dan bukan siapa-siapa tidak mengelola apa pun", () => {
+  it("pembeli dan bukan siapa-siapa tidak mengelola apa pun", () => {
     expect(canManageSite(at({ isMember: true }))).toBe(false);
-    expect(canManageSite(at({ isMember: true, isPublisher: true }))).toBe(false);
     expect(canManageSite(null)).toBe(false);
   });
 });
 
 describe("canSellOnSite", () => {
-  it("publisher boleh menjual di situs tempat izinnya berlaku", () => {
-    // Model lama yang tetap berlaku: customer yang disetujui boleh berjualan
-    // tanpa jadi anggota business mana pun.
-    expect(canSellOnSite(at({ isMember: true, isPublisher: true }))).toBe(true);
-  });
-
-  it("customer biasa tidak, meski dia anggota", () => {
-    expect(canSellOnSite(at({ isMember: true }))).toBe(false);
-  });
-
-  it("izin jual tidak ikut ke situs lain", () => {
-    // Publisher di situs A membuka halaman situs B: barisnya di situs B tidak
-    // punya flag itu, jadi standing-nya polos.
-    expect(canSellOnSite(at({ isMember: true, isPublisher: false }))).toBe(false);
-  });
-
   it("staff IKUT boleh menjual — lebih longgar daripada mengelola", () => {
+    // Inti perbedaan kedua gate: menjual memang pekerjaan staff.
     expect(canSellOnSite(at({ businessRole: "staff" }))).toBe(true);
     expect(canManageSite(at({ businessRole: "staff" }))).toBe(false);
   });
 
-  it("Platform, owner/admin, dan Agent selalu boleh", () => {
+  it("Platform dan owner selalu boleh", () => {
     expect(canSellOnSite(at({ isPlatform: true }))).toBe(true);
     expect(canSellOnSite(at({ businessRole: "owner" }))).toBe(true);
-    expect(canSellOnSite(at({ businessRole: "admin" }))).toBe(true);
-    expect(canSellOnSite(at({ isAgent: true }))).toBe(true);
+  });
+
+  it("pembeli tidak, meski dia anggota situs", () => {
+    // Ini yang dulu diisi "publisher": pembeli yang dinaikkan jadi penjual di
+    // satu storefront. Sekarang tidak ada jalan itu — dia mendaftarkan business.
+    expect(canSellOnSite(at({ isMember: true }))).toBe(false);
+  });
+
+  it("anggota business LAIN tidak boleh menjual di sini", () => {
+    expect(canSellOnSite(at({ businessRole: null, isMember: true }))).toBe(false);
   });
 });
 
@@ -88,32 +74,32 @@ describe("belongsToSite", () => {
     expect(belongsToSite(null)).toBe(false);
   });
 
-  it("customer, Agent, anggota business, dan Platform punya urusan di sini", () => {
+  it("pembeli, staff, owner, dan Platform punya urusan di sini", () => {
     expect(belongsToSite(at({ isMember: true }))).toBe(true);
-    expect(belongsToSite(at({ isAgent: true }))).toBe(true);
     expect(belongsToSite(at({ businessRole: "staff" }))).toBe(true);
+    expect(belongsToSite(at({ businessRole: "owner" }))).toBe(true);
     expect(belongsToSite(at({ isPlatform: true }))).toBe(true);
   });
 });
 
 describe("normalizeBusinessRole", () => {
-  it("membaca ketiga peran, case-insensitive", () => {
+  it("dua peran yang ada, case-insensitive", () => {
     expect(normalizeBusinessRole("OWNER")).toBe("owner");
-    expect(normalizeBusinessRole(" admin ")).toBe("admin");
-    expect(normalizeBusinessRole("staff")).toBe("staff");
+    expect(normalizeBusinessRole(" staff ")).toBe("staff");
   });
 
-  it("kosakata lama tetap terbaca sebagai tingkatannya", () => {
-    // Pemetaan yang sama dengan backfill migration: baris yang entah bagaimana
-    // masih berisi nilai lama tidak boleh diam-diam turun jadi bukan-siapa-siapa.
+  it("kosakata lama TURUN, tidak naik", () => {
+    // Menggabungkan peran dengan menebak ke ATAS memberi orang izin yang tidak
+    // pernah diputuskan siapa pun; menebak ke bawah paling banter bikin dia
+    // minta dinaikkan.
     expect(normalizeBusinessRole("company")).toBe("owner");
-    expect(normalizeBusinessRole("agent")).toBe("admin");
+    expect(normalizeBusinessRole("admin")).toBe("staff");
+    expect(normalizeBusinessRole("agent")).toBe("staff");
   });
 
   it("nilai asing jatuh ke null — bukan ke peran paling rendah", () => {
     // null berarti "bukan anggota business ini", dan itu lebih sedikit izin
-    // daripada 'staff'. Menebak 'staff' di sini akan memberi akses ke orang
-    // yang barisnya rusak.
+    // daripada 'staff'. Menebak 'staff' akan memberi akses ke baris yang rusak.
     expect(normalizeBusinessRole("publisher")).toBeNull();
     expect(normalizeBusinessRole(null)).toBeNull();
     expect(normalizeBusinessRole(7)).toBeNull();
@@ -121,18 +107,30 @@ describe("normalizeBusinessRole", () => {
 });
 
 describe("managesBusiness & standingLabel", () => {
-  it("owner & admin mengelola; staff dan bukan-anggota tidak", () => {
+  it("owner mengelola; staff dan bukan-anggota tidak", () => {
     expect([
       managesBusiness("owner"),
-      managesBusiness("admin"),
       managesBusiness("staff"),
       managesBusiness(null),
-    ]).toEqual([true, true, false, false]);
+    ]).toEqual([true, false, false]);
   });
 
   it("Platform menang atas peran business apa pun", () => {
     expect(standingLabel({ isPlatform: true, businessRole: "staff" })).toBe("Platform");
     expect(standingLabel({ isPlatform: false, businessRole: "owner" })).toBe("Owner");
+    expect(standingLabel({ isPlatform: false, businessRole: "staff" })).toBe("Staff");
     expect(standingLabel({ isPlatform: false, businessRole: null })).toBe("Customer");
+  });
+
+  it("empat label, tidak lebih", () => {
+    const labels = new Set(
+      [
+        { isPlatform: true, businessRole: null },
+        { isPlatform: false, businessRole: "owner" as const },
+        { isPlatform: false, businessRole: "staff" as const },
+        { isPlatform: false, businessRole: null },
+      ].map(standingLabel),
+    );
+    expect([...labels].sort()).toEqual(["Customer", "Owner", "Platform", "Staff"]);
   });
 });

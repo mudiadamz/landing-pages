@@ -11,9 +11,35 @@ import { as, denied, makeSite, makeUser, sql, uniq } from "./sql";
  * one PostgREST call reaches another storefront.
  */
 
-const agentOf = async (siteId: string) => {
-  const uid = await makeUser({ standing: "admin" });
-  await sql("insert into lp_site_agents (site_id, user_id) values ($1, $2)", [siteId, uid]);
+/**
+ * Somebody who manages this site.
+ *
+ * Since the roles were cut to four that is exactly one thing: OWNER of the
+ * business that owns the site. lp_site_agents used to be a second answer and is
+ * gone. Reuses the site's business when it already has one, so two managers of
+ * the same site really are managers of the same business rather than the second
+ * call quietly reassigning the site.
+ */
+const ownerOf = async (siteId: string) => {
+  const uid = await makeUser();
+  const { rows } = await sql<{ business_id: string | null }>(
+    "select business_id from lp_sites where id = $1",
+    [siteId],
+  );
+  let biz = rows[0]?.business_id ?? null;
+  if (!biz) {
+    const made = await sql<{ id: string }>(
+      "insert into public.lp_businesses (name, slug) values ('Uji', $1) returning id",
+      [`s-${uniq()}`],
+    );
+    biz = made.rows[0].id;
+    await sql("update public.lp_sites set business_id = $2 where id = $1", [siteId, biz]);
+  }
+  await sql(
+    `insert into public.lp_business_members (business_id, user_id, role) values ($1, $2, 'owner')
+     on conflict (business_id, user_id) do update set role = 'owner'`,
+    [biz, uid],
+  );
   return uid;
 };
 
@@ -40,7 +66,7 @@ describe("lp_site_settings — siapa boleh menyimpan setelan situs", () => {
 
   it("Agent menyimpan setelan situs yang dia kelola — insert maupun update", async () => {
     const site = await makeSite();
-    const agent = await agentOf(site);
+    const agent = await ownerOf(site);
     const key = `k_${uniq()}`;
     expect((await saveSetting(agent, site, key)).rowCount).toBe(1);
     expect((await saveSetting(agent, site, key)).rowCount).toBe(1);
@@ -49,7 +75,7 @@ describe("lp_site_settings — siapa boleh menyimpan setelan situs", () => {
   it("Agent TIDAK bisa menyentuh setelan situs lain", async () => {
     const mine = await makeSite();
     const theirs = await makeSite();
-    const agent = await agentOf(mine);
+    const agent = await ownerOf(mine);
     await denied(() => saveSetting(agent, theirs));
     // …not even by updating a row that already exists there.
     await sql("insert into lp_site_settings (site_id, key, value) values ($1, 'tracking', '{}')", [theirs]);
@@ -61,7 +87,7 @@ describe("lp_site_settings — siapa boleh menyimpan setelan situs", () => {
 
   it("jenis akun 'agent' saja tidak cukup — harus terdaftar sebagai Agent situs itu", async () => {
     const site = await makeSite();
-    const agentElsewhere = await makeUser({ standing: "admin" });
+    const agentElsewhere = await makeUser({ standing: "staff" });
     await denied(() => saveSetting(agentElsewhere, site));
   });
 
@@ -100,7 +126,7 @@ describe("lp_sites — domain & branding hanya Company", () => {
 
   it("Agent situs itu pun TIDAK bisa mengubah host / is_canonical / branding", async () => {
     const site = await makeSite();
-    const agent = await agentOf(site);
+    const agent = await ownerOf(site);
     for (const set of ["host = 'evil.test'", "is_canonical = true", "name = 'Dibajak'", "active = false"]) {
       const r = await as({ uid: agent }, () => sql(`update lp_sites set ${set} where id = $1`, [site]));
       expect(r.rowCount, set).toBe(0);
@@ -119,7 +145,7 @@ describe("lp_sites — domain & branding hanya Company", () => {
 describe("lp_landing_page_categories — katalog bersama, hanya Company", () => {
   it("Company mengelola; Agent & customer tidak; semua membaca", async () => {
     const company = await makeUser({ standing: "platform" });
-    const agent = await makeUser({ standing: "admin" });
+    const agent = await makeUser({ standing: "staff" });
     const slug = `c-${uniq()}`;
     const ins = (uid: string, s: string) =>
       as({ uid }, () => sql("insert into lp_landing_page_categories (name, slug) values ('Kat', $1)", [s]));
@@ -152,10 +178,11 @@ describe("lp_pages — halaman editorial", () => {
   });
 });
 
-describe("lp_site_members & lp_site_agents — keanggotaan", () => {
-  // The seller check (lp_can_sell) and the site manager check both read these
-  // tables. A user who could write their own row here could make themselves a
-  // publisher, or an Agent of any storefront.
+describe("lp_site_members — keanggotaan", () => {
+  // The seller check (lp_can_sell) and the site manager check both read business
+  // membership now. What is left to protect here is the membership row itself:
+  // a user who could write their own must not be able to join a site they were
+  // never added to.
 
   it("user membaca baris keanggotaannya sendiri, bukan milik orang lain", async () => {
     const site = await makeSite();
@@ -168,41 +195,22 @@ describe("lp_site_members & lp_site_agents — keanggotaan", () => {
     expect(rows.map((r) => r.user_id)).toEqual([me]);
   });
 
-  it("TIDAK bisa menjadikan dirinya publisher", async () => {
-    const site = await makeSite();
+  it("TIDAK bisa mengangkat dirinya jadi anggota business mana pun", async () => {
+    // This is what "make myself a publisher" became: selling is business
+    // membership now, so that table is the one that has to refuse.
     const me = await makeUser();
-    await sql("insert into lp_site_members (site_id, user_id) values ($1, $2)", [site, me]);
-    const upd = await as({ uid: me }, () =>
-      sql("update lp_site_members set is_publisher = true, publisher_status = 'approved' where user_id = $1", [me]),
-    ).catch((e) => e);
-    expect(upd.code === "42501" || upd.rowCount === 0).toBe(true);
-    // Joining a DIFFERENT site as a publisher, in one insert.
-    const elsewhere = await makeSite();
+    const { rows } = await sql<{ id: string }>(
+      "insert into public.lp_businesses (name, slug) values ('Uji', $1) returning id",
+      [`x-${uniq()}`],
+    );
     await denied(() =>
       as({ uid: me }, () =>
-        sql("insert into lp_site_members (site_id, user_id, is_publisher) values ($1, $2, true)", [elsewhere, me]),
+        sql("insert into public.lp_business_members (business_id, user_id, role) values ($1, $2, 'owner')", [
+          rows[0].id,
+          me,
+        ]),
       ),
     );
   });
-
-  it("TIDAK bisa mendaftarkan dirinya sebagai Agent situs mana pun", async () => {
-    const me = await makeUser({ standing: "admin" });
-    // The fixture is made OUTSIDE as(): made inside, the site insert itself
-    // would be refused and the test would pass for the wrong reason.
-    const site = await makeSite();
-    await denied(() =>
-      as({ uid: me }, () => sql("insert into lp_site_agents (site_id, user_id) values ($1, $2)", [site, me])),
-    );
-  });
-
-  it("Agent melihat tautannya sendiri saja", async () => {
-    const site = await makeSite();
-    const a = await agentOf(site);
-    const b = await agentOf(site);
-    const { rows } = await as({ uid: a }, () =>
-      sql<{ user_id: string }>("select user_id from lp_site_agents where site_id = $1", [site]),
-    );
-    expect(rows.map((r) => r.user_id)).toEqual([a]);
-    expect(b).not.toBe(a);
-  });
 });
+

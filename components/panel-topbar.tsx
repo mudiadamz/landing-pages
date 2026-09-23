@@ -88,11 +88,9 @@ export function PanelTopbar({
     ? t("panel.rolePlatform")
     : businessRole === "owner"
       ? t("panel.roleOwner")
-      : businessRole === "admin"
-        ? t("panel.roleBizAdmin")
-        : businessRole === "staff"
-          ? t("panel.roleStaff")
-          : t("panel.roleCustomer");
+      : businessRole === "staff"
+        ? t("panel.roleStaff")
+        : t("panel.roleCustomer");
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--card)] px-3 sm:px-4">

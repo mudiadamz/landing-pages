@@ -4,7 +4,6 @@ import { createClient } from "@/lib/db/server";
 import { isCanonicalRequest, canonicalOrigin, currentSite } from "@/lib/site-resolve";
 import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures, canSellOnCurrentSite } from "@/lib/actions/profiles";
-import { getPublisherApplications } from "@/lib/actions/admin";
 import { managesBusiness } from "@/lib/profile-utils";
 import { getPanelPalette, getPanelSkin } from "@/lib/actions/site-settings";
 import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
@@ -42,7 +41,6 @@ const CUSTOMER_PANEL_PREFIXES = [
   "/panel/favorites",
   "/panel/invoices",
   "/panel/profile",
-  "/panel/publisher", // applying to become a seller
 ];
 
 function isCustomerPanelPath(pathname: string): boolean {
@@ -104,9 +102,10 @@ export default async function PanelLayout({
   // Feature access drives which admin areas appear in the nav.
   const features = await getAccessibleFeatures();
 
-  // Pending admin actions (currently: publisher applications) → sidebar badge,
-  // shown to anyone who can access the Users area.
-  const pendingActions = features.includes("users") ? (await getPublisherApplications()).length : 0;
+  // No pending-action badge any more: the only queue it ever counted was
+  // publisher applications, and those are gone. Business applications have their
+  // own queue on /panel/platform, which only the Platform sees.
+  const pendingActions = 0;
 
   // The panel-wide site scope, for the one switcher in the sidebar. Admins only, and
   // only the fields the switcher renders — the full row would ship template, palette and

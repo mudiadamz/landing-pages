@@ -119,11 +119,11 @@ export const uniq = () => randomUUID().slice(0, 8);
  * Where a test user stands (docs/plans/multi-business-saas.md, Fase 5).
  *
  * `account_type` is gone; a standing is now TWO facts in two tables, so the
- * fixture writes both. "platform" is `lp_profiles.is_platform`; the three
- * business roles are rows in `lp_business_members` against the default business
- * the Fase 0 backfill created. "customer" is the absence of both.
+ * fixture writes both. "platform" is `lp_profiles.is_platform`; owner and staff
+ * are rows in `lp_business_members` against the default business the Fase 0
+ * backfill created. "customer" is the absence of both.
  */
-export type Standing = "platform" | "owner" | "admin" | "staff" | "customer";
+export type Standing = "platform" | "owner" | "staff" | "customer";
 
 /** The one business every migrated database has. Tests attach memberships to it. */
 export async function defaultBusiness(): Promise<string> {
