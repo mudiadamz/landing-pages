@@ -6,6 +6,7 @@ import { isCanonicalRequest, canonicalOrigin, currentSite } from "@/lib/site-res
 import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures, canSellOnCurrentSite } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
+import { managesBusiness } from "@/lib/profile-utils";
 import { getPanelPalette } from "@/lib/actions/site-settings";
 import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
 import { PanelSidebar } from "@/components/panel-sidebar";
@@ -90,20 +91,12 @@ export default async function PanelLayout({
   // Fase 4 signup: a plain customer (not the platform operator, not already tied
   // to a business) may apply to open one. Membership is the eligibility check —
   // the seeded owners/admins from the old model already have a row.
-  let canApplyBusiness = false;
-  let isBusinessManager = false;
-  if (user) {
-    const { data: membership } = await createAdminClient()
-      .from("lp_business_members")
-      .select("business_id, role")
-      .eq("user_id", user.id)
-      .limit(1);
-    const row = membership?.[0];
-    // Manager = runs a business (owner/admin) → sees the money/KYC page.
-    isBusinessManager = row?.role === "owner" || row?.role === "admin";
-    // Eligible to apply = a plain user with no business, and not the operator.
-    canApplyBusiness = !profile?.is_platform && !row;
-  }
+  //
+  // Read off the profile rather than queried again here: getProfile() resolves
+  // the membership once per request (Fase 5), and a second copy of this rule is
+  // a second place for it to drift.
+  const isBusinessManager = managesBusiness(profile?.business_role ?? null);
+  const canApplyBusiness = !!user && !profile?.is_platform && !profile?.business_id;
 
   // Feature access drives which admin areas appear in the nav.
   const features = await getAccessibleFeatures();

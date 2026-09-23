@@ -7,7 +7,6 @@ import { createClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { setBusinessContext } from "@/lib/backend/tenant";
 import {
-  managesBusiness,
   normalizeBusinessRole,
   normalizePublisherStatus,
   type BusinessRole,
