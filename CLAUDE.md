@@ -34,7 +34,8 @@ Ringkasan yang paling sering dilanggar:
 | Multi-domain, tema, palet, PWA per-domain | [`docs/multi-domain.md`](docs/multi-domain.md) + [`docs/technical.md`](docs/technical.md) |
 | Template chat MbahGPT (+ backend-nya) | [`docs/mbahgpt.md`](docs/mbahgpt.md) |
 | Setup, script, env | [`docs/technical.md`](docs/technical.md), [`.env.example`](.env.example) |
-| Deploy (Docker + Caddy) | [`docs/technical.md`](docs/technical.md) → Deploy, `Dockerfile`, `docker-compose.yml`, `Caddyfile` |
+| Deploy (Cloudflare Tunnel + systemd — lihat "Konvensi penting") | `/etc/cloudflared/config.yml`, `scripts/redeploy.sh`. `Dockerfile`/`docker-compose.yml`/`Caddyfile` = jalur lama, tidak dipakai |
+| Terminal browser untuk mesin produksi | `~/work/web-ssh` → `https://term.mbahgpt.com` |
 | Pitch produk (non-teknis) | [`README.md`](README.md) |
 | Menjalankan & menguji di mesin lokal | skill [`run-local`](.claude/skills/run-local/SKILL.md) |
 | Flow buat/edit produk (admin) | [`app/panel/CLAUDE.md`](app/panel/CLAUDE.md) |
@@ -94,14 +95,33 @@ Ringkasan yang paling sering dilanggar:
     setiap kolom yang disebut kode memang ada.
 - Server Actions semua di `lib/actions/*.ts`.
 - Kontak support hardcode di `lib/constants.ts` (`SUPPORT_CONTACT`).
-- **Deploy: Docker, bukan Vercel lagi — dan tanpa Supabase.** `docker compose
-  --env-file .env.production up -d --build` di server: `db` (postgres:17) →
-  `migrate` (sekali jalan, sebagai pemilik) → `app` (sebagai role `app`) → Caddy.
-  Backup: `scripts/backup.sh` dari cron; latihan restore: `scripts/restore-drill.sh`.
-  Caddy di depan mengurus TLS untuk semua domain lewat
-  on-demand TLS, dan bertanya ke `/api/tls-check` (jawabannya dari `lp_sites`)
-  sebelum menerbitkan sertifikat. `NEXT_PUBLIC_*` disulih saat **build** — ganti
-  nilainya berarti build ulang, bukan restart.
+- **Deploy — YANG SEBENARNYA JALAN (diperiksa 2026-09-23).** Produksi
+  `mbahgpt.com` dilayani dari **mesin ini** (WSL2, `DESKTOP-1SAP3QS`) lewat
+  **Cloudflare Tunnel**, bukan Docker dan bukan Caddy:
+
+  ```
+  Browser ──https──> Cloudflare ──tunnel──> cloudflared ──> localhost:3000
+  ```
+
+  - `/etc/cloudflared/config.yml` — ingress: `mbahgpt.com` & `www` → `:3000`,
+    `term.mbahgpt.com` → `:8022` (web-ssh, lihat `~/work/web-ssh`),
+    `ssh.mbahgpt.com` → `ssh://localhost:22`. **Catch-all 404 wajib terakhir** —
+    cloudflared mencocokkan rule berurutan.
+  - Aplikasinya **systemd**, bukan container: `landing-pages.service`. Itu yang
+    di-restart `scripts/redeploy.sh`, dan itu sebabnya `scripts/ship.sh` bekerja.
+  - **Databasenya lokal** di `127.0.0.1:54329` (container postgres `lp-dev-db-1`).
+    `.env.development.local` menunjuk ke sana, jadi **DATABASE ITU PRODUKSI** —
+    `pnpm db:migrate` dan tiap query di sesi dev mengenai data pengguna sungguhan.
+    Perlakukan begitu.
+  - `caddy.service` **inactive**. `Caddyfile` + `docker-compose.yml` di repo
+    adalah jalur deploy lama (masih menunjuk service `app:3000`); jangan diikuti
+    tanpa memastikan dulu, dan jangan dihapus tanpa keputusan sadar.
+  - Konsekuensi TLS: sertifikat diurus Cloudflare, **bukan** on-demand TLS Caddy.
+    `/api/tls-check` masih ada dan masih menjawab dari `lp_sites`, tapi di
+    topologi ini tidak ada yang memanggilnya.
+  - Backup: `scripts/backup.sh` dari cron; latihan restore: `scripts/restore-drill.sh`.
+  - `NEXT_PUBLIC_*` disulih saat **build** — ganti nilainya berarti build ulang,
+    bukan restart.
 - **Selesai mengubah kode → jalankan rutin `scripts/ship.sh "pesan"`** (sejak
   2026-09-22, permintaan Adam): (1) naikkan versi, (2) rebuild + restart, (3)
   commit + push — tanpa diminta lagi tiap selesai. Ketiganya sudah otomatis:

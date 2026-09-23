@@ -4,6 +4,31 @@ import { isMissingRecord } from "@/lib/missing-record";
 import { sessionFailureReason, sessionFingerprint, validateSession } from "@/lib/backend/auth";
 import { sessionTokenFrom } from "@/lib/auth/cookie";
 
+/**
+ * Is this bounce a person, or a scanner?
+ *
+ * Two signals, and either is enough:
+ *
+ *   A cookie was presented. Whatever happened next — unknown token, expired row
+ *   — somebody had a session here once. A scanner never has one, so this is
+ *   always worth a line.
+ *
+ *   It is a top-level navigation. `Sec-Fetch-Mode: navigate` is sent by every
+ *   current browser and by no scanner bothering to imitate one; where it is
+ *   missing entirely (an older client), an `Accept` that asks for HTML says the
+ *   same thing less precisely.
+ *
+ * Deliberately NOT a list of suspicious paths: that is whack-a-mole against an
+ * attacker who can simply pick a new one, and it would drop the genuine case of
+ * a logged-out person opening /panel — the exact case this exists to catch.
+ */
+function worthLogging(request: NextRequest, token: string | null): boolean {
+  if (token) return true;
+  const mode = request.headers.get("sec-fetch-mode");
+  if (mode) return mode === "navigate";
+  return (request.headers.get("accept") ?? "").includes("text/html");
+}
+
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
@@ -72,11 +97,19 @@ export async function updateSession(request: NextRequest) {
      * identical redirect, so without a reason the complaint cannot be answered:
      * a cookie the browser dropped and a session the server expired look exactly
      * the same from the outside. One extra query, only on the failing path.
+     *
+     * Worth logging, though — not every bounce is. The internet points scanners
+     * at /panel/.env and /panel/wp-login all day, and each one produces a
+     * `no-cookie` line in exactly the shape a REAL logged-out person produces.
+     * Left unfiltered, the one line that matters ends up buried in the noise it
+     * was built to be found among.
      */
-    const reason = await sessionFailureReason(token);
-    console.warn(
-      `[auth] bounce to /login reason=${reason} path=${pathname} session=${sessionFingerprint(token)} ua=${(request.headers.get("user-agent") ?? "-").slice(0, 80)}`,
-    );
+    if (worthLogging(request, token)) {
+      const reason = await sessionFailureReason(token);
+      console.warn(
+        `[auth] bounce to /login reason=${reason} path=${pathname} session=${sessionFingerprint(token)} ua=${(request.headers.get("user-agent") ?? "-").slice(0, 80)}`,
+      );
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     // Come back to the book after signing in.
