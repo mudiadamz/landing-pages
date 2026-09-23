@@ -33,7 +33,7 @@ describe("tabel yang hanya boleh disentuh service role", () => {
       it("anon & user login tidak melihat satu baris pun", async () => {
         const v = vals();
         await sql(`insert into ${table} (${cols}) values (${placeholders(v.length)})`, v);
-        const company = await makeUser({ accountType: "company" });
+        const company = await makeUser({ standing: "platform" });
         for (const who of ["anon", { uid: await makeUser() }, { uid: company }] as const) {
           const { rowCount } = await as(who, () => sql(`select 1 from ${table}`));
           expect(rowCount, JSON.stringify(who)).toBe(0);
@@ -104,15 +104,15 @@ describe("lp_contacts — formulir kontak", () => {
       (await as(who, () => sql("select id from lp_contacts where name = 'Rahasia'"))).rowCount;
     expect(await seen("anon")).toBe(0);
     expect(await seen({ uid: await makeUser() })).toBe(0);
-    expect(await seen({ uid: await makeUser({ accountType: "agent" }) })).toBe(0);
-    expect(await seen({ uid: await makeUser({ accountType: "company" }) })).toBe(1);
+    expect(await seen({ uid: await makeUser({ standing: "admin" }) })).toBe(0);
+    expect(await seen({ uid: await makeUser({ standing: "platform" }) })).toBe(1);
   });
 });
 
 describe("lp_product_events — analitik per produk", () => {
   it("pemilik produk membaca eventnya; penjual lain tidak; tidak ada yang menulis lewat API", async () => {
-    const owner = await makeUser({ accountType: "agent" });
-    const rival = await makeUser({ accountType: "agent" });
+    const owner = await makeUser({ standing: "admin" });
+    const rival = await makeUser({ standing: "admin" });
     const p = await makeProduct(owner);
     await sql("insert into lp_product_events (landing_page_id, kind) values ($1, 'view')", [p]);
     const seen = async (uid: string) =>

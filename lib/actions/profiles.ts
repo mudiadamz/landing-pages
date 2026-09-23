@@ -7,9 +7,10 @@ import { createClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { setBusinessContext } from "@/lib/backend/tenant";
 import {
-  normalizeAccountType,
+  managesBusiness,
+  normalizeBusinessRole,
   normalizePublisherStatus,
-  type AccountType,
+  type BusinessRole,
   type PublisherStatus,
 } from "@/lib/profile-utils";
 import { ALL_FEATURE_KEYS, type FeatureKey } from "@/lib/features";
@@ -22,16 +23,17 @@ import { canonicalSiteId, currentSiteId, editingSite } from "@/lib/site-resolve"
 import { sniffBrandImage } from "@/lib/site-brand";
 import { imageMaxBytes, imageMaxLabel } from "@/lib/upload-limit";
 import {
+  DEFAULT_BUSINESS_ROLE_PERMISSIONS,
   DEFAULT_ROLE_PERMISSIONS,
+  normalizeBusinessRolePermissions,
   normalizeRolePermissions,
+  type BusinessRolePermissions,
   type RolePermissions,
 } from "@/lib/role-permissions";
 
 export type Profile = {
   id: string;
   full_name: string | null;
-  /** Jenis akun. Menggantikan `role`; "publisher" bukan jenis akun lagi. */
-  account_type: AccountType;
   /**
    * When they proved they own the address, or null if they never have.
    * Not auth.users.email_confirmed_at — that only means "allowed to sign in"
@@ -42,12 +44,30 @@ export type Profile = {
   avatar_url: string | null;
   /** Platform operator — bypasses business scoping (docs/plans/multi-business-saas.md). */
   is_platform: boolean;
+  /**
+   * The business they belong to and their role in it, or null for an ordinary
+   * buyer. Together with `is_platform` this replaces `account_type` (Fase 5).
+   *
+   * One membership, not a list: the application form allows exactly one, and
+   * every screen that asks "which business is this person's" would otherwise
+   * have to pick. The per-SITE answer is `SiteStanding.businessRole`, which is
+   * the one permissions are decided from.
+   */
+  business_id: string | null;
+  business_role: BusinessRole | null;
 };
 
-/** Company saja. Tanpa cadangan kalau profilnya tidak ada. */
+/**
+ * Platform operator saja — aksi yang tidak boleh didelegasikan ke siapa pun:
+ * buat/hapus situs, hapus akun, ban, ubah kedudukan orang lain.
+ *
+ * Dulu "Company saja" lewat `account_type`. Sejak Fase 5 kedudukan itu ada di
+ * `lp_profiles.is_platform`, jadi ini dan `requirePlatform()` menanyakan hal yang
+ * sama; dua nama dipertahankan karena dua puluhan pemanggil menyebut niat yang
+ * berbeda ("ini aksi platform" vs "ini tampilan lintas business").
+ */
 export async function requireAdmin() {
-  const profile = await getProfile();
-  return profile?.account_type === "company";
+  return !!(await getProfile())?.is_platform;
 }
 
 /** Platform operator saja (docs/plans/multi-business-saas.md) — lintas business. */
@@ -58,43 +78,72 @@ export async function requirePlatform() {
 /**
  * Boleh membuat & menjual produk **di mana pun**.
  *
- * Company dan Agent saja. Seorang publisher tidak lolos di sini karena izinnya
- * terikat pada satu situs — dia lewat `canSellOnCurrentSite(siteId)`. Gate yang
- * tidak menyebut situs tidak bisa menjawab pertanyaan yang jawabannya per situs.
+ * Platform dan siapa pun yang tergabung di sebuah business — termasuk staff,
+ * karena menjual memang pekerjaannya. Seorang publisher tidak lolos di sini
+ * karena izinnya terikat pada satu situs; dia lewat `canSellOnCurrentSite(siteId)`.
+ * Gate yang tidak menyebut situs tidak bisa menjawab pertanyaan yang jawabannya
+ * per situs.
  */
 export async function canSellProducts() {
   const profile = await getProfile();
-  return profile?.account_type === "company" || profile?.account_type === "agent";
+  return !!profile && (profile.is_platform || profile.business_role !== null);
 }
 
 /* -------------------------------------------------------------------------- *
  * Kedudukan di sebuah situs.
  *
- * Tiga tabel menjawab tiga hal berbeda, dan sengaja tidak diringkas jadi satu
- * "role": lp_profiles.account_type = jenis akunnya, lp_site_agents = situs yang
- * dia kelola, lp_site_members = situs tempat dia jadi customer (dan apakah dia
- * publisher di situ). Meringkasnya jadi satu nilai adalah persis yang dulu
- * membuat "publisher" tersimpan di dua tempat sekaligus.
+ * Empat tabel menjawab empat hal berbeda, dan sengaja tidak diringkas jadi satu
+ * "role": lp_profiles.is_platform = operator platform, lp_business_members =
+ * perannya di business PEMILIK situs ini, lp_site_agents = situs yang dia kelola,
+ * lp_site_members = situs tempat dia jadi customer (dan apakah dia publisher di
+ * situ). Meringkasnya jadi satu nilai adalah persis yang dulu membuat "publisher"
+ * tersimpan di dua tempat sekaligus.
  * -------------------------------------------------------------------------- */
 
 /**
  * `cache()` = memoisasi per-request, bukan cache lintas request: ini data satu
  * orang, tidak boleh masuk `unstable_cache` yang dibagi antar pengunjung. Layar
  * panel menanyakannya beberapa kali dalam satu render.
+ *
+ * `businessRole` di-resolve terhadap business PEMILIK SITUS INI, bukan terhadap
+ * business si pemanggil: owner sebuah business tidak otomatis jadi apa-apa di
+ * storefront milik orang lain. Itu perbedaan yang tidak bisa diungkapkan model
+ * `account_type` lama, dan alasan Fase 5 ada.
  */
 const readStanding = cache(
-  async (userId: string, siteId: string, accountType: AccountType): Promise<SiteStanding> => {
-    const empty = { accountType, isAgent: false, isMember: false, isPublisher: false };
+  async (userId: string, siteId: string, isPlatform: boolean): Promise<SiteStanding> => {
+    const empty: SiteStanding = {
+      isPlatform,
+      businessRole: null,
+      isAgent: false,
+      isMember: false,
+      isPublisher: false,
+    };
     if (!userId || !siteId) return empty;
     const admin = createAdminClient();
-    const [{ data: agent }, { data: member }] = await Promise.all([
+    const [{ data: site }, { data: agent }, { data: member }] = await Promise.all([
+      admin.from("lp_sites").select("business_id").eq("id", siteId).maybeSingle(),
       admin.from("lp_site_agents").select("user_id")
         .eq("user_id", userId).eq("site_id", siteId).maybeSingle(),
       admin.from("lp_site_members").select("is_publisher")
         .eq("user_id", userId).eq("site_id", siteId).maybeSingle(),
     ]);
+
+    let businessRole: BusinessRole | null = null;
+    const businessId = (site?.business_id as string | null) ?? null;
+    if (businessId) {
+      const { data: membership } = await admin
+        .from("lp_business_members")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("business_id", businessId)
+        .maybeSingle();
+      businessRole = normalizeBusinessRole(membership?.role);
+    }
+
     return {
-      accountType,
+      isPlatform,
+      businessRole,
       isAgent: !!agent,
       isMember: !!member,
       isPublisher: !!member?.is_publisher,
@@ -113,7 +162,7 @@ export async function currentSiteStanding(siteId?: string): Promise<SiteStanding
   const profile = await getProfile();
   if (!profile) return null;
   const id = siteId ?? (await editingSite()).id;
-  return readStanding(profile.id, id, profile.account_type);
+  return readStanding(profile.id, id, profile.is_platform);
 }
 
 /** Boleh mengurus situs ini — kontennya, setelannya, customer-nya. */
@@ -199,31 +248,91 @@ export async function getRolePermissions(siteId?: string): Promise<RolePermissio
 }
 
 /**
- * Access check for an admin feature. A full admin has everything; otherwise the
- * feature must be granted to the user's role (customer/publisher) at /panel/roles.
+ * Peta fitur per peran BUSINESS (Fase 5) — `{admin, staff}` untuk satu business.
+ *
+ * Tersimpan di kolom `lp_businesses.role_permissions`. Dibaca lewat service-role
+ * karena `lp_businesses` service-role-only sejak Fase 0; gerbangnya ada di
+ * pemanggil, yang hanya pernah menanyakan business yang memiliki situs yang
+ * sedang dibuka orang itu.
+ *
+ * Tidak ter-`unstable_cache`: nilainya per-business dan berubah lewat satu layar
+ * yang jarang dipakai, sementara cache lintas-request untuk data otorisasi adalah
+ * cara yang rapi untuk memberi orang izin yang baru saja dicabut.
  */
-export async function requireFeature(feature: FeatureKey): Promise<boolean> {
-  const profile = await getProfile();
-  if (!profile) return false;
-  if (profile.account_type === "company") return true;
-  const standing = await currentSiteStanding();
-  // Agent di situs yang sedang dilihat punya seluruh fitur untuk situs itu.
-  if (standing?.isAgent) return true;
-  // Sisanya: customer, dan peta izin membedakan customer biasa dari yang sudah
-  // jadi publisher DI SITUS INI.
-  const perms = await getRolePermissions();
-  return perms[standing?.isPublisher ? "publisher" : "customer"].includes(feature);
+const readBusinessRolePermissions = cache(
+  async (businessId: string | null): Promise<BusinessRolePermissions> => {
+    if (!businessId) return DEFAULT_BUSINESS_ROLE_PERMISSIONS;
+    try {
+      const { data } = await createAdminClient()
+        .from("lp_businesses")
+        .select("role_permissions")
+        .eq("id", businessId)
+        .maybeSingle();
+      return normalizeBusinessRolePermissions(data?.role_permissions);
+    } catch {
+      return DEFAULT_BUSINESS_ROLE_PERMISSIONS;
+    }
+  },
+);
+
+/** Peta peran business untuk business yang memiliki situs yang sedang dibuka panel. */
+export async function getBusinessRolePermissions(
+  businessId?: string | null,
+): Promise<BusinessRolePermissions> {
+  const id = businessId === undefined ? (await editingSite()).business_id : businessId;
+  return readBusinessRolePermissions(id ?? null);
 }
 
-/** Feature keys the current user can access (all for admins) — drives the nav. */
-export async function getAccessibleFeatures(): Promise<FeatureKey[]> {
+/**
+ * Fitur yang bisa dicapai orang ini di situs yang sedang dibuka — GABUNGAN dari
+ * setiap jalan masuk yang dia punya, bukan yang pertama cocok.
+ *
+ * Empat jalan, dan seseorang boleh punya lebih dari satu (owner sebuah business
+ * yang juga publisher di storefront lain, misalnya). Mengambil yang pertama
+ * cocok berarti menambah peran bisa MENGURANGI izin, yang tidak akan pernah
+ * ditebak siapa pun.
+ *
+ *   Platform                      semuanya
+ *   owner business pemilik situs  semuanya (owner tidak bisa dikunci dari
+ *                                 business-nya sendiri — lihat lib/role-permissions)
+ *   admin/staff business itu      dari matriks business
+ *   Agent situs itu               semuanya untuk situs itu (delegasi per-situs lama)
+ *   sisanya                       dari matriks situs, baris publisher/customer
+ */
+async function accessibleFeatures(): Promise<FeatureKey[]> {
   const profile = await getProfile();
   if (!profile) return [];
-  if (profile.account_type === "company") return [...ALL_FEATURE_KEYS];
+  if (profile.is_platform) return [...ALL_FEATURE_KEYS];
+
   const standing = await currentSiteStanding();
-  if (standing?.isAgent) return [...ALL_FEATURE_KEYS];
-  const perms = await getRolePermissions();
-  return perms[standing?.isPublisher ? "publisher" : "customer"];
+  if (standing?.businessRole === "owner" || standing?.isAgent) return [...ALL_FEATURE_KEYS];
+
+  const granted = new Set<FeatureKey>();
+
+  if (standing?.businessRole === "admin" || standing?.businessRole === "staff") {
+    const site = await editingSite();
+    const bizPerms = await getBusinessRolePermissions(site.business_id);
+    for (const k of bizPerms[standing.businessRole]) granted.add(k);
+  }
+
+  const sitePerms = await getRolePermissions();
+  for (const k of sitePerms[standing?.isPublisher ? "publisher" : "customer"]) granted.add(k);
+
+  return [...granted];
+}
+
+/**
+ * Access check for an admin feature. The Platform has everything; otherwise the
+ * feature must be granted by one of the matrices — per business (/panel/roles,
+ * kolom Admin/Staff) or per site (kolom Publisher/Customer).
+ */
+export async function requireFeature(feature: FeatureKey): Promise<boolean> {
+  return (await accessibleFeatures()).includes(feature);
+}
+
+/** Feature keys the current user can access — drives the nav. */
+export async function getAccessibleFeatures(): Promise<FeatureKey[]> {
+  return accessibleFeatures();
 }
 
 export const getProfile = cache(async (): Promise<Profile | null> => {
@@ -236,7 +345,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 
   const { data, error } = await db
     .from("lp_profiles")
-    .select("id, full_name, account_type, email_verified_at, avatar_url, is_platform")
+    .select("id, full_name, email_verified_at, avatar_url, is_platform")
     .eq("id", user.id)
     .single();
 
@@ -244,13 +353,25 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   // Carry the platform flag into the request so the DB layer can let Platform
   // bypass business scoping (Fase 2 policies read is_platform()).
   setBusinessContext({ isPlatform: !!data.is_platform });
+
+  // Their business membership — the half of the old account_type that says
+  // "whose". Service-role because lp_business_members is service-role-only; the
+  // gate is that it only ever reads the signed-in user's own row.
+  const { data: membership } = await createAdminClient()
+    .from("lp_business_members")
+    .select("business_id, role")
+    .eq("user_id", data.id)
+    .limit(1);
+  const mine = membership?.[0];
+
   return {
     id: data.id,
     full_name: data.full_name ?? null,
-    account_type: normalizeAccountType(data.account_type),
     email_verified_at: data.email_verified_at ?? null,
     avatar_url: data.avatar_url ?? null,
     is_platform: !!data.is_platform,
+    business_id: (mine?.business_id as string | null) ?? null,
+    business_role: normalizeBusinessRole(mine?.role),
   } as Profile;
 });
 
@@ -347,11 +468,6 @@ export async function applyAsPublisher(
   // Pengajuan sekarang milik pasangan (orang, situs): dia melamar jadi publisher
   // DI SITUS yang sedang dia buka, bukan di seluruh platform.
   const siteId = await currentSiteId();
-  const { data: current } = await db
-    .from("lp_profiles")
-    .select("account_type")
-    .eq("id", user.id)
-    .single();
   const { data: membership } = await createAdminClient()
     .from("lp_site_members")
     .select("is_publisher, publisher_status")
@@ -359,11 +475,15 @@ export async function applyAsPublisher(
     .eq("site_id", siteId)
     .maybeSingle();
 
-  const accountType = normalizeAccountType(current?.account_type);
+  const standing = await currentSiteStanding(siteId);
   const status = normalizePublisherStatus(membership?.publisher_status);
 
-  if (accountType === "company") return { ok: false, error: "Company tidak perlu mengajukan." };
-  if (accountType === "agent") return { ok: false, error: "Agent tidak perlu mengajukan." };
+  // Anyone who may already sell here has nothing to apply FOR. Asked of the
+  // standing at THIS site rather than of a global account type (Fase 5): a
+  // business owner is not automatically a seller on somebody else's storefront.
+  if (standing?.isPlatform) return { ok: false, error: "Platform tidak perlu mengajukan." };
+  if (standing?.businessRole || standing?.isAgent)
+    return { ok: false, error: "Pengelola business tidak perlu mengajukan." };
   if (membership?.is_publisher || status === "approved")
     return { ok: false, error: "Anda sudah jadi publisher di situs ini." };
   if (status === "pending") return { ok: false, error: "Pengajuan Anda sedang ditinjau." };
@@ -432,7 +552,9 @@ export async function applyAsPublisher(
 export type ProfileWithUser = {
   id: string;
   full_name: string | null;
-  account_type: AccountType;
+  /** Kedudukan platform-wide, diturunkan (Fase 5) — bukan lagi satu kolom. */
+  is_platform: boolean;
+  business_role: BusinessRole | null;
   /** Status pengajuan publisher DI SITUS yang sedang dibuka. */
   publisher_status: PublisherStatus;
   email: string | null;
@@ -449,16 +571,17 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
 
   let { data, error } = await db
     .from("lp_profiles")
-    .select("id, full_name, account_type")
+    .select("id, full_name, is_platform")
     .eq("id", user.id)
     .single();
 
   if ((error || !data) && user) {
-    // No account_type: the column's default says 'customer', and a signed-in
-    // user may insert only (id, full_name) — naming any other column here is
-    // refused (20260919010000). That refusal is the point: this is the path an
-    // account without a profile takes, and it must not be a way to pick one's
-    // own account type.
+    // A signed-in user may insert only (id, full_name) — naming any other column
+    // here is refused (20260919010000). That refusal is the point: this is the
+    // path an account without a profile takes, and it must not be a way to hand
+    // oneself a standing. Since Fase 5 there is no account_type to pick at all;
+    // is_platform defaults to false and business membership is a separate table
+    // nobody writes to from here.
     const { error: insertError } = await db.from("lp_profiles").insert({
       id: user.id,
       full_name: user.user_metadata?.full_name ?? null,
@@ -466,7 +589,7 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
     if (!insertError || insertError.code === "23505") {
       const ret = await db
         .from("lp_profiles")
-        .select("id, full_name, account_type")
+        .select("id, full_name, is_platform")
         .eq("id", user.id)
         .single();
       data = ret.data;
@@ -475,10 +598,16 @@ export async function getProfileWithUser(): Promise<ProfileWithUser | null> {
   }
 
   if (error || !data) return null;
+  const { data: membership } = await createAdminClient()
+    .from("lp_business_members")
+    .select("role")
+    .eq("user_id", data.id)
+    .limit(1);
   return {
     id: data.id,
     full_name: data.full_name ?? null,
-    account_type: normalizeAccountType(data.account_type),
+    is_platform: !!data.is_platform,
+    business_role: normalizeBusinessRole(membership?.[0]?.role),
     // Status pengajuan hidup di keanggotaan sekarang, dan keanggotaan itu
     // per-situs — jadi yang dilaporkan adalah status di situs yang sedang dibuka.
     publisher_status: normalizePublisherStatus(

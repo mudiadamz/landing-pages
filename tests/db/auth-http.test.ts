@@ -88,10 +88,10 @@ describe("pendaftaran", () => {
   it("signup langsung bisa dipakai — profil lahir customer, belum terverifikasi, nama tersimpan", async () => {
     const u = await ownUser("Pendaftar");
     const { rows } = await raw.query(
-      "select full_name, account_type, email, email_verified_at from lp_profiles where id = $1",
+      "select full_name, is_platform, email, email_verified_at from lp_profiles where id = $1",
       [u.id],
     );
-    expect(rows[0]).toEqual({ full_name: "Pendaftar", account_type: "customer", email: u.email, email_verified_at: null });
+    expect(rows[0]).toEqual({ full_name: "Pendaftar", is_platform: false, email: u.email, email_verified_at: null });
     const token = await createSession(u.id);
     expect((await validateSession(token))?.id).toBe(u.id);
   });
@@ -231,7 +231,13 @@ describe("tindakan admin", () => {
   it("hapus user: profil & sesi hilang, pembeliannya bertahan tanpa nama", async () => {
     const buyer = await ownUser();
     const seller = await ownUser();
-    await raw.query("update lp_profiles set account_type = 'agent' where id = $1", [seller.id]);
+    // A seller is a business member since Fase 5 — lp_can_sell() reads that.
+    await raw.query(
+      `insert into lp_business_members (business_id, user_id, role)
+       select id, $1, 'admin' from lp_businesses order by created_at limit 1
+       on conflict do nothing`,
+      [seller.id],
+    );
     const p = await raw.query(
       "insert into lp_landing_pages (title, slug, user_id, price) values ('x', $1, $2, 10000) returning id",
       [`p-${crypto.randomUUID().slice(0, 8)}`, seller.id],

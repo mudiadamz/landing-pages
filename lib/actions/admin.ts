@@ -18,7 +18,6 @@ export type CustomerRow = {
   id: string;
   full_name: string | null;
   email: string | null;
-  account_type: string;
   /** Everything they own, revoked included — this is their buying history. */
   purchase_count: number;
   /** How many of those an admin has since taken access to. */
@@ -90,7 +89,7 @@ export async function getCustomers(): Promise<CustomerRow[]> {
   // customer rendered nameless.
   const { data: profiles } = await db
     .from("lp_profiles")
-    .select("id, full_name, email, account_type")
+    .select("id, full_name, email")
     .in("id", buyerIds);
 
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -101,7 +100,6 @@ export async function getCustomers(): Promise<CustomerRow[]> {
       id: uid,
       full_name: p?.full_name ?? null,
       email: p?.email ?? null,
-      account_type: p?.account_type ?? "customer",
       purchase_count: countMap.get(uid) ?? 0,
       revoked_count: revokedMap.get(uid) ?? 0,
       last_purchase_at: lastPurchaseMap.get(uid) ?? null,
@@ -219,7 +217,7 @@ export async function getPublisherApplications(): Promise<PublisherApplication[]
   const isAdmin = await requireFeature("users");
   if (!isAdmin) return [];
 
-  // Pengajuan situs INI saja. Sejak model account_type, pengajuan itu milik
+  // Pengajuan situs INI saja. Pengajuan itu milik
   // pasangan (orang, situs) — daftar lintas situs akan menampilkan orang yang
   // bukan urusan Agent ini.
   const site = await editingSite();
@@ -276,7 +274,7 @@ export async function approvePublisher(userId: string): Promise<{ ok: boolean; e
   if (!userId) return { ok: false, error: "User tidak valid." };
 
   // Persetujuan berlaku DI SATU SITUS: pengajuan itu milik pasangan
-  // (orang, situs) sejak model account_type. Menyetujui di sini tidak membuka
+  // (orang, situs). Menyetujui di sini tidak membuka
   // izin jual di storefront lain, dan memang tidak seharusnya.
   const site = await editingSite();
   const db = createAdminClient();
@@ -344,7 +342,7 @@ export async function rejectPublisher(
     const { error: rmErr } = await db.storage.from("publisher-kyc").remove(paths);
     if (rmErr) console.error("rejectPublisher photo cleanup error:", rmErr);
     else {
-      // The paths live on the membership row since the account_type model —
+      // The paths live on the membership row —
       // the same row updated above. They used to be cleared on lp_profiles,
       // where the columns no longer exist, so the update failed unread and the
       // application kept pointing at photos that had just been deleted.

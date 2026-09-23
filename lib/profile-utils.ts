@@ -1,26 +1,53 @@
-export type AccountType = "company" | "agent" | "customer";
+/**
+ * Siapa seseorang, platform-wide — penerus `lp_profiles.account_type`
+ * (docs/plans/multi-business-saas.md, Fase 5).
+ *
+ * Jenis akun global sudah pensiun. Yang menggantikannya dua fakta yang tersimpan
+ * di tempat yang benar:
+ *
+ *   Platform      `lp_profiles.is_platform` — operator SaaS-nya. Dulu "Company".
+ *   Business role `lp_business_members.role` — owner | admin | staff, PER
+ *                 business. Dulu "Agent", yang sebetulnya selalu berarti
+ *                 "mengelola punya siapa", cuma tidak punya tempat menyimpan
+ *                 "punya siapa"-nya.
+ *   (tidak dua-duanya) pembeli biasa. Dulu "Customer".
+ *
+ * Alasan pindahnya: satu jenis akun global tidak bisa menjawab pertanyaan yang
+ * sebenarnya ditanyakan setiap layar — "boleh apa dia DI SINI". Selama izinnya
+ * global, menambah business kedua berarti setiap Agent jadi Agent di semua
+ * business sekaligus.
+ *
+ * "Publisher" tetap bukan jenis akun: itu flag pada keanggotaan situs
+ * (`lp_site_members.is_publisher`), seperti sebelumnya.
+ */
+
+export type BusinessRole = "owner" | "admin" | "staff";
 
 export type PublisherStatus = "none" | "pending" | "approved" | "rejected";
 
+/** Kedudukan platform-wide seseorang. Dua fakta, bukan satu nilai yang diringkas. */
+export type Standing = {
+  /** Operator platform (`lp_profiles.is_platform`) — lintas business. */
+  isPlatform: boolean;
+  /** Perannya di business yang dia ikuti, atau null kalau dia pembeli biasa. */
+  businessRole: BusinessRole | null;
+};
+
+const ROLES = new Set<string>(["owner", "admin", "staff"]);
+
 /**
- * Jenis akun: **Company**, **Agent**, atau **Customer**.
+ * Peran business yang dikenali, atau null.
  *
- * "Publisher" tidak ada di sini, dan itu perubahan arti, bukan penghapusan
- * nilai: publisher adalah seorang Customer yang boleh menjual **di sebuah
- * situs** — jadi ia flag pada keanggotaan (`lp_site_members.is_publisher`),
- * bukan jenis akun. Orang yang sama bisa publisher di satu storefront dan
- * pembeli biasa di storefront lain.
- *
- * Nilai lama masih dibaca: `'admin'`/`'company'` → Company, `'publisher'` →
- * Customer (izin jualnya ada di keanggotaan, bukan di sini). Baris yang entah
- * bagaimana kembali berisi nilai lama harus tetap dibaca dengan benar, bukan
- * diam-diam kehilangan tingkatannya.
+ * Nilai lama ikut dibaca supaya baris yang belum sempat dimigrasi tidak
+ * diam-diam kehilangan tingkatannya: `company` → owner, `agent` → admin. Itu
+ * pemetaan yang sama dengan yang dipakai backfill Fase 0/5.
  */
-export function normalizeAccountType(value: unknown): AccountType {
+export function normalizeBusinessRole(value: unknown): BusinessRole | null {
   const s = String(value ?? "").trim().toLowerCase();
-  if (s === "company" || s === "admin") return "company";
-  if (s === "agent") return "agent";
-  return "customer";
+  if (ROLES.has(s)) return s as BusinessRole;
+  if (s === "company") return "owner";
+  if (s === "agent") return "admin";
+  return null;
 }
 
 export function normalizePublisherStatus(value: unknown): PublisherStatus {
@@ -29,9 +56,16 @@ export function normalizePublisherStatus(value: unknown): PublisherStatus {
   return "none";
 }
 
-/** Nama yang ditampilkan untuk sebuah jenis akun. */
-export function accountTypeLabel(type: AccountType): string {
-  if (type === "company") return "Company";
-  if (type === "agent") return "Agent";
+/** Boleh mengurus business-nya: owner & admin. Staff bekerja di dalamnya, tidak mengaturnya. */
+export function managesBusiness(role: BusinessRole | null): boolean {
+  return role === "owner" || role === "admin";
+}
+
+/** Nama yang ditampilkan untuk sebuah kedudukan. */
+export function standingLabel(s: Standing): string {
+  if (s.isPlatform) return "Platform";
+  if (s.businessRole === "owner") return "Owner";
+  if (s.businessRole === "admin") return "Admin";
+  if (s.businessRole === "staff") return "Staff";
   return "Customer";
 }

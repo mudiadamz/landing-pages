@@ -3,8 +3,14 @@
 import { useState, useTransition } from "react";
 import { SaveBar } from "@/components/ui/save-bar";
 import { updateRolePermissions } from "@/lib/actions/site-settings";
+import { updateBusinessRolePermissions } from "@/lib/actions/business-money";
 import { type FeatureKey } from "@/lib/features";
-import type { ConfigurableRole, RolePermissions } from "@/lib/role-permissions";
+import type {
+  BusinessConfigurableRole,
+  BusinessRolePermissions,
+  ConfigurableRole,
+  RolePermissions,
+} from "@/lib/role-permissions";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
 
@@ -13,11 +19,17 @@ import type { MessageKey } from "@/lib/i18n";
  * delegatable ones (audit: the rest were invisible, so it was unclear whether
  * they were always-locked or always-open).
  *
+ * Six columns since Fase 5, on two axes that are saved to two different places:
+ *
+ *   Platform, Owner   fixed ✓ — neither can be locked out of what they operate
+ *   Admin, Staff      per BUSINESS      → lp_businesses.role_permissions
+ *   Publisher, Customer  per SITE       → lp_site_settings "role_permissions"
+ *
  * kind decides how a row reads:
  *   everyone     every account has it (Dashboard, purchases, favourites)
- *   seller       anyone who can sell (Company, Agent, verified publisher)
- *   delegatable  Company & Agent always; Publisher/Customer are the toggles
- *   company      Company only, never delegated (the locked rows)
+ *   seller       anyone who can sell (Platform, business members, verified publisher)
+ *   delegatable  Platform & Owner always; the other four are toggles
+ *   company      Platform only, never delegated (the locked rows)
  */
 type Kind = "everyone" | "seller" | "delegatable" | "company";
 type Row = { labelKey: MessageKey; kind: Kind; feature?: FeatureKey };
@@ -51,8 +63,6 @@ const MATRIX: Row[] = [
   { labelKey: "panel.navStorage", kind: "company" },
 ];
 
-const CONFIGURABLE: ConfigurableRole[] = ["publisher", "customer"];
-
 function FixedYes() {
   return (
     <span className="inline-flex text-[var(--primary)]" title="✓">
@@ -66,40 +76,84 @@ function FixedNo() {
   return <span className="text-[var(--muted)]/50" aria-hidden>—</span>;
 }
 
-export function RolesForm({ initial }: { initial: RolePermissions }) {
+type Col = "platform" | "owner" | BusinessConfigurableRole | ConfigurableRole;
+
+const BUSINESS_COLS: Col[] = ["admin", "staff"];
+const isBusinessCol = (c: Col): c is BusinessConfigurableRole =>
+  (BUSINESS_COLS as string[]).includes(c);
+
+export function RolesForm({
+  initial,
+  initialBusiness,
+  hasBusiness,
+}: {
+  initial: RolePermissions;
+  initialBusiness: BusinessRolePermissions;
+  /** No business owns this storefront → the Admin/Staff columns have nowhere to save. */
+  hasBusiness: boolean;
+}) {
   const t = useT();
   const [perms, setPerms] = useState<RolePermissions>(initial);
+  const [bizPerms, setBizPerms] = useState<BusinessRolePermissions>(initialBusiness);
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ ok?: boolean; error?: string } | null>(null);
-  const dirty = JSON.stringify(perms) !== JSON.stringify(initial);
+  const siteDirty = JSON.stringify(perms) !== JSON.stringify(initial);
+  const bizDirty = JSON.stringify(bizPerms) !== JSON.stringify(initialBusiness);
+  const dirty = siteDirty || bizDirty;
 
-  function toggle(role: ConfigurableRole, key: FeatureKey) {
-    setPerms((p) => {
-      const has = p[role].includes(key);
-      return { ...p, [role]: has ? p[role].filter((k) => k !== key) : [...p[role], key] };
-    });
+  function toggle(col: Col, key: FeatureKey) {
     setStatus(null);
+    const flip = (list: FeatureKey[]) =>
+      list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
+    if (isBusinessCol(col)) setBizPerms((p) => ({ ...p, [col]: flip(p[col]) }));
+    else setPerms((p) => ({ ...p, [col]: flip(p[col as ConfigurableRole]) }));
   }
 
-  // What each column shows for a row. Only delegatable × {publisher,customer} is
-  // an editable checkbox; everything else is a fixed ✓ / — that explains itself.
-  function cell(row: Row, col: "company" | "agent" | "publisher" | "customer") {
+  function checked(col: Col, key: FeatureKey): boolean {
+    return isBusinessCol(col)
+      ? bizPerms[col].includes(key)
+      : perms[col as ConfigurableRole].includes(key);
+  }
+
+  /**
+   * Save only what changed. Two actions because two stores — and sending an
+   * unchanged business matrix from a storefront with no business would fail for
+   * a change the user did not make.
+   */
+  function save() {
+    startTransition(async () => {
+      if (siteDirty) {
+        const res = await updateRolePermissions(perms);
+        if (!res.ok) return setStatus(res);
+      }
+      if (bizDirty) {
+        const res = await updateBusinessRolePermissions(bizPerms);
+        if (!res.ok) return setStatus(res);
+      }
+      setStatus({ ok: true });
+    });
+  }
+
+  // What each column shows for a row. Only delegatable × the four editable
+  // columns is a checkbox; everything else is a fixed ✓ / — that explains itself.
+  function cell(row: Row, col: Col) {
     switch (row.kind) {
       case "everyone":
         return <FixedYes />;
       case "seller":
         return col === "customer" ? <FixedNo /> : <FixedYes />;
       case "company":
-        return col === "company" ? <FixedYes /> : <FixedNo />;
+        return col === "platform" ? <FixedYes /> : <FixedNo />;
       case "delegatable":
-        if (col === "company" || col === "agent") return <FixedYes />;
+        if (col === "platform" || col === "owner") return <FixedYes />;
         return (
           <input
             type="checkbox"
-            checked={perms[col].includes(row.feature!)}
+            checked={checked(col, row.feature!)}
+            disabled={isBusinessCol(col) && !hasBusiness}
             onChange={() => toggle(col, row.feature!)}
             aria-label={`${t(row.labelKey)} — ${col}`}
-            className="h-5 w-5 accent-[var(--primary)]"
+            className="h-5 w-5 accent-[var(--primary)] disabled:opacity-40"
           />
         );
     }
@@ -113,21 +167,24 @@ export function RolesForm({ initial }: { initial: RolePermissions }) {
     return null;
   }
 
-  const cols: { key: "company" | "agent" | "publisher" | "customer"; label: string }[] = [
-    { key: "company", label: "Company" },
-    { key: "agent", label: "Agent" },
-    { key: "publisher", label: "Publisher" },
-    { key: "customer", label: "Customer" },
+  const cols: { key: Col; label: string }[] = [
+    { key: "platform", label: t("panel.rolePlatform") },
+    { key: "owner", label: t("panel.roleOwner") },
+    { key: "admin", label: t("panel.roleBizAdmin") },
+    { key: "staff", label: t("panel.roleStaff") },
+    { key: "publisher", label: t("panel.rolePublisher") },
+    { key: "customer", label: t("panel.roleCustomer") },
   ];
 
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800/50 dark:bg-amber-900/15 dark:text-amber-200">
         {t("panel.roleLegend")}
+        {!hasBusiness && <span className="block mt-1">{t("panel.roleNoBusiness")}</span>}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
-        <table className="w-full min-w-[560px] text-sm">
+        <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
               <th className="px-4 py-3 font-medium">{t("panel.roleColFeature")}</th>
@@ -173,7 +230,7 @@ export function RolesForm({ initial }: { initial: RolePermissions }) {
       <SaveBar
         dirty={dirty}
         saving={pending}
-        onSave={() => startTransition(async () => setStatus(await updateRolePermissions(perms)))}
+        onSave={save}
         saveLabel={t("common.save")}
         savingLabel={t("common.saving")}
         unsavedLabel={t("common.unsavedChanges")}

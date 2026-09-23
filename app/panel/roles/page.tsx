@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
-import { requireSiteAdmin, getRolePermissions } from "@/lib/actions/profiles";
+import {
+  requireSiteAdmin,
+  getRolePermissions,
+  getBusinessRolePermissions,
+} from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
 import { RolesForm } from "./roles-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
@@ -18,7 +22,10 @@ export default async function RolesPage() {
   ]);
   if (!isSiteAdmin) redirect("/panel");
 
-  const perms = await getRolePermissions(site.id);
+  const [perms, bizPerms] = await Promise.all([
+    getRolePermissions(site.id),
+    getBusinessRolePermissions(site.business_id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -31,7 +38,11 @@ export default async function RolesPage() {
         <span className="text-foreground">{site.host}</span>
       </p>
 
-      <RolesForm initial={perms} />
+      <RolesForm
+        initial={perms}
+        initialBusiness={bizPerms}
+        hasBusiness={!!site.business_id}
+      />
     </div>
   );
 }

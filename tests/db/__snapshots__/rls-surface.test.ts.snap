@@ -258,9 +258,7 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ 1`] = `
     "policyname": "contacts_select_admin",
     "roles": "authenticated",
     "tablename": "lp_contacts",
-    "using": "(EXISTS ( SELECT 1
-   FROM lp_profiles
-  WHERE ((lp_profiles.id = auth.uid()) AND (lp_profiles.account_type = 'company'::text))))",
+    "using": "(lp_get_my_profile_role() = 'company'::text)",
   },
   {
     "check": "",
@@ -395,20 +393,20 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ 1`] = `
     "using": "(auth.uid() = user_id)",
   },
   {
-    "check": "",
-    "cmd": "SELECT",
-    "policyname": "Admin can read customer profiles",
-    "roles": "public",
-    "tablename": "lp_profiles",
-    "using": "((lp_get_my_profile_role() = 'company'::text) AND (account_type = 'customer'::text))",
-  },
-  {
     "check": "(auth.uid() = id)",
     "cmd": "INSERT",
     "policyname": "Enable insert for authenticated users",
     "roles": "public",
     "tablename": "lp_profiles",
     "using": "",
+  },
+  {
+    "check": "",
+    "cmd": "SELECT",
+    "policyname": "Platform reads non-platform profiles",
+    "roles": "public",
+    "tablename": "lp_profiles",
+    "using": "((lp_get_my_profile_role() = 'company'::text) AND (NOT is_platform))",
   },
   {
     "check": "",

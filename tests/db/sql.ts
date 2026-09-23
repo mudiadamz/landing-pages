@@ -115,7 +115,28 @@ export async function sqlState(fn: () => Promise<unknown>): Promise<string | nul
 
 export const uniq = () => randomUUID().slice(0, 8);
 
-export type AccountType = "company" | "agent" | "customer";
+/**
+ * Where a test user stands (docs/plans/multi-business-saas.md, Fase 5).
+ *
+ * `account_type` is gone; a standing is now TWO facts in two tables, so the
+ * fixture writes both. "platform" is `lp_profiles.is_platform`; the three
+ * business roles are rows in `lp_business_members` against the default business
+ * the Fase 0 backfill created. "customer" is the absence of both.
+ */
+export type Standing = "platform" | "owner" | "admin" | "staff" | "customer";
+
+/** The one business every migrated database has. Tests attach memberships to it. */
+export async function defaultBusiness(): Promise<string> {
+  const { rows } = await sql<{ id: string }>(
+    "select id from public.lp_businesses order by created_at limit 1",
+  );
+  if (rows[0]) return rows[0].id;
+  const { rows: made } = await sql<{ id: string }>(
+    "insert into public.lp_businesses (name, slug) values ('Uji', $1) returning id",
+    [`b-${uniq()}`],
+  );
+  return made[0].id;
+}
 
 /**
  * A user, created the way GoTrue creates one: an insert into auth.users, which
@@ -123,7 +144,13 @@ export type AccountType = "company" | "agent" | "customer";
  * that makes a user is also, quietly, a test that signup works.
  */
 export async function makeUser(
-  opts: { accountType?: AccountType; provider?: "email" | "google"; fullName?: string } = {},
+  opts: {
+    standing?: Standing;
+    /** Attach the business role to this business instead of the default one. */
+    businessId?: string;
+    provider?: "email" | "google";
+    fullName?: string;
+  } = {},
 ): Promise<string> {
   const { rows } = await sql<{ id: string }>(
     `insert into auth.users
@@ -139,8 +166,16 @@ export async function makeUser(
     ],
   );
   const id = rows[0].id;
-  if (opts.accountType && opts.accountType !== "customer") {
-    await sql("update public.lp_profiles set account_type = $2 where id = $1", [id, opts.accountType]);
+  const standing = opts.standing ?? "customer";
+  if (standing === "platform") {
+    await sql("update public.lp_profiles set is_platform = true where id = $1", [id]);
+  } else if (standing !== "customer") {
+    const biz = opts.businessId ?? (await defaultBusiness());
+    await sql(
+      `insert into public.lp_business_members (business_id, user_id, role) values ($1, $2, $3)
+       on conflict (business_id, user_id) do update set role = excluded.role`,
+      [biz, id, standing],
+    );
   }
   return id;
 }

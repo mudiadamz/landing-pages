@@ -7,7 +7,13 @@ import { createAdminClient } from "@/lib/db/admin";
 import { normalizeBankCode } from "@/lib/bank-codes";
 import { disburse, disbursementConfig } from "@/lib/disbursement";
 import { businessBalances, MIN_PAYOUT } from "@/lib/ledger";
-import { requirePlatform } from "./profiles";
+import { managesBusiness } from "@/lib/profile-utils";
+import {
+  normalizeBusinessRolePermissions,
+  type BusinessRolePermissions,
+} from "@/lib/role-permissions";
+import { editingSite } from "@/lib/site-resolve";
+import { currentSiteStanding, requirePlatform } from "./profiles";
 
 /**
  * The money side of a business — payouts, refunds, KYC (docs/plans/multi-business-saas.md,
@@ -495,5 +501,41 @@ export async function submitBusinessKyc(input: KycInput): Promise<{ ok: boolean;
   }
   revalidatePath("/panel/business");
   revalidatePath(`/panel/platform/${businessId}`);
+  return { ok: true };
+}
+
+/**
+ * Save the per-business feature matrix (docs/plans/multi-business-saas.md, Fase 5).
+ *
+ * The business is taken from the storefront the panel is editing, never from the
+ * caller — the whole point of the phase is that "which business" is a property of
+ * what you are looking at, not of who you are.
+ *
+ * Gate: Platform, or an owner/admin of THAT business. Deliberately not
+ * `requireFeature` — handing out access is not itself a delegatable feature, the
+ * same line /panel/roles already draws for the per-site matrix.
+ */
+export async function updateBusinessRolePermissions(
+  perms: BusinessRolePermissions,
+): Promise<{ ok: boolean; error?: string }> {
+  const site = await editingSite();
+  if (!site.business_id) return { ok: false, error: "Situs ini belum terhubung ke business." };
+
+  const standing = await currentSiteStanding(site.id);
+  if (!standing?.isPlatform && !managesBusiness(standing?.businessRole ?? null)) {
+    return { ok: false, error: "Akses ditolak." };
+  }
+
+  const clean = normalizeBusinessRolePermissions(perms);
+  const { error } = await createAdminClient()
+    .from("lp_businesses")
+    .update({ role_permissions: clean, updated_at: new Date().toISOString() })
+    .eq("id", site.business_id);
+  if (error) {
+    console.error("updateBusinessRolePermissions error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  // The nav is drawn from these, so the whole panel shell has to be redrawn.
+  revalidatePath("/panel", "layout");
   return { ok: true };
 }

@@ -129,7 +129,13 @@ export const id = {
   "panel.tabOther": "Link lainnya",
 
   /* panel: sidebar */
-  "panel.roleAdmin": "Company",
+  /* Kedudukan sejak Fase 5: Platform, lalu peran di sebuah business.
+     "Agent" bertahan karena lp_site_agents masih ada — itu delegasi
+     per-situs di dalam sebuah business, bukan jenis akun. */
+  "panel.rolePlatform": "Platform",
+  "panel.roleOwner": "Owner",
+  "panel.roleBizAdmin": "Admin",
+  "panel.roleStaff": "Staff",
   "panel.roleAgent": "Agent",
   "panel.rolePublisher": "Publisher",
   "panel.roleCustomer": "Customer",
@@ -1142,8 +1148,9 @@ export const id = {
   "panel.updateReview": "Update review",
   "panel.sendReview": "Kirim review",
   "panel.roleColFeature": "Fitur",
-  "panel.roleLegend": "Company & Agent selalu punya semua fitur situs. Baris terkunci tidak bisa didelegasikan.",
-  "panel.roleReasonCompany": "Hanya Company",
+  "panel.roleLegend": "Platform & Owner selalu punya semua fitur. Admin & Staff diatur per business; Publisher & Customer per situs. Baris terkunci tidak bisa didelegasikan.",
+  "panel.roleNoBusiness": "Situs ini belum terhubung ke business, jadi kolom Admin & Staff belum bisa diatur.",
+  "panel.roleReasonCompany": "Hanya Platform",
   "panel.roleReasonEveryone": "Semua akun",
   "panel.roleReasonSeller": "Penjual",
   "panel.showConfirm":

@@ -23,7 +23,7 @@ describe("trigger penghitung — jalan walau pemicunya tak boleh menulis produk"
   // would silently stop counting.
 
   it("sold_count naik saat pembelian masuk, turun saat dihapus, tidak di bawah nol", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const buyer = await makeUser();
     const p = await makeProduct(seller, { isFree: true });
     await as({ uid: buyer }, () =>
@@ -40,7 +40,7 @@ describe("trigger penghitung — jalan walau pemicunya tak boleh menulis produk"
   });
 
   it("mencabut akses TIDAK mengurangi sold_count — penjualannya tetap terjadi", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const p = await makeProduct(seller);
     const purchase = await makePurchase(await makeUser(), p);
     await sql("update lp_purchases set revoked_at = now() where id = $1", [purchase]);
@@ -48,7 +48,7 @@ describe("trigger penghitung — jalan walau pemicunya tak boleh menulis produk"
   });
 
   it("like_count mengikuti like & batal like", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makeProduct(seller);
     await as({ uid: me }, () =>
@@ -60,7 +60,7 @@ describe("trigger penghitung — jalan walau pemicunya tak boleh menulis produk"
   });
 
   it("rating = rata-rata ulasan (2 desimal), ikut berubah saat ulasan diubah & dihapus", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const p = await makeProduct(seller);
     const a = await makeUser();
     const b = await makeUser();
@@ -80,7 +80,7 @@ describe("trigger penghitung — jalan walau pemicunya tak boleh menulis produk"
   });
 
   it("updated_at bergerak saat produk diubah", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const p = await makeProduct(seller);
     await sql("update lp_landing_pages set updated_at = now() - interval '1 day' where id = $1", [p]);
     await sql("update lp_landing_pages set title = 'baru' where id = $1", [p]);
@@ -94,7 +94,7 @@ describe("trigger penghitung — jalan walau pemicunya tak boleh menulis produk"
 
 describe("RPC", () => {
   it("lp_increment_view: pengunjung anonim menaikkan view_count — dan hanya itu", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const p = await makeProduct(seller);
     const { rows: before } = await sql<{ slug: string; title: string }>(
       "select slug, title from lp_landing_pages where id = $1",
@@ -146,7 +146,7 @@ describe("RPC", () => {
 describe("constraint yang menyimpan aturan bisnis", () => {
 
   it("satu pembelian per orang per produk — callback Duitku yang diulang tidak menggandakan", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const buyer = await makeUser();
     const p = await makeProduct(seller);
     await makePurchase(buyer, p);
@@ -163,7 +163,7 @@ describe("constraint yang menyimpan aturan bisnis", () => {
   });
 
   it("nomor invoice unik bila ada; banyak pembelian boleh tanpa nomor", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const inv = `INV-${uniq()}`;
     const buy = (uid: string, pid: string, invoice: string | null) =>
       sql("insert into lp_purchases (user_id, landing_page_id, amount, invoice_number) values ($1, $2, 0, $3)", [
@@ -207,7 +207,7 @@ describe("constraint yang menyimpan aturan bisnis", () => {
   });
 
   it("CHECK: rating ulasan 1..5", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const buyer = await makeUser();
     const p = await makeProduct(seller);
     expect(
@@ -222,7 +222,7 @@ describe("constraint yang menyimpan aturan bisnis", () => {
     ["preview_type terdaftar", "preview_type = 'video'"],
     ["purchase_type terdaftar", "purchase_type = 'barter'"],
   ])("CHECK produk: %s", async (_name, set) => {
-    const p = await makeProduct(await makeUser({ accountType: "agent" }));
+    const p = await makeProduct(await makeUser({ standing: "admin" }));
     expect(await sqlState(() => sql(`update lp_landing_pages set ${set} where id = $1`, [p]))).toBe("23514");
   });
 
@@ -244,12 +244,16 @@ describe("constraint yang menyimpan aturan bisnis", () => {
     ).toBe("23514");
   });
 
-  it("CHECK: locale situs hanya id / en; jenis akun hanya tiga", async () => {
+  it("CHECK: locale situs hanya id / en; peran business hanya tiga", async () => {
     const site = await makeSite();
     expect(await sqlState(() => sql("update lp_sites set locale = 'fr' where id = $1", [site]))).toBe("23514");
-    const u = await makeUser();
+    // Sejak Fase 5 kosakata peran dijaga di lp_business_members, bukan di
+    // lp_profiles.account_type — kolom itu sudah tidak ada.
+    const u = await makeUser({ standing: "admin" });
     expect(
-      await sqlState(() => sql("update lp_profiles set account_type = 'publisher' where id = $1", [u])),
+      await sqlState(() =>
+        sql("update lp_business_members set role = 'publisher' where user_id = $1", [u]),
+      ),
     ).toBe("23514");
   });
 });
@@ -263,7 +267,7 @@ describe("menghapus user — ke mana datanya pergi", () => {
   const deleteUser = (id: string) => sql("delete from auth.users where id = $1", [id]);
 
   it("pembeli dihapus: pembelian & pesanan paket TETAP ADA tanpa nama — omzet tidak berubah", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const buyer = await makeUser();
     const p = await makeProduct(seller);
     const purchase = await makePurchase(buyer, p, 75_000);
@@ -277,7 +281,7 @@ describe("menghapus user — ke mana datanya pergi", () => {
   });
 
   it("data pribadinya ikut pergi: profil, ulasan, like, chat, keanggotaan", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makeProduct(seller);
     await makePurchase(me, p);
@@ -301,7 +305,7 @@ describe("menghapus user — ke mana datanya pergi", () => {
     // This is why DELETE /api/admin/users refuses an account that still owns
     // products. Without that guard, deleting one seller erases other people's
     // purchase records — and their access to what they paid for.
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const buyer = await makeUser();
     const p = await makeProduct(seller);
     const purchase = await makePurchase(buyer, p);

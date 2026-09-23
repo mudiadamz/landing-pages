@@ -143,8 +143,8 @@ export default async function PanelLayout({
         dangerouslySetInnerHTML={{ __html: paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
       />
       <PanelSidebar
-        accountType={profile?.account_type}
         isPlatform={!!profile?.is_platform}
+        businessRole={profile?.business_role ?? null}
         canSell={!!canSell}
         canApplyBusiness={canApplyBusiness}
         isBusinessManager={isBusinessManager}
@@ -158,7 +158,8 @@ export default async function PanelLayout({
         <PanelTopbar
           displayName={displayName}
           email={user?.email ?? null}
-          accountType={profile?.account_type}
+          isPlatform={!!profile?.is_platform}
+          businessRole={profile?.business_role ?? null}
           avatarUrl={profile?.avatar_url ?? ""}
           brand={brand}
           locale={locale}

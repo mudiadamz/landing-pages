@@ -10,8 +10,7 @@ import { usePanelChrome } from "@/components/panel-chrome";
 import { useT } from "@/lib/i18n/client";
 import type { Locale } from "@/lib/i18n";
 import type { SiteBrand } from "@/lib/site-brand";
-
-type AccountType = "company" | "agent" | "customer";
+import type { BusinessRole } from "@/lib/profile-utils";
 
 /**
  * The panel's top bar, in the content pane rather than across the whole window.
@@ -29,14 +28,17 @@ type AccountType = "company" | "agent" | "customer";
 export function PanelTopbar({
   displayName,
   email,
-  accountType,
+  isPlatform = false,
+  businessRole = null,
   avatarUrl = "",
   brand,
   locale,
 }: {
   displayName: string;
   email: string | null;
-  accountType?: AccountType;
+  isPlatform?: boolean;
+  /** Peran di business yang dia ikuti, atau null (Fase 5). */
+  businessRole?: BusinessRole | null;
   avatarUrl?: string;
   brand: SiteBrand;
   locale: Locale;
@@ -65,12 +67,17 @@ export function PanelTopbar({
     };
   }, [menuOpen]);
 
-  const roleLabel =
-    accountType === "company"
-      ? t("panel.roleAdmin")
-      : accountType === "agent"
-        ? t("panel.roleAgent")
-        : t("panel.roleCustomer");
+  // Satu kedudukan yang ditampilkan, urut dari yang paling menentukan: Platform
+  // menang atas peran business, dan orang tanpa keduanya adalah pembeli.
+  const roleLabel = isPlatform
+    ? t("panel.rolePlatform")
+    : businessRole === "owner"
+      ? t("panel.roleOwner")
+      : businessRole === "admin"
+        ? t("panel.roleBizAdmin")
+        : businessRole === "staff"
+          ? t("panel.roleStaff")
+          : t("panel.roleCustomer");
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--card)] px-3 sm:px-4">

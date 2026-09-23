@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/db/server";
 import { getSiteContent } from "@/lib/actions/site-settings";
-import { normalizeAccountType, normalizePublisherStatus } from "@/lib/profile-utils";
+import { normalizePublisherStatus } from "@/lib/profile-utils";
+import { currentSiteStanding } from "@/lib/actions/profiles";
 import { createAdminClient } from "@/lib/db/admin";
 import { currentSiteId } from "@/lib/site-resolve";
 import { PublisherApplyForm } from "./apply-form";
@@ -30,16 +31,14 @@ export default async function PublisherPage() {
   } = await db.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: row }, content] = await Promise.all([
-    db
-      .from("lp_profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single(),
-    getSiteContent(),
-  ]);
-
-  const accountType = normalizeAccountType(row?.account_type);
+  // Kedudukan DI SITUS INI (Fase 5): pengelola business pemilik situs ini tidak
+  // perlu melamar — tapi pengelola business LAIN tetap perlu, dan model
+  // account_type lama tidak bisa membedakan keduanya.
+  const [siteStanding, content] = await Promise.all([currentSiteStanding(), getSiteContent()]);
+  const standing = {
+    isPlatform: !!siteStanding?.isPlatform,
+    businessRole: siteStanding?.businessRole ?? null,
+  };
   // Pengajuan ini milik pasangan (orang, situs): statusnya dibaca dari
   // keanggotaan di situs yang sedang dibuka, bukan dari profilnya.
   const { data: membership } = await createAdminClient()
@@ -60,7 +59,7 @@ export default async function PublisherPage() {
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm sm:p-6">
         <PublisherApplyForm
-          accountType={accountType}
+          standing={standing}
           status={status}
           rejectNote={membership?.publisher_reject_note ?? null}
           termsHeading={content.publisherTermsHeading}

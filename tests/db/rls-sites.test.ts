@@ -12,7 +12,7 @@ import { as, denied, makeSite, makeUser, sql, uniq } from "./sql";
  */
 
 const agentOf = async (siteId: string) => {
-  const uid = await makeUser({ accountType: "agent" });
+  const uid = await makeUser({ standing: "admin" });
   await sql("insert into lp_site_agents (site_id, user_id) values ($1, $2)", [siteId, uid]);
   return uid;
 };
@@ -34,7 +34,7 @@ describe("lp_site_settings — siapa boleh menyimpan setelan situs", () => {
   // content, legal, hiring, custom JS, role permissions) failed on save.
 
   it("Company menyimpan setelan situs mana pun", async () => {
-    const company = await makeUser({ accountType: "company" });
+    const company = await makeUser({ standing: "platform" });
     expect((await saveSetting(company, await makeSite())).rowCount).toBe(1);
   });
 
@@ -61,7 +61,7 @@ describe("lp_site_settings — siapa boleh menyimpan setelan situs", () => {
 
   it("jenis akun 'agent' saja tidak cukup — harus terdaftar sebagai Agent situs itu", async () => {
     const site = await makeSite();
-    const agentElsewhere = await makeUser({ accountType: "agent" });
+    const agentElsewhere = await makeUser({ standing: "admin" });
     await denied(() => saveSetting(agentElsewhere, site));
   });
 
@@ -88,7 +88,7 @@ describe("lp_sites — domain & branding hanya Company", () => {
   // is_canonical or re-pointing host would take over routing for every domain.
 
   it("Company membuat, mengubah, dan menghapus situs", async () => {
-    const company = await makeUser({ accountType: "company" });
+    const company = await makeUser({ standing: "platform" });
     const site = await makeSite();
     const ins = await as({ uid: company }, () =>
       sql("insert into lp_sites (host, name) values ($1, 'Baru')", [`${uniq()}.test.local`]),
@@ -118,8 +118,8 @@ describe("lp_sites — domain & branding hanya Company", () => {
 
 describe("lp_landing_page_categories — katalog bersama, hanya Company", () => {
   it("Company mengelola; Agent & customer tidak; semua membaca", async () => {
-    const company = await makeUser({ accountType: "company" });
-    const agent = await makeUser({ accountType: "agent" });
+    const company = await makeUser({ standing: "platform" });
+    const agent = await makeUser({ standing: "admin" });
     const slug = `c-${uniq()}`;
     const ins = (uid: string, s: string) =>
       as({ uid }, () => sql("insert into lp_landing_page_categories (name, slug) values ('Kat', $1)", [s]));
@@ -143,7 +143,7 @@ describe("lp_pages — halaman editorial", () => {
       sql<{ slug: string }>("select slug from lp_pages where site_id = $1 order by slug", [site]),
     );
     expect(rows.map((r) => r.slug)).toEqual(["tentang"]);
-    const company = await makeUser({ accountType: "company" });
+    const company = await makeUser({ standing: "platform" });
     await denied(() =>
       as({ uid: company }, () =>
         sql("insert into lp_pages (site_id, slug, title) values ($1, 'x', 'x')", [site]),
@@ -186,7 +186,7 @@ describe("lp_site_members & lp_site_agents — keanggotaan", () => {
   });
 
   it("TIDAK bisa mendaftarkan dirinya sebagai Agent situs mana pun", async () => {
-    const me = await makeUser({ accountType: "agent" });
+    const me = await makeUser({ standing: "admin" });
     // The fixture is made OUTSIDE as(): made inside, the site insert itself
     // would be refused and the test would pass for the wrong reason.
     const site = await makeSite();

@@ -29,39 +29,39 @@ describe("lp_purchases — mengambil produk", () => {
   // /rest/v1/lp_purchases, handed over any paid product.
 
   it("boleh mengambil produk gratis (is_free)", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const { rowCount } = await claim(me, await makeProduct(seller, { isFree: true, price: 50_000 }));
     expect(rowCount).toBe(1);
   });
 
   it("boleh mengambil produk yang harganya 0 atau kosong", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     expect((await claim(me, await makeProduct(seller, { price: 0 }))).rowCount).toBe(1);
     expect((await claim(me, await makeProduct(seller, { price: null }))).rowCount).toBe(1);
   });
 
   it("TIDAK boleh mengambil produk berbayar", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     await denied(async () => claim(me, await makeProduct(seller, { price: 50_000 })));
   });
 
   it("TIDAK boleh mengambil produk berbayar yang sedang diskon", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     await denied(async () => claim(me, await makeProduct(seller, { price: 50_000, priceDiscount: 10_000 })));
   });
 
   it("TIDAK boleh mencatat nominal untuk produk gratis (omzet palsu di statistik penjual)", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     await denied(async () => claim(me, await makeProduct(seller, { isFree: true }), 999_000));
   });
 
   it("TIDAK boleh mengambil atas nama orang lain", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const other = await makeUser();
     const free = await makeProduct(seller, { isFree: true });
@@ -73,7 +73,7 @@ describe("lp_purchases — mengambil produk", () => {
   });
 
   it("anon tidak bisa mengambil apa pun", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const free = await makeProduct(seller, { isFree: true });
     await denied(() =>
       as("anon", () => sql("insert into lp_purchases (landing_page_id, amount) values ($1, 0)", [free])),
@@ -83,7 +83,7 @@ describe("lp_purchases — mengambil produk", () => {
 
 describe("lp_purchases — membaca & mengubah", () => {
   it("pembeli melihat pembeliannya sendiri", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makePurchase(me, await makeProduct(seller));
     const { rowCount } = await as({ uid: me }, () => sql("select id from lp_purchases where id = $1", [p]));
@@ -91,7 +91,7 @@ describe("lp_purchases — membaca & mengubah", () => {
   });
 
   it("pembelian yang dicabut tidak terlihat lagi oleh pembelinya", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makePurchase(me, await makeProduct(seller));
     await sql("update lp_purchases set revoked_at = now() where id = $1", [p]);
@@ -100,7 +100,7 @@ describe("lp_purchases — membaca & mengubah", () => {
   });
 
   it("tidak bisa membatalkan pencabutan sendiri", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makePurchase(me, await makeProduct(seller));
     await sql("update lp_purchases set revoked_at = now() where id = $1", [p]);
@@ -112,7 +112,7 @@ describe("lp_purchases — membaca & mengubah", () => {
   });
 
   it("tidak melihat pembelian orang lain", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const other = await makeUser();
     const p = await makePurchase(other, await makeProduct(seller));
@@ -121,7 +121,7 @@ describe("lp_purchases — membaca & mengubah", () => {
   });
 
   it("tidak bisa mengubah nominal atau menghapus pembeliannya sendiri", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makePurchase(me, await makeProduct(seller), 50_000);
     const upd = await as({ uid: me }, () => sql("update lp_purchases set amount = 0 where id = $1", [p])).catch(
@@ -147,9 +147,12 @@ describe("lp_landing_pages — siapa boleh membuat produk", () => {
     await denied(async () => insertOwn(await makeUser()));
   });
 
-  it.each(["company", "agent"] as const)("%s boleh membuat produknya sendiri", async (accountType) => {
-    expect((await insertOwn(await makeUser({ accountType }))).rowCount).toBe(1);
-  });
+  it.each(["platform", "owner", "admin"] as const)(
+    "%s boleh membuat produknya sendiri",
+    async (standing) => {
+      expect((await insertOwn(await makeUser({ standing }))).rowCount).toBe(1);
+    },
+  );
 
   it("customer yang publisher di sebuah situs boleh membuat produk", async () => {
     const me = await makeUser();
@@ -167,8 +170,8 @@ describe("lp_landing_pages — siapa boleh membuat produk", () => {
   });
 
   it("tidak ada yang bisa membuat produk atas nama orang lain", async () => {
-    const me = await makeUser({ accountType: "agent" });
-    const other = await makeUser({ accountType: "agent" });
+    const me = await makeUser({ standing: "admin" });
+    const other = await makeUser({ standing: "admin" });
     await denied(() =>
       as({ uid: me }, () =>
         sql("insert into lp_landing_pages (title, slug, user_id) values ('x', $1, $2)", [`p-${uniq()}`, other]),
@@ -179,7 +182,7 @@ describe("lp_landing_pages — siapa boleh membuat produk", () => {
 
 describe("lp_landing_pages — mengubah produk", () => {
   it("pemilik boleh mengubah isi produknya, termasuk mem-pin (setLandingPageFeatured)", async () => {
-    const me = await makeUser({ accountType: "agent" });
+    const me = await makeUser({ standing: "admin" });
     const p = await makeProduct(me);
     const { rowCount } = await as({ uid: me }, () =>
       sql("update lp_landing_pages set title = 'Baru', featured = true, published = false where id = $1", [p]),
@@ -192,7 +195,7 @@ describe("lp_landing_pages — mengubah produk", () => {
     async (column) => {
       // Only triggers and the SECURITY DEFINER view RPC write these. A seller
       // setting "Terjual 999" or a 5.0 rating is lying to buyers.
-      const me = await makeUser({ accountType: "agent" });
+      const me = await makeUser({ standing: "admin" });
       const p = await makeProduct(me);
       // 5 fits rating's numeric(3,2); 999 would fail as an overflow before the
       // grant is even consulted, and the test would pass for the wrong reason.
@@ -204,7 +207,7 @@ describe("lp_landing_pages — mengubah produk", () => {
   );
 
   it("penjual juga tidak bisa MELAHIRKAN produk dengan angka palsu", async () => {
-    const me = await makeUser({ accountType: "agent" });
+    const me = await makeUser({ standing: "admin" });
     await denied(() =>
       as({ uid: me }, () =>
         sql("insert into lp_landing_pages (title, slug, user_id, sold_count) values ('x', $1, $2, 999)", [
@@ -216,8 +219,8 @@ describe("lp_landing_pages — mengubah produk", () => {
   });
 
   it("bukan pemilik tidak bisa mengubah atau menghapus", async () => {
-    const owner = await makeUser({ accountType: "agent" });
-    const me = await makeUser({ accountType: "agent" });
+    const owner = await makeUser({ standing: "admin" });
+    const me = await makeUser({ standing: "admin" });
     const p = await makeProduct(owner);
     const upd = await as({ uid: me }, () => sql("update lp_landing_pages set title = 'x' where id = $1", [p]));
     const del = await as({ uid: me }, () => sql("delete from lp_landing_pages where id = $1", [p]));
@@ -225,7 +228,7 @@ describe("lp_landing_pages — mengubah produk", () => {
   });
 
   it("pemilik boleh menghapus produknya sendiri", async () => {
-    const me = await makeUser({ accountType: "agent" });
+    const me = await makeUser({ standing: "admin" });
     const p = await makeProduct(me);
     expect((await as({ uid: me }, () => sql("delete from lp_landing_pages where id = $1", [p]))).rowCount).toBe(1);
   });
@@ -252,7 +255,7 @@ describe("lp_landing_pages — mengubah produk", () => {
 
 describe("lp_landing_pages — membaca", () => {
   it("siapa pun melihat produk yang terbit", async () => {
-    const p = await makeProduct(await makeUser({ accountType: "agent" }));
+    const p = await makeProduct(await makeUser({ standing: "admin" }));
     expect((await as("anon", () => sql("select id from lp_landing_pages where id = $1", [p]))).rowCount).toBe(1);
   });
 
@@ -262,7 +265,7 @@ describe("lp_landing_pages — membaca", () => {
   // drafts through the user client), so it is recorded rather than rushed.
   // When it is fixed, this test starts failing: flip `it.fails` to `it`.
   it.fails("anon TIDAK melihat draft (celah yang diketahui)", async () => {
-    const p = await makeProduct(await makeUser({ accountType: "agent" }), { published: false });
+    const p = await makeProduct(await makeUser({ standing: "admin" }), { published: false });
     expect((await as("anon", () => sql("select id from lp_landing_pages where id = $1", [p]))).rowCount).toBe(0);
   });
 });
@@ -274,7 +277,7 @@ describe("lp_reviews", () => {
     );
 
   it("pembeli boleh mengulas produk yang dibelinya", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makeProduct(seller);
     await makePurchase(me, p);
@@ -284,13 +287,13 @@ describe("lp_reviews", () => {
   it("yang TIDAK membeli tidak boleh mengulas (menjatuhkan rating pesaing)", async () => {
     // lib/actions/reviews.ts refuses without a purchase; the database did not,
     // and the rating trigger turns every review into the product's public score.
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     await denied(async () => review(me, await makeProduct(seller)));
   });
 
   it("pembelian yang sudah dicabut tidak memberi hak mengulas", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const p = await makeProduct(seller);
     const purchase = await makePurchase(me, p);
@@ -299,7 +302,7 @@ describe("lp_reviews", () => {
   });
 
   it("siapa pun membaca ulasan; tidak ada yang bisa mengubah ulasan orang lain", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const author = await makeUser();
     const me = await makeUser();
     const p = await makeProduct(seller);
@@ -313,7 +316,7 @@ describe("lp_reviews", () => {
 
 describe("lp_product_likes", () => {
   it("menyukai & batal menyukai atas nama sendiri; tidak atas nama orang lain", async () => {
-    const seller = await makeUser({ accountType: "agent" });
+    const seller = await makeUser({ standing: "admin" });
     const me = await makeUser();
     const other = await makeUser();
     const p = await makeProduct(seller);
@@ -341,7 +344,7 @@ describe("lp_plan_orders", () => {
   it("pemilik melihat pesanannya, orang lain tidak, Company melihat semua", async () => {
     const me = await makeUser();
     const other = await makeUser();
-    const company = await makeUser({ accountType: "company" });
+    const company = await makeUser({ standing: "platform" });
     const o = await order(me);
     const seen = async (uid: string) =>
       (await as({ uid }, () => sql("select id from lp_plan_orders where id = $1", [o]))).rowCount;
@@ -368,8 +371,8 @@ describe("lp_plan_orders", () => {
 
 describe("lp_landing_page_versions", () => {
   it("hanya pemilik produk yang bisa membaca & menulis versinya", async () => {
-    const owner = await makeUser({ accountType: "agent" });
-    const me = await makeUser({ accountType: "agent" });
+    const owner = await makeUser({ standing: "admin" });
+    const me = await makeUser({ standing: "admin" });
     const p = await makeProduct(owner);
     await sql("insert into lp_landing_page_versions (landing_page_id, html_content) values ($1, '<p>v1</p>')", [p]);
     expect(

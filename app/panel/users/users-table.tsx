@@ -3,16 +3,33 @@
 import { PLANS, PLAN_LIST, normalizePlan } from "@/lib/plans";
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/client";
+import type { BusinessRole } from "@/lib/profile-utils";
 
-type AccountType = "company" | "agent" | "customer";
-type RoleFilter = "all" | AccountType;
+/** Satu nilai untuk satu baris — apa yang dropdown-nya tampilkan. */
+function standingOf(u: { is_platform: boolean; business_role: BusinessRole | null }): StandingValue {
+  return u.is_platform ? "platform" : (u.business_role ?? "");
+}
+
+/**
+ * Kedudukan yang bisa dipilih di satu kontrol (Fase 5, menggantikan account_type).
+ *
+ * "" = bukan siapa-siapa di business ini — pembeli biasa. "platform" bukan peran
+ * business sama sekali; ia ada di kolom lain (lp_profiles.is_platform) dan
+ * digabung ke satu dropdown karena bagi yang memakainya ini satu pertanyaan:
+ * "orang ini siapa di sini".
+ */
+type StandingValue = "" | BusinessRole | "platform";
+type RoleFilter = "all" | StandingValue;
 type VerifyFilter = "all" | "unverified" | "verified";
 
 type UserRow = {
   id: string;
   full_name: string | null;
   email: string | null;
-  account_type: AccountType;
+  /** Operator platform — lintas business. */
+  is_platform: boolean;
+  /** Peran di business yang memiliki situs yang sedang dibuka, atau null. */
+  business_role: BusinessRole | null;
   is_active: boolean;
   exclude_from_stats?: boolean;
   /**
@@ -153,21 +170,49 @@ export function UsersTable({
     }
   }
 
-  async function changeRole(user: UserRow, accountType: AccountType) {
-    if (accountType === user.account_type) return;
-    const prev = user.account_type;
-    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, account_type: accountType } : u)));
+  /**
+   * Change where someone stands (Fase 5).
+   *
+   * Up to two requests, because two different facts are being set: whether they
+   * operate the Platform (a column on their profile) and what they are inside
+   * this site's business (a row in lp_business_members). Sent in the order that
+   * is safe to interrupt — the platform flag is dropped BEFORE a lesser role is
+   * granted, so a failure halfway leaves someone with less access, never more.
+   */
+  async function changeStanding(user: UserRow, next: StandingValue) {
+    const prev = standingOf(user);
+    if (next === prev) return;
+
+    const patches: Array<Record<string, unknown>> = [];
+    if (prev === "platform" && next !== "platform") patches.push({ isPlatform: false });
+    if (next === "platform") patches.push({ isPlatform: true });
+    else patches.push({ businessRole: next });
+
+    const optimistic = {
+      is_platform: next === "platform",
+      business_role: next === "platform" || next === "" ? null : (next as BusinessRole),
+    };
+    setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, ...optimistic } : u)));
     setUpdating(user.id);
     try {
-      const res = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, accountType }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error ?? t("panel.roleChangeFailed"));
-        setUsers((list) => list.map((u) => (u.id === user.id ? { ...u, account_type: prev } : u)));
+      for (const patch of patches) {
+        const res = await fetch("/api/admin/users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, ...patch }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          alert(data.error ?? t("panel.roleChangeFailed"));
+          setUsers((list) =>
+            list.map((u) =>
+              u.id === user.id
+                ? { ...u, is_platform: user.is_platform, business_role: user.business_role }
+                : u,
+            ),
+          );
+          return;
+        }
       }
     } finally {
       setUpdating(null);
@@ -276,7 +321,7 @@ export function UsersTable({
   const unverifiedCount = users.filter((u) => !u.email_verified_at).length;
 
   const filtered = users.filter((u) => {
-    if (roleFilter !== "all" && u.account_type !== roleFilter) return false;
+    if (roleFilter !== "all" && standingOf(u) !== roleFilter) return false;
     if (verifyFilter === "unverified" && u.email_verified_at) return false;
     if (verifyFilter === "verified" && !u.email_verified_at) return false;
     if (!search) return true;
@@ -284,7 +329,7 @@ export function UsersTable({
     return (
       u.full_name?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
-      u.account_type.toLowerCase().includes(q)
+      standingOf(u).toLowerCase().includes(q)
     );
   });
 
@@ -372,9 +417,11 @@ export function UsersTable({
           aria-label={t("panel.filterRole")}
         >
           <option value="all">{t("panel.allRoles")}</option>
-          <option value="company">Company</option>
-          <option value="publisher">Publisher</option>
-          <option value="customer">Customer</option>
+          <option value="platform">{t("panel.rolePlatform")}</option>
+          <option value="owner">{t("panel.roleOwner")}</option>
+          <option value="admin">{t("panel.roleBizAdmin")}</option>
+          <option value="staff">{t("panel.roleStaff")}</option>
+          <option value="">{t("panel.roleCustomer")}</option>
         </select>
         <select
           value={verifyFilter}
@@ -424,7 +471,7 @@ export function UsersTable({
               </div>
             </div>
             <div className="mt-3 flex flex-wrap items-start gap-2">
-              <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
+              <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeStanding} />
               <PlanControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changePlan} />
               <button
                 type="button"
@@ -519,7 +566,7 @@ export function UsersTable({
                   <td className="px-4 py-3 font-medium text-foreground">{u.full_name || "—"}</td>
                   <td className="px-4 py-3 text-[var(--muted)]">{u.email || "—"}</td>
                   <td className="px-4 py-3 text-center">
-                    <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeRole} />
+                    <RoleControl user={u} canEdit={isAdmin} disabled={updating === u.id} onChange={changeStanding} />
                   </td>
                   {showSiteRole && (
                     <td className="px-4 py-3 text-center">
@@ -717,21 +764,23 @@ function RoleControl({
   user: UserRow;
   canEdit: boolean;
   disabled: boolean;
-  onChange: (user: UserRow, accountType: AccountType) => void;
+  onChange: (user: UserRow, next: StandingValue) => void;
 }) {
   const t = useT();
-  if (!canEdit) return <RoleBadge role={user.account_type} />;
+  if (!canEdit) return <RoleBadge value={standingOf(user)} />;
   return (
     <select
-      value={user.account_type}
+      value={standingOf(user)}
       disabled={disabled}
-      onChange={(e) => onChange(user, e.target.value as AccountType)}
+      onChange={(e) => onChange(user, e.target.value as StandingValue)}
       className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
       aria-label={t("panel.changeRole")}
     >
-      <option value="customer">customer</option>
-      <option value="publisher">publisher</option>
-      <option value="company">company</option>
+      <option value="">{t("panel.roleCustomer")}</option>
+      <option value="staff">{t("panel.roleStaff")}</option>
+      <option value="admin">{t("panel.roleBizAdmin")}</option>
+      <option value="owner">{t("panel.roleOwner")}</option>
+      <option value="platform">{t("panel.rolePlatform")}</option>
     </select>
   );
 }
@@ -785,7 +834,8 @@ function DeleteUserButton({
   onClick: () => void;
 }) {
   const t = useT();
-  const blocked = user.account_type === "company";
+  // A Platform operator has to be demoted first — the same line the API draws.
+  const blocked = user.is_platform;
   return (
     <button
       type="button"
@@ -808,14 +858,27 @@ function DeleteUserButton({
   );
 }
 
-function RoleBadge({ role }: { role: AccountType }) {
+function RoleBadge({ value }: { value: StandingValue }) {
+  const t = useT();
   const cls =
-    role === "company"
+    value === "platform"
       ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-      : role === "agent"
+      : value === "owner" || value === "admin"
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-        : "bg-[var(--accent-subtle)] text-[var(--muted)]";
-  return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{role}</span>;
+        : value === "staff"
+          ? "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300"
+          : "bg-[var(--accent-subtle)] text-[var(--muted)]";
+  const label =
+    value === "platform"
+      ? t("panel.rolePlatform")
+      : value === "owner"
+        ? t("panel.roleOwner")
+        : value === "admin"
+          ? t("panel.roleBizAdmin")
+          : value === "staff"
+            ? t("panel.roleStaff")
+            : t("panel.roleCustomer");
+  return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{label}</span>;
 }
 
 /**

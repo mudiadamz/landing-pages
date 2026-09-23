@@ -11,11 +11,12 @@ import type { SiteBrand } from "@/lib/site-brand";
 import type { FeatureKey } from "@/lib/features";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
+import { managesBusiness, type BusinessRole } from "@/lib/profile-utils";
 
-type AccountType = "company" | "agent" | "customer";
 type Props = {
-  accountType?: AccountType;
   isPlatform?: boolean;
+  /** Peran di business pemilik situs yang sedang dibuka, atau null (Fase 5). */
+  businessRole?: BusinessRole | null;
   canSell?: boolean;
   /** Eligible to open a Business (not platform, not already a member) → apply link. */
   canApplyBusiness?: boolean;
@@ -336,8 +337,8 @@ function ImageIcon({ className }: { className?: string }) {
 }
 
 function NavContent({
-  accountType,
   isPlatform = false,
+  businessRole = null,
   features = [],
   canSell,
   canApplyBusiness = false,
@@ -347,8 +348,8 @@ function NavContent({
   onItemClick,
   onOpenAssets,
 }: {
-  accountType?: AccountType;
   isPlatform?: boolean;
+  businessRole?: BusinessRole | null;
   features?: FeatureKey[];
   canSell?: boolean;
   canApplyBusiness?: boolean;
@@ -393,9 +394,13 @@ function NavContent({
     if (item.applyOnly) return !!canApplyBusiness;
     if (item.businessManagerOnly) return !!isBusinessManager;
     if (item.everyone) return true;
-    if (item.adminOnly) return accountType === "company";
+    // adminOnly = "platform only" since Fase 5: these are the undelegatable
+    // actions (create/delete a site, ban, delete an account), and the old
+    // "Company" that guarded them IS the Platform now.
+    if (item.adminOnly) return !!isPlatform;
     if (item.sellerOnly) return !!canSell;
-    if (item.feature) return features.includes(item.feature) || (!!item.publisherToo && accountType === "agent");
+    if (item.feature)
+      return features.includes(item.feature) || (!!item.publisherToo && managesBusiness(businessRole));
     return true;
   };
 
@@ -569,8 +574,8 @@ function NavContent({
 }
 
 export function PanelSidebar({
-  accountType,
   isPlatform,
+  businessRole,
   canSell,
   canApplyBusiness,
   isBusinessManager,
@@ -658,8 +663,8 @@ export function PanelSidebar({
           }`}
         >
           <NavContent
-            accountType={accountType}
             isPlatform={isPlatform}
+            businessRole={businessRole}
             features={features}
             canSell={canSell}
             canApplyBusiness={canApplyBusiness}

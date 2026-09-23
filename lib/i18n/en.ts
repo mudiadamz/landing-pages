@@ -140,7 +140,13 @@ export const en: Record<keyof typeof id, string> = {
   "panel.tabOther": "Other links",
 
   /* panel: sidebar */
-  "panel.roleAdmin": "Company",
+  /* Standings since Fase 5: Platform, then a role inside one business.
+     "Agent" stays because lp_site_agents still exists — a per-site
+     delegation inside a business, not an account type. */
+  "panel.rolePlatform": "Platform",
+  "panel.roleOwner": "Owner",
+  "panel.roleBizAdmin": "Admin",
+  "panel.roleStaff": "Staff",
   "panel.roleAgent": "Agent",
   "panel.rolePublisher": "Publisher",
   "panel.roleCustomer": "Customer",
@@ -1152,8 +1158,9 @@ export const en: Record<keyof typeof id, string> = {
   "panel.updateReview": "Update review",
   "panel.sendReview": "Send review",
   "panel.roleColFeature": "Feature",
-  "panel.roleLegend": "Company & Agent always have every site feature. Locked rows cannot be delegated.",
-  "panel.roleReasonCompany": "Company only",
+  "panel.roleLegend": "Platform & Owner always have every feature. Admin & Staff are set per business; Publisher & Customer per site. Locked rows cannot be delegated.",
+  "panel.roleNoBusiness": "No business owns this storefront yet, so the Admin & Staff columns cannot be set.",
+  "panel.roleReasonCompany": "Platform only",
   "panel.roleReasonEveryone": "All accounts",
   "panel.roleReasonSeller": "Sellers",
   "panel.showConfirm":

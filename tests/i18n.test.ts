@@ -175,6 +175,10 @@ describe("dictionary integrity", () => {
     // Two different preference screens; neither should move when the other is
     // reworded.
     Tema: ["panel.themeLabel", "chat.theme"],
+    // The standing somebody holds vs the sidebar group that leads to the
+    // cross-business screens. Same word, two jobs: one names a person, the other
+    // names a section, and English may well want "Platform operator" for the first.
+    Platform: ["panel.rolePlatform", "panel.navGroupPlatform"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

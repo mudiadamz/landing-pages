@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { applyAsPublisher } from "@/lib/actions/profiles";
 import { LivePhotoCapture } from "@/components/live-photo-capture";
-import type { PublisherStatus, AccountType } from "@/lib/profile-utils";
+import type { PublisherStatus, Standing } from "@/lib/profile-utils";
 import { useT } from "@/lib/i18n/client";
 
 const EMPTY = {
@@ -77,13 +77,13 @@ function AreaField({
 }
 
 export function PublisherApplyForm({
-  accountType,
+  standing,
   status: initialStatus,
   rejectNote,
   termsHeading,
   terms,
 }: {
-  accountType: AccountType;
+  standing: Standing;
   status: PublisherStatus;
   /** Why the last application was turned down, if it was. */
   rejectNote?: string | null;
@@ -112,10 +112,10 @@ export function PublisherApplyForm({
   const ready = !!ktp && !!selfie && filled && agreed;
 
   // Admins and existing publishers never see the apply CTA.
-  if (accountType === "company" || accountType === "agent") {
+  if (standing.isPlatform || standing.businessRole !== null) {
     return (
       <p className="text-sm text-[var(--muted)]">
-        {accountType === "company" ? t("panel.adminCanSell") : t("panel.publisherCanSell")}
+        {standing.isPlatform ? t("panel.adminCanSell") : t("panel.publisherCanSell")}
       </p>
     );
   }

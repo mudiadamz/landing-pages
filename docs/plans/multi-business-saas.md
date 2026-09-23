@@ -34,7 +34,7 @@ dan [`hierarchical-users.md`](hierarchical-users.md) dulu — model lama
 | **Platform** | Kamu, operator SaaS. Super-admin lintas bisnis, merchant of record, yang menagih & payout. | `lp_profiles.is_platform = true` |
 | **Business** | Penjual. **Bisa perorangan atau perusahaan** (`business_type`). Unit isolasi: katalog, user, penjualan, billing, payout, punya storefront sendiri. | baris `lp_businesses` |
 | **Storefront** | Satu domain/situs milik sebuah Business. Sebuah Business boleh punya beberapa. | `lp_sites` (kini `business_id`) |
-| **Business member** | Orang yang **mengelola** sebuah Business. | `lp_business_members(business_id, user_id, role)` — `owner \| admin \| staff` |
+| **Business member** | Orang yang bekerja di sebuah Business. `owner`/`admin` mengelolanya, `staff` bekerja di dalamnya. | `lp_business_members(business_id, user_id, role)` — `owner \| admin \| staff` |
 | **Customer** | Pembeli. Ter-scope ke satu Business (terisolasi). | user + baris keanggotaan business-nya |
 
 **Perbedaan dari model lama:**
@@ -168,7 +168,70 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id) + **user & storage** (view lintas-business = Platform-only) + **referensi antar-produk** (related/next/bundle, tulis & baca). | ✅ |
 | 3 | Ledger + komisi + hold ✅ · KYC (ajukan/approve) + payout (catat, min + KYC-gated) + refund (catat) ✅ · **integrasi disbursement (Duitku Transfer Online, `lp_business_payouts`, mati kalau env kosong)** ✅ | ✅ |
 | 4 | Panel Platform (overview + saldo ledger) ✅ · signup business (approval-gated) + onboarding + provisioning domain saat approve ✅ · **notifikasi email approve/reject** ✅ | ✅ |
-| 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |
+| 5 | Matriks peran per-business (`lp_businesses.role_permissions`, kolom Admin/Staff di `/panel/roles`); **`lp_profiles.account_type` dihapus** — kedudukan = `is_platform` + `lp_business_members.role`. | ✅ |
+
+---
+
+## Fase 5 — peran per-business, `account_type` pensiun (2026-09-23)
+
+**Kenapa kolomnya harus pergi.** `account_type` satu nilai global yang menjawab
+pertanyaan yang tidak pernah global: "boleh apa dia DI SINI". Selama satu business
+itu tidak kelihatan salah. Dengan business kedua, setiap "Agent" otomatis jadi
+Agent di semua business sekaligus — itu bukan model izin, itu ketiadaan model izin.
+
+**Penggantinya, di tempat yang benar:**
+
+| Lama | Baru |
+|---|---|
+| `account_type = 'company'` | `lp_profiles.is_platform` |
+| `account_type = 'agent'` | `lp_business_members.role ∈ owner\|admin`, **per business** |
+| `account_type = 'customer'` | tidak dua-duanya |
+
+`lp_site_agents` **tetap ada**: itu delegasi per-situs DI DALAM sebuah business,
+bukan jenis akun. `is_publisher` juga tetap, dan publisher tetap bukan jenis akun.
+
+**Urutan migration (`20260923010000`) adalah isinya.** Backfill dulu — sampai
+model baru memberi jawaban yang sama untuk semua orang yang sudah ada — baru
+fungsi, baru policy, baru `drop column`. Membalik urutannya berarti ada jendela
+waktu di mana semua orang jadi customer.
+- Agent → `admin` di business pemilik situs yang **benar-benar dia kelola**
+  (lewat `lp_site_agents`). Pasangan itulah yang dulu tidak bisa diungkapkan.
+  Agent yang tidak mengelola situs mana pun jatuh ke business tertua (tempat
+  backfill Fase 0 menaruh semua data lama), bukan hilang.
+
+**Satu titik kompatibilitas, bukan sebelas.** `lp_get_my_profile_role()` tetap
+bernama itu dan tetap mengembalikan `company | agent | customer` — sebelas policy
+memanggilnya — tapi nilainya sekarang **diturunkan**, bukan dibaca. Menulis ulang
+sebelas policy dalam satu migration adalah sebelas kesempatan menyalahkan aturan
+RLS; kolomnya bisa pergi hari ini, kata-katanya bisa diperbaiki nanti, terpisah.
+Catatan: `staff` → `'customer'` di fungsi itu, sengaja — kalau tidak, sebelas
+policy diam-diam memberi staff hak kelola yang tidak pernah diputuskan siapa pun.
+
+**Dua policy yang membaca kolomnya langsung ditulis ulang.**
+`"Admin can read customer profiles"` → `"Platform reads non-platform profiles"`:
+sedikit lebih luas dan memang benar — daftar user Platform selalu memuat pengelola
+business (sudah begitu lewat service role), sementara akun Platform lain tetap di
+balik satu langkah sengaja.
+
+**Matriks peran per-business.** `lp_businesses.role_permissions` (jsonb):
+`{admin: [...], staff: [...]}`. Owner **tidak ada** di matriksnya — owner yang bisa
+dikunci dari business-nya sendiri itu tiket support, bukan fitur. Default (belum
+pernah diatur) = admin semuanya, staff kosong: tiap Agent lama jadi business admin
+lewat backfill, jadi default yang lebih ketat berarti mengambil menu dari orang
+yang kemarin punya, tanpa ada yang memutuskan itu. `/panel/roles` jadi enam kolom
+(Platform · Owner · Admin · Staff · Publisher · Customer) yang menyimpan ke **dua**
+tempat: Admin/Staff ke business, Publisher/Customer ke situs.
+
+**`requireFeature` jadi GABUNGAN**, bukan yang-pertama-cocok. Seseorang bisa punya
+beberapa jalan masuk sekaligus (owner sebuah business yang juga publisher di
+storefront lain); mengambil yang pertama cocok berarti *menambah* peran bisa
+*mengurangi* izin, yang tidak akan pernah ditebak siapa pun.
+
+**Verifikasi:** `pnpm test` (`tests/site-membership.test.ts` — termasuk "peran
+business tidak ikut ke storefront business lain"; `tests/role-permissions.test.ts`
+— default & "daftar kosong tersimpan menang atas default"), `pnpm test:db`
+(`tests/db/rls-profiles.test.ts` — peta turunan `lp_get_my_profile_role()` dan
+bukti kolomnya sudah tidak ada). Snapshot `rls-surface` diperbarui dengan sadar.
 
 ---
 

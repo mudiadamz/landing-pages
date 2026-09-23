@@ -11,8 +11,8 @@ import { makeUser, sql } from "./sql";
 describe("signup → lp_handle_new_user", () => {
   it("membuat tepat satu baris profil untuk user baru", async () => {
     const id = await makeUser({ fullName: "Budi" });
-    const { rows } = await sql("select full_name, account_type from public.lp_profiles where id = $1", [id]);
-    expect(rows).toEqual([{ full_name: "Budi", account_type: "customer" }]);
+    const { rows } = await sql("select full_name, is_platform from public.lp_profiles where id = $1", [id]);
+    expect(rows).toEqual([{ full_name: "Budi", is_platform: false }]);
   });
 
   it("jenis akun datang dari default kolom, bukan dari trigger", async () => {

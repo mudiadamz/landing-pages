@@ -1,4 +1,4 @@
-import type { AccountType } from "@/lib/profile-utils";
+import { managesBusiness, type BusinessRole } from "@/lib/profile-utils";
 
 /**
  * Siapa boleh apa DI SEBUAH SITUS.
@@ -14,13 +14,21 @@ import type { AccountType } from "@/lib/profile-utils";
 /**
  * Kedudukan seseorang di satu situs, sesudah semua tabelnya dibaca.
  *
- * Tiga fakta yang datang dari tiga tempat berbeda, sengaja tidak diringkas jadi
- * satu "role": jenis akun ada di profil, keagenan di `lp_site_agents`, dan izin
- * jual di baris keanggotaan. Meringkasnya jadi satu nilai adalah persis yang
- * membuat model sebelumnya menyimpan "publisher" di dua tempat.
+ * Empat fakta dari empat tempat, sengaja tidak diringkas jadi satu "role":
+ * `lp_profiles.is_platform`, peran di business PEMILIK SITUS INI
+ * (`lp_business_members`), keagenan (`lp_site_agents`), dan izin jual di baris
+ * keanggotaan (`lp_site_members`). Meringkasnya jadi satu nilai adalah persis
+ * yang membuat model sebelumnya menyimpan "publisher" di dua tempat.
+ *
+ * `businessRole` sengaja per-situs, bukan global: yang ditanyakan selalu "dia
+ * pengelola business yang memiliki situs INI?", dan sejak business kedua ada,
+ * jawabannya berbeda per situs (Fase 5).
  */
 export type SiteStanding = {
-  accountType: AccountType;
+  /** Operator platform — lolos di mana pun. Dulu `accountType === "company"`. */
+  isPlatform: boolean;
+  /** Perannya di business yang MEMILIKI situs ini, atau null. Dulu "Agent" global. */
+  businessRole: BusinessRole | null;
   /** Ada baris di `lp_site_agents` untuk situs ini. */
   isAgent: boolean;
   /** Ada baris di `lp_site_members` untuk situs ini. */
@@ -32,29 +40,32 @@ export type SiteStanding = {
 /**
  * Boleh mengurus situs ini: kontennya, setelannya, dan customer-nya.
  *
- * Company menang tanpa perlu terdaftar sebagai Agent: dia yang membuat situsnya,
+ * Platform menang tanpa perlu terdaftar di mana pun: dia yang membuat situsnya,
  * dan mengunci dirinya di luar domain yang baru dibuat adalah cara bodoh untuk
- * kehilangan akses.
+ * kehilangan akses. Owner & admin business pemiliknya juga lolos — situs itu
+ * memang milik business mereka; staff tidak (dia bekerja di dalamnya, bukan
+ * mengaturnya).
  */
 export function canManageSite(s: SiteStanding | null): boolean {
   if (!s) return false;
-  return s.accountType === "company" || s.isAgent;
+  return s.isPlatform || managesBusiness(s.businessRole) || s.isAgent;
 }
 
 /**
  * Boleh membuat & menjual produk di situs ini.
  *
- * Tiga jalan masuk, dan yang ketiga adalah inti model baru: seorang Customer
- * yang disetujui sebagai publisher **di situs itu** boleh menjual di situ, tanpa
- * jadi Agent dan tanpa berubah jenis akun.
+ * Lebih longgar daripada mengurus: staff sebuah business ikut lolos — menjual
+ * adalah pekerjaannya. Dan jalan terakhir adalah inti model lama yang tetap
+ * berlaku: seorang Customer yang disetujui sebagai publisher **di situs itu**
+ * boleh menjual di situ, tanpa jadi anggota business mana pun.
  */
 export function canSellOnSite(s: SiteStanding | null): boolean {
   if (!s) return false;
-  return s.accountType === "company" || s.isAgent || s.isPublisher;
+  return s.isPlatform || s.businessRole !== null || s.isAgent || s.isPublisher;
 }
 
 /** Punya urusan apa pun dengan situs ini? Bukan siapa-siapa = tidak boleh apa-apa. */
 export function belongsToSite(s: SiteStanding | null): boolean {
   if (!s) return false;
-  return s.accountType === "company" || s.isAgent || s.isMember;
+  return s.isPlatform || s.businessRole !== null || s.isAgent || s.isMember;
 }

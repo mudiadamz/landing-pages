@@ -5,7 +5,6 @@ import { createAnonClient } from "@/lib/db/anon";
 import { createClient as createServerClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
-import { normalizeAccountType } from "@/lib/profile-utils";
 import { setBusinessContext } from "@/lib/backend/tenant";
 import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
 
@@ -267,30 +266,38 @@ export const listMemberSites = cache(async (): Promise<Site[]> => {
 
   const admin = createAdminClient();
   /*
-   * Situs yang punya urusan kerja dengan orang ini: yang dia KELOLA (Agent) dan
-   * yang dia boleh JUALI (publisher).
+   * Situs yang punya urusan kerja dengan orang ini: yang dimiliki BUSINESS-nya,
+   * yang dia KELOLA (Agent), dan yang dia boleh JUALI (publisher).
+   *
+   * Business-nya masuk sejak Fase 5: itu yang menggantikan "Agent" global lama —
+   * pengelola sebuah business melihat seluruh storefront business itu tanpa harus
+   * didaftarkan satu per satu di lp_site_agents.
    *
    * Keanggotaan biasa tidak masuk — "saya pernah beli di sini" bukan alasan
    * membuka cakupan panel. Tapi izin jual iya: tanpa itu, seorang publisher di
    * situs B akan selalu jatuh ke situs kanonik dan izin jualnya tidak pernah
    * berlaku di panel. Ketahuan waktu mengujinya, bukan waktu menulisnya.
    */
-  const [{ data: profile }, { data: agentRows }, { data: publisherRows }] = await Promise.all([
-    admin.from("lp_profiles").select("account_type").eq("id", user.id).maybeSingle(),
-    admin.from("lp_site_agents").select("site_id").eq("user_id", user.id),
-    admin
-      .from("lp_site_members")
-      .select("site_id")
-      .eq("user_id", user.id)
-      .eq("is_publisher", true),
-  ]);
-  const rows = [...(agentRows ?? []), ...(publisherRows ?? [])];
-  // Lewat normalizer, bukan perbandingan mentah: nilai lama masih mungkin ada,
-  // dan Company yang tidak dikenali di sini kehilangan seluruh daftar situsnya.
-  if (normalizeAccountType(profile?.account_type) === "company") return all;
+  const [{ data: profile }, { data: memberships }, { data: agentRows }, { data: publisherRows }] =
+    await Promise.all([
+      admin.from("lp_profiles").select("is_platform").eq("id", user.id).maybeSingle(),
+      admin.from("lp_business_members").select("business_id").eq("user_id", user.id),
+      admin.from("lp_site_agents").select("site_id").eq("user_id", user.id),
+      admin
+        .from("lp_site_members")
+        .select("site_id")
+        .eq("user_id", user.id)
+        .eq("is_publisher", true),
+    ]);
+  // Platform melihat semuanya: dia yang membuat situsnya, dan mengunci dirinya di
+  // luar domain yang baru dibuat adalah cara bodoh kehilangan akses.
+  if (profile?.is_platform) return all;
 
-  const mine = new Set((rows ?? []).map((r) => r.site_id as string));
-  return all.filter((s) => mine.has(s.id));
+  const myBusinesses = new Set((memberships ?? []).map((m) => m.business_id as string));
+  const mine = new Set(
+    [...(agentRows ?? []), ...(publisherRows ?? [])].map((r) => r.site_id as string),
+  );
+  return all.filter((s) => mine.has(s.id) || (s.business_id && myBusinesses.has(s.business_id)));
 });
 
 /**

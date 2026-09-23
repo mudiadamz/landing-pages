@@ -14,7 +14,8 @@ vi.mock("resend", () => ({ Resend: class { emails = { send } } }));
 
 const { sendBusinessDecisionEmail } = await import("@/lib/email");
 
-const sent = () => send.mock.calls[0][0] as unknown as { subject: string; html: string; to: string };
+const sent = () =>
+  (send.mock.calls as unknown as Array<[{ subject: string; html: string; to: string }]>)[0][0];
 
 beforeEach(() => {
   send.mockClear();

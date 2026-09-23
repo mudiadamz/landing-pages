@@ -3,7 +3,7 @@ import { createClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { requireAdmin, requireFeature, requireSiteAdmin, requirePlatform } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
-import { normalizeAccountType } from "@/lib/profile-utils";
+import { normalizeBusinessRole, type BusinessRole } from "@/lib/profile-utils";
 import { normalizePlan } from "@/lib/plans";
 import { deleteUser, setBanned } from "@/lib/backend/auth";
 
@@ -24,7 +24,32 @@ async function getCaller() {
 }
 
 const PROFILE_COLUMNS =
-  "id, full_name, email, account_type, is_active, exclude_from_stats, email_verified_at, plan, plan_expires_at";
+  "id, full_name, email, is_platform, is_active, exclude_from_stats, email_verified_at, plan, plan_expires_at";
+
+/**
+ * Business membership for a batch of people, as `{userId: role}`.
+ *
+ * Its own query rather than a join: since Fase 5 the standing lives in two
+ * tables on purpose (is_platform on the profile, role per business), and
+ * flattening them back into one row in SQL is how the old account_type got
+ * invented in the first place.
+ */
+async function rolesByUser(
+  admin: ReturnType<typeof createAdminClient>,
+  ids: string[],
+): Promise<Map<string, BusinessRole>> {
+  const out = new Map<string, BusinessRole>();
+  if (!ids.length) return out;
+  const { data } = await admin
+    .from("lp_business_members")
+    .select("user_id, role")
+    .in("user_id", ids);
+  for (const r of data ?? []) {
+    const role = normalizeBusinessRole(r.role);
+    if (role) out.set(r.user_id as string, role);
+  }
+  return out;
+}
 
 /**
  * Daftar user — anggota situs yang sedang dilihat, bukan seluruh database.
@@ -50,14 +75,15 @@ export async function GET(req: Request) {
     const { data, error } = await admin
       .from("lp_profiles")
       .select(PROFILE_COLUMNS)
-      .order("account_type", { ascending: true })
+      .order("is_platform", { ascending: false })
       .order("full_name", { ascending: true });
     if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    const roles = await rolesByUser(admin, (data ?? []).map((r) => r.id as string));
     // site_role null = "tidak relevan di tampilan lintas situs", bukan "bukan anggota".
     return NextResponse.json(
       (data ?? []).map((r) => ({
         ...r,
-        account_type: normalizeAccountType(r.account_type),
+        business_role: roles.get(r.id as string) ?? null,
         is_agent: null,
         is_publisher: null,
       })),
@@ -70,7 +96,7 @@ export async function GET(req: Request) {
   // which Postgres rejects as an invalid uuid and would surface as a 500 that
   // the table then mislabels as "no users".
   if (!site.id) return NextResponse.json([]);
-  // Dua tabel, karena sejak model account_type keduanya menjawab hal berbeda:
+  // Dua tabel, karena keduanya menjawab hal berbeda:
   // keanggotaan = "customer di sini", keagenan = "yang mengelola sini".
   const [{ data: members, error: memberErr }, { data: agents }] = await Promise.all([
     admin.from("lp_site_members").select("user_id, is_publisher").eq("site_id", site.id),
@@ -88,9 +114,10 @@ export async function GET(req: Request) {
     .from("lp_profiles")
     .select(PROFILE_COLUMNS)
     .in("id", ids)
-    .order("account_type", { ascending: true })
+    .order("is_platform", { ascending: false })
     .order("full_name", { ascending: true });
   if (error) return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+  const roles = await rolesByUser(admin, (data ?? []).map((r) => r.id as string));
 
   /**
    * Role dinormalkan DI SINI, bukan di komponen.
@@ -103,7 +130,7 @@ export async function GET(req: Request) {
   return NextResponse.json(
     (data ?? []).map((r) => ({
       ...r,
-      account_type: normalizeAccountType(r.account_type),
+      business_role: roles.get(r.id as string) ?? null,
       is_agent: agentIds.has(r.id),
       is_publisher: publisherById.get(r.id) ?? false,
     })),
@@ -123,9 +150,9 @@ async function guardPlatformAdminTarget(
   actorIsPlatformAdmin: boolean,
 ): Promise<NextResponse | null> {
   if (actorIsPlatformAdmin) return null;
-  const { data } = await admin.from("lp_profiles").select("account_type").eq("id", userId).maybeSingle();
-  if (normalizeAccountType(data?.account_type) === "company") {
-    return NextResponse.json({ error: "Tidak bisa mengubah Company." }, { status: 403 });
+  const { data } = await admin.from("lp_profiles").select("is_platform").eq("id", userId).maybeSingle();
+  if (data?.is_platform) {
+    return NextResponse.json({ error: "Tidak bisa mengubah akun Platform." }, { status: 403 });
   }
   return null;
 }
@@ -178,12 +205,17 @@ export async function PATCH(req: Request) {
   if (!hasUsers) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { userId, active, accountType, excludeFromStats, plan, isAgent, isPublisher, email } =
+  const { userId, active, businessRole, isPlatform, excludeFromStats, plan, isAgent, isPublisher, email } =
     body as {
       userId?: string;
       active?: boolean;
-      /** Jenis akun (platform). Company saja yang boleh mengubahnya. */
-      accountType?: string;
+      /**
+       * Peran di business yang memiliki situs yang sedang dibuka, atau "" untuk
+       * mengeluarkan dia dari business itu. Platform saja yang boleh mengubahnya.
+       */
+      businessRole?: string;
+      /** Jadikan / cabut operator Platform. Platform saja. */
+      isPlatform?: boolean;
       excludeFromStats?: boolean;
       plan?: string;
       /** Mengelola situs yang sedang dilihat. */
@@ -206,7 +238,7 @@ export async function PATCH(req: Request) {
   // from analytics is the common case — it's your own testing traffic — and
   // carries no privilege risk.
   const selfEdit = userId === user.id;
-  if (selfEdit && (typeof accountType === "string" || typeof active === "boolean")) {
+  if (selfEdit && (typeof businessRole === "string" || typeof isPlatform === "boolean" || typeof active === "boolean")) {
     return NextResponse.json({ error: "Tidak bisa mengubah akun sendiri" }, { status: 400 });
   }
 
@@ -218,9 +250,10 @@ export async function PATCH(req: Request) {
    *   isAgent      → baris di lp_site_agents  (mengelola situs ini)
    *   isPublisher  → flag di lp_site_members  (boleh menjual di situs ini)
    *
-   * Sengaja terpisah dari `accountType` di bawah: yang ini per situs, yang itu
-   * jenis akun. Satu kontrol untuk keduanya berarti Agent sebuah situs bisa
-   * mengangkat dirinya jadi Company lewat layar yang sama.
+   * Sengaja terpisah dari `businessRole`/`isPlatform` di bawah: yang ini per
+   * situs, yang itu kedudukan di business / di platform. Satu kontrol untuk
+   * semuanya berarti pengelola satu situs bisa mengangkat dirinya jadi Platform
+   * lewat layar yang sama.
    */
   if (typeof isAgent === "boolean" || typeof isPublisher === "boolean") {
     const site = await editingSite();
@@ -289,23 +322,76 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ success: true });
   }
 
-  // Jenis akun — Company saja, terutama karena dari sini orang bisa jadi Company.
-  if (typeof accountType === "string") {
+  /**
+   * Peran di sebuah BUSINESS — Platform saja (Fase 5, menggantikan accountType).
+   *
+   * Business-nya diambil dari situs yang sedang dibuka panel, bukan dari body:
+   * "jadikan dia admin" selalu berarti "di business yang sedang saya lihat", dan
+   * menerima business_id dari klien akan membuat layar ini bisa menyusupkan orang
+   * ke business orang lain. `""` = keluarkan dari business itu.
+   */
+  if (typeof businessRole === "string") {
     if (!isAdmin) {
       return NextResponse.json(
-        { error: "Hanya Company yang bisa mengubah jenis akun." },
+        { error: "Hanya Platform yang bisa mengubah peran business." },
         { status: 403 },
       );
     }
-    if (!["company", "agent", "customer"].includes(accountType)) {
+    const site = await editingSite();
+    if (!site.business_id) {
+      return NextResponse.json(
+        { error: "Situs ini belum terhubung ke business mana pun." },
+        { status: 400 },
+      );
+    }
+    if (businessRole === "") {
+      const { error } = await admin
+        .from("lp_business_members")
+        .delete()
+        .eq("business_id", site.business_id)
+        .eq("user_id", userId);
+      if (error) {
+        console.error("remove business member error:", error);
+        return NextResponse.json({ error: "Gagal mengubah peran." }, { status: 500 });
+      }
+      return NextResponse.json({ success: true });
+    }
+    if (!["owner", "admin", "staff"].includes(businessRole)) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     }
     const { error } = await admin
+      .from("lp_business_members")
+      .upsert(
+        { business_id: site.business_id, user_id: userId, role: businessRole },
+        { onConflict: "business_id,user_id" },
+      );
+    if (error) {
+      console.error("set business role error:", error);
+      return NextResponse.json({ error: "Gagal mengubah peran." }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  /**
+   * Make somebody a Platform operator, or stop being one.
+   *
+   * The most dangerous switch in the panel: a Platform account reaches every
+   * business and can undo every other decision. Platform-only, never delegated,
+   * and never applicable to yourself (guarded above with ban and role).
+   */
+  if (typeof isPlatform === "boolean") {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Hanya Platform yang bisa mengangkat operator Platform." },
+        { status: 403 },
+      );
+    }
+    const { error } = await admin
       .from("lp_profiles")
-      .update({ account_type: accountType })
+      .update({ is_platform: isPlatform })
       .eq("id", userId);
     if (error) {
-      return NextResponse.json({ error: "Failed to update account type" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to update platform flag" }, { status: 500 });
     }
     return NextResponse.json({ success: true });
   }
@@ -322,7 +408,7 @@ export async function PATCH(req: Request) {
    */
   if (typeof plan === "string") {
     if (!isAdmin) {
-      return NextResponse.json({ error: "Hanya Company yang bisa mengubah paket." }, { status: 403 });
+      return NextResponse.json({ error: "Hanya Platform yang bisa mengubah paket." }, { status: 403 });
     }
     if (normalizePlan(plan) !== plan) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });
@@ -344,7 +430,7 @@ export async function PATCH(req: Request) {
     // Admin situs yang ingin mengeluarkan seseorang memakai DELETE fromSite.
     if (!isAdmin) {
       return NextResponse.json(
-        { error: "Hanya Company yang bisa ban akun. Untuk mengeluarkan dari situs ini, pakai tombol keluarkan." },
+        { error: "Hanya Platform yang bisa ban akun. Untuk mengeluarkan dari situs ini, pakai tombol keluarkan." },
         { status: 403 },
       );
     }
@@ -445,7 +531,7 @@ export async function DELETE(req: Request) {
   // siapa pun dari situsnya sendiri.
   if (!isAdmin) {
     return NextResponse.json(
-      { error: "Hanya Company yang bisa menghapus user." },
+      { error: "Hanya Platform yang bisa menghapus user." },
       { status: 403 },
     );
   }
@@ -454,16 +540,16 @@ export async function DELETE(req: Request) {
 
   const { data: target } = await admin
     .from("lp_profiles")
-    .select("account_type, full_name, email")
+    .select("is_platform, full_name, email")
     .eq("id", userId)
     .maybeSingle();
   if (!target) return NextResponse.json({ error: "User tidak ditemukan." }, { status: 404 });
 
-  // Another admin has to be demoted first. Not paranoia about malice — it is one
-  // extra deliberate step in front of the account that can undo everything else.
-  if (normalizeAccountType(target.account_type) === "company") {
+  // Another operator has to be demoted first. Not paranoia about malice — it is
+  // one extra deliberate step in front of the account that can undo everything else.
+  if (target.is_platform) {
     return NextResponse.json(
-      { error: "Ubah jenis akunnya dari Company dulu sebelum menghapus." },
+      { error: "Cabut dulu status Platform-nya sebelum menghapus." },
       { status: 400 },
     );
   }

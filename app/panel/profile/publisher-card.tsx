@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { PublisherStatus, AccountType } from "@/lib/profile-utils";
+import type { PublisherStatus, Standing } from "@/lib/profile-utils";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -31,8 +31,8 @@ export type PublisherInfo = {
 // Keys, resolved per render — see the note on PUBLISHER_BADGE in ../page.tsx.
 const STEPS = ["panel.stepApplied", "panel.stepReviewed", "panel.stepApproved"] as const;
 
-function stepIndex(status: PublisherStatus, accountType: AccountType): number {
-  if (accountType === "agent" || accountType === "company" || status === "approved") return 2;
+function stepIndex(status: PublisherStatus, alreadySells: boolean): number {
+  if (alreadySells || status === "approved") return 2;
   if (status === "pending") return 1;
   if (status === "rejected") return 1;
   return -1;
@@ -48,22 +48,24 @@ function fmt(d: string | null): string {
 }
 
 export async function PublisherCard({
-  accountType,
+  standing,
   status,
   info,
 }: {
-  accountType: AccountType;
+  standing: Standing;
   status: PublisherStatus;
   info: PublisherInfo;
 }) {
   const t = translator(await requestLocale());
-  const isPublisher = accountType === "agent" || accountType === "company";
+  // Sejak Fase 5: siapa pun yang sudah punya izin jual lewat jalur lain — Platform
+  // atau anggota sebuah business — tidak perlu melamar jadi publisher.
+  const isPublisher = standing.isPlatform || standing.businessRole !== null;
   const applied = status !== "none" || isPublisher;
-  const active = stepIndex(status, accountType);
+  const active = stepIndex(status, isPublisher);
   const rejected = status === "rejected";
 
   const tone = isPublisher
-    ? { chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300", label: accountType === "company" ? t("panel.roleAdmin") : t("panel.publisherActive") }
+    ? { chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300", label: standing.isPlatform ? t("panel.rolePlatform") : t("panel.publisherActive") }
     : status === "pending"
       ? { chip: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300", label: t("panel.publisherWaiting") }
       : rejected

@@ -36,14 +36,24 @@ let anon: StorageClient;
 const bytes = (n: number, type: string) => new Blob([new Uint8Array(n).fill(7)], { type });
 const uid = () => crypto.randomUUID();
 
-async function makeUser(accountType: "agent" | "customer"): Promise<string> {
+async function makeUser(standing: "seller" | "customer"): Promise<string> {
   const { rows } = await raw.query(
     `insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
      values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $1, 'x', now(), now(), '{"provider":"email"}', '{}')
      returning id`,
     [`st-${uid().slice(0, 8)}@test.local`],
   );
-  if (accountType === "agent") await raw.query("update lp_profiles set account_type = 'agent' where id = $1", [rows[0].id]);
+  // A seller is a business member since Fase 5 (account_type is gone). The
+  // storage rules ask lp_can_sell(), which reads that membership.
+  if (standing === "seller") {
+    const { rows: biz } = await raw.query<{ id: string }>(
+      "select id from lp_businesses order by created_at limit 1",
+    );
+    await raw.query(
+      "insert into lp_business_members (business_id, user_id, role) values ($1, $2, 'admin') on conflict do nothing",
+      [biz[0].id, rows[0].id],
+    );
+  }
   return rows[0].id;
 }
 
@@ -72,7 +82,7 @@ beforeAll(async () => {
   await resetPool(APP_DB);
   raw = new pg.Client({ connectionString: DB });
   await raw.connect();
-  sellerId = await makeUser("agent");
+  sellerId = await makeUser("seller");
   customerId = await makeUser("customer");
   strangerId = await makeUser("customer");
   seller = storageClient(() => ({ uid: sellerId }));

@@ -8,11 +8,11 @@ import { signOut } from "@/lib/actions/auth";
 import { getPurchasesForUser } from "@/lib/actions/purchases";
 import { getMyFavorites } from "@/lib/actions/likes";
 import {
-  normalizeAccountType,
   normalizePublisherStatus,
-  accountTypeLabel,
+  standingLabel,
   type PublisherStatus,
 } from "@/lib/profile-utils";
+import { getProfile } from "@/lib/actions/profiles";
 import { ProfileForm } from "./profile-form";
 import { AvatarForm } from "./avatar-form";
 import { PublisherCard } from "./publisher-card";
@@ -70,7 +70,7 @@ export default async function ProfilePage() {
       // One string literal, deliberately: supabase-js infers the row type from
       // the literal, and a concatenated expression collapses it to an error type.
       .select(
-        "id, full_name, account_type, email_verified_at, avatar_url",
+        "id, full_name, email_verified_at, avatar_url",
       )
       .eq("id", user.id)
       .single(),
@@ -78,7 +78,12 @@ export default async function ProfilePage() {
     getMyFavorites(),
   ]);
 
-  const accountType = row ? normalizeAccountType(row.account_type) : "customer";
+  // Kedudukan diturunkan, bukan dibaca dari satu kolom (Fase 5).
+  const me = await getProfile();
+  const standing = {
+    isPlatform: !!me?.is_platform,
+    businessRole: me?.business_role ?? null,
+  };
   // Berkas & status pengajuan ada di keanggotaan situs ini sekarang.
   const { data: membership } = await createAdminClient()
     .from("lp_site_members")
@@ -96,12 +101,11 @@ export default async function ProfilePage() {
   const verified = !!row?.email_verified_at;
   const publisherBadge = PUBLISHER_BADGE[publisherStatus];
 
-  const roleClass =
-    accountType === "company"
-      ? "bg-[var(--primary)]/15 text-[var(--primary)]"
-      : accountType === "agent"
-        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-        : "bg-[var(--accent-subtle)] text-[var(--muted)]";
+  const roleClass = standing.isPlatform
+    ? "bg-[var(--primary)]/15 text-[var(--primary)]"
+    : standing.businessRole
+      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+      : "bg-[var(--accent-subtle)] text-[var(--muted)]";
 
   return (
     <div className="space-y-5">
@@ -119,7 +123,7 @@ export default async function ProfilePage() {
             <p className="mt-0.5 break-all text-sm text-[var(--muted)]">{email || "—"}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${roleClass}`}>
-                {accountTypeLabel(accountType)}
+                {standingLabel(standing)}
               </span>
               {publisherBadge && (
                 <span
@@ -164,7 +168,7 @@ export default async function ProfilePage() {
         </header>
         <div className="p-4 sm:p-6">
           <PublisherCard
-            accountType={accountType}
+            standing={standing}
             status={publisherStatus}
             info={{
               displayName: membership?.publisher_display_name ?? null,
