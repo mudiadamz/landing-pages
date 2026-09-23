@@ -160,6 +160,10 @@ export const en: Record<keyof typeof id, string> = {
   "panel.navGroupBranding": "Branding",
   "panel.navGroupContent": "Content",
   "panel.navGroupSystem": "System",
+  /* Customer shell (components/account-shell.tsx). "Overview", not
+     "Dashboard": that word belongs to a back office, and this screen isn't one. */
+  "panel.navOverview": "Overview",
+  "panel.accountNav": "Account navigation",
   "panel.navDashboard": "Dashboard",
   "panel.navPurchases": "My purchases",
   "panel.navFavorites": "Favourites",

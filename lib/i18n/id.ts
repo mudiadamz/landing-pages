@@ -149,6 +149,10 @@ export const id = {
   "panel.navGroupBranding": "Branding",
   "panel.navGroupContent": "Konten",
   "panel.navGroupSystem": "Sistem",
+  /* Customer shell (components/account-shell.tsx). "Ringkasan" bukan
+     "Dashboard": kata itu milik back office, dan layar ini bukan itu. */
+  "panel.navOverview": "Ringkasan",
+  "panel.accountNav": "Navigasi akun",
   "panel.navDashboard": "Dashboard",
   "panel.navPurchases": "Pembelian saya",
   "panel.navFavorites": "Favorit",

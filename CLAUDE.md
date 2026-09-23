@@ -195,6 +195,25 @@ Ringkasan yang paling sering dilanggar:
     matriks business, Agent situs itu lolos, sisanya lewat matriks situs. Ambil
     yang pertama cocok dan menambah peran bisa MENGURANGI izin. Nav panel
     digambar dari `getAccessibleFeatures()`.
+- **Dua shell panel, satu set route.** `/panel` melayani dua audiens yang nyaris
+  tidak beririsan: business menjangkau 26 layar, customer menjangkau empat. Jadi
+  yang bercabang **shell-nya**, bukan route-nya — halaman yang sama dirender di
+  bingkai yang cocok, tidak ada yang dipindah atau diduplikasi.
+  - Aturannya di `lib/panel-shell.ts` (`isCustomerOnly`), dipakai sekali di
+    `app/panel/layout.tsx`. Ditulis sebagai daftar hal yang **tidak** bisa dia
+    lakukan: bukan Platform, tanpa peran business, tidak boleh jual di situs ini
+    (itu mencakup publisher & Agent situs), dan nol fitur terdelegasi. **Satu
+    kemampuan saja sudah cukup untuk tetap dapat sidebar** — salah ke arah itu
+    cuma memalukan, salah ke arah sebaliknya mencabut menu yang kemarin ada.
+  - Customer → `components/account-shell.tsx`: topbar + empat tab
+    (`components/account-nav.tsx`), bottom bar di HP. Tanpa sidebar.
+  - **Sengaja bukan chrome storefront**: chrome itu per-template (default /
+    linkbio / mbahgpt / pustaka), jadi "pembelian saya" akan tampak jadi empat
+    halaman berbeda tergantung domain tempat dia beli.
+  - `PanelTopbar` dipakai kedua shell lewat `withSidebar` — satu menu akun, bukan
+    dua yang harus disamakan. "Daftar business" jadi satu baris di menu itu
+    (`canApplyBusiness`), supaya tetap terjangkau dari layar mana pun tanpa jadi
+    tab kelima.
 - **Delegasi fitur admin**: daftar fitur yang bisa diberikan ada di `lib/features.ts`
   (`ADMIN_FEATURES`: stats, users, categories, contacts, inbox, hero, content, legal,
   hiring, custom-js). **Dua matriks, dua sumbu, sengaja tidak digabung**

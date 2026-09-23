@@ -33,6 +33,8 @@ export function PanelTopbar({
   avatarUrl = "",
   brand,
   locale,
+  withSidebar = true,
+  canApplyBusiness = false,
 }: {
   displayName: string;
   email: string | null;
@@ -42,6 +44,19 @@ export function PanelTopbar({
   avatarUrl?: string;
   brand: SiteBrand;
   locale: Locale;
+  /**
+   * False in the customer shell (components/account-shell.tsx), which has no
+   * sidebar: the two toggles have nothing to toggle, and the brand has to show
+   * at every width because there is no rail printing it on desktop.
+   */
+  withSidebar?: boolean;
+  /**
+   * Eligible to open a Business → one row in this menu. It lives here rather
+   * than in the nav because the customer nav is four tabs and this is a
+   * once-ever action — but it must still be reachable from every screen, not
+   * only from the dashboard.
+   */
+  canApplyBusiness?: boolean;
 }) {
   const t = useT();
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = usePanelChrome();
@@ -83,6 +98,8 @@ export function PanelTopbar({
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--card)] px-3 sm:px-4">
       {/* Mobile: opens the drawer. Desktop: collapses the rail. One button in one
           place, because to the reader it is the same control — "the sidebar". */}
+      {withSidebar && (
+      <>
       <button
         type="button"
         onClick={() => setMobileOpen(!mobileOpen)}
@@ -102,10 +119,13 @@ export function PanelTopbar({
       >
         <SidebarIcon className="h-5 w-5" collapsed={collapsed} />
       </button>
+      </>
+      )}
 
-      {/* The brand only on phones — on desktop it is already at the top of the
-          sidebar, and printing it twice on one screen reads as a mistake. */}
-      <Link href="/panel" className="flex items-center md:hidden">
+      {/* With a sidebar, the brand shows only on phones — on desktop the rail
+          already prints it, and twice on one screen reads as a mistake. Without
+          one, this is the only place it appears. */}
+      <Link href="/panel" className={`flex items-center ${withSidebar ? "md:hidden" : ""}`}>
         <SiteLogo brand={brand} imgClassName="h-7 w-auto max-w-[140px]" markClassName="h-6 w-6" />
       </Link>
 
@@ -159,6 +179,17 @@ export function PanelTopbar({
                   </span>
                 </span>
               </Link>
+
+              {canApplyBusiness && (
+                <Link
+                  href="/panel/apply-business"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 border-b border-[var(--border)] px-3 py-3 text-sm text-foreground transition-colors hover:bg-[var(--background)]"
+                >
+                  <StoreIcon className="h-5 w-5 shrink-0 text-[var(--muted)]" />
+                  {t("panel.navApplyBusiness")}
+                </Link>
+              )}
 
               <div className="flex items-center justify-between px-3 py-2.5">
                 <span className="text-sm text-[var(--muted)]">{t("nav.language")}</span>
@@ -214,6 +245,14 @@ function SidebarIcon({ className, collapsed }: { className?: string; collapsed: 
       <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth={2} />
       <path strokeWidth={2} d="M9 4v16" />
       {!collapsed && <path strokeWidth={2} d="M3 4h6v16H3z" fill="currentColor" opacity="0.25" />}
+    </svg>
+  );
+}
+
+function StoreIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l1.5-5h15L21 9M3 9h18M3 9v10a1 1 0 001 1h16a1 1 0 001-1V9M9 20v-6h6v6" />
     </svg>
   );
 }

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/db/server";
-import { createAdminClient } from "@/lib/db/admin";
 import { isCanonicalRequest, canonicalOrigin, currentSite } from "@/lib/site-resolve";
 import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures, canSellOnCurrentSite } from "@/lib/actions/profiles";
@@ -12,6 +11,8 @@ import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
 import { PanelSidebar } from "@/components/panel-sidebar";
 import { PanelTopbar } from "@/components/panel-topbar";
 import { PanelChrome } from "@/components/panel-chrome";
+import { AccountShell } from "@/components/account-shell";
+import { isCustomerOnly } from "@/lib/panel-shell";
 import { PANEL_SIDEBAR_COOKIE, isSidebarCollapsed } from "@/lib/panel-chrome";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
@@ -114,6 +115,46 @@ export default async function PanelLayout({
   const collapsed = isSidebarCollapsed((await cookies()).get(PANEL_SIDEBAR_COOKIE)?.value);
   const brand = siteBrand(await currentSite(), locale);
 
+  // Which shell? The rule is in lib/panel-shell.ts, where it can be tested.
+  const customerOnly = isCustomerOnly({
+    isPlatform: !!profile?.is_platform,
+    businessRole: profile?.business_role ?? null,
+    canSell: !!canSell,
+    featureCount: features.length,
+  });
+
+  const banners = (
+    <>
+      <EmailVerifyNotice />
+      {user && !emailVerified && <EmailConfirmBanner email={user.email ?? null} />}
+    </>
+  );
+
+  if (customerOnly) {
+    return (
+      <LocaleProvider locale={locale}>
+        {/* Still inside PanelChrome: the topbar's account menu reads it, and the
+            context costs nothing when there is no rail to drive. */}
+        <PanelChrome defaultCollapsed={collapsed}>
+          <style
+            dangerouslySetInnerHTML={{ __html: paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
+          />
+          <AccountShell
+            displayName={displayName}
+            email={user?.email ?? null}
+            avatarUrl={profile?.avatar_url ?? ""}
+            brand={brand}
+            locale={locale}
+            canApplyBusiness={canApplyBusiness}
+            banners={banners}
+          >
+            {children}
+          </AccountShell>
+        </PanelChrome>
+      </LocaleProvider>
+    );
+  }
+
   return (
     <LocaleProvider locale={locale}>
     <PanelChrome defaultCollapsed={collapsed}>
@@ -157,8 +198,7 @@ export default async function PanelLayout({
           brand={brand}
           locale={locale}
         />
-        <EmailVerifyNotice />
-        {user && !emailVerified && <EmailConfirmBanner email={user.email ?? null} />}
+        {banners}
         <main id="panel-main" className="flex-1 min-w-0 max-w-5xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 md:mx-0">
           {children}
         </main>

@@ -179,6 +179,10 @@ describe("dictionary integrity", () => {
     // cross-business screens. Same word, two jobs: one names a person, the other
     // names a section, and English may well want "Platform operator" for the first.
     Platform: ["panel.rolePlatform", "panel.navGroupPlatform"],
+    // The customer panel's first tab vs the analytics dashboard's first tab.
+    // Unrelated screens for unrelated audiences; renaming one must not move the
+    // other, and English may want "Overview" for one and "Summary" for the other.
+    Ringkasan: ["panel.navOverview", "analytics.tabOverview"],
   };
 
   it("has no UNDECLARED duplicate values", () => {
