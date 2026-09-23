@@ -12,6 +12,7 @@ import { requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { paletteFromKey } from "@/lib/palette";
+import { normalizeSkin } from "@/lib/skin";
 import { normalizeLocale } from "@/lib/i18n";
 import { createAdminClient } from "@/lib/db/admin";
 import { brandMaxBytes, iconShapeError, readPngSize, sniffBrandImage } from "@/lib/site-brand";
@@ -47,6 +48,8 @@ export type SiteProfileInput = {
   categoryIds: string[];
   template: string;
   palette: string;
+  /** Visual style key (lib/skin.ts). Unknown values fall back to the default. */
+  skin: string;
   /** UI language for this storefront. Anything unknown falls back to Indonesian. */
   locale: string;
   /** Public URLs from uploadSiteBrandImage. Empty string clears back to the default. */
@@ -345,6 +348,7 @@ export async function updateSiteProfile(
       category_ids: input.categoryIds,
       template: resolveTemplate(input.template).key,
       palette: paletteFromKey(input.palette).preset,
+      skin: normalizeSkin(input.skin),
       locale: normalizeLocale(input.locale),
       logo_url: input.logoUrl?.trim() || null,
       icon_url: input.iconUrl?.trim() || null,

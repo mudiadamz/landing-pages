@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updatePanelPalette } from "@/lib/actions/site-settings";
+import { updatePanelPalette, updatePanelSkin } from "@/lib/actions/site-settings";
+import { SKIN_PRESETS } from "@/lib/skin";
 import {
   PALETTE_PRESETS,
   normalizeTokens,
@@ -37,15 +38,23 @@ const FIELDS: { key: keyof PaletteTokens; labelKey: MessageKey }[] = [
   { key: "secondaryDark", labelKey: "panel.paletteSecondaryDark" },
 ];
 
-export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
+export function AppearanceForm({
+  initial,
+  initialSkin,
+}: {
+  initial: PaletteConfig;
+  initialSkin: string;
+}) {
   const t = useT();
   const router = useRouter();
   const [preset, setPreset] = useState(initial.preset);
+  const [skin, setSkin] = useState(initialSkin);
   const [tokens, setTokens] = useState<PaletteTokens>(initial.tokens);
   const [saving, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const dirty =
     preset !== initial.preset ||
+    skin !== initialSkin ||
     JSON.stringify(tokens) !== JSON.stringify(initial.tokens);
 
   const choose = (key: string) => {
@@ -64,11 +73,18 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
   function save() {
     setMsg(null);
     start(async () => {
-      const res = await updatePanelPalette({ preset, tokens: normalizeTokens(tokens) });
+      // Two stores, so two writes. The style goes first: if the palette write
+      // then fails, the user sees an error with the style already applied, which
+      // is a visible and correctable state — the reverse would look like the
+      // style silently refused to change.
+      const skinRes = skin !== initialSkin ? await updatePanelSkin(skin) : { ok: true as const };
+      const res = !skinRes.ok
+        ? skinRes
+        : await updatePanelPalette({ preset, tokens: normalizeTokens(tokens) });
       setMsg(
         res.ok
           ? { ok: true, text: t("panel.paletteSaved") }
-          : { ok: false, text: res.error ?? t("common.failed") },
+          : { ok: false, text: ("error" in res && res.error) || t("common.failed") },
       );
       if (res.ok) router.refresh();
     });
@@ -167,6 +183,50 @@ export function AppearanceForm({ initial }: { initial: PaletteConfig }) {
             {t("panel.link")}
           </a>
           <span className="text-sm text-[var(--muted)]">{t("panel.secondaryText")}</span>
+        </div>
+      </div>
+
+      {/* Style, under the colours: the same screen answers "what does my panel
+          look like", and these are the two halves of that. Each option previews
+          ITSELF with inline styles, because utility classes here would be
+          repainted by whichever skin the panel is already wearing. */}
+      <div className="space-y-2">
+        <span className="block text-sm font-medium text-foreground">{t("sites.skinLabel")}</span>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SKIN_PRESETS.map((sk) => {
+            const active = skin === sk.key;
+            const flat = sk.key === "flat";
+            return (
+              <button
+                key={sk.key}
+                type="button"
+                onClick={() => {
+                  setSkin(sk.key);
+                  setMsg(null);
+                }}
+                aria-pressed={active}
+                className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                  active
+                    ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
+                    : "border-[var(--border)] hover:bg-[var(--background)]"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className="mt-0.5 h-10 w-10 shrink-0 border border-[var(--border)] bg-[var(--card)]"
+                  style={
+                    flat
+                      ? { borderRadius: "0.25rem", boxShadow: "none" }
+                      : { borderRadius: "0.75rem", boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }
+                  }
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-foreground">{sk.label}</span>
+                  <span className="mt-0.5 block text-xs text-[var(--muted)]">{sk.note}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

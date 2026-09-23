@@ -6,8 +6,9 @@ import { siteBrand } from "@/lib/site-brand";
 import { getProfile, getAccessibleFeatures, canSellOnCurrentSite } from "@/lib/actions/profiles";
 import { getPublisherApplications } from "@/lib/actions/admin";
 import { managesBusiness } from "@/lib/profile-utils";
-import { getPanelPalette } from "@/lib/actions/site-settings";
+import { getPanelPalette, getPanelSkin } from "@/lib/actions/site-settings";
 import { paletteCss, surfaceCss, PANEL_SURFACES } from "@/lib/palette";
+import { skinCss } from "@/lib/skin";
 import { PanelSidebar } from "@/components/panel-sidebar";
 import { PanelTopbar } from "@/components/panel-topbar";
 import { PanelChrome } from "@/components/panel-chrome";
@@ -74,10 +75,11 @@ export default async function PanelLayout({
     }
   }
 
-  const [db, profile, palette] = await Promise.all([
+  const [db, profile, palette, panelSkin] = await Promise.all([
     createClient(),
     getProfile(),
     getPanelPalette(),
+    getPanelSkin(),
   ]);
   const {
     data: { user },
@@ -137,7 +139,7 @@ export default async function PanelLayout({
             context costs nothing when there is no rail to drive. */}
         <PanelChrome defaultCollapsed={collapsed}>
           <style
-            dangerouslySetInnerHTML={{ __html: paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
+            dangerouslySetInnerHTML={{ __html: skinCss(panelSkin) + paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
           />
           <AccountShell
             displayName={displayName}
@@ -174,7 +176,7 @@ export default async function PanelLayout({
           on the canonical domain that style is on this page too — the admin UI
           should not inherit a storefront's page colour. */}
       <style
-        dangerouslySetInnerHTML={{ __html: paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
+        dangerouslySetInnerHTML={{ __html: skinCss(panelSkin) + paletteCss(palette) + surfaceCss(PANEL_SURFACES) }}
       />
       <PanelSidebar
         isPlatform={!!profile?.is_platform}

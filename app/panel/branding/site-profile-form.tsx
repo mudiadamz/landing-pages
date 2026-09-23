@@ -16,6 +16,7 @@ import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import type { SiteProfileInput } from "@/lib/actions/sites";
 import type { LocaleOption } from "@/lib/i18n/locales";
 import { useT } from "@/lib/i18n/client";
+import { SKIN_PRESETS } from "@/lib/skin";
 
 /**
  * Everything about a storefront that isn't its hostname.
@@ -311,6 +312,53 @@ export function SiteProfileForm({
           <p className="text-xs text-[var(--muted)]">
             {t("sites.paletteNote")}
           </p>
+        </div>
+
+        {/* Style sits under the palette because the two are read together — one
+            says what colour, the other what the surfaces are made of — but they
+            are genuinely independent: any palette works with any style. Each
+            option previews ITSELF rather than describing itself, since "flat"
+            and "glass" are words nobody agrees on. */}
+        <div className="space-y-2">
+          <span className="block text-sm font-medium text-foreground">{t("sites.skinLabel")}</span>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {SKIN_PRESETS.map((sk) => {
+              const active = draft.skin === sk.key;
+              const flat = sk.key === "flat";
+              return (
+                <button
+                  key={sk.key}
+                  type="button"
+                  onClick={() => set("skin", sk.key)}
+                  aria-pressed={active}
+                  className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                    active
+                      ? "border-[var(--primary)] bg-[var(--primary)]/5 ring-1 ring-[var(--primary)]/30"
+                      : "border-[var(--border)] hover:bg-[var(--background)]"
+                  }`}
+                >
+                  {/* Inline styles, not utility classes: this swatch has to keep
+                      its own look whatever skin the PANEL is currently wearing,
+                      and the rounded and shadow utilities are exactly what a
+                      skin repaints. */}
+                  <span
+                    aria-hidden
+                    className="mt-0.5 h-10 w-10 shrink-0 border border-[var(--border)] bg-[var(--card)]"
+                    style={
+                      flat
+                        ? { borderRadius: "0.25rem", boxShadow: "none" }
+                        : { borderRadius: "0.75rem", boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }
+                    }
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">{sk.label}</span>
+                    <span className="mt-0.5 block text-xs text-[var(--muted)]">{sk.note}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-[var(--muted)]">{t("sites.skinNote")}</p>
         </div>
       </section>
 

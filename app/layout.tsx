@@ -20,6 +20,7 @@ import { LocaleProvider } from "@/lib/i18n/client";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { paletteCss, paletteFromKey, surfaceCss } from "@/lib/palette";
+import { skinCss } from "@/lib/skin";
 import { DEFAULT_ICON } from "@/lib/site-brand";
 import { siteAppearance, type SiteAppearance } from "@/lib/site-appearance";
 import { APPLE_ICON_SPEC, iconUrl } from "@/lib/pwa-icons";
@@ -251,6 +252,9 @@ export default async function RootLayout({
               // nowhere else — so a domain switched to a template designed around
               // one palette still rendered in Forest until somebody also changed
               // the dropdown underneath. An explicit pick still wins.
+              // Shape before colour: the skin only sets radius/depth/blur, so
+              // nothing below can be undone by it.
+              skinCss(site.skin) +
               paletteCss(paletteFromKey(site.palette || template.defaultPalette)) +
               // The template's own page/card colours, after the palette so they
               // win. The panel re-asserts its own inside this one.

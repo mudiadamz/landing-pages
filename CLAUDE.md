@@ -255,6 +255,27 @@ Ringkasan yang paling sering dilanggar:
     dua yang harus disamakan. "Daftar business" jadi satu baris di menu itu
     (`canApplyBusiness`), supaya tetap terjangkau dari layar mana pun tanpa jadi
     tab kelima.
+- **Tiga sumbu tema, saling bebas** — masing-masing menjawab pertanyaan berbeda:
+  | sumbu | pertanyaan | di mana |
+  |---|---|---|
+  | `template` | apa yang ada di halaman | `lib/templates/registry.tsx`, `lp_sites.template` |
+  | `palette` | warnanya apa | `lib/palette.ts`, `lp_sites.palette` |
+  | `skin` | permukaannya terbuat dari apa (radius, bayangan, blur) | `lib/skin.ts`, `lp_sites.skin` |
+  - **Kenapa skin cuma ~25 baris CSS, bukan refactor 185 file:** Tailwind v4
+    mengompilasi `rounded-xl` jadi `border-radius: var(--radius-xl)` dan
+    `backdrop-blur-md` jadi `blur(var(--blur-md))`. Mendefinisikan ulang empat
+    variabel mengubah ~660 pemakaian sekaligus. Bayangan pengecualian — nilainya
+    di-inline ke `--tw-shadow` — jadi itu di-override per class.
+  - Tailwind menaruh utility-nya di `@layer utilities`, dan aturan **tanpa layer
+    selalu menang** atas yang berlayer, berapa pun urutannya. `<style>` dari
+    `skinCss()` tanpa layer, jadi override-nya pasti, bukan adu specificity.
+  - **Setiap skin WAJIB memancarkan semua token, termasuk `glass` yang isinya
+    nilai bawaan Tailwind.** Root layout menulis skin storefront, panel layout
+    menulis skin panel SESUDAHNYA; kalau default-nya diam, storefront `flat`
+    akan bocor ke panel `glass` dan dua cakupan itu tidak benar-benar bebas.
+  - Panel punya setelan sendiri di `lp_site_settings` key `panel_skin`
+    (`/panel/appearance`), seperti `panel_palette`. Storefront diatur di
+    `/panel/branding`, di bawah palette.
 - **Delegasi fitur admin**: daftar fitur yang bisa diberikan ada di `lib/features.ts`
   (`ADMIN_FEATURES`: stats, users, categories, contacts, inbox, hero, content, legal,
   hiring, custom-js). **Dua matriks, dua sumbu, sengaja tidak digabung**

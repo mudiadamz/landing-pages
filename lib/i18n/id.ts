@@ -1056,6 +1056,8 @@ export const id = {
   "sites.templateBadgeNoteBefore": "Badge di atas = permukaan yang template ini punya sendiri;",
   "sites.templateBadgeNoteAfter":
     "berarti ikut tampilan Marketplace. Yang selalu sama di semua template: halaman produk, checkout, reader, dan halaman legal.",
+  "sites.skinLabel": "Gaya visual",
+  "sites.skinNote": "Mengubah sudut, bayangan, dan efek buram — bukan warnanya. Panel punya setelan sendiri di Tampilan.",
   "sites.paletteNote":
     "Mengubah warna aksi, tint, dan aksen. Latar, teks, dan border tetap — di situlah kontrasnya, jadi tidak bisa diatur sampai rusak.",
   "sites.localeNote":

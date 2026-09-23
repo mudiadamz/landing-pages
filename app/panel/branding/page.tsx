@@ -65,6 +65,7 @@ export default async function BrandingPage() {
           categoryIds: site.category_ids ?? [],
           template: site.template || "default",
           palette: site.palette || "forest",
+          skin: site.skin,
           locale: site.locale,
           logoUrl: site.logo_url ?? "",
           iconUrl: site.icon_url ?? "",

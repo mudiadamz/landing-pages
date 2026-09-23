@@ -1066,6 +1066,8 @@ export const en: Record<keyof typeof id, string> = {
   "sites.templateBadgeNoteBefore": "The badges above are the surfaces this template owns;",
   "sites.templateBadgeNoteAfter":
     "means it follows the Marketplace look. Identical across every template: the product page, checkout, reader, and legal pages.",
+  "sites.skinLabel": "Visual style",
+  "sites.skinNote": "Changes corners, depth and blur — not the colours. The panel has its own setting under Appearance.",
   "sites.paletteNote":
     "Changes the action, tint and accent colours. Background, text and borders stay put — that is where the contrast lives, so it cannot be adjusted into unreadability.",
   "sites.localeNote":

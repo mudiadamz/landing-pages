@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/db/admin";
 import { PANEL_SITE_COOKIE } from "@/lib/panel-site";
 import { setBusinessContext } from "@/lib/backend/tenant";
 import { DEFAULT_LOCALE, normalizeLocale, type Locale } from "@/lib/i18n";
+import { DEFAULT_SKIN } from "@/lib/skin";
 
 /**
  * Which storefront is this request for?
@@ -48,10 +49,12 @@ export type Site = {
   locale: Locale;
   /** Which Business owns this storefront (docs/plans/multi-business-saas.md). */
   business_id: string | null;
+  /** Visual style: radius/depth/blur, independent of palette (lib/skin.ts). */
+  skin: string;
 };
 
 const SITE_COLUMNS =
-  "id, host, name, tagline, description, category_ids, template, palette, logo_url, icon_url, is_canonical, active, locale, business_id";
+  "id, host, name, tagline, description, category_ids, template, palette, skin, logo_url, icon_url, is_canonical, active, locale, business_id";
 
 /**
  * Used when lp_sites is empty or unreachable — a fresh database, or the migration
@@ -75,6 +78,7 @@ const FALLBACK_SITE: Site = {
   active: true,
   locale: DEFAULT_LOCALE,
   business_id: null,
+  skin: DEFAULT_SKIN,
 };
 
 function anonClient() {

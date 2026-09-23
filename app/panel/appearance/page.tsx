@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/actions/profiles";
-import { getPanelPalette } from "@/lib/actions/site-settings";
+import { getPanelPalette, getPanelSkin } from "@/lib/actions/site-settings";
 import { AppearanceForm } from "./appearance-form";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { translator } from "@/lib/i18n";
@@ -11,7 +11,7 @@ export const metadata = { title: "Tampilan" };
 export default async function AppearancePage() {
   const t = translator(await requestLocale());
   if (!(await requireAdmin())) redirect("/panel");
-  const palette = await getPanelPalette();
+  const [palette, skin] = await Promise.all([getPanelPalette(), getPanelSkin()]);
 
   return (
     <div className="space-y-5">
@@ -23,7 +23,7 @@ export default async function AppearancePage() {
         {t("panel.paletteForAfter")}
       </p>
 
-      <AppearanceForm initial={palette} />
+      <AppearanceForm initial={palette} initialSkin={skin} />
     </div>
   );
 }

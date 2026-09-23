@@ -44,6 +44,7 @@ import {
   type PopupBanner,
 } from "@/lib/popup-config";
 import { POPUP_MAX_BYTES, readWebpHeader } from "@/lib/webp";
+import { DEFAULT_SKIN, normalizeSkin } from "@/lib/skin";
 import { canonicalSiteId, currentSiteId, editingSite } from "@/lib/site-resolve";
 import { sanitizePageHtml } from "@/lib/page-html";
 
@@ -725,6 +726,64 @@ const readPanelPalette = unstable_cache(
 
 export async function getPanelPalette(): Promise<PaletteConfig> {
   return readPanelPalette(await canonicalSiteId());
+}
+
+/* Panel visual style (edited at /panel/appearance, stored under "panel_skin").
+ *
+ * Its OWN setting, not the canonical site's `skin`: the panel is a workspace and
+ * the storefront is a shopfront, and a business that wants a flat storefront has
+ * said nothing about what it wants to stare at all day. Same reason the panel
+ * palette is separate. */
+
+const SKIN_KEY = "panel_skin";
+
+const readPanelSkin = unstable_cache(
+  async (siteId: string): Promise<string> => {
+    try {
+      const db = createAnonClient();
+      const { data } = await db
+        .from("lp_site_settings")
+        .select("value")
+        .eq("site_id", siteId)
+        .eq("key", SKIN_KEY)
+        .maybeSingle();
+      return normalizeSkin(data?.value);
+    } catch {
+      // A style is decoration; never let it take the panel down with it.
+      return DEFAULT_SKIN;
+    }
+  },
+  ["panel-skin"],
+  { revalidate: 300, tags: ["panel-skin"] },
+);
+
+export async function getPanelSkin(): Promise<string> {
+  return readPanelSkin(await canonicalSiteId());
+}
+
+export async function updatePanelSkin(key: string): Promise<{ ok: boolean; error?: string }> {
+  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+
+  const db = await createClient();
+  const { error } = await db
+    .from("lp_site_settings")
+    .upsert(
+      {
+        site_id: await canonicalSiteId(),
+        key: SKIN_KEY,
+        value: normalizeSkin(key),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "site_id,key" },
+    );
+  if (error) {
+    console.error("updatePanelSkin error:", error);
+    return { ok: false, error: "Gagal menyimpan." };
+  }
+  updateTag("panel-skin");
+  // The style is injected by the panel LAYOUT, so the whole shell has to redraw.
+  revalidatePath("/panel", "layout");
+  return { ok: true };
 }
 
 export async function updatePanelPalette(

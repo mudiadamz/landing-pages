@@ -17,6 +17,7 @@ import {
 } from "@/lib/site-brand";
 import type { LandingPageCategory } from "@/lib/actions/landing-pages";
 import type { LocaleOption } from "@/lib/i18n/locales";
+import { DEFAULT_SKIN } from "@/lib/skin";
 import { DomainSetupGuide } from "../domain-setup-guide";
 
 /**
@@ -149,6 +150,9 @@ export function SiteWizard({
         categoryIds,
         template,
         palette,
+        // A new storefront starts on the default style; it is changed later from
+        // /panel/branding, next to the palette, rather than adding a step here.
+        skin: DEFAULT_SKIN,
         locale,
         logoUrl,
         iconUrl,
