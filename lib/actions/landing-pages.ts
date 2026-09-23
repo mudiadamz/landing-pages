@@ -7,6 +7,7 @@ import { effectivePlan, resolvePlanLimits, withinLimit, PLANS } from "@/lib/plan
 import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createAnonClient } from "@/lib/db/anon";
 import { createClient } from "@/lib/db/server";
+import { createAdminClient } from "@/lib/db/admin";
 import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
 import { currentSite, editingSite } from "@/lib/site-resolve";
@@ -226,13 +227,17 @@ export async function getLandingPageBySlug(slug: string) {
  */
 export async function getBundleContaining(productId: string) {
   const db = await createClient();
-  const { data } = await db
+  const site = await currentSite();
+  let q = db
     .from("lp_landing_pages")
     .select("id, title, slug, thumbnail_url, thumbnail_landscape_url, price, price_discount, is_free, bundle_product_ids, bundle_note, published")
     .contains("bundle_product_ids", [productId])
-    .eq("published", true)
-    .limit(1)
-    .maybeSingle();
+    .eq("published", true);
+  // Business isolation (Fase 2): the upsell must come from THIS storefront's
+  // business. Without it, any business could advertise its own bundle on every
+  // other business's preview page just by listing their product id.
+  if (site.business_id) q = q.eq("business_id", site.business_id);
+  const { data } = await q.limit(1).maybeSingle();
   if (!data) return null;
   return data as {
     id: string;
@@ -254,11 +259,16 @@ export async function getBundleContaining(productId: string) {
  */
 export async function getNextInSeries(nextProductId: string) {
   const db = await createClient();
-  const { data } = await db
+  const site = await currentSite();
+  let q = db
     .from("lp_landing_pages")
     .select("id, title, slug, thumbnail_url, thumbnail_landscape_url, price, price_discount, is_free, published")
-    .eq("id", nextProductId)
-    .maybeSingle();
+    .eq("id", nextProductId);
+  // Business isolation (Fase 2), same as getProductsByIds: a "continue reading"
+  // link is a product card, and a product card from another business does not
+  // belong on this storefront.
+  if (site.business_id) q = q.eq("business_id", site.business_id);
+  const { data } = await q.maybeSingle();
   if (!data || data.published === false) return null;
   return data as {
     id: string;
@@ -846,6 +856,67 @@ export async function getProductsByIds(ids: string[]): Promise<RelatedProduct[]>
   return clean.map((id) => byId.get(id)).filter((p): p is RelatedProduct => !!p);
 }
 
+type ProductRefs = {
+  related_product_ids?: string[] | null;
+  next_product_id?: string | null;
+  bundle_product_ids?: string[] | null;
+};
+
+/**
+ * Drop cross-product references that point outside the edited product's business.
+ *
+ * Not exported (a `"use server"` module may only export async functions, and this
+ * is an internal helper). Uses the service-role client because it has to read
+ * rows the caller cannot see — the gate is right here: the references are only
+ * resolved for a product the caller actually owns.
+ *
+ * A null `business_id` means a single-business deployment (the Fase 2 fallback),
+ * where there is nothing to scope to, so the ids pass through untouched. A field
+ * the caller did not send, or explicitly cleared, stays that way.
+ */
+async function scopeProductRefs(
+  productId: string,
+  userId: string,
+  refs: ProductRefs,
+): Promise<ProductRefs> {
+  const blank: ProductRefs = { related_product_ids: [], next_product_id: null, bundle_product_ids: [] };
+  const admin = createAdminClient();
+  const { data: self } = await admin
+    .from("lp_landing_pages")
+    .select("business_id, user_id")
+    .eq("id", productId)
+    .maybeSingle();
+  // Someone else's product: the UPDATE is scoped to user_id and will match zero
+  // rows, so the values never land — but resolving ids against a row the caller
+  // doesn't own would leak which ids exist. Refuse instead.
+  if (!self || self.user_id !== userId) return blank;
+
+  const businessId = (self.business_id as string | null) ?? null;
+  if (!businessId) return refs;
+
+  const candidates = [
+    ...(refs.related_product_ids ?? []),
+    ...(refs.bundle_product_ids ?? []),
+    ...(refs.next_product_id ? [refs.next_product_id] : []),
+  ].filter((v): v is string => typeof v === "string" && v.length > 0);
+  if (candidates.length === 0) return refs;
+
+  const { data } = await admin
+    .from("lp_landing_pages")
+    .select("id")
+    .in("id", [...new Set(candidates)])
+    .eq("business_id", businessId);
+  const ok = new Set((data ?? []).map((r) => r.id as string));
+
+  const keep = (list: string[] | null | undefined) =>
+    list == null ? list : list.filter((v) => ok.has(v));
+  return {
+    related_product_ids: keep(refs.related_product_ids),
+    bundle_product_ids: keep(refs.bundle_product_ids),
+    next_product_id: refs.next_product_id && ok.has(refs.next_product_id) ? refs.next_product_id : null,
+  };
+}
+
 export async function updateLandingPagePricing(
   id: string,
   opts: {
@@ -892,6 +963,21 @@ export async function updateLandingPagePricing(
   if ("long_description" in payload) {
     const clean = sanitizeRichText(payload.long_description);
     payload.long_description = clean || null;
+  }
+
+  // Cross-product references are ids the BROWSER sent. The picker only offers the
+  // seller's own products, but a picker is not a control: without this, a crafted
+  // request could point related/next/bundle at another business's catalog — and
+  // bundle_product_ids is the dangerous one, because grantBundleItems turns a
+  // listed id into a real purchase row for the buyer.
+  const refFields = ["related_product_ids", "next_product_id", "bundle_product_ids"] as const;
+  if (refFields.some((f) => f in payload)) {
+    const scoped = await scopeProductRefs(id, user.id, {
+      related_product_ids: payload.related_product_ids,
+      next_product_id: payload.next_product_id,
+      bundle_product_ids: payload.bundle_product_ids,
+    });
+    for (const f of refFields) if (f in payload) Object.assign(payload, { [f]: scoped[f] });
   }
 
   const { error } = await db

@@ -117,8 +117,22 @@ business/payout, multi-domain + Caddy on-demand TLS + `/api/tls-check`.
 > sudah lewat keanggotaan situs (`site_id → business`); TIDAK ditambah filter
 > `profile.business_id` karena customer boleh jadi anggota beberapa business.
 >
-> **Sisa (belum diisolasi):** related/bundle products (minor). Harus ditutup sebelum
-> business ke-2 benar-benar live (Fase 4).
+> **Referensi antar-produk (DITERAPKAN 2026-09-23):** sebuah produk bisa menunjuk
+> produk lain — `related_product_ids`, `next_product_id`, `bundle_product_ids` —
+> dan id itu **disimpan**, tidak difilter. Yang berbahaya `bundle_product_ids`:
+> `grantBundleItems` mengubah tiap id jadi baris `lp_purchases` sungguhan, jadi
+> bundle yang memuat produk business lain = membagikan produk itu gratis.
+> - **Tulis:** `updateLandingPagePricing` melewatkan ketiga field lewat
+>   `scopeProductRefs` — id di luar business produk yang diedit dibuang sebelum
+>   disimpan. Picker di panel bukan kontrol; request yang dirakit tangan tetap
+>   lewat situ.
+> - **Baca:** `getBundleItemIds` menyaring lagi terhadap business si bundle, supaya
+>   baris lama (ditulis sebelum penyaring tulis ada) tidak jadi kepemilikan gratis.
+>   `getBundleContaining` & `getNextInSeries` ikut di-scope `site.business_id`
+>   seperti `getProductsByIds`.
+> - `business_id` null tetap berarti "tanpa filter" (deployment 1-business).
+> - Diuji di `tests/db/business-isolation.test.ts` (lapisan aplikasi, bukan RLS —
+>   Fase 2 sudah memutuskan policy baca restrictive merusak cache).
 
 ---
 
@@ -149,7 +163,7 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 |---|---|---|
 | 0 | Tabel `lp_businesses` / `lp_business_members` / `lp_business_ledger`; `business_id` nullable + `is_platform`; backfill 1 business default. **Nol perubahan perilaku.** | ✅ |
 | 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
-| 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id) + **user & storage** (view lintas-business = Platform-only). | ✅ |
+| 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id) + **user & storage** (view lintas-business = Platform-only) + **referensi antar-produk** (related/next/bundle, tulis & baca). | ✅ |
 | 3 | Ledger + komisi + hold ✅ · **KYC (ajukan/approve) + payout (catat, min + KYC-gated) + refund (catat) ✅ — pencatatan & workflow, TANPA API disbursement (transfer bank manual)** · integrasi disbursement (Duitku/Xendit) ⬜ | ✅ recording + workflow |
 | 4 | Panel Platform (overview + saldo ledger) ✅ · **signup business (approval-gated) + onboarding + provisioning domain saat approve** ✅ · notifikasi email approve/reject ⬜ | ✅ signup + approval |
 | 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |
