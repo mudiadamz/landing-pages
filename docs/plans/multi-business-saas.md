@@ -167,8 +167,26 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
 | 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id) + **user & storage** (view lintas-business = Platform-only) + **referensi antar-produk** (related/next/bundle, tulis & baca). | ✅ |
 | 3 | Ledger + komisi + hold ✅ · KYC (ajukan/approve) + payout (catat, min + KYC-gated) + refund (catat) ✅ · **integrasi disbursement (Duitku Transfer Online, `lp_business_payouts`, mati kalau env kosong)** ✅ | ✅ |
-| 4 | Panel Platform (overview + saldo ledger) ✅ · **signup business (approval-gated) + onboarding + provisioning domain saat approve** ✅ · notifikasi email approve/reject ⬜ | ✅ signup + approval |
+| 4 | Panel Platform (overview + saldo ledger) ✅ · signup business (approval-gated) + onboarding + provisioning domain saat approve ✅ · **notifikasi email approve/reject** ✅ | ✅ |
 | 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |
+
+---
+
+## Fase 4 — notifikasi keputusan (2026-09-23)
+
+`approveBusiness`/`rejectBusiness` mengirim email lewat Resend
+(`sendBusinessDecisionEmail`), **sesudah** status ditulis dan **tanpa** membuat
+keputusannya gagal kalau Resend sedang mati: keputusan itu produknya, email cuma
+kesopanan, dan approve yang melempar akan meninggalkan business aktif sementara
+Platform mengira gagal. Tanpa `RESEND_API_KEY` fungsinya diam.
+
+Alamat: `contact_email` yang diisi pemohon, cadangan `lp_profiles.email` si
+`applied_by`. Email approve hanya menyebut domain yang **benar-benar** ter-provision
+(host yang sudah dipakai orang lain tidak dijanjikan). Email reject **tidak
+menyebut alasan** — alasannya memang tidak ada di data, jadi mengarangnya berarti
+sistem mengaku tahu hal yang tidak dia tahu; diarahkan ke balasan email.
+
+Nama business di-escape sebelum masuk HTML (`tests/business-decision-email.test.ts`).
 
 ---
 

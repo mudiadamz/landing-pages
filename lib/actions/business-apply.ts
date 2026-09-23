@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/db/admin";
+import { sendBusinessDecisionEmail } from "@/lib/email";
+import { canonicalOrigin } from "@/lib/site-resolve";
 import { slugFromTitle } from "@/lib/slug";
 import { requirePlatform } from "./profiles";
 
@@ -132,7 +134,7 @@ export async function approveBusiness(id: string): Promise<{ ok: boolean; error?
 
   const { data: biz } = await admin
     .from("lp_businesses")
-    .select("id, name, status, desired_host")
+    .select("id, name, status, desired_host, contact_email, applied_by")
     .eq("id", id)
     .single();
   if (!biz) return { ok: false, error: "Business tidak ditemukan." };
@@ -146,6 +148,7 @@ export async function approveBusiness(id: string): Promise<{ ok: boolean; error?
     return { ok: false, error: "Gagal menyetujui." };
   }
 
+  let provisioned: string | null = null;
   const host = cleanHost((biz.desired_host as string) || "");
   if (host && !hostError(host)) {
     const { data: taken } = await admin.from("lp_sites").select("id").eq("host", host).limit(1);
@@ -157,9 +160,13 @@ export async function approveBusiness(id: string): Promise<{ ok: boolean; error?
         business_id: id,
       });
       if (siteErr) console.error("approveBusiness site provisioning error:", siteErr);
+      // Only announce a domain that actually exists now: a taken host means the
+      // business still has to add one from /panel/sites.
+      else provisioned = host;
     }
   }
 
+  await notifyDecision(admin, biz, true, provisioned);
   revalidatePath("/panel/platform");
   return { ok: true };
 }
@@ -169,6 +176,13 @@ export async function rejectBusiness(id: string): Promise<{ ok: boolean; error?:
   if (!(await requirePlatform())) return { ok: false, error: "Akses ditolak." };
   const admin = createAdminClient();
 
+  const { data: biz } = await admin
+    .from("lp_businesses")
+    .select("id, name, contact_email, applied_by")
+    .eq("id", id)
+    .single();
+  if (!biz) return { ok: false, error: "Business tidak ditemukan." };
+
   const { error } = await admin
     .from("lp_businesses")
     .update({ status: "suspended", reviewed_at: new Date().toISOString() })
@@ -177,6 +191,48 @@ export async function rejectBusiness(id: string): Promise<{ ok: boolean; error?:
     console.error("rejectBusiness error:", error);
     return { ok: false, error: "Gagal menolak." };
   }
+
+  await notifyDecision(admin, biz, false, null);
   revalidatePath("/panel/platform");
   return { ok: true };
+}
+
+/**
+ * Email the applicant the decision (Fase 4). Not exported — a `"use server"`
+ * module may only export async functions that are safe to call from a browser,
+ * and this one takes a service-role client.
+ *
+ * Called AFTER the status is written, and never awaited for its success: the
+ * decision is the product, the email is the courtesy. `contact_email` is what the
+ * applicant typed; the profile address is the fallback for an application that
+ * left it blank.
+ */
+async function notifyDecision(
+  admin: ReturnType<typeof createAdminClient>,
+  biz: { name?: unknown; contact_email?: unknown; applied_by?: unknown },
+  approved: boolean,
+  host: string | null,
+): Promise<void> {
+  try {
+    let to = typeof biz.contact_email === "string" ? biz.contact_email.trim() : "";
+    if (!to && typeof biz.applied_by === "string") {
+      const { data: profile } = await admin
+        .from("lp_profiles")
+        .select("email")
+        .eq("id", biz.applied_by)
+        .maybeSingle();
+      to = ((profile?.email as string | null) ?? "").trim();
+    }
+    if (!to) return;
+
+    await sendBusinessDecisionEmail({
+      to,
+      businessName: String(biz.name ?? "Business"),
+      approved,
+      host,
+      origin: canonicalOrigin(),
+    });
+  } catch (e) {
+    console.error("notifyDecision error:", e);
+  }
 }
