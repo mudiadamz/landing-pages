@@ -1,6 +1,6 @@
 {
   "name": "landing_pages",
-  "version": "0.1.35",
+  "version": "0.1.36",
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "scripts": {
@@ -16,7 +16,8 @@
     "i18n:scan": "node scripts/find-hardcoded-strings.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:db": "vitest run --config vitest.db.config.ts"
+    "test:db": "vitest run --config vitest.db.config.ts",
+    "db:check": "node --env-file-if-exists=.env.development.local scripts/migrate.mjs --check"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

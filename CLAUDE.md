@@ -123,8 +123,21 @@ Ringkasan yang paling sering dilanggar:
   - `NEXT_PUBLIC_*` disulih saat **build** — ganti nilainya berarti build ulang,
     bukan restart.
 - **Selesai mengubah kode → jalankan rutin `scripts/ship.sh "pesan"`** (sejak
-  2026-09-22, permintaan Adam): (1) naikkan versi, (2) rebuild + restart, (3)
-  commit + push — tanpa diminta lagi tiap selesai. Ketiganya sudah otomatis:
+  2026-09-22, permintaan Adam): (0) **tolak kalau database tertinggal dari
+  `db/migrations`**, (1) naikkan versi, (2) rebuild + restart, (3)
+  commit + push — tanpa diminta lagi tiap selesai.
+  - **Gerbang migration** (`pnpm db:check` → `scripts/migrate.mjs --check`)
+    jalan PALING AWAL, sebelum kode baru mulai melayani. Ada karena 2026-09-23
+    sebuah fase ter-ship padahal migration-nya belum pernah diterapkan di sini:
+    produksi menjalankan kode baru di atas skema lama selama tujuh jam **tanpa
+    satu error pun** — gagalnya baru muncul sebagai 500 di request pertama yang
+    menyentuh kolom baru, bukan sebagai deploy yang patah.
+  - Sengaja **menolak**, bukan menerapkan sendiri: sebuah migration bisa
+    men-drop kolom, dan satu-satunya hal yang lebih buruk daripada ship tanpa
+    migration adalah skrip deploy yang diam-diam menjalankan statement
+    destruktif di produksi karena ada file baru muncul.
+  - `SKIP_MIGRATE_CHECK=1` untuk menembusnya — gerbang yang tidak bisa dilewati
+    saat darurat akan dihapus orang, bukan dipakai. Ketiganya sudah otomatis:
   versi dinaikkan oleh hook `.githooks/pre-commit`; rebuild/restart oleh
   `scripts/redeploy.sh` (REBUILD/RESTART/NOOP sesuai yang berubah); push ke
   `origin` (allow rule `Bash(git push:*)` di `~/.claude/settings.json`) dengan

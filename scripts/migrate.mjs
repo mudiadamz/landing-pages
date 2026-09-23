@@ -4,8 +4,13 @@
  * fase 4). Replaces `supabase migration up`.
  *
  *   node scripts/migrate.mjs                 # DATABASE_URL (or MIGRATE_DATABASE_URL)
- *   node scripts/migrate.mjs --status        # list, apply nothing
+ *   node scripts/migrate.mjs --status        # list, apply nothing, always exit 0
+ *   node scripts/migrate.mjs --check         # same, but EXIT 1 if anything is pending
  *   node scripts/migrate.mjs --seed          # then db/seed.sql (dev only; idempotent)
+ *
+ * `--check` exists for scripts/ship.sh. Shipping code that expects a schema the
+ * database has not got is a silent failure until the first request touches the
+ * new column, so the deploy routine asks first and refuses.
  *
  * Runs as the database OWNER, not as `app`: migrations create and grant, the app
  * only reads and writes. Use MIGRATE_DATABASE_URL when DATABASE_URL is the app
@@ -44,6 +49,7 @@ export function migrationFiles(dir = DIR) {
 /**
  * @param {string} connectionString
  * @param {{ dir?: string, log?: (m: string) => void, statusOnly?: boolean, appPassword?: string | null }} [opts]
+ * @returns {Promise<string[]>} names APPLIED — or, with `statusOnly`, names PENDING.
  */
 export async function migrate(
   connectionString,
@@ -67,6 +73,8 @@ export async function migrate(
     const done = new Map(
       (await client.query("select version, name, checksum from migrations.applied")).rows.map((r) => [r.version, r]),
     );
+    // Applied names, or — in statusOnly mode, where nothing is applied — the
+    // pending ones, so a caller can gate on the list being empty.
     const applied = [];
     for (const m of migrationFiles(dir)) {
       const prev = done.get(m.version);
@@ -78,6 +86,7 @@ export async function migrate(
       }
       if (statusOnly) {
         log(`belum: ${m.name}`);
+        applied.push(m.name);
         continue;
       }
       await client.query("begin");
@@ -114,8 +123,23 @@ if (isMain) {
     console.error("MIGRATE_DATABASE_URL atau DATABASE_URL harus diisi.");
     process.exit(2);
   }
-  migrate(url, { statusOnly: process.argv.includes("--status"), appPassword: process.env.APP_DB_PASSWORD || null })
-    .then(async () => {
+  const check = process.argv.includes("--check");
+  migrate(url, {
+    statusOnly: check || process.argv.includes("--status"),
+    appPassword: process.env.APP_DB_PASSWORD || null,
+  })
+    .then(async (pending) => {
+      if (check) {
+        if (pending.length) {
+          console.error(
+            `\n${pending.length} migration belum diterapkan ke database ini.\n` +
+              `Jalankan dulu:  pnpm db:migrate\n`,
+          );
+          process.exit(1);
+        }
+        console.log("database sudah terbaru");
+        return;
+      }
       if (!process.argv.includes("--seed")) return;
       const client = new pg.Client({ connectionString: url });
       await client.connect();

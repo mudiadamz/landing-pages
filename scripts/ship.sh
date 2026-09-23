@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # The after-code routine, in one command:
+#   0. refuse if the database is behind db/migrations
 #   1. rebuild + restart the running service, doing the least work needed
 #      (scripts/redeploy.sh: REBUILD / RESTART / NOOP)
 #   2. commit — the pre-commit hook bumps package.json's version automatically,
@@ -19,6 +20,27 @@ MSG="${1:-}"
 if [ -z "$MSG" ]; then
   echo "usage: scripts/ship.sh \"commit message\"" >&2
   exit 2
+fi
+
+# 0. Migration gate — FIRST, before the new code starts serving.
+#
+# On 2026-09-23 a phase shipped whose migration had never been applied here:
+# production ran new code against an old schema for seven hours. It happened to
+# be harmless, which is exactly why it went unnoticed — the failure mode is a
+# 500 on whichever request first touches the new column, not a broken deploy.
+#
+# Deliberately a REFUSAL, not an auto-apply: a migration can drop a column, and
+# the one thing worse than shipping without one is a deploy script quietly
+# running a destructive statement on production because a file appeared.
+#
+# SKIP_MIGRATE_CHECK=1 overrides it — a gate nobody can get past in an emergency
+# is a gate that gets deleted instead of used.
+if [ "${SKIP_MIGRATE_CHECK:-0}" = "1" ]; then
+  echo "==> migration gate SKIPPED (SKIP_MIGRATE_CHECK=1)"
+elif ! pnpm --silent db:check; then
+  echo "!! refusing to ship: the database is behind db/migrations (see above)." >&2
+  echo "   run 'pnpm db:migrate' then 'pnpm test:db', or set SKIP_MIGRATE_CHECK=1 to override." >&2
+  exit 1
 fi
 
 # 1. Rebuild + restart as needed (fails loud, before any commit).

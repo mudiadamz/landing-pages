@@ -64,3 +64,72 @@ describe("migrate.mjs", () => {
     await expect(migrate(url, { dir, ...quiet })).rejects.toThrow(/berubah/);
   });
 });
+
+/**
+ * `statusOnly` is what scripts/ship.sh gates on (`pnpm db:check`).
+ *
+ * The gate exists because on 2026-09-23 a phase shipped whose migration had
+ * never been applied here, and production ran new code against an old schema
+ * for seven hours without a single error — the failure mode is a 500 on
+ * whichever request first touches the new column, not a broken deploy. So what
+ * matters below is that status mode REPORTS pending work and CHANGES NOTHING;
+ * a gate that applied the migration while checking would be the thing it was
+ * built to prevent.
+ */
+describe("statusOnly — the ship.sh gate", () => {
+  let gateDir: string;
+  let gateUrl: string;
+
+  beforeAll(async () => {
+    gateDir = mkdtempSync(path.join(tmpdir(), "lp-gate-"));
+    await admin.query("drop database if exists lp_gate_test with (force)");
+    await admin.query("create database lp_gate_test");
+    const u = new URL(inject("dbUrl"));
+    u.pathname = "/lp_gate_test";
+    gateUrl = u.toString();
+  });
+
+  afterAll(async () => {
+    await admin.query("drop database if exists lp_gate_test with (force)");
+    rmSync(gateDir, { recursive: true, force: true });
+  });
+
+  const put = (name: string, sql: string) => writeFileSync(path.join(gateDir, name), sql);
+  async function gateTables(): Promise<string[]> {
+    const c = new pg.Client({ connectionString: gateUrl });
+    await c.connect();
+    const { rows } = await c.query("select tablename from pg_tables where schemaname='public' order by 1");
+    await c.end();
+    return rows.map((r) => r.tablename);
+  }
+
+  it("names what is pending, and applies NOTHING", async () => {
+    put("20260201000000_x.sql", "create table x (id int);");
+    put("20260202000000_y.sql", "create table y (id int);");
+
+    const pending = await migrate(gateUrl, { dir: gateDir, statusOnly: true, ...quiet });
+    expect(pending).toEqual(["20260201000000_x.sql", "20260202000000_y.sql"]);
+    // The whole point: checking must not be a side effect.
+    expect(await gateTables()).toEqual([]);
+  });
+
+  it("returns empty once the database is current — that is the ship-allowed signal", async () => {
+    await migrate(gateUrl, { dir: gateDir, ...quiet });
+    expect(await migrate(gateUrl, { dir: gateDir, statusOnly: true, ...quiet })).toEqual([]);
+    expect(await gateTables()).toEqual(["x", "y"]);
+  });
+
+  it("a migration added after the last deploy shows up as pending", async () => {
+    put("20260203000000_z.sql", "create table z (id int);");
+    expect(await migrate(gateUrl, { dir: gateDir, statusOnly: true, ...quiet })).toEqual([
+      "20260203000000_z.sql",
+    ]);
+  });
+
+  it("an EDITED applied migration still throws in status mode, rather than reporting clean", async () => {
+    // Drift is the other way a database and a checkout disagree, and a gate that
+    // only counted files would wave it through.
+    put("20260201000000_x.sql", "create table x (id int, extra text);");
+    await expect(migrate(gateUrl, { dir: gateDir, statusOnly: true, ...quiet })).rejects.toThrow(/berubah/);
+  });
+});
