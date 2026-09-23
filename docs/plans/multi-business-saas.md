@@ -60,9 +60,11 @@ saldo tiap business dikredit = harga − komisi.
   menutup jendela refund sebelum bisa di-payout. Ini yang mencegah saldo negatif.
 - **Komisi flat %** per business (`lp_businesses.commission_pct`), bisa override
   per plan.
-- **Payout manual dulu**: batch mingguan, ada minimum, tombol "tandai sudah
-  dibayar" menulis baris `payout`. Otomatis (Duitku Disbursement / Xendit)
-  belakangan.
+- **Payout**: dua jalur, satu set penjaga (`checkPayout`) dan satu riwayat
+  (`lp_business_payouts`). "Catat manual" membukukan transfer yang sudah dilakukan
+  manusia; "Kirim via Duitku" benar-benar mentransfer (Duitku Disbursement
+  Transfer Online, `lib/disbursement.ts`). Ledger **didebit lebih dulu** di kedua
+  jalur — debit itu yang mencegah dua request membelanjakan saldo yang sama.
 - **Refund/saldo negatif**: hold menutup mayoritas; sisanya blokir payout +
   potong dari payout berikutnya.
 - Callback Duitku ditulis ulang: idempoten per `(business, order)`, menulis
@@ -164,9 +166,43 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | 0 | Tabel `lp_businesses` / `lp_business_members` / `lp_business_ledger`; `business_id` nullable + `is_platform`; backfill 1 business default. **Nol perubahan perilaku.** | ✅ |
 | 1 | `current_business()` + scope panel & resolver ke business; `is_platform` untuk owner platform. | ✅ |
 | 2 | Isolasi **katalog** per business (produk + **kategori** + related, via filter eksplisit + cache key; create set business_id) + **user & storage** (view lintas-business = Platform-only) + **referensi antar-produk** (related/next/bundle, tulis & baca). | ✅ |
-| 3 | Ledger + komisi + hold ✅ · **KYC (ajukan/approve) + payout (catat, min + KYC-gated) + refund (catat) ✅ — pencatatan & workflow, TANPA API disbursement (transfer bank manual)** · integrasi disbursement (Duitku/Xendit) ⬜ | ✅ recording + workflow |
+| 3 | Ledger + komisi + hold ✅ · KYC (ajukan/approve) + payout (catat, min + KYC-gated) + refund (catat) ✅ · **integrasi disbursement (Duitku Transfer Online, `lp_business_payouts`, mati kalau env kosong)** ✅ | ✅ |
 | 4 | Panel Platform (overview + saldo ledger) ✅ · **signup business (approval-gated) + onboarding + provisioning domain saat approve** ✅ · notifikasi email approve/reject ⬜ | ✅ signup + approval |
 | 5 | Matriks peran per-business; pensiunkan `account_type`. | ⬜ |
+
+---
+
+## Fase 3 — disbursement (2026-09-23)
+
+**Provider: Duitku**, bukan Xendit — merchant, kredensial, dan kebiasaan tanda
+tangan Duitku sudah ada di sini; gateway kedua berarti hubungan bisnis kedua
+untuk masalah yang sama.
+
+**Mati secara default.** `DUITKU_DISBURSE_USER_ID/EMAIL/SECRET` kosong →
+`disbursementConfig()` null → layar Platform cuma menampilkan "Catat manual",
+persis seperti sebelum ini ada. Sandbox juga default; produksi harus diminta
+(`DUITKU_DISBURSE_SANDBOX=false`).
+
+**Aturan yang menentukan bentuk `lib/disbursement.ts`:** sesudah request
+*transfer* dikirim, **"tidak tahu" bukan "gagal"**. Timeout, jawaban tak terbaca,
+dan kode tunggu Duitku (`68`, `80`, `TO`) semuanya → `pending`, dan `pending`
+**tidak pernah** mengembalikan saldo. Hanya penolakan eksplisit → `failed`, dan
+di situ baris `adjustment` mengkredit balik. Kegagalan *inquiry* aman dianggap
+gagal: belum ada uang yang bergerak.
+
+**Kode bank, bukan nama bank.** `lp_businesses.payout_bank_code` (BI sandi,
+`lib/bank-codes.ts`) dipilih dari daftar di `/panel/business`. Menebak "bca" →
+"014" berarti salah kirim ke orang sungguhan; bank di luar daftar tetap boleh —
+payout-nya manual.
+
+**Idempotensi** ada di `lp_business_payouts.ledger_ref` (UNIQUE): satu payout per
+baris debit ledger, jadi request yang diulang tidak bisa jadi transfer kedua.
+
+**Verifikasi:** `pnpm test` (`tests/disbursement.test.ts` — matriks
+sent/pending/failed), `pnpm test:db` (`tests/db/ledger.test.ts` — UNIQUE,
+CHECK, cascade). Sebelum menyalakan produksi: satu transfer sandbox sungguhan,
+karena tes memakai fetch tiruan dan tidak membuktikan tanda tangannya diterima
+Duitku.
 
 ---
 

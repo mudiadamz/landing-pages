@@ -3,32 +3,54 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitBusinessKyc } from "@/lib/actions/business-money";
+import { BANKS } from "@/lib/bank-codes";
 
 const inputClass =
   "mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
 
+/** Value of the escape hatch for a bank that isn't in the list. */
+const OTHER = "";
+
+/**
+ * Payout bank details + KYC request.
+ *
+ * The bank is PICKED, not typed, because an automatic disbursement addresses a
+ * bank by code and there is no safe way to turn "bca" into "014" by guessing.
+ * A bank outside the list is still allowed — it just means payouts to it stay
+ * manual, which is what happened for every business before this existed.
+ */
 export function KycForm({
   bankName: initName,
+  bankCode: initCode,
   bankAccount: initAccount,
   bankHolder: initHolder,
 }: {
   bankName: string;
+  bankCode: string;
   bankAccount: string;
   bankHolder: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [bankCode, setBankCode] = useState(initCode);
   const [bankName, setBankName] = useState(initName);
   const [bankAccount, setBankAccount] = useState(initAccount);
   const [bankHolder, setBankHolder] = useState(initHolder);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  function pickBank(code: string) {
+    setBankCode(code);
+    const bank = BANKS.find((b) => b.code === code);
+    // Picking a listed bank fills the name too, so the two can't disagree.
+    if (bank) setBankName(bank.name);
+  }
+
   function submit() {
     setError(null);
     setSaved(false);
     startTransition(async () => {
-      const res = await submitBusinessKyc({ bankName, bankAccount, bankHolder });
+      const res = await submitBusinessKyc({ bankName, bankCode, bankAccount, bankHolder });
       if (!res.ok) {
         setError(res.error ?? "Gagal menyimpan.");
         return;
@@ -47,9 +69,31 @@ export function KycForm({
       }}
     >
       <label className="block">
-        <span className="text-xs font-medium text-foreground">Nama bank</span>
-        <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} maxLength={80} className={inputClass} placeholder="BCA" />
+        <span className="text-xs font-medium text-foreground">Bank</span>
+        <select value={bankCode} onChange={(e) => pickBank(e.target.value)} className={inputClass}>
+          <option value={OTHER}>Lainnya (payout manual)</option>
+          {BANKS.map((b) => (
+            <option key={b.code} value={b.code}>
+              {b.name} ({b.code})
+            </option>
+          ))}
+        </select>
       </label>
+
+      {bankCode === OTHER && (
+        <label className="block">
+          <span className="text-xs font-medium text-foreground">Nama bank</span>
+          <input
+            type="text"
+            value={bankName}
+            onChange={(e) => setBankName(e.target.value)}
+            maxLength={80}
+            className={inputClass}
+            placeholder="Nama bank"
+          />
+        </label>
+      )}
+
       <label className="block">
         <span className="text-xs font-medium text-foreground">Nomor rekening</span>
         <input type="text" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} maxLength={40} className={inputClass} placeholder="1234567890" />

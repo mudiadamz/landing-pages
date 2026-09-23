@@ -46,6 +46,7 @@ export default async function MyBusinessPage() {
         </p>
         <KycForm
           bankName={money.payout_bank_name ?? ""}
+          bankCode={money.payout_bank_code ?? ""}
           bankAccount={money.payout_bank_account ?? ""}
           bankHolder={money.payout_bank_holder ?? ""}
         />

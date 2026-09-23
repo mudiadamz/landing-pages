@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sql } from "./sql";
+import { sql, sqlState } from "./sql";
 
 /**
  * Business ledger data model (docs/plans/multi-business-saas.md, Fase 3).
@@ -91,4 +91,62 @@ describe("business ledger", () => {
     expect(Number(rows[0].bal)).toBe(70000);
   });
 
+});
+
+/**
+ * Payout execution (Fase 3, sisa: disbursement). The ledger says how much is
+ * owed; lp_business_payouts says what happened when we tried to pay it.
+ */
+describe("lp_business_payouts", () => {
+  async function business(): Promise<string> {
+    const { rows } = await sql<{ id: string }>(
+      "insert into public.lp_businesses (name, slug) values ('Payout', $1) returning id",
+      [`p-${Date.now()}-${Math.random().toString(36).slice(2)}`],
+    );
+    return rows[0].id;
+  }
+
+  const insert = (biz: string, ref: string, extra = "") =>
+    sql(
+      `insert into public.lp_business_payouts (business_id, amount, ledger_ref${extra ? ", status" : ""})
+       values ($1, 50000, $2${extra ? `, '${extra}'` : ""})`,
+      [biz, ref],
+    );
+
+  it("ledger_ref unik — satu payout per debit, jadi retry tidak jadi transfer kedua", async () => {
+    const biz = await business();
+    const ref = `payout-${Math.random().toString(36).slice(2)}`;
+    await insert(biz, ref);
+    // 23505 = unique_violation. This is what makes a retried request idempotent.
+    expect(await sqlState(() => insert(biz, ref))).toBe("23505");
+  });
+
+  it("jumlah harus positif — arah uang ada di ledger, bukan di tanda angka ini", async () => {
+    const biz = await business();
+    expect(
+      await sqlState(() =>
+        sql("insert into public.lp_business_payouts (business_id, amount, ledger_ref) values ($1, -1, $2)", [
+          biz,
+          `x-${Math.random()}`,
+        ]),
+      ),
+    ).toBe("23514"); // check_violation
+  });
+
+  it("status di luar daftar ditolak — 'pending' tidak boleh berubah arti diam-diam", async () => {
+    const biz = await business();
+    expect(await sqlState(() => insert(biz, `y-${Math.random()}`, "selesai"))).toBe("23514");
+    expect(await sqlState(() => insert(biz, `z-${Math.random()}`, "sent"))).toBeNull();
+  });
+
+  it("ikut terhapus bersama business-nya (tidak ada payout yatim)", async () => {
+    const biz = await business();
+    await insert(biz, `d-${Math.random()}`);
+    await sql("delete from public.lp_businesses where id = $1", [biz]);
+    const { rows } = await sql<{ n: string }>(
+      "select count(*)::text n from public.lp_business_payouts where business_id = $1",
+      [biz],
+    );
+    expect(Number(rows[0].n)).toBe(0);
+  });
 });

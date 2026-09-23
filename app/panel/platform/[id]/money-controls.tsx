@@ -5,21 +5,25 @@ import {
   recordPayout,
   recordRefund,
   reviewBusinessKyc,
+  sendPayout,
 } from "@/lib/actions/business-money";
 
-type Result = { ok: boolean; error?: string };
+type Result = { ok: boolean; error?: string; note?: string };
 
 function useAction() {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   function run(fn: () => Promise<Result>) {
     setError(null);
+    setNote(null);
     startTransition(async () => {
       const res = await fn();
       if (!res.ok) setError(res.error ?? "Gagal.");
+      else if (res.note) setNote(res.note);
     });
   }
-  return { pending, error, run };
+  return { pending, error, note, run };
 }
 
 const inputClass =
@@ -51,15 +55,34 @@ export function KycControls({ id, status }: { id: string; status: string }) {
   );
 }
 
-export function PayoutControl({ id, available }: { id: string; available: number }) {
-  const { pending, error, run } = useAction();
+/**
+ * One amount, two ways to spend it. "Kirim via Duitku" moves real money and is
+ * shown only when the deployment has disbursement credentials AND the business
+ * has a recognised bank code; "Catat manual" is always there, because a transfer
+ * someone already made at the bank still has to be booked.
+ *
+ * The send button asks for confirmation: it is the only control in the panel
+ * whose mistake cannot be undone from the panel.
+ */
+export function PayoutControl({
+  id,
+  available,
+  canSend,
+}: {
+  id: string;
+  available: number;
+  canSend: boolean;
+}) {
+  const { pending, error, note, run } = useAction();
   const [amount, setAmount] = useState("");
+  const value = Number(amount);
+
   return (
     <form
       className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        run(() => recordPayout(id, Number(amount)));
+        run(() => recordPayout(id, value));
       }}
     >
       <input
@@ -70,11 +93,25 @@ export function PayoutControl({ id, available }: { id: string; available: number
         placeholder="Jumlah payout"
         className={`${inputClass} max-w-[180px]`}
       />
-      <button type="submit" disabled={pending || !amount} className={btnPrimary}>
-        Catat payout
+      {canSend && (
+        <button
+          type="button"
+          disabled={pending || !amount}
+          className={btnPrimary}
+          onClick={() => {
+            if (!confirm(`Kirim Rp${value.toLocaleString("id-ID")} lewat Duitku? Transfer ini tidak bisa dibatalkan.`)) return;
+            run(() => sendPayout(id, value));
+          }}
+        >
+          Kirim via Duitku
+        </button>
+      )}
+      <button type="submit" disabled={pending || !amount} className={canSend ? btnGhost : btnPrimary}>
+        Catat manual
       </button>
       <span className="text-xs text-[var(--muted)]">tersedia: {available.toLocaleString("id-ID")}</span>
       {error && <span className="text-xs text-red-600">{error}</span>}
+      {note && <span className="text-xs text-amber-600">{note}</span>}
     </form>
   );
 }

@@ -87,6 +87,14 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ 1`] = `
   {
     "check": "true",
     "cmd": "ALL",
+    "policyname": "Service role manages lp_business_payouts",
+    "roles": "service_role",
+    "tablename": "lp_business_payouts",
+    "using": "true",
+  },
+  {
+    "check": "true",
+    "cmd": "ALL",
     "policyname": "Service role manages lp_businesses",
     "roles": "service_role",
     "tablename": "lp_businesses",
