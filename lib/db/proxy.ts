@@ -1,7 +1,7 @@
 import { safeNextPath } from "@/lib/next-path";
 import { NextResponse, type NextRequest } from "next/server";
 import { isMissingRecord } from "@/lib/missing-record";
-import { validateSession } from "@/lib/backend/auth";
+import { sessionFailureReason, sessionFingerprint, validateSession } from "@/lib/backend/auth";
 import { sessionTokenFrom } from "@/lib/auth/cookie";
 
 export async function updateSession(request: NextRequest) {
@@ -63,9 +63,20 @@ export async function updateSession(request: NextRequest) {
   // One indexed lookup in app_auth.sessions. Nothing to refresh: the session is
   // opaque and its expiry slides server-side, so the cookie is never rewritten
   // here — and a revoked or banned session stops working on this very request.
-  const user = await validateSession(sessionTokenFrom((n) => request.cookies.get(n)?.value));
+  const token = sessionTokenFrom((n) => request.cookies.get(n)?.value);
+  const user = await validateSession(token);
 
   if ((isPanelRoute || isReadRoute) && !user) {
+    /**
+     * Say WHY, once per bounce. Every cause of "logged out again" produces this
+     * identical redirect, so without a reason the complaint cannot be answered:
+     * a cookie the browser dropped and a session the server expired look exactly
+     * the same from the outside. One extra query, only on the failing path.
+     */
+    const reason = await sessionFailureReason(token);
+    console.warn(
+      `[auth] bounce to /login reason=${reason} path=${pathname} session=${sessionFingerprint(token)} ua=${(request.headers.get("user-agent") ?? "-").slice(0, 80)}`,
+    );
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     // Come back to the book after signing in.

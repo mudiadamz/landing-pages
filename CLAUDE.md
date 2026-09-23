@@ -129,6 +129,27 @@ Ringkasan yang paling sering dilanggar:
   menentukan identitas dari hal lain** — `currentUser()` (`lib/auth/session.ts`) atau
   `db.auth.getUser()` dari `lib/db/server` (bentuk lama, jawaban sama). Ban (`setBanned`) mencabut
   semua sesi saat itu juga.
+- **Umur sesi: 30 hari yang MENGGESER** (`SESSION_TTL_DAYS`), plus cookie 400 hari
+  (`COOKIE_MAX_AGE`). Tiap request yang datang >24 jam sesudah `last_seen_at`
+  mendorong `expires_at` jadi 30 hari lagi, jadi orang yang rutin buka situs tidak
+  pernah kedaluwarsa. Cookie sengaja jauh lebih panjang dari barisnya: yang
+  memutuskan hidup-matinya sesi adalah baris di `app_auth.sessions`, dan cookie
+  yang hidup lebih lama dari barisnya cuma token yang tidak dikenal.
+- **"Kok saya sering ke-logout?" — jangan menebak, baca lognya.** Setiap penyebab
+  menghasilkan redirect ke `/login` yang identik, jadi proxy mencatat alasannya
+  (`lib/db/proxy.ts` → `sessionFailureReason`, satu query dan HANYA di jalur gagal):
+  - `no-cookie` — browser tidak mengirim apa pun. Barisnya bisa jadi masih hidup;
+    cookie-nya yang hilang (dibersihkan, di-evict, private browsing, PWA iOS yang
+    punya jar sendiri). **Menaikkan `SESSION_TTL_DAYS` tidak akan menolong sama
+    sekali** — ini satu-satunya alasan orang paling sering salah tebak.
+  - `unknown` — token sampai tapi tidak ada barisnya: sign-out di tempat lain, ban
+    yang mencabut semua sesi, atau database yang berbeda.
+  - `expired` — barisnya ada dan 30 harinya habis. Cuma ini yang bisa diperbaiki
+    dengan menaikkan TTL.
+  - `locked` — akun di-ban atau dihapus.
+  Lognya memuat sidik jari sesi (8 hex dari sha256), bukan tokennya — cukup untuk
+  mengaitkan dua baris log, tidak cukup untuk dipakai masuk. Lihat
+  `tests/db/session-failure.test.ts`.
 - **Sign-in**: email/password (`lib/actions/auth.ts: login`, batas gagal per IP & per
   email) atau Google (`signInWithGoogle` → `lib/backend/google.ts`, OAuth+PKCE tanpa
   SDK → `/auth/callback`). Env: `GOOGLE_CLIENT_ID/SECRET`.

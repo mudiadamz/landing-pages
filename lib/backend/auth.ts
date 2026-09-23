@@ -142,6 +142,50 @@ export async function validateSession(token: string | null | undefined): Promise
   return toUser(row);
 }
 
+/**
+ * WHY a session did not authenticate — diagnostics only, never a decision.
+ *
+ * "I get logged out too quickly" is unanswerable from the outside, because
+ * every cause produces the identical redirect to /login. This separates them:
+ *
+ *   no-cookie   the browser sent nothing. The session row may well be alive —
+ *               the cookie was evicted, cleared, or never stored. Nothing
+ *               server-side can extend a cookie the browser threw away.
+ *   unknown     a token arrived that matches no row: signed out elsewhere, a
+ *               ban revoking every session, or a different database.
+ *   expired     the row exists and its 30 days ran out — a genuinely short
+ *               session, and the only cause SESSION_TTL_DAYS could fix.
+ *   locked      banned or deleted account.
+ *
+ * Runs only on the failing path, so the happy path costs nothing extra.
+ */
+export type SessionFailure = "no-cookie" | "unknown" | "expired" | "locked";
+
+export async function sessionFailureReason(
+  token: string | null | undefined,
+): Promise<SessionFailure> {
+  if (!token || token.length > 128) return "no-cookie";
+  const { rows } = await pool().query<{ expired: boolean; usable: boolean }>(
+    `select s.expires_at <= now() as expired,
+            (${USABLE}) as usable
+       from app_auth.sessions s join auth.users u on u.id = s.user_id
+      where s.token_hash = $1`,
+    [sha256(token)],
+  );
+  const row = rows[0];
+  if (!row) return "unknown";
+  if (!row.usable) return "locked";
+  return row.expired ? "expired" : "unknown";
+}
+
+/**
+ * A stable, non-reversible handle for one session, so two log lines can be tied
+ * to the same cookie without the log ever holding a usable credential.
+ */
+export function sessionFingerprint(token: string | null | undefined): string {
+  return token ? sha256(token).toString("hex").slice(0, 8) : "-";
+}
+
 export async function revokeSession(token: string | null | undefined): Promise<void> {
   if (!token || token.length > 128) return;
   await pool().query("delete from app_auth.sessions where token_hash = $1", [sha256(token)]);
