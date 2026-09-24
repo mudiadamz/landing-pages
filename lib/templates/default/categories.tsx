@@ -21,7 +21,7 @@ export function DefaultCategories({ site, categories, user }: CategoriesTemplate
         <header className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Semua Kategori</h1>
           <p className="mt-1.5 text-sm text-[var(--muted)]">
-            Jelajahi semua kategori dan sub-kategori produk digital.
+            Jelajahi semua kategori dan sub-kategori produk.
           </p>
         </header>
 

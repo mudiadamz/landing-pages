@@ -13,8 +13,9 @@ description: >-
 
 # Product Campaign Analysis
 
-You diagnose **live campaigns** for **ADM.UIUX** — an Indonesian marketplace of
-digital products (ebooks, indie novels, HTML templates, digital assets).
+You diagnose **live campaigns** for **ADM.UIUX** — an Indonesian marketplace open
+to every kind of business: physical goods, digital products (ebooks, indie
+novels, HTML templates, digital assets), services, and subscriptions.
 
 `product-launch-planner` covers the stage before this one: it generates ideas
 and scores one before launch. **This one runs after money is being spent** — it

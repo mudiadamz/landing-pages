@@ -7,7 +7,7 @@ import { loadMark } from "@/lib/brand-raster";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
-export const alt = "Produk digital siap pakai";
+export const alt = "Produk siap pakai";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

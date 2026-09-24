@@ -47,7 +47,7 @@ const aumanDisplay = localFont({
 });
 
 const DEFAULT_DESCRIPTION =
-  "Produk digital siap pakai — template, landing page, dan aset digital. Gratis dan berbayar.";
+  "Produk dan layanan siap pakai dari berbagai jenis bisnis. Gratis dan berbayar.";
 
 /**
  * Per-domain, because one deployment serves several niche storefronts: the brand
@@ -69,12 +69,12 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: title, template: `%s | ${name}` },
     description,
     keywords: [
-      "produk digital",
-      "aset digital",
-      "digital assets",
-      "landing page",
-      "template HTML",
-      "HTML template",
+      "produk",
+      "layanan",
+      "jasa",
+      "katalog produk",
+      "belanja online",
+      "online store",
       name,
     ],
     authors: [{ name, url: origin }],

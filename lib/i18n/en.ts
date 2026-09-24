@@ -168,7 +168,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.navFavorites": "Favourites",
   "panel.navApplyBusiness": "Become a business",
   "panel.navMyBusiness": "My business",
-  "panel.navProducts": "Digital products",
+  "panel.navProducts": "Products",
   "panel.navAssets": "Assets",
   "panel.navSales": "Sales",
   "panel.navUsers": "Users",
@@ -197,7 +197,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.titleCustomJs": "Custom JavaScript",
   "panel.titleHero": "Homepage hero",
   "panel.titleRoles": "Roles & access",
-  "panel.titleNewProduct": "New digital product",
+  "panel.titleNewProduct": "New product",
   "panel.titleStats": "Statistics — {title}",
   "panel.titleInbox": "Inbox ({address})",
   "panel.inboxEmpty": "Email sent to {address} shows up here.",
@@ -235,7 +235,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.view": "View",
   "panel.heroEyebrowPlaceholder": "{count} products ready to use · free preview",
   "panel.heroHeading": "Heading",
-  "panel.heroHeadingPlaceholder": "Digital products ready to use — ~no coding.~",
+  "panel.heroHeadingPlaceholder": "Ready-to-use products for your business — ~no fuss.~",
   "panel.heroCta1Text": "Primary button — text",
   "panel.heroCta1Link": "Primary button — link",
   "panel.heroCta2Text": "Second button — text (leave empty to hide)",
@@ -699,7 +699,7 @@ export const en: Record<keyof typeof id, string> = {
   "editor.noChanges": "No changes.",
   "editor.zipApplied": "Site ZIP uploaded — preview updated.",
   "editor.saveHint": "Cmd/Ctrl+S to save",
-  "product.editHeading": "Edit digital product",
+  "product.editHeading": "Edit product",
   "product.epubContents": "EPUB contents",
 
   /* panel: konten situs */
@@ -1066,7 +1066,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.emailTo": "To: {to}",
   "panel.emailNoBody": "No content.",
   "panel.pickEmail": "Pick an email from the list to read it.",
-  "panel.invoiceTagline": "Landing Page & Digital Assets",
+  "panel.invoiceTagline": "Products & Services",
   "sales.customer": "Customer",
   "panel.invoiceMethod": "Method: {method}",
   "panel.item": "Item",
@@ -1155,7 +1155,7 @@ export const en: Record<keyof typeof id, string> = {
   "panel.step2Title": "Fill in the details",
   "panel.step2Desc": "Preview, price & files",
   "panel.createNew": "Create new",
-  "panel.noDigitalProducts": "No digital products yet.",
+  "panel.noProducts": "No products yet.",
   "panel.createNewProduct": "Create a new product",
 
   "panel.deleteProductConfirm": "Delete this product?",
@@ -1264,7 +1264,7 @@ export const en: Record<keyof typeof id, string> = {
   "reader.seeBundle": "See the bundle →",
   "reader.ifYouWantAnother": "If you want something else",
   "reader.otherBook": "Another book",
-  "home.heroImageAlt": "Digital product preview",
+  "home.heroImageAlt": "Product preview",
   "home.mockupEyebrow": "Ready-made templates",
   "home.mockupLine1": "Live today,",
   "home.mockupLine2": "no coding.",
@@ -1391,13 +1391,13 @@ export const en: Record<keyof typeof id, string> = {
   "contact.sendMessage": "Send a message",
 
   "about.metaDescription":
-    "About Storefront — ready-made digital products: templates, landing pages, and digital assets.",
+    "About Storefront — ready-to-use products and services from every kind of business.",
   "about.myNameIs": "My name is",
   "home.allCategories": "All categories",
-  "home.allCategoriesMeta": "Browse every category and sub-category of digital products.",
+  "home.allCategoriesMeta": "Browse every category and sub-category of products.",
   "home.categoryNotFound": "Category not found",
   "home.manifestDescription":
-    "A marketplace of ready-made landing page templates & digital assets. Preview, buy, download.",
+    "A storefront for products and services from every kind of business. Browse, preview, buy.",
 
   "legal.lastUpdated": "Last updated: {date}",
 

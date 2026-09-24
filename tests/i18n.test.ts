@@ -183,6 +183,14 @@ describe("dictionary integrity", () => {
     // Unrelated screens for unrelated audiences; renaming one must not move the
     // other, and English may want "Overview" for one and "Summary" for the other.
     Ringkasan: ["panel.navOverview", "analytics.tabOverview"],
+    // The panel's sidebar destination vs the analytics/sales column heading for
+    // one product. English already splits them ("Products" / "Product"), and a
+    // shortened nav label has no business shortening a table header.
+    Produk: ["panel.navProducts", "analytics.product"],
+    // Two empty states on two screens: the product list with nothing in it, vs
+    // the sales screen before anything has sold. Each gets its own hint line
+    // beside it, so they are reworded independently.
+    "Belum ada produk.": ["panel.noProducts", "sales.noProducts"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

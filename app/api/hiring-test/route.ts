@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         ${detailRows}
       </table>
       <hr style="margin-top:24px">
-      <p style="color:#666;font-size:12px">Storefront — Landing Page & Digital Assets</p>
+      <p style="color:#666;font-size:12px">Storefront — Produk & Layanan</p>
     </div>
   `;
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       <p>Terima kasih sudah mengisi tes dan mengirimkan CV kamu untuk posisi <strong>Landing Page Creator</strong>.</p>
       <p>Lamaran kamu sudah kami terima. Tim kami akan me-review dan menghubungi kamu jika sesuai.</p>
       <hr style="margin-top:24px">
-      <p style="color:#666;font-size:12px">Storefront — Landing Page & Digital Assets</p>
+      <p style="color:#666;font-size:12px">Storefront — Produk & Layanan</p>
     </div>
   `;
 

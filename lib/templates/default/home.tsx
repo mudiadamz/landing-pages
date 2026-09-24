@@ -44,12 +44,12 @@ export function DefaultHome({
         {pages.length === 0 ? (
           <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)]/50 py-12 sm:py-16 px-6 sm:px-8 text-center animate-fade-in-up hover:shadow-lg transition-shadow duration-300">
-              <p className="text-[var(--muted)]">Belum ada produk digital.</p>
+              <p className="text-[var(--muted)]">Belum ada produk.</p>
               <p className="mt-2 text-sm text-[var(--muted)]">
                 <Link href="/signup" className="font-medium text-[var(--primary)] hover:opacity-80 transition-opacity">
                   Daftar
                 </Link>{" "}
-                untuk membuat dan menjual produk digital pertamamu.
+                untuk membuat dan menjual produk pertamamu.
               </p>
             </div>
           </section>

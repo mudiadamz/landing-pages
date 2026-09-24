@@ -124,7 +124,7 @@ export const DEFAULT_CONTENT: SiteContent = {
 
   aboutHeading: "Tentang",
   aboutParagraphs: [
-    "Storefront membantumu menemukan, melihat preview, dan membeli produk digital siap pakai — mulai dari landing page, template, hingga aset digital lainnya. Mau yang gratis atau premium, jelajahi koleksi kami dan mulai dalam hitungan menit.",
+    "Storefront membantumu menemukan, melihat preview, dan membeli produk maupun layanan dari berbagai jenis bisnis — barang fisik, produk digital, jasa, hingga langganan. Mau yang gratis atau premium, jelajahi koleksi kami dan mulai dalam hitungan menit.",
     "Buat akun untuk menyimpan pembelian dan mengakses panel untuk mengelola kontenmu. Kami fokus pada kesederhanaan dan kualitas.",
   ],
   aboutAuthorHeading: "Tentang penulis",
@@ -136,29 +136,29 @@ export const DEFAULT_CONTENT: SiteContent = {
 
   licenseHeading: "Ketentuan & lisensi",
   licenseParagraphs: [
-    "Produk yang dijual di sini adalah produk digital: landing page, template HTML, dan aset digital lainnya. Anda membeli hak penggunaan produk, bukan lisensi eksklusif. Produk boleh digunakan untuk proyek pribadi maupun komersial. Penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.",
-    "Setiap template kami test sebelum rilis. Kalau Anda menemukan bug, laporkan lewat halaman Kontak dan kami bantu perbaiki. Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar, mencakup bantuan implementasi dan perbaikan bug.",
+    "Produk yang dijual di sini bisa berupa barang fisik, produk digital, jasa, maupun langganan — tergantung bisnis penjualnya. Untuk produk digital, Anda membeli hak penggunaan, bukan lisensi eksklusif: boleh dipakai untuk proyek pribadi maupun komersial, sedangkan penggandaan atau redistribusi ke pihak ketiga tanpa izin tidak diperkenankan.",
+    "Setiap produk kami periksa sebelum rilis. Kalau ada yang tidak sesuai, laporkan lewat halaman Kontak dan kami bantu selesaikan. Dukungan (support 1 bulan) berlaku untuk setiap pembelian berbayar, mencakup bantuan pemakaian dan perbaikan masalah.",
     "Pembayaran diproses dengan aman lewat payment gateway resmi kami (Duitku) langsung di halaman ini. Untuk sebagian produk pihak ketiga, pembayaran bisa diarahkan ke link resmi penjual—pastikan Anda selalu membeli dari sumber resmi.",
-    "Dengan membeli atau mengambil template gratis, Anda dianggap telah membaca dan menyetujui disclaimer serta ketentuan layanan kami.",
+    "Dengan membeli atau mengambil produk gratis, Anda dianggap telah membaca dan menyetujui disclaimer serta ketentuan layanan kami.",
   ],
 
   howToHeading: "Cara pembelian",
   howToSteps: [
     { label: "Daftar akun", text: "Klik Daftar di pojok kanan atas, isi email dan password." },
-    { label: "Lihat preview", text: "Klik tombol Lihat pada landing page yang diminati untuk melihat tampilan lengkap." },
-    { label: "Klik Beli", text: "Untuk template berbayar, klik Beli. Anda akan diarahkan ke halaman pembayaran." },
+    { label: "Lihat preview", text: "Klik tombol Lihat pada produk yang diminati untuk melihat detail lengkapnya." },
+    { label: "Klik Beli", text: "Untuk produk berbayar, klik Beli. Anda akan diarahkan ke halaman pembayaran." },
     { label: "Lakukan pembayaran", text: "Selesaikan pembayaran sesuai instruksi di halaman tersebut." },
-    { label: "Akses di Panel", text: "Setelah pembayaran terkonfirmasi, landing page bisa diakses di Panel → Pembelian Saya." },
-    { label: "Template gratis", text: "Klik Ambil gratis. Langsung tersimpan di akun Anda tanpa biaya." },
+    { label: "Akses di Panel", text: "Setelah pembayaran terkonfirmasi, pembelian bisa diakses di Panel → Pembelian Saya." },
+    { label: "Produk gratis", text: "Klik Ambil gratis. Langsung tersimpan di akun Anda tanpa biaya." },
   ],
 
   supportHeading: "Jaminan support 1 bulan",
   supportIntro:
     "Support 1 bulan diberikan untuk setiap pembelian berbayar. Dukungan teknis berlaku selama 1 bulan sejak tanggal pembelian. Yang termasuk:",
   supportPoints: [
-    "Bantuan implementasi (cara upload, deploy, integrasi dasar)",
-    "Perbaikan bug pada kode template",
-    "Panduan modifikasi sederhana (teks, gambar, warna)",
+    "Bantuan pemakaian (cara pesan, akses, dan pemakaian dasar)",
+    "Perbaikan masalah pada produk yang Anda terima",
+    "Panduan penyesuaian sederhana sesuai kebutuhan Anda",
   ],
   supportOutro:
     "Untuk memakai dukungan, sertakan detail pembelian (email atau bukti transaksi). Kami akan merespons dalam 1–2 hari kerja. Hubungi kami lewat",
@@ -167,19 +167,19 @@ export const DEFAULT_CONTENT: SiteContent = {
   faqs: [
     {
       q: "Apa saja yang dijual di Storefront?",
-      a: "Produk digital siap pakai — mulai dari landing page dan template HTML, hingga aset digital lainnya. Semua bisa di-preview gratis sebelum beli, lalu langsung dipakai sesuai kebutuhan.",
+      a: "Produk dan layanan dari berbagai jenis bisnis — barang fisik, produk digital, jasa, maupun langganan. Banyak di antaranya bisa di-preview gratis sebelum beli, lalu langsung dipakai sesuai kebutuhan.",
     },
     {
       q: "Bagaimana cara preview sebelum beli?",
-      a: "Setiap landing page punya tombol Lihat. Klik untuk membuka preview di tab baru. Anda bisa cek tampilan dan struktur sebelum memutuskan membeli.",
+      a: "Produk yang menyediakan preview punya tombol Lihat. Klik untuk membukanya di tab baru dan cek detailnya sebelum memutuskan membeli.",
     },
     {
-      q: "Apakah bisa diedit setelah dibeli?",
-      a: "Ya. Anda mendapat akses file HTML. Edit menggunakan code editor favorit Anda. Template dirancang sederhana agar mudah dimodifikasi.",
+      q: "Apakah produk bisa disesuaikan setelah dibeli?",
+      a: "Tergantung produknya. Untuk produk digital yang berupa file, Anda mendapat akses penuh ke filenya dan bebas menyesuaikannya. Untuk produk atau layanan lain, penyesuaian mengikuti ketentuan penjual.",
     },
     {
       q: "Bagaimana support 1 bulan itu?",
-      a: "Support 1 bulan diberikan untuk setiap pembelian berbayar. Anda punya hak support selama 1 bulan sejak pembelian: tanya seputar implementasi, bug, atau modifikasi dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
+      a: "Support 1 bulan diberikan untuk setiap pembelian berbayar. Anda punya hak support selama 1 bulan sejak pembelian: tanya seputar pemakaian, masalah pada produk, atau penyesuaian dasar. Hubungi kami lewat link Kontak dengan bukti pembelian.",
     },
   ],
 

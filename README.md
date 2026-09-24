@@ -4,7 +4,8 @@
 
 ### Satu platform. Banyak web. Satu tempat mengelola semuanya.
 
-Platform **multi-tenant** untuk menjalankan banyak web bisnis digital sekaligus —
+Platform **multi-tenant** untuk menjalankan banyak web bisnis sekaligus, apa pun jenis
+bisnisnya —
 tiap domain punya wajah, niche, dan timnya sendiri, tapi berbagi satu katalog,
 satu sistem pembayaran, dan satu panel.
 
@@ -50,7 +51,7 @@ salinan satu sama lain.
 
 | Tampilan | Cocok untuk |
 |---|---|
-| **Marketplace** | Katalog campuran — template, aset digital, ebook. Hero besar, grid produk, testimoni. |
+| **Marketplace** | Katalog campuran — barang, produk digital, jasa, langganan. Hero besar, grid produk, testimoni. |
 | **Pustaka** | Niche bacaan — ebook dan novel dipajang seperti rak buku, fokus ke sampul dan judul. |
 | **Link in bio** | Bio Instagram/TikTok — satu kolom tombol, semua yang dijual tinggal di-tap. |
 | **MbahGPT** | Web yang produknya adalah asisten AI itu sendiri — chat penuh layar, bisa membaca gambar & PDF. |
@@ -87,8 +88,9 @@ namanya sendiri.
 
 ## Visinya
 
-Satu platform tempat setiap bisnis digital — toko, perpustakaan digital, halaman
-kreator, asisten AI — berjalan sebagai *tenant*-nya sendiri. Niche baru cukup
+Satu platform tempat setiap bisnis — toko barang, penjual produk digital, penyedia
+jasa, perpustakaan digital, halaman kreator, asisten AI — berjalan sebagai
+*tenant*-nya sendiri. Niche baru cukup
 dikonfigurasi, bukan dibangun ulang. Semakin banyak web yang bergabung, semakin
 kuat fondasi yang mereka pakai bersama.
 

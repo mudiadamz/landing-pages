@@ -60,7 +60,7 @@ export const DEFAULT_LEGAL: LegalContent = {
 <h2>Informasi yang Kami Kumpulkan</h2>
 <ul>
 <li><strong>Data akun</strong> — nama dan email saat Anda mendaftar.</li>
-<li><strong>Data pembelian</strong> — riwayat transaksi dan template yang Anda beli.</li>
+<li><strong>Data pembelian</strong> — riwayat transaksi dan produk yang Anda beli.</li>
 <li><strong>Data pembayaran</strong> — diproses oleh payment gateway kami; kami tidak menyimpan nomor kartu Anda.</li>
 <li><strong>Data penggunaan</strong> — interaksi dasar dengan situs untuk analitik dan peningkatan layanan.</li>
 <li><strong>Data sesi &amp; teknis</strong> — alamat IP dan perkiraan lokasi (negara/kota/ISP), sumber rujukan/kampanye (UTM), jenis perangkat/browser, halaman yang Anda kunjungi, dan lama kunjungan. Kami memakainya secara internal (first-party) untuk memahami minat pengunjung dan efektivitas promosi.</li>
@@ -90,14 +90,14 @@ export const DEFAULT_LEGAL: LegalContent = {
 
   terms: {
     title: "Ketentuan Layanan",
-    description: "Ketentuan layanan {{site}}. Syarat dan ketentuan penggunaan produk digital.",
+    description: "Ketentuan layanan {{site}}. Syarat dan ketentuan penggunaan layanan kami.",
     body: `<p>Dengan menggunakan layanan kami, Anda setuju dengan ketentuan ini. Mohon baca dengan saksama.</p>
 <h2>Penggunaan Layanan</h2>
-<p>Anda setuju menggunakan platform produk digital kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.</p>
+<p>Anda setuju menggunakan platform kami sesuai ketentuan ini dan hukum yang berlaku. Anda bertanggung jawab atas konten yang dibuat dan dibagikan.</p>
 <h2>Akun</h2>
 <p>Anda wajib memberikan informasi yang akurat saat membuat akun. Anda bertanggung jawab menjaga keamanan kredensial Anda.</p>
 <h2>Pembelian</h2>
-<p>Pembelian produk digital berbayar mengikuti ketentuan penjual. Pengembalian dana diatur dalam <a href="/refund">Kebijakan Pengembalian Dana</a> (garansi 7 hari untuk file rusak/tidak sesuai). Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar.</p>
+<p>Pembelian berbayar mengikuti ketentuan penjual. Pengembalian dana diatur dalam <a href="/refund">Kebijakan Pengembalian Dana</a> (garansi 7 hari untuk produk rusak atau tidak sesuai deskripsi). Dukungan teknis (support 1 bulan) berlaku untuk setiap pembelian berbayar.</p>
 <h2>Perubahan</h2>
 <p>Kami dapat memperbarui ketentuan ini sewaktu-waktu. Penggunaan layanan setelah perubahan berarti Anda menerima ketentuan terbaru.</p>
 <p>Untuk pertanyaan terkait ketentuan ini, hubungi kami melalui link di <a href="/contact">halaman Kontak</a>.</p>`,
@@ -106,12 +106,12 @@ export const DEFAULT_LEGAL: LegalContent = {
   refund: {
     title: "Kebijakan Pengembalian Dana",
     description:
-      "Kebijakan pengembalian dana {{site}}. Garansi 7 hari untuk file rusak atau tidak sesuai deskripsi.",
-    body: `<p>Produk kami berupa template HTML dan digital assets yang dikirim secara digital. Karena itu, setiap produk bisa Anda <a href="/">preview gratis</a> secara lengkap sebelum membeli—jadi Anda tahu persis apa yang Anda dapat.</p>
+      "Kebijakan pengembalian dana {{site}}. Garansi 7 hari untuk produk rusak atau tidak sesuai deskripsi.",
+    body: `<p>Produk yang dijual di sini bisa berupa barang fisik, produk digital, jasa, maupun langganan. Sebagian besar bisa Anda <a href="/">lihat previewnya</a> lebih dulu sebelum membeli—jadi Anda tahu persis apa yang Anda dapat.</p>
 <h2>Garansi 7 hari</h2>
-<p>Kami memberi garansi 7 hari sejak tanggal pembelian. Jika file yang Anda terima <strong>rusak, tidak lengkap, atau tidak sesuai dengan deskripsi/preview</strong>, kami akan memperbaikinya, atau—jika tidak bisa diperbaiki—mengembalikan dana Anda sepenuhnya.</p>
+<p>Kami memberi garansi 7 hari sejak tanggal pembelian. Jika produk yang Anda terima <strong>rusak, tidak lengkap, atau tidak sesuai dengan deskripsi/preview</strong>, kami akan memperbaikinya, atau—jika tidak bisa diperbaiki—mengembalikan dana Anda sepenuhnya.</p>
 <h2>Yang tidak tercakup</h2>
-<p>Karena setiap template sudah bisa di-preview gratis sebelum dibeli, pengembalian dana karena <strong>berubah pikiran atau perbedaan selera</strong> tidak berlaku. Begitu pula jika file sudah diunduh dan sesuai deskripsi.</p>
+<p>Karena deskripsi dan preview tersedia sebelum pembelian, pengembalian dana karena <strong>berubah pikiran atau perbedaan selera</strong> tidak berlaku. Begitu pula jika produk sudah diterima atau diunduh dan sesuai deskripsi.</p>
 <h2>Cara mengajukan</h2>
 <ol>
 <li>Hubungi kami lewat <a href="/contact">halaman Kontak</a> dalam 7 hari sejak pembelian.</li>

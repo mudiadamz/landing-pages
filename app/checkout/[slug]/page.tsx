@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) return { title: "Checkout" };
   const description = buildMetaDescription(
     page.long_description,
-    `${page.title} — produk digital siap pakai. Preview gratis, beli, download, pakai.`,
+    `${page.title} — produk siap pakai. Preview gratis, beli, langsung pakai.`,
   );
   const url = `/checkout/${slug}`;
   const ogImage = page.thumbnail_landscape_url || page.thumbnail_url;
@@ -168,7 +168,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const canonicalUrl = `${SITE_URL}/checkout/${page.slug}`;
   const metaDescription = buildMetaDescription(
     page.long_description,
-    `${page.title} — produk digital siap pakai.`,
+    `${page.title} — produk siap pakai.`,
   );
   // No aggregateRating yet — emitting one without a review count reads as
   // manufactured and trips structured-data validators (see audit B6).

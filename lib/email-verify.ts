@@ -111,7 +111,7 @@ export async function sendVerificationEmail(opts: {
         <p style="color:#666;font-size:12px">Link berlaku 24 jam. Kalau tombol tidak jalan, buka link ini:<br>${link}</p>
         <p style="color:#666;font-size:12px">Kalau Anda tidak membuat akun di Storefront, abaikan email ini.</p>
         <hr>
-        <p style="color:#666;font-size:12px">Storefront — Landing Page &amp; Digital Assets</p>
+        <p style="color:#666;font-size:12px">Storefront — Produk &amp; Layanan</p>
       `,
     });
     return true;

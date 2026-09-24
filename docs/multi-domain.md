@@ -26,7 +26,7 @@ dikelola”), dan berlaku untuk seluruh panel:
 | Layar | Cara di-scope |
 |---|---|
 | Identitas situs, Hero, Konten situs, Tracking, Popup, Custom JS | baris/`lp_site_settings` milik situs itu |
-| **Produk digital** | **kategori** — niche situs diperluas ke sub-kategorinya (produk milik kategori, bukan milik situs) |
+| **Produk** | **kategori** — niche situs diperluas ke sub-kategorinya (produk milik kategori, bukan milik situs) |
 | **Penjualan, Analytics, Kontak** | kolom `site_id` di `lp_purchases` / `lp_sessions` / `lp_page_events` / `lp_contacts` |
 
 **Sengaja TIDAK di-scope**, karena konsepnya tidak ada: Users & Roles (satu

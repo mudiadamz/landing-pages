@@ -27,7 +27,7 @@ export async function sendPurchaseConfirmationEmail(opts: {
         <p><a href="${opts.downloadUrl}">Download sekarang</a></p>
         <p>Atau masuk ke panel untuk mendownload kapan saja.</p>
         <hr>
-        <p style="color:#666;font-size:12px">Storefront — Landing Page & Digital Assets</p>
+        <p style="color:#666;font-size:12px">Storefront — Produk & Layanan</p>
       `,
     });
   } catch (err) {
@@ -96,7 +96,7 @@ export async function sendBusinessDecisionEmail(opts: {
         : `Pengajuan business "${opts.businessName}"`,
       html: `${body}
         <hr>
-        <p style="color:#666;font-size:12px">Storefront — Landing Page &amp; Digital Assets</p>
+        <p style="color:#666;font-size:12px">Storefront — Produk &amp; Layanan</p>
       `,
     });
     return true;

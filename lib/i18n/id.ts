@@ -157,7 +157,7 @@ export const id = {
   "panel.navFavorites": "Favorit",
   "panel.navApplyBusiness": "Daftar business",
   "panel.navMyBusiness": "Business saya",
-  "panel.navProducts": "Produk digital",
+  "panel.navProducts": "Produk",
   "panel.navAssets": "Assets",
   "panel.navSales": "Penjualan",
   "panel.navUsers": "Users",
@@ -186,7 +186,7 @@ export const id = {
   "panel.titleCustomJs": "Custom JavaScript",
   "panel.titleHero": "Hero halaman utama",
   "panel.titleRoles": "Roles & akses",
-  "panel.titleNewProduct": "Produk digital baru",
+  "panel.titleNewProduct": "Produk baru",
   "panel.titleStats": "Statistik — {title}",
   "panel.titleInbox": "Email masuk ({address})",
   "panel.inboxEmpty": "Email yang dikirim ke {address} akan muncul di sini.",
@@ -224,7 +224,7 @@ export const id = {
   "panel.view": "Lihat",
   "panel.heroEyebrowPlaceholder": "{count} produk siap pakai · preview gratis",
   "panel.heroHeading": "Judul (heading)",
-  "panel.heroHeadingPlaceholder": "Produk digital siap pakai — ~tanpa ngoding.~",
+  "panel.heroHeadingPlaceholder": "Produk siap pakai untuk bisnismu — ~tanpa ribet.~",
   "panel.heroCta1Text": "Tombol utama — teks",
   "panel.heroCta1Link": "Tombol utama — link",
   "panel.heroCta2Text": "Tombol kedua — teks (kosongkan untuk sembunyikan)",
@@ -299,7 +299,7 @@ export const id = {
   "panel.noFiles": "Tidak ada file.",
   "panel.open": "Buka",
   "panel.deleteFile": "Hapus file",
-  "panel.taglinePlaceholder": "Contoh: Aset digital siap pakai",
+  "panel.taglinePlaceholder": "Contoh: Produk pilihan, siap pakai",
   "panel.seoDescription": "Deskripsi (SEO)",
   "panel.seoPlaceholder": "Kalimat yang tampil di hasil pencarian Google…",
   "panel.seoHint":
@@ -689,7 +689,7 @@ export const id = {
   "editor.noChanges": "Tidak ada perubahan.",
   "editor.zipApplied": "ZIP situs terupload — preview diperbarui.",
   "editor.saveHint": "Cmd/Ctrl+S untuk menyimpan",
-  "product.editHeading": "Edit produk digital",
+  "product.editHeading": "Edit produk",
   "product.epubContents": "Isi EPUB",
 
   /* panel: konten situs */
@@ -1056,7 +1056,7 @@ export const id = {
   "panel.emailTo": "Kepada: {to}",
   "panel.emailNoBody": "Tidak ada isi.",
   "panel.pickEmail": "Pilih email di daftar untuk melihat isi.",
-  "panel.invoiceTagline": "Landing Page & Digital Assets",
+  "panel.invoiceTagline": "Produk & Layanan",
   "sales.customer": "Pelanggan",
   "panel.invoiceMethod": "Metode: {method}",
   "panel.item": "Item",
@@ -1145,7 +1145,7 @@ export const id = {
   "panel.step2Title": "Lengkapi detail",
   "panel.step2Desc": "Preview, harga & file",
   "panel.createNew": "Buat baru",
-  "panel.noDigitalProducts": "Belum ada produk digital.",
+  "panel.noProducts": "Belum ada produk.",
   "panel.createNewProduct": "Buat produk baru",
 
   "panel.deleteProductConfirm": "Hapus produk ini?",
@@ -1254,7 +1254,7 @@ export const id = {
   "reader.seeBundle": "Lihat paket →",
   "reader.ifYouWantAnother": "Kalau mau yang lain",
   "reader.otherBook": "Buku lain",
-  "home.heroImageAlt": "Preview produk digital",
+  "home.heroImageAlt": "Preview produk",
   "home.mockupEyebrow": "Template siap pakai",
   "home.mockupLine1": "Live hari ini,",
   "home.mockupLine2": "tanpa ngoding.",
@@ -1381,13 +1381,13 @@ export const id = {
   "contact.sendMessage": "Kirim pesan",
 
   "about.metaDescription":
-    "Tentang Storefront — produk digital siap pakai: template, landing page, dan aset digital.",
+    "Tentang Storefront — produk dan layanan siap pakai dari berbagai jenis bisnis.",
   "about.myNameIs": "Nama saya",
   "home.allCategories": "Semua Kategori",
-  "home.allCategoriesMeta": "Jelajahi semua kategori dan sub-kategori produk digital.",
+  "home.allCategoriesMeta": "Jelajahi semua kategori dan sub-kategori produk.",
   "home.categoryNotFound": "Kategori tidak ditemukan",
   "home.manifestDescription":
-    "Marketplace template landing page & aset digital siap pakai. Preview, beli, download.",
+    "Etalase produk dan layanan dari berbagai jenis bisnis. Jelajahi, preview, beli.",
 
   "legal.lastUpdated": "Terakhir diperbarui: {date}",
 

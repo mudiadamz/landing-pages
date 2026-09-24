@@ -1,7 +1,9 @@
 # CLAUDE.md — Landing Page Manager (ADM.UIUX)
 
-Marketplace produk digital milik ADM.UIUX (Adam Mudianto). Admin membuat & menjual
-produk; pembeli preview gratis, bayar via Duitku, lalu download atau baca di situs.
+Marketplace milik ADM.UIUX (Adam Mudianto), terbuka untuk segala jenis bisnis —
+barang fisik, produk digital, jasa, maupun langganan. Admin membuat & menjual
+produk; pembeli preview gratis, bayar via Duitku, lalu mengakses pembeliannya —
+download, baca di situs, atau ditindaklanjuti penjual.
 **Satu deployment melayani beberapa storefront** (multi-domain + tema).
 
 ## Baca ini dulu
