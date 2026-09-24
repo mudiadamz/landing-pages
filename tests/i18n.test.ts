@@ -194,6 +194,10 @@ describe("dictionary integrity", () => {
     // An event's end time vs an order that has been fulfilled. English already
     // splits them ("End" / "Completed"); in Indonesian they collide by accident.
     Selesai: ["product.eventEnd", "order.statusDone"],
+    // The EPUB reader's page counter vs the blog's post pager. Same sentence,
+    // two unrelated surfaces — one counts pages inside one book, the other
+    // counts pages of a list — and English may well want "of" vs "page … of".
+    "Halaman {page} dari {total}": ["reader.pageOf", "blog.pageOf"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

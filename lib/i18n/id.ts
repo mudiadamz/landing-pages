@@ -593,6 +593,25 @@ export const id = {
   "order.openHint": "Menunggu atau sedang diproses",
   "panel.orderStatus": "Status pesanan",
 
+  /* ---- template blog ---- */
+  "blog.empty": "Belum ada tulisan.",
+  "blog.readingTime": "{minutes} menit baca",
+  "blog.newerPosts": "Tulisan lebih baru",
+  "blog.olderPosts": "Tulisan lama",
+  "blog.pageOf": "Halaman {page} dari {total}",
+  "blog.comments": "{count} komentar",
+  "blog.commentsClosed": "Komentar dari arsip lama. Komentar baru sedang ditutup.",
+  "blog.anonymous": "Anonim",
+  "blog.searchPlaceholder": "Cari tulisan…",
+  "blog.labels": "Label",
+  "blog.archive": "Arsip",
+  "blog.labelHeading": "Label: {label}",
+  "blog.archiveHeading": "Arsip {period}",
+  "blog.searchHeading": "Hasil untuk \"{query}\"",
+  "blog.searchEmpty": "Tidak ada tulisan yang cocok.",
+  "blog.resultCount": "{count} tulisan",
+  "blog.backHome": "← Semua tulisan",
+
   /* ---- alamat kirim (Fase 6b) ---- */
   "shipping.heading": "Alamat pengiriman",
   "shipping.name": "Nama penerima",

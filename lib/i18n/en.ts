@@ -604,6 +604,25 @@ export const en: Record<keyof typeof id, string> = {
   "order.openHint": "Waiting or in progress",
   "panel.orderStatus": "Order status",
 
+  /* ---- blog template ---- */
+  "blog.empty": "No posts yet.",
+  "blog.readingTime": "{minutes} min read",
+  "blog.newerPosts": "Newer posts",
+  "blog.olderPosts": "Older posts",
+  "blog.pageOf": "Page {page} of {total}",
+  "blog.comments": "{count} comments",
+  "blog.commentsClosed": "Comments from the old archive. New comments are closed.",
+  "blog.anonymous": "Anonymous",
+  "blog.searchPlaceholder": "Search posts…",
+  "blog.labels": "Labels",
+  "blog.archive": "Archive",
+  "blog.labelHeading": "Label: {label}",
+  "blog.archiveHeading": "Archive {period}",
+  "blog.searchHeading": "Results for \"{query}\"",
+  "blog.searchEmpty": "No posts matched.",
+  "blog.resultCount": "{count} posts",
+  "blog.backHome": "← All posts",
+
   /* ---- shipping address (Fase 6b) ---- */
   "shipping.heading": "Shipping address",
   "shipping.name": "Recipient name",

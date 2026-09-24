@@ -35,6 +35,7 @@ Ringkasan yang paling sering dilanggar:
 | Aturan & pola arsitektur | [`docs/architecture.md`](docs/architecture.md) |
 | Multi-domain, tema, palet, PWA per-domain | [`docs/multi-domain.md`](docs/multi-domain.md) + [`docs/technical.md`](docs/technical.md) |
 | Template chat MbahGPT (+ backend-nya) | [`docs/mbahgpt.md`](docs/mbahgpt.md) |
+| Template blog (URL ala Blogger) + impor Blogger | [`docs/blog.md`](docs/blog.md) |
 | Setup, script, env | [`docs/technical.md`](docs/technical.md), [`.env.example`](.env.example) |
 | Deploy (Cloudflare Tunnel + systemd — lihat "Konvensi penting") | `/etc/cloudflared/config.yml`, `scripts/redeploy.sh`. `Dockerfile`/`docker-compose.yml`/`Caddyfile` = jalur lama, tidak dipakai |
 | Terminal browser untuk mesin produksi | `~/work/web-ssh` → `https://term.mbahgpt.com` |

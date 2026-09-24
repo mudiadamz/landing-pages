@@ -19,6 +19,7 @@
  */
 
 import { withRls } from "@/lib/backend/rls";
+import { stripHtmlSuffix } from "@/lib/blog-path";
 
 /** The proxy must not hang on a slow database; the page can decide later. */
 const TIMEOUT_MS = 1500;
@@ -71,6 +72,21 @@ async function ask(sql: string, params: unknown[], cacheKey: string): Promise<bo
 /** Slugs are lowercase alphanumerics and hyphens; anything else cannot exist. */
 const SLUG = /^[a-z0-9-]+$/;
 
+/** The blog template's addresses: /2026/09/judul.html and /p/judul.html. */
+const BLOG_POST = /^\/(\d{4})\/(0[1-9]|1[0-2])\/([^/]+\.html)$/;
+
+/** Resolve a host to its site id, cached like every other answer here. */
+async function siteIdFor(host: string): Promise<string | null> {
+  try {
+    const row = await firstRow<{ id: string }>("select id from lp_sites where host = $1 limit 1", [
+      host,
+    ]);
+    return row?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * True when the path names a record that is definitely not there.
  *
@@ -80,9 +96,52 @@ const SLUG = /^[a-z0-9-]+$/;
 export async function isMissingRecord(pathname: string, host: string): Promise<boolean> {
   if (!process.env.DATABASE_URL) return false;
 
+  /**
+   * A blog post, at its Blogger address.
+   *
+   * Worth a lookup precisely because this archive was imported: search engines
+   * and other people's links carry ten years of paths, some of which no longer
+   * exist, and each of those has to answer with a real 404 rather than a 200
+   * carrying a "not found" body — otherwise Google keeps them indexed.
+   */
+  const post = BLOG_POST.exec(pathname);
+  if (post) {
+    const siteId = await siteIdFor(host);
+    if (!siteId) return false;
+    const exists = await ask(
+      "select 1 from lp_blog_posts where site_id = $1 and path = $2 and published limit 1",
+      [siteId, pathname],
+      `blogpost:${siteId}:${pathname}`,
+    );
+    return !exists;
+  }
+
   const page = /^\/p\/([^/]+)\/?$/.exec(pathname);
   if (page) {
-    const slug = decodeURIComponent(page[1]).toLowerCase();
+    const raw = decodeURIComponent(page[1]);
+    const slug = raw.toLowerCase();
+
+    /**
+     * `/p/judul.html` is a BLOG page, `/p/judul` is an editorial one.
+     *
+     * This guard used to answer for both, which meant every imported Blogger page
+     * 404'd in the proxy before its route could run — the page existed, the
+     * request never reached it. The `.html` suffix is the whole distinction
+     * (lib/blog-path.ts), so it is asked of the blog table instead.
+     */
+    // Asked through the same function the routes use, so the proxy and
+    // app/p/[slug] can never disagree about which table owns an address.
+    if (stripHtmlSuffix(raw) !== null) {
+      const siteId = await siteIdFor(host);
+      if (!siteId) return false;
+      const exists = await ask(
+        "select 1 from lp_blog_posts where site_id = $1 and path = $2 and published limit 1",
+        [siteId, `/p/${raw}`],
+        `blogpage:${siteId}:${raw}`,
+      );
+      return !exists;
+    }
+
     if (!SLUG.test(slug)) return true;
 
     // Editorial pages are scoped per storefront, so the host has to be resolved
@@ -93,12 +152,7 @@ export async function isMissingRecord(pathname: string, host: string): Promise<b
 
     if (cachedSite && Date.now() - cachedSite.at < TTL_MS && !cachedSite.exists) return false;
 
-    try {
-      const row = await firstRow<{ id: string }>("select id from lp_sites where host = $1 limit 1", [host]);
-      siteId = row?.id ?? null;
-    } catch {
-      return false;
-    }
+    siteId = await siteIdFor(host);
     // An unknown host is not this guard's problem to answer.
     if (!siteId) return false;
 

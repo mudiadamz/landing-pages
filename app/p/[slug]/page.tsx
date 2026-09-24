@@ -4,7 +4,10 @@ import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { currentSite } from "@/lib/site-resolve";
 import { getPublishedPage } from "@/lib/actions/pages";
+import { getBlogPostByPath } from "@/lib/actions/blog";
+import { buildPagePath, stripHtmlSuffix } from "@/lib/blog-path";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
+import { BlogPageRoute } from "@/lib/templates/blog/page-route";
 
 /**
  * An editorial page, in the storefront's own chrome.
@@ -19,6 +22,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const page = await getPublishedPage(slug);
+  if (!page) {
+    // A Blogger page lives at /p/slug.html; this app's own editorial pages have
+    // no suffix. The `.html` is the whole of what separates them, which is why
+    // stripHtmlSuffix returns null rather than the slug when it is absent.
+    const blogSlug = stripHtmlSuffix(slug);
+    const post = blogSlug ? await getBlogPostByPath(buildPagePath(blogSlug)) : null;
+    if (post) {
+      return {
+        title: post.title,
+        description: post.metaDescription?.trim() || post.excerpt,
+        alternates: { canonical: post.path },
+      };
+    }
+  }
   // notFound() here as well as in the component: metadata resolves first, so
   // this is the earliest point a missing page is known.
   //
@@ -48,7 +65,15 @@ export default async function EditorialPageRoute({
     getCategories(site.business_id),
     getPublishedPage(slug),
   ]);
-  if (!page) notFound();
+
+  // Editorial page first, imported Blogger page second. That order is the
+  // compatibility rule: a page written in this panel owns its slug, and an
+  // import can never take an address out from under it.
+  if (!page) {
+    const blogSlug = stripHtmlSuffix(slug);
+    if (blogSlug) return <BlogPageRoute path={buildPagePath(blogSlug)} />;
+    notFound();
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">

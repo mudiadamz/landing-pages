@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { getLegalContent, getHiringContent } from "@/lib/actions/site-settings";
 import { getCategories, getLandingPagesForHomepage } from "@/lib/actions/landing-pages";
 import { currentOrigin, currentSite } from "@/lib/site-resolve";
+import { getBlogPaths } from "@/lib/actions/blog";
+import { resolveTemplate } from "@/lib/templates/registry";
 
 /**
  * One sitemap per domain. Reading the host makes this dynamic rather than built
@@ -81,5 +83,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticRoutes, ...categoryRoutes, ...productRoutes];
+  /**
+   * A blog's posts, at the address they have always had.
+   *
+   * Only for a site running the blog theme: the query is cheap but a sitemap
+   * that lists nothing is still a round trip on every crawl of every other
+   * storefront. Posts get the higher priority here because on a blog they ARE
+   * the catalogue.
+   */
+  const blogRoutes: MetadataRoute.Sitemap =
+    resolveTemplate(site.template).key === "blog"
+      ? (await getBlogPaths(site.id)).map((p) => ({
+          url: `${base}${p.path}`,
+          lastModified: new Date(p.updatedAt),
+          changeFrequency: "monthly" as const,
+          priority: 0.8,
+        }))
+      : [];
+
+  return [...staticRoutes, ...categoryRoutes, ...productRoutes, ...blogRoutes];
 }

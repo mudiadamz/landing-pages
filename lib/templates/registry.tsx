@@ -24,7 +24,27 @@ import { LinkbioCategory, LinkbioCategories } from "./linkbio/category";
 import { MbahgptHome } from "./mbahgpt/home";
 import { MbahgptHeader, MbahgptFooter } from "./mbahgpt/chrome";
 import { MbahgptCategory, MbahgptCategories } from "./mbahgpt/category";
+import { BlogHome } from "./blog/home";
+import { BlogHeader, BlogFooter } from "./blog/chrome";
 import type { Locale } from "@/lib/i18n";
+import type { BlogArchiveMonth, BlogLabel, BlogListing } from "@/lib/actions/blog";
+
+/**
+ * What a blog storefront needs, which no other template has any use for.
+ *
+ * Optional on TemplateProps rather than required, and fetched in app/page.tsx
+ * only when the site actually runs the blog theme — the contract that every
+ * template receives the SAME props is about a template never choosing its own
+ * data, not about every site paying for every template's queries. A blog
+ * template handed `undefined` renders an empty state; it does not fetch.
+ */
+export type BlogTemplateData = {
+  listing: BlogListing;
+  labels: BlogLabel[];
+  months: BlogArchiveMonth[];
+  /** The blog's own `/p/*.html` pages, for the footer nav. */
+  pages: { title: string; path: string }[];
+};
 
 /**
  * Frontend templates, so storefronts in different niches don't all look like a
@@ -77,6 +97,8 @@ export type TemplateProps = {
   activeCategories: string[];
   /** The owner's other sites, shown behind the link icon. Empty = no icon. */
   otherLinks: OtherLink[];
+  /** Posts, labels and archive — present only on a site running the blog theme. */
+  blog?: BlogTemplateData;
   /** Per-network social addresses; a blank one hides that icon. */
   socialUrls: SocialUrls;
 };
@@ -241,6 +263,24 @@ export const TEMPLATES: Record<string, TemplateDef> = {
     // blue, and the row stops looking like the same wall lit differently.
     surfaces: { background: "#f5eee8", card: "#fffdfb" },
     defaultPalette: "breeze",
+  },
+  blog: {
+    key: "blog",
+    label: "Blog",
+    description:
+      "Tulisan, bukan katalog: daftar posting terbaru, label, arsip per bulan, dan pencarian. URL-nya persis Blogger/Blogspot (/2026/09/judul.html, /p/halaman.html, /search/label/Nama), jadi blog yang pindah ke sini tidak kehilangan satu pun alamat lamanya. Isi diimpor dengan scripts/import-blogger.mjs.",
+    Home: BlogHome,
+    Header: BlogHeader,
+    Footer: BlogFooter,
+    // No Category/Categories: those are product-catalogue screens and a blog has
+    // no products. The registry falls back to the marketplace ones, which is
+    // what /category/* should render if a blog site ever has a category at all.
+    //
+    // No bottom nav: the reading surface is a column of text and the sidebar
+    // already carries navigation. A fixed bar would cover the last line of every
+    // post on a phone.
+    hasBottomNav: false,
+    defaultPalette: "ink",
   },
   mbahgpt: {
     key: "mbahgpt",

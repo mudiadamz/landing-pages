@@ -7,6 +7,8 @@ import { currentSite } from "@/lib/site-resolve";
 import { TemplateHomeView } from "@/lib/templates/chrome";
 import { getSiteContent, getOtherLinks, getSocialUrls } from "@/lib/actions/site-settings";
 import { requestLocale } from "@/lib/i18n/request";
+import { getBlogArchiveMonths, getBlogFeed, getBlogLabels, getBlogPages } from "@/lib/actions/blog";
+import { resolveTemplate } from "@/lib/templates/registry";
 
 /**
  * viewport-fit=cover so the top cover can reach past the notch into the status
@@ -70,9 +72,31 @@ export default async function Home({ searchParams }: Props) {
     requestLocale(),
   ]);
 
+  /**
+   * Blog data, only for a site actually running the blog theme.
+   *
+   * Fetched here like everything else — a template never fetches — but gated on
+   * the template so the other four storefronts do not pay for four queries
+   * against a table they have no rows in. `undefined` is a state the blog home
+   * renders (as an empty archive), not one it crashes on.
+   */
+  const blog =
+    resolveTemplate(site.template).key === "blog"
+      ? await (async () => {
+          const [listing, labels, months, blogPages] = await Promise.all([
+            getBlogFeed(page, site.id),
+            getBlogLabels(site.id),
+            getBlogArchiveMonths(site.id),
+            getBlogPages(site.id),
+          ]);
+          return { listing, labels, months, pages: blogPages };
+        })()
+      : undefined;
+
   return (
     <TemplateHomeView
       site={site}
+      blog={blog}
       locale={locale}
       pages={listing.items}
       listing={listing}
