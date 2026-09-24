@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getAdminCategories } from "@/lib/actions/categories";
 import { CategoriesTable } from "./categories-table";
@@ -8,7 +9,7 @@ import { requestLocale } from "@/lib/i18n/request";
 export default async function CategoriesPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("categories");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("categories"));
 
   const categories = await getAdminCategories();
 

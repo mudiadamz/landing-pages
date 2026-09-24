@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import {
   requireSiteAdmin,
@@ -20,7 +21,7 @@ export default async function RolesPage() {
     requireSiteAdmin(),
     editingSite(),
   ]);
-  if (!isSiteAdmin) redirect("/panel");
+  if (!isSiteAdmin) redirect(deniedPath("roles"));
 
   const [perms, bizPerms] = await Promise.all([
     getRolePermissions(site.id),

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getCustomJsRecord } from "@/lib/actions/site-settings";
 import { editingSite } from "@/lib/site-resolve";
@@ -15,7 +16,7 @@ export async function generateMetadata() {
 export default async function CustomJsPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("custom-js");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("custom-js"));
 
   const site = await editingSite();
   const record = await getCustomJsRecord(site.id);

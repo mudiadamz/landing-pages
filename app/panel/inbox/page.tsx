@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import Link from "next/link";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getReceivedEmailsForAdmin, getReceivedEmailById } from "@/lib/actions/received-emails";
@@ -14,7 +15,7 @@ type Props = { searchParams: Promise<{ id?: string }> };
 export default async function InboxPage({ searchParams }: Props) {
   const t = translator(await requestLocale());
   const ok = await requireFeature("inbox");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("inbox"));
 
   const { id: detailId } = await searchParams;
   const [emails, detail] = await Promise.all([

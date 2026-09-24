@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getContactsForAdmin } from "@/lib/actions/contacts";
@@ -12,7 +13,7 @@ import { requestLocale } from "@/lib/i18n/request";
 export default async function ContactsPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("contacts");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("contacts"));
 
   const [contacts, scope] = await Promise.all([getContactsForAdmin(), panelScope()]);
 

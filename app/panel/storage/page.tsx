@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requirePlatform } from "@/lib/actions/profiles";
 import { listAllStorageFiles } from "@/lib/actions/storage-admin";
 import { StorageManager } from "./storage-manager";
@@ -10,7 +11,7 @@ export const metadata = { title: "Storage" };
 
 export default async function StoragePage() {
   const t = translator(await requestLocale());
-  if (!(await requirePlatform())) redirect("/panel");
+  if (!(await requirePlatform())) redirect(deniedPath("storage"));
 
   const { files, buckets, truncated, error } = await listAllStorageFiles();
 

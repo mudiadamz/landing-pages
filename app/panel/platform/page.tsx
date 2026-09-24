@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requirePlatform } from "@/lib/actions/profiles";
 import { listBusinessesForPlatform } from "@/lib/actions/platform";
 import { PanelPageHeader } from "@/components/panel-page-header";
@@ -18,7 +19,7 @@ function rupiah(n: number): string {
  * Only the Platform (is_platform) reaches this.
  */
 export default async function PlatformPage() {
-  if (!(await requirePlatform())) redirect("/panel");
+  if (!(await requirePlatform())) redirect(deniedPath("platform"));
   const businesses = await listBusinessesForPlatform();
   const pending = businesses.filter((b) => b.status === "pending");
 

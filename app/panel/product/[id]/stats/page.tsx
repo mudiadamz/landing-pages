@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById } from "@/lib/actions/landing-pages";
@@ -20,7 +21,7 @@ const RANGES = [7, 30, 90];
 export default async function ProductStatsPage({ params, searchParams }: Props) {
   const t = translator(await requestLocale());
   const canSell = await canSellProducts();
-  if (!canSell) redirect("/panel");
+  if (!canSell) redirect(deniedPath("products"));
 
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const days = RANGES.includes(Number(sp.days)) ? Number(sp.days) : 30;

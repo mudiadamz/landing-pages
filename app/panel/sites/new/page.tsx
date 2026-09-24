@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
@@ -18,7 +19,7 @@ export const metadata = { title: "Storefront baru" };
  * picker view can cross to the client).
  */
 export default async function NewSitePage() {
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireAdmin())) redirect(deniedPath("sites"));
   if (!(await isCanonicalRequest())) redirect(`${canonicalOrigin()}/panel/sites/new`);
 
   const categories = await getCategories((await editingSite()).business_id);

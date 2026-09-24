@@ -1,4 +1,5 @@
 import { redirect, notFound } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requirePlatform } from "@/lib/actions/profiles";
 import { getBusinessMoney } from "@/lib/actions/business-money";
 import { bankByCode } from "@/lib/bank-codes";
@@ -20,7 +21,7 @@ function rupiah(n: number): string {
  * disbursement API. Platform-only.
  */
 export default async function BusinessMoneyPage({ params }: Props) {
-  if (!(await requirePlatform())) redirect("/panel");
+  if (!(await requirePlatform())) redirect(deniedPath("platform"));
   const { id } = await params;
   const money = await getBusinessMoney(id);
   if (!money) notFound();

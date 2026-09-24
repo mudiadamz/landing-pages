@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
@@ -9,7 +10,7 @@ import { UsersTable } from "./users-table";
 export default async function UsersPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("users");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("users"));
 
   // Tiga hal berbeda, sengaja dipisah:
   //   isAdmin      platform — boleh ubah role platform, paket, ban, hapus akun

@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById } from "@/lib/actions/landing-pages";
@@ -16,7 +17,7 @@ export default async function EpubChaptersPage({
   params: Promise<{ id: string }>;
 }) {
   const t = translator(await requestLocale());
-  if (!(await canSellProducts())) redirect("/panel");
+  if (!(await canSellProducts())) redirect(deniedPath("products"));
 
   const { id } = await params;
   const page = await getLandingPageById(id);

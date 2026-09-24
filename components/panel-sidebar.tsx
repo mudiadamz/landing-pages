@@ -88,8 +88,13 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
     labelKey: "panel.navGroupMain",
     items: [
       { href: "/panel", labelKey: "panel.navDashboard", icon: HomeIcon, everyone: true, exact: true },
-      { href: "/panel/purchases", labelKey: "panel.navPurchases", icon: ReceiptIcon, everyone: true },
-      { href: "/panel/favorites", labelKey: "panel.navFavorites", icon: HeartIcon, everyone: true },
+      // "Pembelian saya" and "Favorit" USED to sit here, for everyone. They are
+      // customer screens: what this person bought, what they liked. In a rail
+      // built for running a shop they read as someone else's menu, and a
+      // business owner looking for their own receipts is not doing admin work —
+      // they are being a customer, which is now a shell they can switch to
+      // (components/panel-view-switch.tsx). Removed rather than moved: they
+      // already exist in the account shell.
       { href: "/panel/apply-business", labelKey: "panel.navApplyBusiness", icon: BadgeIcon, applyOnly: true },
       { href: "/panel/business", labelKey: "panel.navMyBusiness", icon: BadgeIcon, businessManagerOnly: true },
     ],
@@ -113,8 +118,8 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       // Beside Users on purpose: a plan is a property of a user, and the two
       // screens are opened in the same breath — "who is on what, and what does
       // what cost".
-      { href: "/panel/plans", labelKey: "panel.navPlans", icon: BadgeIcon, adminOnly: true },
-      { href: "/panel/roles", labelKey: "panel.navRoles", icon: ShieldIcon, adminOnly: true },
+      { href: "/panel/plans", labelKey: "panel.navPlans", icon: BadgeIcon, businessOnly: true },
+      { href: "/panel/roles", labelKey: "panel.navRoles", icon: ShieldIcon, businessOnly: true },
     ],
   },
   {
@@ -166,7 +171,7 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       // business restyling every other business's admin is not a thing to allow.
       // A storefront's own look lives in /panel/branding.
       { href: "/panel/appearance", labelKey: "panel.navAppearance", icon: PaletteIcon, adminOnly: true },
-      { href: "/panel/analytics", labelKey: "panel.navAnalytics", icon: PulseIcon, adminOnly: true },
+      { href: "/panel/analytics", labelKey: "panel.navAnalytics", icon: PulseIcon, businessOnly: true },
       { href: "/panel/tracking", labelKey: "panel.navTracking", icon: TargetIcon, businessOnly: true },
       { href: "/panel/custom-js", labelKey: "panel.navCustomJs", icon: CodeIcon, feature: "custom-js" },
       { href: "/panel/popup", labelKey: "panel.navPopup", icon: PopupIcon, businessOnly: true },
@@ -210,13 +215,6 @@ function PaletteIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828L11 19.5M7 17h.01" />
-    </svg>
-  );
-}
-function HeartIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
     </svg>
   );
 }
@@ -335,13 +333,6 @@ function UsersIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  );
-}
-function ReceiptIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
     </svg>
   );
 }

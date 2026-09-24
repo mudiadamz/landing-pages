@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
@@ -32,7 +33,7 @@ export default async function BrandingPage() {
   // running it, not a decision about who the business is — and a staff member
   // who has to ask an owner to fix a typo in the shop name is a staff member
   // who stops fixing typos.
-  if (!(await canSellOnCurrentSite())) redirect("/panel");
+  if (!(await canSellOnCurrentSite())) redirect(deniedPath("branding"));
 
   // Same belt-and-braces guard as /panel/sites: this screen rewrites a site row, and
   // app/panel/layout.tsx already keeps admin routes on the canonical origin.

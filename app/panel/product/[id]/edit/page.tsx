@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import Link from "next/link";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getLandingPageById, getCategories, getLandingPagesForUser } from "@/lib/actions/landing-pages";
@@ -17,7 +18,7 @@ export default async function EditPage({
 }) {
   const t = translator(await requestLocale());
   const canSell = await canSellProducts();
-  if (!canSell) redirect("/panel");
+  if (!canSell) redirect(deniedPath("products"));
 
   const { id } = await params;
   const site = await editingSite();

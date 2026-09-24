@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { canSellProducts } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { editingSite } from "@/lib/site-resolve";
@@ -16,7 +17,7 @@ const STEPS = [
 export default async function NewPagePage() {
   const t = translator(await requestLocale());
   const canSell = await canSellProducts();
-  if (!canSell) redirect("/panel");
+  if (!canSell) redirect(deniedPath("products"));
 
   const categories = await getCategories((await editingSite()).business_id);
 

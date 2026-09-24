@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getLegalContent } from "@/lib/actions/site-settings";
 import { applySiteName, LEGAL_KEYS } from "@/lib/legal-config";
@@ -16,7 +17,7 @@ export async function generateMetadata() {
 export default async function LegalSettingsPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("legal");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("legal"));
 
   const site = await editingSite();
   const stored = await getLegalContent(site.id);

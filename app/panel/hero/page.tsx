@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getHero } from "@/lib/actions/site-settings";
 import { editingSite } from "@/lib/site-resolve";
@@ -11,7 +12,7 @@ import { requestLocale } from "@/lib/i18n/request";
 export default async function HeroSettingsPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("hero");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("hero"));
 
   // Which storefront's hero — not the host, which is always the canonical domain
   // here because the panel only runs there.

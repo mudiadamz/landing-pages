@@ -592,6 +592,10 @@ export const id = {
   "order.open": "Pesanan berjalan",
   "order.openHint": "Menunggu atau sedang diproses",
   "panel.orderStatus": "Status pesanan",
+  "panel.viewCustomer": "Lihat sebagai pelanggan",
+  "panel.viewBusiness": "Kembali ke panel bisnis",
+  "panel.deniedTitle": "Menu itu tidak bisa kamu buka",
+  "panel.deniedBody": "Menu {menu} butuh izin yang belum kamu punya. Minta ke pemilik business kalau kamu memang perlu.",
 
   /* ---- domain sendiri (bring your own domain) ---- */
   "domains.heading": "Domain saya",

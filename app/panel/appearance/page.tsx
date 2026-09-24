@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireAdmin } from "@/lib/actions/profiles";
 import { getPanelPalette, getPanelSkin } from "@/lib/actions/site-settings";
 import { AppearanceForm } from "./appearance-form";
@@ -10,7 +11,7 @@ export const metadata = { title: "Tampilan" };
 
 export default async function AppearancePage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireAdmin())) redirect(deniedPath("appearance"));
   const [palette, skin] = await Promise.all([getPanelPalette(), getPanelSkin()]);
 
   return (

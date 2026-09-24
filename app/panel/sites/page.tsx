@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
@@ -13,7 +14,7 @@ export const metadata = { title: "Domain" };
 
 export default async function SitesPage() {
   const t = translator(await requestLocale());
-  if (!(await requireAdmin())) redirect("/panel");
+  if (!(await requireAdmin())) redirect(deniedPath("sites"));
 
   // Belt and braces: app/panel/layout.tsx already sends admin routes on a niche
   // domain to the canonical origin, so this normally never fires. Kept because this

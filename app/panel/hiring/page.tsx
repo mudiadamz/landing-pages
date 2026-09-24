@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getHiringContent } from "@/lib/actions/site-settings";
 import { editingSite } from "@/lib/site-resolve";
@@ -15,7 +16,7 @@ export async function generateMetadata() {
 export default async function HiringSettingsPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("hiring");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("hiring"));
 
   const site = await editingSite();
   const hiring = await getHiringContent(site.id);

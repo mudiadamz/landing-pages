@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { PanelPageHeader } from "@/components/panel-page-header";
 import { listMyDomains } from "@/lib/actions/domains";
-import { getProfile } from "@/lib/actions/profiles";
+import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
+import { deniedPath } from "@/lib/panel-view";
 import { DomainsManager } from "./domains-manager";
 
 /**
@@ -22,8 +23,10 @@ export async function generateMetadata() {
 
 export default async function DomainsPage() {
   const t = translator(await requestLocale());
-  const profile = await getProfile();
-  if (!profile) redirect("/login");
+  // The same gate the sidebar shows this behind. It had none — it leaned on
+  // listMyDomains() returning nothing, which is not a refusal, it is an empty
+  // page that looks like a bug.
+  if (!(await requireSiteAdmin())) redirect(deniedPath("domains"));
 
   const domains = await listMyDomains();
 

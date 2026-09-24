@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getPopupBanner } from "@/lib/actions/site-settings";
 import { editingSite } from "@/lib/site-resolve";
@@ -14,7 +15,7 @@ export async function generateMetadata() {
 
 export default async function PopupPage() {
   const t = translator(await requestLocale());
-  if (!(await requireSiteAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect(deniedPath("popup"));
 
   const site = await editingSite();
   const popup = await getPopupBanner(site.id);

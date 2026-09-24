@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { getTracking } from "@/lib/actions/site-settings";
 import { editingSite } from "@/lib/site-resolve";
@@ -12,7 +13,7 @@ export const metadata = { title: "Tracking" };
 
 export default async function TrackingPage() {
   const t = translator(await requestLocale());
-  if (!(await requireSiteAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect(deniedPath("tracking"));
 
   const site = await editingSite();
   const tracking = await getTracking(site.id);

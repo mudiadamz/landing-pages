@@ -260,6 +260,24 @@ Ringkasan yang paling sering dilanggar:
     kolom verifikasi/sertifikat — RLS tidak bisa membandingkan baris lama dengan
     yang baru, trigger bisa. Penjaga itu hanya berlaku saat ada `auth.uid()`,
     supaya migration & service_role tidak ikut tertahan.
+- **Shell panel adalah PILIHAN, bukan vonis** (2026-09-25). `lib/panel-shell.ts`
+  menjawab "apakah orang ini cuma pembeli"; `lib/panel-view.ts` menjawab
+  pertanyaan lain: orang yang punya toko juga berbelanja. Cookie
+  `lp_panel_view` menyimpan pilihannya, tombolnya di menu akun (dirender kedua
+  shell, jadi perjalanannya pulang-pergi). **Customer-only menang atas cookie**
+  — yang tidak punya kemampuan bisnis tidak boleh diberi rail berisi 26 menu
+  yang semuanya akan menolaknya.
+  - Karena itu **"Pembelian saya" & "Favorit" dicabut dari sidebar bisnis**.
+    Keduanya layar pelanggan; di rail yang dibangun untuk mengurus toko mereka
+    terbaca seperti menu orang lain. Sekarang dicapai lewat tombol ganti
+    tampilan, bukan dengan menempelkannya ke back office.
+- **Menu yang ditolak WAJIB mengatakannya.** Semua layar ber-gate dulu menjawab
+  gagal dengan `redirect("/panel")` telanjang: menunya hilang saat diklik dan
+  dashboard muncul tanpa penjelasan — tidak bisa dibedakan dari salah klik, dan
+  tidak pernah menyebut izin mana yang kurang. Sekarang `deniedPath("<menu>")`
+  (`lib/panel-view.ts`), dan `/panel` menampilkan pemberitahuannya. Nilainya
+  dicocokkan ke daftar yang dikenal sebelum sampai ke halaman, jadi tidak ada
+  string sembarangan yang bisa dipantulkan ke layar.
 - **Dua shell panel, satu set route.** `/panel` melayani dua audiens yang nyaris
   tidak beririsan: business menjangkau 26 layar, customer menjangkau empat. Jadi
   yang bercabang **shell-nya**, bukan route-nya — halaman yang sama dirender di

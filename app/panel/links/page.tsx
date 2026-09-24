@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
@@ -18,7 +19,7 @@ import { requestLocale } from "@/lib/i18n/request";
  */
 export default async function LinksPage() {
   const t = translator(await requestLocale());
-  if (!(await requireSiteAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect(deniedPath("links"));
 
   // Cakupan panel, bukan host request — sama seperti /panel/plans.
   const site = await editingSite();

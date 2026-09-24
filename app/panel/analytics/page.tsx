@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import Link from "next/link";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
@@ -23,7 +24,7 @@ export default async function AnalyticsPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const t = translator(await requestLocale());
-  if (!(await requireSiteAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect(deniedPath("analytics"));
 
   const sp = await searchParams;
   const parsed = Number(sp.range) as Range;

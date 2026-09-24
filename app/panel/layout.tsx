@@ -13,6 +13,7 @@ import { PanelTopbar } from "@/components/panel-topbar";
 import { PanelChrome } from "@/components/panel-chrome";
 import { AccountShell } from "@/components/account-shell";
 import { isCustomerOnly } from "@/lib/panel-shell";
+import { PANEL_VIEW_COOKIE, canSwitchPanelView, resolvePanelView } from "@/lib/panel-view";
 import { PANEL_SIDEBAR_COOKIE, isSidebarCollapsed } from "@/lib/panel-chrome";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
@@ -116,13 +117,20 @@ export default async function PanelLayout({
   const collapsed = isSidebarCollapsed((await cookies()).get(PANEL_SIDEBAR_COOKIE)?.value);
   const brand = siteBrand(await currentSite(), locale);
 
-  // Which shell? The rule is in lib/panel-shell.ts, where it can be tested.
+  // Which shell? Two questions, and they are not the same one.
+  //
+  // `isCustomerOnly` is a verdict about permissions: is there anything here for
+  // this person besides buying. `resolvePanelView` is a CHOICE: somebody who
+  // runs a shop also buys things, and their receipts belong in the customer
+  // shell rather than bolted into an admin rail (lib/panel-view.ts).
   const customerOnly = isCustomerOnly({
     isPlatform: !!profile?.is_platform,
     businessRole: profile?.business_role ?? null,
     canSell: !!canSell,
     featureCount: features.length,
   });
+  const view = resolvePanelView((await cookies()).get(PANEL_VIEW_COOKIE)?.value, customerOnly);
+  const maySwitch = canSwitchPanelView(customerOnly);
 
   const banners = (
     <>
@@ -131,7 +139,7 @@ export default async function PanelLayout({
     </>
   );
 
-  if (customerOnly) {
+  if (view === "customer") {
     return (
       <LocaleProvider locale={locale}>
         {/* Still inside PanelChrome: the topbar's account menu reads it, and the
@@ -147,6 +155,7 @@ export default async function PanelLayout({
             brand={brand}
             locale={locale}
             canApplyBusiness={canApplyBusiness}
+            maySwitchView={maySwitch}
             banners={banners}
           >
             {children}
@@ -198,6 +207,9 @@ export default async function PanelLayout({
           avatarUrl={profile?.avatar_url ?? ""}
           brand={brand}
           locale={locale}
+          panelView="business"
+          maySwitchView={maySwitch}
+          canApplyBusiness={canApplyBusiness}
         />
         {banners}
         <main id="panel-main" className="flex-1 min-w-0 max-w-5xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 md:mx-0">

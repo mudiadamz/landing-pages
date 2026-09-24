@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import Link from "next/link";
 import { getSalesOverview, type SalesOverview, type RecentSale } from "@/lib/actions/sales";
@@ -54,7 +55,7 @@ function formatDate(s: string | null) {
 export default async function SalesPage() {
   const t = translator(await requestLocale());
   const [data, scope] = await Promise.all([getSalesOverview(), panelScope()]);
-  if (!data) redirect("/panel");
+  if (!data) redirect(deniedPath("sales"));
 
   // The customer directory is the admin's tool for withdrawing access, so it
   // only loads for the global view.

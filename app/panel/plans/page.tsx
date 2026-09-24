@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireSiteAdmin } from "@/lib/actions/profiles";
 import { editingSite } from "@/lib/site-resolve";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
@@ -23,7 +24,7 @@ import { PlansForm } from "./plans-form";
  */
 export default async function PlansPage() {
   const t = translator(await requestLocale());
-  if (!(await requireSiteAdmin())) redirect("/panel");
+  if (!(await requireSiteAdmin())) redirect(deniedPath("plans"));
 
   // Situs yang sedang difilter, bukan host request. Tanpa ini layar ini membaca
   // dan menulis setelan situs KANONIK apa pun pilihan filternya — filter yang

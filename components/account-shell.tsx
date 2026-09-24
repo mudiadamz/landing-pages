@@ -31,6 +31,7 @@ export function AccountShell({
   brand,
   locale,
   canApplyBusiness,
+  maySwitchView = false,
   banners,
 }: {
   children: ReactNode;
@@ -40,6 +41,8 @@ export function AccountShell({
   brand: SiteBrand;
   locale: Locale;
   canApplyBusiness: boolean;
+  /** True for a business person looking at their own account — offers the way back. */
+  maySwitchView?: boolean;
   /** Email-verification notices — rendered by the caller, shown above the tabs. */
   banners?: ReactNode;
 }) {
@@ -53,6 +56,8 @@ export function AccountShell({
         locale={locale}
         withSidebar={false}
         canApplyBusiness={canApplyBusiness}
+        panelView="customer"
+        maySwitchView={maySwitchView}
       />
       {banners}
       <div className="mx-auto w-full max-w-4xl flex-1 px-3 sm:px-6">

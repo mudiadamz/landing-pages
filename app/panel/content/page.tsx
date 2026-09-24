@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { requireFeature } from "@/lib/actions/profiles";
 import { getSiteContent } from "@/lib/actions/site-settings";
 import { editingSite } from "@/lib/site-resolve";
@@ -15,7 +16,7 @@ export async function generateMetadata() {
 export default async function ContentSettingsPage() {
   const t = translator(await requestLocale());
   const ok = await requireFeature("content");
-  if (!ok) redirect("/panel");
+  if (!ok) redirect(deniedPath("content"));
 
   const site = await editingSite();
   const content = await getSiteContent(site.id);

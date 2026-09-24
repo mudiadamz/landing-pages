@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { deniedPath } from "@/lib/panel-view";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { canSellProducts } from "@/lib/actions/profiles";
@@ -8,7 +9,7 @@ import { UploadForm } from "../upload-form";
 export default async function UploadPage() {
   const t = translator(await requestLocale());
   const canSell = await canSellProducts();
-  if (!canSell) redirect("/panel");
+  if (!canSell) redirect(deniedPath("products"));
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

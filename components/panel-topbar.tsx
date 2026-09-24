@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { PanelViewSwitch } from "@/components/panel-view-switch";
+import type { PanelView } from "@/lib/panel-view";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { SiteLogo } from "@/components/site-logo";
 import { usePanelChrome } from "@/components/panel-chrome";
@@ -35,6 +37,8 @@ export function PanelTopbar({
   locale,
   withSidebar = true,
   canApplyBusiness = false,
+  panelView,
+  maySwitchView = false,
 }: {
   displayName: string;
   email: string | null;
@@ -57,6 +61,10 @@ export function PanelTopbar({
    * only from the dashboard.
    */
   canApplyBusiness?: boolean;
+  /** Which shell is on screen, for the switch's label. */
+  panelView?: PanelView;
+  /** Has anywhere to switch to — false for someone who only ever buys. */
+  maySwitchView?: boolean;
 }) {
   const t = useT();
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = usePanelChrome();
@@ -177,6 +185,16 @@ export function PanelTopbar({
                   </span>
                 </span>
               </Link>
+
+              {/* The way between the two shells. In the account menu because
+                  that is the one control both shells already render, so the
+                  trip is round without either of them growing a chrome of its
+                  own. */}
+              {maySwitchView && (
+                <div className="border-b border-[var(--border)] px-1 py-1">
+                  <PanelViewSwitch current={panelView ?? "business"} />
+                </div>
+              )}
 
               {canApplyBusiness && (
                 <Link

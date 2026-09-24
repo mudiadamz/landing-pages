@@ -1,3 +1,4 @@
+import { deniedMenu } from "@/lib/panel-view";
 import Link from "next/link";
 import Image from "next/image";
 import { getProfile, requireFeature, canSellOnCurrentSite, currentSiteStanding } from "@/lib/actions/profiles";
@@ -30,7 +31,22 @@ function formatIDR(n: number) {
 
 const nf = (n: number) => n.toLocaleString("id-ID");
 
-export default async function PanelPage() {
+/**
+ * `?denied=<menu>` arrives from a gated screen that refused this person.
+ *
+ * Every one of them used to answer a failed check with a bare
+ * `redirect("/panel")`: the menu vanished mid-click and the dashboard appeared
+ * with nothing to explain it — indistinguishable from a misclick, and it never
+ * said which permission was missing. The value is matched against a known list
+ * (lib/panel-view.ts) before it reaches the page, so nothing a visitor types
+ * can be reflected back at them.
+ */
+export default async function PanelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ denied?: string | string[] }>;
+}) {
+  const denied = deniedMenu((await searchParams).denied);
   const t = translator(await requestLocale());
   const profile = await getProfile();
   const seller = await canSellOnCurrentSite();
@@ -56,6 +72,17 @@ export default async function PanelPage() {
 
   return (
     <div className="space-y-6">
+      {/* Says WHICH menu refused, and why it might. A dashboard that simply
+          appears after a click is the failure this replaces. */}
+      {denied && (
+        <div
+          role="status"
+          className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm"
+        >
+          <p className="font-medium text-foreground">{t("panel.deniedTitle")}</p>
+          <p className="mt-0.5 text-[var(--muted)]">{t("panel.deniedBody", { menu: denied })}</p>
+        </div>
+      )}
       <div>
         <h1 className="text-xl font-semibold tracking-tight">
           {firstName ? t("panel.greeting", { name: firstName }) : t("panel.navDashboard")}

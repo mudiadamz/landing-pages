@@ -603,6 +603,10 @@ export const en: Record<keyof typeof id, string> = {
   "order.open": "Open orders",
   "order.openHint": "Waiting or in progress",
   "panel.orderStatus": "Order status",
+  "panel.viewCustomer": "View as customer",
+  "panel.viewBusiness": "Back to business panel",
+  "panel.deniedTitle": "That menu is not open to you",
+  "panel.deniedBody": "{menu} needs a permission you do not have. Ask the business owner if you need it.",
 
   /* ---- bring your own domain ---- */
   "domains.heading": "My domains",
