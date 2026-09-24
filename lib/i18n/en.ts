@@ -610,8 +610,10 @@ export const en: Record<keyof typeof id, string> = {
     "Point a subdomain you own at this shop. It takes two DNS records: a CNAME that sends the traffic, and a TXT that proves the domain is yours.",
   "domains.addFailed": "Could not add the domain.",
   "domains.removeFailed": "Could not remove the domain.",
-  "domains.subdomainOnly":
-    "Use a subdomain (e.g. shop.yourbrand.com), not the root domain — a CNAME cannot live on a root domain.",
+  "domains.rootOrSubdomain":
+    "Either the root domain (yourbrand.com) or a subdomain (shop.yourbrand.com). The panel gives you the right record for each.",
+  "domains.apexNote":
+    "A root domain uses an A record, not a CNAME — that is a DNS rule, not our choice. If your registrar offers ALIAS/ANAME or CNAME flattening, that works too.",
   "domains.empty": "No domains yet. Add one above.",
   "domains.recordName": "Name / host",
   "domains.certReady": "HTTPS ready",

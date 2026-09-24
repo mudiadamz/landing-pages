@@ -1,17 +1,22 @@
 /* Rules for a domain a customer brings, kept away from the code that resolves
  * DNS so they can be tested without a network.
  *
- * The shape we accept is narrow on purpose: a SUBDOMAIN of a domain the
- * customer owns (`shop.mereksendiri.com`), pointed here with a CNAME.
+ * Both shapes are supported, and they need DIFFERENT records:
  *
- * Why not the apex (`mereksendiri.com`):
- *   - a CNAME is illegal at the apex (RFC 1034 — the apex must carry SOA/NS),
- *     so an apex customer needs an A record, which pins them to an IP we then
- *     can never change without breaking every one of them at once;
- *   - the workarounds (ALIAS / ANAME / CNAME flattening) exist at maybe a third
- *     of registrars, and the ones that lack it produce a support ticket that
- *     ends in "your registrar cannot do this".
- * A subdomain has none of that: CNAME works everywhere, and the target can move.
+ *   shop.mereksendiri.com   CNAME → edge.mbahgpt.com    (a subdomain)
+ *   mereksendiri.com        A     → <edge IP>           (the root domain)
+ *
+ * The split is not a preference, it is RFC 1034: the apex of a zone must carry
+ * its SOA and NS records, and a CNAME may not coexist with anything — so a root
+ * domain cannot be a CNAME. Handing an apex customer the CNAME instruction
+ * produces an error at their registrar with no explanation from us, which is
+ * why `dnsInstruction` exists rather than one copy of the text.
+ *
+ * The cost of the A record is real and worth saying out loud: it pins that
+ * customer to one IP. Move the edge and every apex domain breaks at once, while
+ * the CNAME ones follow by themselves. Some providers offer ALIAS/ANAME or
+ * CNAME flattening at the apex, which gets the best of both; the check below
+ * accepts that too, because from the outside it resolves to the same address.
  */
 
 /** Where the proof lives: a TXT record on this label under their domain. */
@@ -38,12 +43,7 @@ const MULTI_LABEL_SUFFIXES = new Set([
   "co.jp", "com.br", "com.mx", "co.za", "com.tr", "com.ph", "co.th", "com.vn", "com.hk",
 ]);
 
-export type DomainProblem =
-  | "empty"
-  | "invalid"
-  | "apex"
-  | "reserved"
-  | "too-long";
+export type DomainProblem = "empty" | "invalid" | "reserved" | "too-long";
 
 /** Hosts nobody else may claim, whatever their DNS says. */
 const RESERVED = new Set(["localhost", "mbahgpt.com", "www.mbahgpt.com"]);
@@ -96,7 +96,8 @@ export function customHostProblem(host: string): DomainProblem | null {
     return "invalid";
   }
   if (RESERVED.has(host)) return "reserved";
-  if (isApex(host)) return "apex";
+  // The apex is allowed. It needs an A record rather than a CNAME, which is a
+  // difference in INSTRUCTIONS (see dnsInstruction), not a reason to refuse.
   return null;
 }
 
@@ -126,6 +127,40 @@ export function txtMatches(records: string[][], token: string): boolean {
     const joined = chunks.join("").trim().replace(/^"|"$/g, "");
     return joined === wanted;
   });
+}
+
+export type DnsInstruction = {
+  type: "A" | "CNAME";
+  /** What to put in the record's name/host field. */
+  name: string;
+  value: string;
+};
+
+/**
+ * The one record this customer has to create, given what kind of host it is.
+ *
+ * Returned as data rather than rendered text so the panel, the docs and any
+ * future email all say the same thing — and so the apex/subdomain split is
+ * decided once, here, instead of in each of them.
+ */
+export function dnsInstruction(host: string, target: string, edgeIp: string): DnsInstruction {
+  return isApex(host)
+    ? { type: "A", name: host, value: edgeIp }
+    : { type: "CNAME", name: host, value: target };
+}
+
+/**
+ * Does this host resolve to our edge?
+ *
+ * Asked of the resolved ADDRESSES, not of the record type, because that is the
+ * one question with the same answer for every shape a customer might use: a
+ * CNAME to the edge, an A record straight at it, or an apex flattened by their
+ * provider all end at the same IP. Checking "is there a CNAME and does it match"
+ * would report a correctly-configured apex as broken.
+ */
+export function pointsHere(addresses: string[], edgeIp: string): boolean {
+  const want = edgeIp.trim();
+  return want.length > 0 && addresses.some((a) => a.trim() === want);
 }
 
 /**

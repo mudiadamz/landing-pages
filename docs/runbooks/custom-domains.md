@@ -6,11 +6,12 @@ Sebuah business mengarahkan `shop.mereksendiri.com` ke sini sendiri, lewat
 ## Bentuknya
 
 ```
-shop.mereksendiri.com ──CNAME──> edge.mbahgpt.com ──A──> VPS (Caddy)
-                                                          │
-                                        reverse_proxy ────┘
-                                                          ↓
-                                              mesin ini (Next.js :3000)
+shop.mereksendiri.com ──CNAME──> edge.mbahgpt.com ──┐
+                                                    ├──> VPS (Caddy)
+mereksendiri.com ──────A────────> <IP edge> ────────┘      │
+                                           reverse_proxy ──┘
+                                                           ↓
+                                               mesin ini (Next.js :3000)
 ```
 
 Plus satu record kedua yang tidak membawa trafik sama sekali:
@@ -19,22 +20,41 @@ Plus satu record kedua yang tidak membawa trafik sama sekali:
 _adm-verify.shop.mereksendiri.com  TXT  adm-verify=<token acak>
 ```
 
-**Hanya TXT yang memberi izin.** CNAME diperiksa supaya panel bisa memberi tahu
-pemiliknya sudah sampai mana, tapi sebuah domain tidak pernah dilayani karena
-DNS-nya mengarah ke sini — mengarahkan DNS adalah hal yang bisa dilakukan
-penyerang juga.
+**Hanya TXT yang memberi izin.** Record trafiknya diperiksa supaya panel bisa
+memberi tahu pemiliknya sudah sampai mana, tapi sebuah domain tidak pernah
+dilayani karena DNS-nya mengarah ke sini — mengarahkan DNS adalah hal yang bisa
+dilakukan penyerang juga.
 
-## Kenapa subdomain saja, bukan domain utama
+## Domain utama & subdomain — record-nya beda, keduanya diterima
 
-CNAME tidak boleh dipasang di apex (RFC 1034: apex wajib memegang SOA/NS). Jadi
-pelanggan apex butuh A record, dan itu memaku mereka ke sebuah IP yang tidak bisa
-kita ganti lagi tanpa mematikan semuanya sekaligus. Jalan keluarnya (ALIAS/ANAME/
-CNAME flattening) ada di mungkin sepertiga registrar, dan yang tidak punya
-menghasilkan tiket support yang berakhir dengan "registrar Anda tidak bisa".
+| yang didaftarkan | record |
+|---|---|
+| `shop.mereksendiri.com` | **CNAME** → `edge.mbahgpt.com` |
+| `mereksendiri.com` | **A** → IP edge (`CUSTOM_DOMAIN_IP`) |
 
-`lib/custom-domain.ts` menolak apex, **termasuk** yang berlabel tiga seperti
-`merek.co.id` — itu apex meski punya tiga label, dan pemeriksaan jumlah-label
-yang naif akan meloloskannya.
+Bukan pilihan kami: RFC 1034 mengharuskan apex sebuah zone memegang SOA dan NS,
+dan CNAME tidak boleh berdampingan dengan record apa pun — jadi domain utama
+tidak bisa jadi CNAME. Memberi pelanggan apex instruksi CNAME menghasilkan error
+di registrar-nya tanpa penjelasan apa pun dari kita, dan itulah kenapa
+`dnsInstruction()` di `lib/custom-domain.ts` yang memutuskan, sekali, bukan
+masing-masing layar.
+
+**Harga A record, disebutkan terang-terangan:** pelanggan itu terpaku ke satu IP.
+Pindahkan edge dan semua domain utama patah sekaligus, sementara yang CNAME ikut
+sendiri. Registrar yang punya ALIAS/ANAME atau CNAME flattening di apex mendapat
+keduanya — dan itu ikut diterima, karena dari luar hasilnya resolve ke alamat
+yang sama.
+
+**Pemeriksaannya menanyakan ALAMAT, bukan jenis record.** `pointsHere()`
+membandingkan hasil `resolve4()` dengan IP edge, jadi satu perbandingan mencakup
+semua bentuk: CNAME ke edge, A langsung ke edge, dan apex yang di-flatten
+provider. Memeriksa "apakah ada CNAME dan apakah cocok" akan melaporkan apex yang
+sudah benar sebagai rusak. Lookup CNAME tetap ada sebagai cadangan untuk jendela
+waktu saat record-nya sudah dibuat tapi targetnya belum menyebar.
+
+`merek.co.id` **adalah** domain utama meski punya tiga label — `isApex()` tahu
+itu lewat daftar suffix dua-tingkat, dan pemeriksaan jumlah label yang naif akan
+salah mengiranya subdomain lalu mengirim pemiliknya membuat CNAME yang ditolak.
 
 ## Kenapa bukan lewat Cloudflare Tunnel saja
 

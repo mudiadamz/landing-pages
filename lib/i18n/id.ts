@@ -599,8 +599,10 @@ export const id = {
     "Arahkan subdomain milikmu sendiri ke toko ini. Butuh dua record DNS: satu CNAME yang mengarahkan trafik, satu TXT yang membuktikan domain itu memang milikmu.",
   "domains.addFailed": "Gagal menambah domain.",
   "domains.removeFailed": "Gagal menghapus domain.",
-  "domains.subdomainOnly":
-    "Pakai subdomain (mis. shop.mereksendiri.com), bukan domain utama — CNAME tidak boleh dipasang di domain utama.",
+  "domains.rootOrSubdomain":
+    "Boleh domain utama (mereksendiri.com) atau subdomain (shop.mereksendiri.com). Panel akan memberi record yang sesuai.",
+  "domains.apexNote":
+    "Domain utama memakai A record, bukan CNAME — itu aturan DNS, bukan pilihan kami. Kalau registrar-mu mendukung ALIAS/ANAME atau CNAME flattening, itu juga diterima.",
   "domains.empty": "Belum ada domain. Tambahkan satu di atas.",
   "domains.recordName": "Nama / host",
   "domains.certReady": "HTTPS siap",

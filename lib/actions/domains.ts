@@ -1,13 +1,15 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-import { resolveCname, resolveTxt } from "node:dns/promises";
+import { resolve4, resolveCname, resolveTxt } from "node:dns/promises";
 import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { createAdminClient } from "@/lib/db/admin";
 import { getProfile } from "./profiles";
 import {
   cnameMatches,
   customHostProblem,
+  dnsInstruction,
+  pointsHere,
   domainState,
   normalizeCustomHost,
   txtMatches,
@@ -40,9 +42,20 @@ import {
  * `lp_sites` is written for readers, and a business owner is not an admin.
  */
 
-/** Where customers are told to point their CNAME. One value, one place. */
+/** Where a SUBDOMAIN is told to CNAME. One value, one place. */
 export async function edgeTarget(): Promise<string> {
   return process.env.CUSTOM_DOMAIN_TARGET || "edge.mbahgpt.com";
+}
+
+/**
+ * The edge's address, for root domains — which cannot be a CNAME (RFC 1034).
+ *
+ * Also what every DNS check compares against, whatever record shape the
+ * customer used, because a CNAME to the edge and an A record straight at it end
+ * at the same place.
+ */
+export async function edgeIp(): Promise<string> {
+  return process.env.CUSTOM_DOMAIN_IP || "18.143.52.190";
 }
 
 /**
@@ -75,6 +88,8 @@ export type DomainRow = {
   certReadyAt: string | null;
   certCheckedAt: string | null;
   certError: string | null;
+  /** The ONE record this host needs: A for a root domain, CNAME for a subdomain. */
+  dns: { type: "A" | "CNAME"; name: string; value: string };
 };
 
 export type DomainCheck = {
@@ -125,8 +140,6 @@ async function mayManage(siteId: string): Promise<boolean> {
 const PROBLEM_MESSAGE: Record<string, string> = {
   empty: "Domain belum diisi.",
   invalid: "Format domain tidak valid. Contoh: shop.mereksendiri.com",
-  apex:
-    "Pakai subdomain, bukan domain utama. CNAME tidak boleh dipasang di domain utama — contoh yang benar: shop.mereksendiri.com",
   reserved: "Domain itu tidak bisa dipakai.",
   "too-long": "Domain terlalu panjang.",
 };
@@ -148,7 +161,7 @@ export async function listMyDomains(): Promise<DomainRow[]> {
   if (!profile.is_platform) q = q.eq("business_id", businessId);
   const { data } = await q;
 
-  const target = await edgeTarget();
+  const [target, ip] = await Promise.all([edgeTarget(), edgeIp()]);
   type Row = {
     id: string;
     host: string;
@@ -177,6 +190,7 @@ export async function listMyDomains(): Promise<DomainRow[]> {
     certReadyAt: r.cert_ready_at,
     certCheckedAt: r.cert_checked_at,
     certError: r.cert_error,
+    dns: dnsInstruction(r.host, r.dns_target ?? target, ip),
   }));
 }
 
@@ -271,11 +285,28 @@ export async function checkCustomDomain(siteId: string): Promise<DomainCheck> {
     txtError = code === "ENOTFOUND" || code === "ENODATA" ? null : code || String(e);
   }
 
+  /**
+   * "Does this host resolve to our edge" — asked of the ADDRESSES.
+   *
+   * A subdomain CNAMEd to the edge, a root domain A-recorded straight at it,
+   * and an apex flattened by the provider all resolve to the same IP, so one
+   * comparison covers every shape. The CNAME lookup stays as a fallback for the
+   * window where the record exists but the target has not propagated yet —
+   * without it a correct setup reads as broken for a few minutes.
+   */
+  const ip = await edgeIp();
   let cnameOk = false;
   try {
-    cnameOk = cnameMatches(await resolveCname(row.host), target);
+    cnameOk = pointsHere(await resolve4(row.host), ip);
   } catch {
     cnameOk = false;
+  }
+  if (!cnameOk) {
+    try {
+      cnameOk = cnameMatches(await resolveCname(row.host), target);
+    } catch {
+      cnameOk = false;
+    }
   }
 
   /**

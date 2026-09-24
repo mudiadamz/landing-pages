@@ -191,7 +191,7 @@ export function DomainsManager({ domains }: { domains: DomainRow[] }) {
             {t("common.add")}
           </button>
         </div>
-        <p className="text-xs text-[var(--muted)]">{t("domains.subdomainOnly")}</p>
+        <p className="text-xs text-[var(--muted)]">{t("domains.rootOrSubdomain")}</p>
         {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
       </form>
 
@@ -217,10 +217,16 @@ export function DomainsManager({ domains }: { domains: DomainRow[] }) {
                 {/* Both records stay visible after verification: a domain that
                     moves registrar needs them again, and hiding them makes the
                     panel useless at exactly the moment it is needed. */}
+                {/* A for a root domain, CNAME for a subdomain — decided in
+                    lib/custom-domain.ts, not here, so the panel and the docs
+                    cannot drift into two different instructions. */}
                 <div className="space-y-2">
-                  <Record type="CNAME" name={d.host} value={d.dnsTarget} />
+                  <Record type={d.dns.type} name={d.dns.name} value={d.dns.value} />
                   <Record type="TXT" name={d.verificationHost} value={d.verificationValue} />
                 </div>
+                {d.dns.type === "A" && (
+                  <p className="text-xs text-[var(--muted)]">{t("domains.apexNote")}</p>
+                )}
 
                 {result && (
                   <ul className="space-y-1 text-xs">

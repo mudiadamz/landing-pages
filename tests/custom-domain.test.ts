@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   cnameMatches,
+  dnsInstruction,
+  pointsHere,
   customHostProblem,
   domainState,
   isApex,
@@ -56,15 +58,15 @@ describe("registrable domain and apex", () => {
 });
 
 describe("customHostProblem", () => {
-  it("accepts a subdomain, which is the whole supported shape", () => {
+  it("accepts a subdomain AND a root domain — they differ in records, not in whether we take them", () => {
     expect(customHostProblem("shop.merek.com")).toBeNull();
     expect(customHostProblem("toko.merek.co.id")).toBeNull();
+    expect(customHostProblem("merek.com")).toBeNull();
+    expect(customHostProblem("merek.co.id")).toBeNull();
   });
 
   it("names the reason instead of just refusing", () => {
     expect(customHostProblem("")).toBe("empty");
-    expect(customHostProblem("merek.com")).toBe("apex");
-    expect(customHostProblem("merek.co.id")).toBe("apex");
     expect(customHostProblem("mbahgpt.com")).toBe("reserved");
     expect(customHostProblem("shop..merek.com")).toBe("invalid");
     expect(customHostProblem("-shop.merek.com")).toBe("invalid");
@@ -74,6 +76,61 @@ describe("customHostProblem", () => {
 
   it("rejects a host that is too long to exist", () => {
     expect(customHostProblem(`${"a".repeat(250)}.merek.com`)).toBe("too-long");
+  });
+});
+
+describe("dnsInstruction", () => {
+  const EDGE = "edge.mbahgpt.com";
+  const IP = "18.143.52.190";
+
+  it("gives a subdomain a CNAME to the edge hostname", () => {
+    expect(dnsInstruction("shop.merek.com", EDGE, IP)).toEqual({
+      type: "CNAME",
+      name: "shop.merek.com",
+      value: EDGE,
+    });
+  });
+
+  /**
+   * RFC 1034: the apex carries SOA and NS, and a CNAME may not coexist with
+   * anything — so a root domain cannot be a CNAME. Handing an apex customer the
+   * CNAME instruction produces an error at their registrar with no explanation
+   * from us.
+   */
+  it("gives a root domain an A record, because a CNAME there is illegal", () => {
+    expect(dnsInstruction("merek.com", EDGE, IP)).toEqual({
+      type: "A",
+      name: "merek.com",
+      value: IP,
+    });
+  });
+
+  it("treats a second-level registry as the root it is", () => {
+    expect(dnsInstruction("merek.co.id", EDGE, IP).type).toBe("A");
+    expect(dnsInstruction("shop.merek.co.id", EDGE, IP).type).toBe("CNAME");
+  });
+});
+
+describe("pointsHere", () => {
+  const IP = "18.143.52.190";
+
+  /**
+   * Asked of the resolved addresses, so one comparison covers every shape:
+   * a CNAME to the edge, an A record straight at it, and an apex flattened by
+   * the provider all resolve to the same IP.
+   */
+  it("accepts the edge address however the customer got there", () => {
+    expect(pointsHere([IP], IP)).toBe(true);
+    expect(pointsHere(["1.2.3.4", IP], IP)).toBe(true);
+  });
+
+  it("is false for somewhere else, or for nothing at all", () => {
+    expect(pointsHere(["142.251.27.121"], IP)).toBe(false);
+    expect(pointsHere([], IP)).toBe(false);
+  });
+
+  it("refuses to match when we have no edge address configured", () => {
+    expect(pointsHere([""], "")).toBe(false);
   });
 });
 
