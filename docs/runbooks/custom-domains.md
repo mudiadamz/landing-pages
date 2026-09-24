@@ -47,14 +47,40 @@ publik, tidak di belakang proxy Cloudflare.
 
 ## Menyiapkan edge (sekali)
 
-1. **VPS mana pun dengan IP publik**, port 80 & 443 terbuka.
+Langkah 1 & 4 di bawah sudah diotomatiskan:
+
+```bash
+scp scripts/setup-edge.sh ubuntu@<ip>:~/
+ssh ubuntu@<ip> 'ORIGIN=origin.mbahgpt.com ACME_EMAIL=you@example.com sudo -E bash setup-edge.sh'
+```
+
+Skripnya idempoten dan mencetak laporan di akhir, termasuk apakah port 80/443
+benar-benar terbuka. Yang tetap manual adalah yang memang di luar mesin itu:
+security group, DNS, dan ingress tunnel. Urutan lengkapnya:
+
+1. **VPS mana pun dengan IP publik**, port 80 & 443 terbuka **di security
+   group**, bukan cuma di dalam mesin. AWS menutup keduanya secara bawaan, dan
+   gejalanya membingungkan: SSH jalan, Caddy jalan, tapi tidak ada yang bisa
+   menjangkaunya dan penerbitan sertifikat gagal tanpa pesan yang jelas.
 2. Arahkan `edge.mbahgpt.com` **A** ke IP itu. Di Cloudflare: **grey cloud**
    (DNS only). Kalau di-proxy, Cloudflare yang menerima TLS-nya dan seluruh
    mekanisme di bawah tidak pernah jalan.
-3. Salin `Caddyfile` dari repo ini ke VPS. Yang perlu diganti hanya alamat
-   backend-nya: `reverse_proxy app:3000` → alamat mesin ini. Paling aman lewat
-   tunnel/WireGuard, bukan port 3000 yang terbuka ke internet.
-4. Set `ACME_EMAIL`, jalankan Caddy.
+3. Beri VPS jalan masuk ke mesin ini. Termurah, karena tunnelnya sudah ada:
+   tambah satu hostname di `/etc/cloudflared/config.yml` (di ATAS catch-all),
+   lalu `cloudflared tunnel route dns <tunnel-id> origin.mbahgpt.com`:
+
+   ```yaml
+     - hostname: origin.mbahgpt.com
+       service: http://localhost:3000
+   ```
+
+   Konsekuensi yang harus disadari: `origin.mbahgpt.com` jadi bisa diakses
+   publik dan menyajikan situs kanonik. Bukan kebocoran data — aplikasi yang
+   sama — tapi itu alamat kedua untuk toko sendiri. Alternatifnya WireGuard
+   atau Tailscale antara kedua mesin (tanpa origin publik), atau Cloudflare
+   Access di hostname itu dengan service token yang dibawa Caddy.
+4. Jalankan `scripts/setup-edge.sh` (lihat atas). Ia memasang Caddy, menulis
+   `/etc/caddy/Caddyfile`, memvalidasinya, dan menyalakan service-nya.
 5. Di mesin ini: `CUSTOM_DOMAIN_TARGET=edge.mbahgpt.com` (defaultnya memang itu).
 
 `Caddyfile` yang sudah ada di repo **tidak perlu diubah selain backend-nya**. Ia
