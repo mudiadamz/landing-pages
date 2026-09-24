@@ -593,6 +593,27 @@ export const id = {
   "order.openHint": "Menunggu atau sedang diproses",
   "panel.orderStatus": "Status pesanan",
 
+  /* ---- domain sendiri (bring your own domain) ---- */
+  "domains.heading": "Domain saya",
+  "domains.intro":
+    "Arahkan subdomain milikmu sendiri ke toko ini. Butuh dua record DNS: satu CNAME yang mengarahkan trafik, satu TXT yang membuktikan domain itu memang milikmu.",
+  "domains.addFailed": "Gagal menambah domain.",
+  "domains.removeFailed": "Gagal menghapus domain.",
+  "domains.subdomainOnly":
+    "Pakai subdomain (mis. shop.mereksendiri.com), bukan domain utama — CNAME tidak boleh dipasang di domain utama.",
+  "domains.empty": "Belum ada domain. Tambahkan satu di atas.",
+  "domains.recordName": "Nama / host",
+  "domains.recordValue": "Nilai",
+  "domains.check": "Cek sekarang",
+  "domains.checking": "Mengecek…",
+  "domains.checkTxt": "TXT verifikasi ditemukan",
+  "domains.checkCname": "CNAME sudah mengarah ke sini",
+  "domains.statePending": "Menunggu verifikasi",
+  "domains.stateVerified": "Terverifikasi",
+  "domains.stateLive": "Aktif",
+  "domains.propagationNote":
+    "Perubahan DNS biasanya butuh beberapa menit, kadang sampai beberapa jam. Tekan \"Cek sekarang\" lagi nanti — tidak perlu menambah ulang.",
+
   /* ---- template blog ---- */
   "blog.empty": "Belum ada tulisan.",
   "blog.readingTime": "{minutes} menit baca",

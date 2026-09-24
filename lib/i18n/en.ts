@@ -604,6 +604,27 @@ export const en: Record<keyof typeof id, string> = {
   "order.openHint": "Waiting or in progress",
   "panel.orderStatus": "Order status",
 
+  /* ---- bring your own domain ---- */
+  "domains.heading": "My domains",
+  "domains.intro":
+    "Point a subdomain you own at this shop. It takes two DNS records: a CNAME that sends the traffic, and a TXT that proves the domain is yours.",
+  "domains.addFailed": "Could not add the domain.",
+  "domains.removeFailed": "Could not remove the domain.",
+  "domains.subdomainOnly":
+    "Use a subdomain (e.g. shop.yourbrand.com), not the root domain — a CNAME cannot live on a root domain.",
+  "domains.empty": "No domains yet. Add one above.",
+  "domains.recordName": "Name / host",
+  "domains.recordValue": "Value",
+  "domains.check": "Check now",
+  "domains.checking": "Checking…",
+  "domains.checkTxt": "Verification TXT found",
+  "domains.checkCname": "CNAME points here",
+  "domains.statePending": "Awaiting verification",
+  "domains.stateVerified": "Verified",
+  "domains.stateLive": "Live",
+  "domains.propagationNote":
+    "DNS changes usually take a few minutes, sometimes hours. Press \"Check now\" again later — there is no need to add it twice.",
+
   /* ---- blog template ---- */
   "blog.empty": "No posts yet.",
   "blog.readingTime": "{minutes} min read",

@@ -51,10 +51,18 @@ export type Site = {
   business_id: string | null;
   /** Visual style: radius/depth/blur, independent of palette (lib/skin.ts). */
   skin: string;
+  /**
+   * Kepemilikan domain terbukti (TXT di `_adm-verify.<host>`). NULL = belum.
+   *
+   * Dibaca `/api/tls-check`: sebuah domain yang belum terbukti tidak boleh
+   * memicu permintaan sertifikat, karena rate limit Let's Encrypt dihitung per
+   * akun dan itu dipakai bersama semua storefront.
+   */
+  verified_at: string | null;
 };
 
 const SITE_COLUMNS =
-  "id, host, name, tagline, description, category_ids, template, palette, skin, logo_url, icon_url, is_canonical, active, locale, business_id";
+  "id, host, name, tagline, description, category_ids, template, palette, skin, logo_url, icon_url, is_canonical, active, locale, business_id, verified_at";
 
 /**
  * Used when lp_sites is empty or unreachable — a fresh database, or the migration
@@ -79,6 +87,9 @@ const FALLBACK_SITE: Site = {
   locale: DEFAULT_LOCALE,
   business_id: null,
   skin: DEFAULT_SKIN,
+  // The fallback is us, not a customer's domain; treating it as unverified
+  // would stop the canonical site renewing its own certificate.
+  verified_at: new Date(0).toISOString(),
 };
 
 function anonClient() {

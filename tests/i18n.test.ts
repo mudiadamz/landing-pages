@@ -198,6 +198,13 @@ describe("dictionary integrity", () => {
     // two unrelated surfaces — one counts pages inside one book, the other
     // counts pages of a list — and English may well want "of" vs "page … of".
     "Halaman {page} dari {total}": ["reader.pageOf", "blog.pageOf"],
+    // A review's "verified purchase" badge vs a domain whose ownership was
+    // proven. Same word in Indonesian, two unrelated claims — English already
+    // wants "Verified buyer" for one of them.
+    Terverifikasi: ["home.verified", "domains.stateVerified"],
+    // A storefront's on/off switch vs a custom domain that is actually serving.
+    // The second is a state we observe, the first one somebody sets.
+    Aktif: ["sites.active", "domains.stateLive"],
   };
 
   it("has no UNDECLARED duplicate values", () => {

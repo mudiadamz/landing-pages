@@ -121,6 +121,9 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
     labelKey: "panel.navGroupBranding",
     items: [
       { href: "/panel/sites", labelKey: "panel.navDomains", icon: GlobeIcon, adminOnly: true },
+      // Business-facing twin of the Platform screen above: a business owner
+      // brings their own domain here, and never sees anyone else's.
+      { href: "/panel/domains", labelKey: "domains.heading", icon: GlobeIcon, sellerOnly: true },
       // Directly after Domain: same object, opposite half. Domain is the plumbing
       // (hostname, DNS, on/off), this is the content (name, logo, template, niche).
       { href: "/panel/branding", labelKey: "panel.navBranding", icon: BadgeIcon, adminOnly: true },

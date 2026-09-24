@@ -23,6 +23,7 @@ const SITE: Site = {
   active: true,
   locale: "en",
   business_id: null,
+  verified_at: null,
   skin: "glass",
 };
 

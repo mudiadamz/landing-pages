@@ -26,9 +26,22 @@ export async function GET(req: Request) {
   const host = normalizeHost(new URL(req.url).searchParams.get("domain"));
   if (!host) return new NextResponse("no domain", { status: 400 });
 
-  // listSites() sudah di-memo per request; daftarnya kecil dan ini cuma
-  // dipanggil sekali per domain per penerbitan sertifikat, bukan per request.
-  const known = (await listSites()).some((s) => s.host === host && s.active);
+  /**
+   * Terdaftar, AKTIF, dan **terbukti dimiliki** (`verified_at`).
+   *
+   * Syarat ketiga ditambahkan bersama pendaftaran domain self-service
+   * (20260924030000). Sebelum itu semua domain dibuat Platform, jadi "ada di
+   * tabel" sudah berarti "kami yang menaruhnya". Sekarang siapa pun yang punya
+   * business bisa menambahkan baris — dan tanpa syarat ini, satu orang yang
+   * mendaftarkan beberapa ratus domain asal-asalan bisa menghabiskan jatah
+   * sertifikat Let's Encrypt SELURUH server, karena rate limit-nya per akun.
+   *
+   * listSites() sudah di-memo per request; daftarnya kecil dan ini cuma
+   * dipanggil sekali per domain per penerbitan sertifikat, bukan per request.
+   */
+  const known = (await listSites()).some(
+    (s) => s.host === host && s.active && !!s.verified_at,
+  );
 
   return known
     ? new NextResponse("ok", { status: 200, headers: { "cache-control": "no-store" } })
