@@ -7,6 +7,8 @@ import { CustomerPurchasesButton } from "./customer-purchases";
 import { panelScope } from "@/lib/site-scope";
 import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 import { EmptyState } from "@/components/ui/empty-state";
+import { OrderStatusControl } from "./order-status-control";
+import { ProductTypeBadge } from "@/components/order-status-badge";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -113,6 +115,11 @@ async function Summary({ data }: { data: SalesOverview }) {
         sub={t("sales.last30", { value: nf(data.sales30) })}
       />
       <Card label={t("analytics.product")} value={nf(data.productCount)} />
+      {/* Only when the shop actually has orders to work: a permanent "0 open"
+          card on a purely digital catalog is a box that never says anything. */}
+      {data.openOrders > 0 && (
+        <Card label={t("order.open")} value={nf(data.openOrders)} sub={t("order.openHint")} />
+      )}
       {data.scope === "global" ? (
         <Card label={t("panel.dashBuyers")} value={nf(data.buyerCount)} />
       ) : (
@@ -175,6 +182,11 @@ async function RecentSales({ rows }: { rows: RecentSale[] }) {
                   {r.method ? ` · ${r.method}` : ""}
                   {r.revoked && <RevokedTag />}
                 </p>
+                {r.productType !== "digital" && (
+                  <div className="mt-2">
+                    <OrderStatusControl purchaseId={r.id} status={r.fulfillment} />
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -185,9 +197,10 @@ async function RecentSales({ rows }: { rows: RecentSale[] }) {
               t("panel.dashBuyers"),
               t("analytics.time"),
               t("panel.method"),
+              t("panel.orderStatus"),
               t("sales.amount"),
             ]}
-            align={["left", "left", "left", "left", "right"]}
+            align={["left", "left", "left", "left", "left", "right"]}
           >
             {rows.map((r) => (
               <tr
@@ -195,7 +208,8 @@ async function RecentSales({ rows }: { rows: RecentSale[] }) {
                 className="border-b border-[var(--border)] transition-colors last:border-0 hover:bg-[var(--background)]/30"
               >
                 <td className="px-4 py-3 font-medium text-foreground">
-                  {r.productTitle}
+                  <span className="mr-2">{r.productTitle}</span>
+                  <ProductTypeBadge type={r.productType} />
                   {r.revoked && <RevokedTag />}
                 </td>
                 <td className="px-4 py-3 text-sm text-[var(--muted)]">
@@ -203,6 +217,16 @@ async function RecentSales({ rows }: { rows: RecentSale[] }) {
                 </td>
                 <td className="px-4 py-3 text-sm text-[var(--muted)]">{formatDate(r.at)}</td>
                 <td className="px-4 py-3 text-sm text-[var(--muted)]">{r.method || "—"}</td>
+                <td className="px-4 py-3 text-sm">
+                  {/* A digital sale has no lifecycle to show — it was finished by
+                      the payment. A dash says that more honestly than a green
+                      "Selesai" chip on every row would. */}
+                  {r.productType === "digital" ? (
+                    <span className="text-[var(--muted)]">—</span>
+                  ) : (
+                    <OrderStatusControl purchaseId={r.id} status={r.fulfillment} />
+                  )}
+                </td>
                 <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                   {idr(r.amount)}
                 </td>

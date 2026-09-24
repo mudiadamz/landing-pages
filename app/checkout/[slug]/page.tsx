@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { GuaranteeBadge, PaymentMethodsRow } from "@/components/trust-badges";
 import { RelatedProducts } from "@/components/related-products";
 import { ProductGallery } from "@/components/product-gallery";
+import { ProductTypeBadge } from "@/components/order-status-badge";
+import { deliversFile, normalizeProductType } from "@/lib/product-type";
 import { getMyLike } from "@/lib/actions/likes";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
@@ -256,6 +258,18 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                   <p className="text-sm font-medium text-[var(--primary)]">{adHeadline}</p>
                 )}
                 <h1 className="text-xl font-semibold text-foreground">{page.title}</h1>
+                {/* What kind of thing this is, BEFORE paying. A haircut listed
+                    exactly like an ebook is the catalog lying by omission; the
+                    badge renders for nothing but digital, which is the shape
+                    every other listing on this page already assumes. */}
+                {!deliversFile(normalizeProductType(page.product_type)) && (
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <ProductTypeBadge type={normalizeProductType(page.product_type)} />
+                    {page.fulfillment_note && (
+                      <span className="text-sm text-[var(--muted)]">{page.fulfillment_note}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <ProductActionsMenu
                 variant="inline"

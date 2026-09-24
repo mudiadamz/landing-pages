@@ -58,6 +58,12 @@ import type { DeliverableType } from "./deliverable-type";
 import { ExternalIcon, FileTextIcon, ImageIcon, TrashIcon } from "./icons";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
+import {
+  normalizeProductType,
+  normalizeServiceMode,
+  type ProductType,
+  type ServiceMode,
+} from "@/lib/product-type";
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
@@ -142,6 +148,13 @@ type Props = {
     bundle_product_ids?: string[] | null;
     bundle_note?: string | null;
     available_at?: string | null;
+    product_type?: ProductType | null;
+    sku?: string | null;
+    stock?: number | null;
+    unit?: string | null;
+    service_duration_minutes?: number | null;
+    service_mode?: ServiceMode | null;
+    fulfillment_note?: string | null;
   };
 };
 
@@ -413,6 +426,25 @@ export function ProductEditForm({
 
   // The buyer receives exactly one file: a ZIP (downloaded), a PDF, or an EPUB
   // (both read in the purchases list). Default to whichever already exists.
+  // What kind of thing is being sold. Held as one piece of state that the
+  // delivery tab branches on — the per-kind fields below stay filled when it
+  // changes, matching the write path, which does not clear them either.
+  const [productType, setProductType] = useState<ProductType>(
+    normalizeProductType(initial.product_type),
+  );
+  const [sku, setSku] = useState(initial.sku ?? "");
+  // Numbers live as strings: an empty box has to survive as "not tracked"
+  // (null), and a number state would round-trip it to 0, which means sold out.
+  const [stock, setStock] = useState(initial.stock != null ? String(initial.stock) : "");
+  const [unit, setUnit] = useState(initial.unit ?? "");
+  const [serviceDuration, setServiceDuration] = useState(
+    initial.service_duration_minutes != null ? String(initial.service_duration_minutes) : "",
+  );
+  const [serviceMode, setServiceMode] = useState<ServiceMode | "">(
+    normalizeServiceMode(initial.service_mode) ?? "",
+  );
+  const [fulfillmentNote, setFulfillmentNote] = useState(initial.fulfillment_note ?? "");
+
   const [deliverableType, setDeliverableType] = useState<DeliverableType>(
     initial.story_epub_url && !initial.zip_url && !initial.story_pdf_url
       ? "epub"
@@ -841,6 +873,16 @@ export function ProductEditForm({
         thumbnail_url: thumbnailUrl.trim() || null,
         thumbnail_landscape_url: thumbWideUrl.trim() || null,
         thumbnail_extra_urls: extraUrls.length ? extraUrls : null,
+        product_type: productType,
+        sku: sku.trim() || null,
+        // Blank stays null — "not tracked" — rather than becoming 0, which the
+        // storefront would read as sold out.
+        stock: stock.trim() === "" ? null : Number(stock),
+        unit: unit.trim() || null,
+        service_duration_minutes:
+          serviceDuration.trim() === "" ? null : Number(serviceDuration),
+        service_mode: serviceMode || null,
+        fulfillment_note: fulfillmentNote.trim() || null,
         zip_url: deliverableType === "zip" ? zipUrl.trim() || null : null,
         story_pdf_url: deliverableType === "pdf" ? storyUrl.trim() || null : null,
         story_pdf_url_dark: deliverableType === "pdf" ? storyUrlDark.trim() || null : null,
@@ -1033,6 +1075,20 @@ export function ProductEditForm({
 
       {/* ========================= Tab: Pengiriman ========================= */}      <DeliveryTab
         className={tab === "pengiriman" ? PANEL_CLASS : "hidden"}
+        productType={productType}
+        setProductType={setProductType}
+        sku={sku}
+        setSku={setSku}
+        stock={stock}
+        setStock={setStock}
+        unit={unit}
+        setUnit={setUnit}
+        serviceDuration={serviceDuration}
+        setServiceDuration={setServiceDuration}
+        serviceMode={serviceMode}
+        setServiceMode={setServiceMode}
+        fulfillmentNote={fulfillmentNote}
+        setFulfillmentNote={setFulfillmentNote}
         deliverableType={deliverableType}
         setDeliverableType={setDeliverableType}
         zipUrl={zipUrl}

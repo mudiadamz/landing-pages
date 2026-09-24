@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/db/admin";
+import { initialFulfillment, normalizeProductType } from "@/lib/product-type";
 
 /**
  * Bundles grant their contents as ordinary purchases. Doing it this way means
@@ -58,15 +59,33 @@ export async function grantBundleItems(
   if (itemIds.length === 0) return 0;
 
   const admin = createAdminClient();
+  // Each item starts where its OWN kind says it should: a bundle of three
+  // ebooks grants three finished rows, while a bundle that includes a printed
+  // copy leaves that one waiting to be sent. Reading the bundle's type once and
+  // applying it to every child would be the bug this loop exists to avoid.
+  const { data: kinds } = await admin
+    .from("lp_landing_pages")
+    .select("id, product_type")
+    .in("id", itemIds);
+  const typeById = new Map(
+    (kinds ?? []).map((r) => [r.id as string, normalizeProductType(r.product_type)]),
+  );
+  const now = new Date().toISOString();
+
   const { error } = await admin.from("lp_purchases").upsert(
-    itemIds.map((id) => ({
-      user_id: userId,
-      landing_page_id: id,
-      amount: 0,
-      payment_method: "bundle",
-      invoice_number: null,
-      bundle_parent_id: bundleProductId,
-    })),
+    itemIds.map((id) => {
+      const status = initialFulfillment(typeById.get(id) ?? "digital");
+      return {
+        user_id: userId,
+        landing_page_id: id,
+        amount: 0,
+        payment_method: "bundle",
+        invoice_number: null,
+        bundle_parent_id: bundleProductId,
+        fulfillment_status: status,
+        fulfilled_at: status === "done" ? now : null,
+      };
+    }),
     { onConflict: "user_id,landing_page_id", ignoreDuplicates: true },
   );
 

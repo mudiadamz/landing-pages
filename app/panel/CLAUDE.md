@@ -26,6 +26,12 @@ hanya kebaca saat benar-benar kerja di dalam folder ini.
    `is_free`, thumbnail (utama wajib + landscape + 2 gambar tambahan), `category_id`
    (hierarki parent→child), `long_description`, jadwal rilis (`available_at`), dan
    file pembeli — ZIP **atau** PDF **atau** EPUB (satu tipe saja).
+   - **Tab Pengiriman dimulai dari `product_type`** (`digital`/`physical`/`service`,
+     Fase 6). Slot upload file hanya muncul untuk `digital`; `physical` menampilkan
+     SKU/stok/satuan, `service` menampilkan durasi + cara layanan diberikan, dan
+     keduanya menampilkan `fulfillment_note`. Field jenis lama **tidak dihapus**
+     saat jenisnya diganti — `product_type` yang menentukan apa yang dibaca, jadi
+     penjual yang salah pilih lalu kembali tidak kehilangan isiannya.
 6. **Publish**: produk baru punya tombol **Simpan draft** + **Publish**; setelah
    pernah publish, jadi satu tombol Simpan perubahan. `featured` (pin) sudah tidak
    ada di form ini — diatur dari daftar produk.

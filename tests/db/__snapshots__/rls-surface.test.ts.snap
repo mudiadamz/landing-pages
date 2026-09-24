@@ -44,12 +44,12 @@ exports[`permukaan keamanan > fungsi SECURITY DEFINER milik lp_ 1`] = `
 exports[`permukaan keamanan > grant tulis per kolom untuk authenticated (tabel yang tidak full-grant) 1`] = `
 [
   {
-    "columns": "available_at,bundle_note,bundle_product_ids,category_id,created_at,cta_action,cta_label,cta_note,cta_reveal,event_description,event_end,event_location,event_start,event_title,featured,html_content,is_free,long_description,next_product_id,preview_cut_percent,preview_label,preview_purged_at,preview_type,preview_url,preview_url_dark,price,price_discount,published,purchase_link,purchase_type,related_product_ids,slug,story_epub_url,story_pdf_url,story_pdf_url_dark,thumbnail_extra_urls,thumbnail_landscape_url,thumbnail_url,title,updated_at,user_id,zip_url",
+    "columns": "available_at,bundle_note,bundle_product_ids,category_id,created_at,cta_action,cta_label,cta_note,cta_reveal,event_description,event_end,event_location,event_start,event_title,featured,fulfillment_note,html_content,is_free,long_description,next_product_id,preview_cut_percent,preview_label,preview_purged_at,preview_type,preview_url,preview_url_dark,price,price_discount,product_type,published,purchase_link,purchase_type,related_product_ids,service_duration_minutes,service_mode,sku,slug,stock,story_epub_url,story_pdf_url,story_pdf_url_dark,thumbnail_extra_urls,thumbnail_landscape_url,thumbnail_url,title,unit,updated_at,user_id,zip_url",
     "privilege_type": "INSERT",
     "table_name": "lp_landing_pages",
   },
   {
-    "columns": "available_at,bundle_note,bundle_product_ids,category_id,created_at,cta_action,cta_label,cta_note,cta_reveal,event_description,event_end,event_location,event_start,event_title,featured,html_content,is_free,long_description,next_product_id,preview_cut_percent,preview_label,preview_purged_at,preview_type,preview_url,preview_url_dark,price,price_discount,published,purchase_link,purchase_type,related_product_ids,slug,story_epub_url,story_pdf_url,story_pdf_url_dark,thumbnail_extra_urls,thumbnail_landscape_url,thumbnail_url,title,updated_at,user_id,zip_url",
+    "columns": "available_at,bundle_note,bundle_product_ids,category_id,created_at,cta_action,cta_label,cta_note,cta_reveal,event_description,event_end,event_location,event_start,event_title,featured,fulfillment_note,html_content,is_free,long_description,next_product_id,preview_cut_percent,preview_label,preview_purged_at,preview_type,preview_url,preview_url_dark,price,price_discount,product_type,published,purchase_link,purchase_type,related_product_ids,service_duration_minutes,service_mode,sku,slug,stock,story_epub_url,story_pdf_url,story_pdf_url_dark,thumbnail_extra_urls,thumbnail_landscape_url,thumbnail_url,title,unit,updated_at,user_id,zip_url",
     "privilege_type": "UPDATE",
     "table_name": "lp_landing_pages",
   },

@@ -132,6 +132,13 @@ export default async function EditPage({
           thumbnail_landscape_url: (page as { thumbnail_landscape_url?: string | null }).thumbnail_landscape_url ?? null,
           thumbnail_extra_urls: (page as { thumbnail_extra_urls?: string[] | null }).thumbnail_extra_urls ?? null,
           available_at: (page as { available_at?: string | null }).available_at ?? null,
+          product_type: page.product_type ?? null,
+          sku: page.sku ?? null,
+          stock: page.stock ?? null,
+          unit: page.unit ?? null,
+          service_duration_minutes: page.service_duration_minutes ?? null,
+          service_mode: page.service_mode ?? null,
+          fulfillment_note: page.fulfillment_note ?? null,
         }}
       />
     </div>

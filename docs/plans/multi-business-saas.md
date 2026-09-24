@@ -169,6 +169,61 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | 3 | Ledger + komisi + hold ✅ · KYC (ajukan/approve) + payout (catat, min + KYC-gated) + refund (catat) ✅ · **integrasi disbursement (Duitku Transfer Online, `lp_business_payouts`, mati kalau env kosong)** ✅ | ✅ |
 | 4 | Panel Platform (overview + saldo ledger) ✅ · signup business (approval-gated) + onboarding + provisioning domain saat approve ✅ · **notifikasi email approve/reject** ✅ | ✅ |
 | 5 | Matriks peran per-business (`lp_businesses.role_permissions`, kolom Admin/Staff di `/panel/roles`); **`lp_profiles.account_type` dihapus** — kedudukan = `is_platform` + `lp_business_members.role`. | ✅ |
+| 6 | **Katalog untuk segala jenis bisnis**: `lp_landing_pages.product_type` (digital/physical/service) + field per-jenis, dan siklus pemenuhan pesanan di `lp_purchases.fulfillment_status`. | ✅ |
+
+---
+
+## Fase 6 — katalog untuk segala jenis bisnis (2026-09-24)
+
+**Masalahnya bukan kata, tapi kolom.** Fase 0–5 membuat platform ini bisa
+menampung banyak business; yang masih tidak bisa ditampungnya adalah business
+yang **tidak menjual file**. "Produk" berarti satu file digital bukan lewat sebuah
+kolom yang bisa dibaca, melainkan lewat asumsi yang tersebar: `zip_url` /
+`story_pdf_url` / `story_epub_url`, `preview_type`, email konfirmasi yang
+menyuruh men-download, dan sebuah baris `lp_purchases` yang artinya "sudah
+diterima" begitu ia ada. Warung, salon, dan tukang servis hanya bisa berpura-pura
+jadi produk digital tanpa file.
+
+**Dua kolom yang hilang, ditambahkan** (`20260924000000_product_types.sql`):
+
+| Kolom | Isi |
+|---|---|
+| `lp_landing_pages.product_type` | `digital` \| `physical` \| `service`. Default `digital` — seluruh katalog lama memang itu, jadi tidak ada backfill. |
+| `lp_landing_pages.sku / stock / unit` | Barang fisik. `stock` NULL = **tidak dilacak**, 0 = habis (arti NULL diputuskan eksplisit, lihat `docs/architecture.md` §5). |
+| `lp_landing_pages.service_duration_minutes / service_mode` | Jasa: panjang satu sesi dan di mana dikerjakan (`onsite`/`remote`/`both`). |
+| `lp_landing_pages.fulfillment_note` | "Dikirim H+1" — tampil ke pembeli sesudah bayar, di email dan di Pembelian saya. |
+| `lp_purchases.fulfillment_status` | `pending` → `processing` → `done`, atau `cancelled`. Plus `fulfillment_note` dan `fulfilled_at`. |
+
+**Dua invarian yang wajib bertahan**, karena keduanya gagal senyap:
+
+1. **`fulfillment_status` tidak menentukan akses.** Akses = ada baris
+   `lp_purchases` dengan `revoked_at` kosong; itu yang dibaca route download,
+   reader EPUB, dan grant bundle. Men-gate download pada status akan mematikan
+   produk digital yang statusnya kebetulan tidak ter-set.
+   Dijaga `tests/db/fulfillment.test.ts`.
+2. **`revoked_at` ≠ `cancelled`.** Yang pertama keputusan akses (support), yang
+   kedua pernyataan tentang pesanan. Membatalkan pesanan tidak menarik akses.
+
+**Backfill lewat urutan, bukan UPDATE.** Kolom status ditambahkan dengan
+`default 'done'` — jadi setiap baris lama (semuanya digital, semuanya sudah
+diterima) benar tanpa satu UPDATE pun — lalu defaultnya diturunkan ke `pending`
+untuk baris baru. `pending` dipilih sebagai default baru dengan sengaja: ketiga
+jalur insert (gratis, callback Duitku, bundle) menuliskan statusnya sendiri dari
+`product_type`, dan jalur keempat yang lupa akan muncul sebagai pesanan yang
+menunggu — bukan sebagai pesanan fisik yang diam-diam tercatat selesai.
+
+**Aturannya satu modul, bukan `=== "digital"` yang tersebar.**
+`lib/product-type.ts` memegang kedua kosakata, `deliversFile`,
+`initialFulfillment`, dan transisi status yang diizinkan. Panel memakai fungsi
+transisi yang sama dengan yang diperiksa server action, jadi dropdown tidak
+pernah menawarkan perubahan yang akan ditolak. `tests/product-type.test.ts`
+mengikat kosakata itu ke CHECK constraint di file migration-nya, karena tidak ada
+apa pun yang menghubungkan keduanya saat compile.
+
+**Yang SENGAJA belum dikerjakan** (butuh keputusan sendiri, bukan kelanjutan
+otomatis): alamat kirim di checkout, stok yang berkurang saat pembelian, nomor
+resi/kurir, dan pemilihan slot jadwal untuk jasa. Model ini menyimpan *jenis* dan
+*progres*; ia belum mengklaim tahu cara mengirim barang.
 
 ---
 

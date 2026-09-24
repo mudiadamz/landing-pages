@@ -1,9 +1,21 @@
 import { Resend } from "resend";
+import { deliversFile, type ProductType } from "@/lib/product-type";
 
+/**
+ * The receipt, which is also the delivery for anything digital.
+ *
+ * Two bodies, because a buyer of a physical good or a service who is told to
+ * "download file landing page (ZIP)" has been sent someone else's email. What
+ * they need instead is confirmation that the order reached the seller, and
+ * whatever the seller wrote about what happens next (`fulfillmentNote`).
+ */
 export async function sendPurchaseConfirmationEmail(opts: {
   to: string;
   title: string;
   downloadUrl: string;
+  productType?: ProductType;
+  /** The seller's "what happens next" line, if they wrote one. */
+  fulfillmentNote?: string | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -12,6 +24,17 @@ export async function sendPurchaseConfirmationEmail(opts: {
   }
 
   const from = process.env.RESEND_FROM ?? "onboarding@resend.dev";
+
+  const note = opts.fulfillmentNote?.trim();
+  const body = deliversFile(opts.productType ?? "digital")
+    ? `
+        <p>Download file di link berikut:</p>
+        <p><a href="${opts.downloadUrl}">Download sekarang</a></p>
+        <p>Atau masuk ke panel untuk mendownload kapan saja.</p>`
+    : `
+        <p>Pesanan Anda sudah kami terima dan sedang diproses penjual.</p>
+        ${note ? `<p>${note}</p>` : ""}
+        <p>Status pesanan bisa Anda pantau di <a href="${opts.downloadUrl}">halaman Pembelian saya</a>.</p>`;
 
   try {
     const resend = new Resend(apiKey);
@@ -22,10 +45,7 @@ export async function sendPurchaseConfirmationEmail(opts: {
       html: `
         <h1>Pembayaran berhasil</h1>
         <p>Terima kasih atas pembelian Anda.</p>
-        <p><strong>${opts.title}</strong></p>
-        <p>Download file landing page (ZIP) di link berikut:</p>
-        <p><a href="${opts.downloadUrl}">Download sekarang</a></p>
-        <p>Atau masuk ke panel untuk mendownload kapan saja.</p>
+        <p><strong>${opts.title}</strong></p>${body}
         <hr>
         <p style="color:#666;font-size:12px">Storefront — Produk & Layanan</p>
       `,

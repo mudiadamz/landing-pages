@@ -6,6 +6,7 @@ import { getCategories, getLandingPageForCheckout } from "@/lib/actions/landing-
 import { currentSite } from "@/lib/site-resolve";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { PurchaseTracker } from "@/components/purchase-tracker";
+import { deliversFile, normalizeProductType } from "@/lib/product-type";
 
 // Matches the Button component's secondary + md variant, so the story reader
 // trigger sits inline with the other buttons.
@@ -89,9 +90,15 @@ export default async function CheckoutDonePage({ params, searchParams }: Props) 
               {t("checkout.paymentSuccess")}
             </h1>
             <p className="text-[var(--muted)] mb-6">
-              {hasPurchase
-                ? t("checkout.filesReady")
-                : t("checkout.paymentProcessing")}
+              {/* "File Anda siap" is only true when there IS a file. For a
+                  service or a physical good the honest next line is that the
+                  seller now has the order — plus whatever they wrote about how
+                  it gets fulfilled. */}
+              {!hasPurchase
+                ? t("checkout.paymentProcessing")
+                : deliversFile(normalizeProductType(checkoutData?.product_type))
+                  ? t("checkout.filesReady")
+                  : checkoutData?.fulfillment_note?.trim() || t("checkout.orderReceived")}
             </p>
           </>
         ) : (

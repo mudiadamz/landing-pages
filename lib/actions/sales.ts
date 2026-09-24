@@ -4,6 +4,13 @@ import { createAdminClient } from "@/lib/db/admin";
 import { getProfile, requireFeature, currentSiteStanding } from "./profiles";
 import { fetchAllRows } from "@/lib/paginate";
 import { panelScope } from "@/lib/site-scope";
+import {
+  isOpenOrder,
+  normalizeFulfillment,
+  normalizeProductType,
+  type FulfillmentStatus,
+  type ProductType,
+} from "@/lib/product-type";
 
 /**
  * Everything /panel/sales needs, in one role-scoped read.
@@ -37,6 +44,9 @@ export type RecentSale = {
   method: string | null;
   revoked: boolean;
   productTitle: string;
+  productType: ProductType;
+  /** Where the seller has got to with this order. Never an access statement. */
+  fulfillment: FulfillmentStatus;
   buyerName: string | null;
   buyerEmail: string | null;
 };
@@ -51,6 +61,13 @@ export type SalesOverview = {
   productCount: number;
   /** Distinct buyers. Global scope only — 0 for a publisher's own view. */
   buyerCount: number;
+  /**
+   * Orders still waiting on the seller (pending or processing).
+   *
+   * Counted over every purchase in scope, not just the recent page: a queue you
+   * can only see the first 25 of is a queue that grows behind you.
+   */
+  openOrders: number;
   products: SalesProductRow[];
   recent: RecentSale[];
 };
@@ -78,11 +95,12 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
   const { filter: scope } = await panelScope();
 
   // Products in scope.
-  let pageQuery = db.from("lp_landing_pages").select("id, title");
+  let pageQuery = db.from("lp_landing_pages").select("id, title, product_type");
   if (!global) pageQuery = pageQuery.eq("user_id", profile.id);
   const { data: pages } = await pageQuery;
   const products = pages ?? [];
   const titleById = new Map(products.map((p) => [p.id, p.title as string]));
+  const typeById = new Map(products.map((p) => [p.id, normalizeProductType(p.product_type)]));
   const ids = products.map((p) => p.id);
 
   if (!global && ids.length === 0) {
@@ -90,7 +108,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
       scope: "own",
       revenueTotal: 0, revenue30: 0,
       salesTotal: 0, salesRevoked: 0, sales30: 0,
-      productCount: 0, buyerCount: 0,
+      productCount: 0, buyerCount: 0, openOrders: 0,
       products: [], recent: [],
     };
   }
@@ -109,11 +127,12 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
     amount: number | null;
     payment_method: string | null;
     revoked_at: string | null;
+    fulfillment_status: string | null;
   }>(
     (from, to) => {
       let q = db
         .from("lp_purchases")
-        .select("id, user_id, landing_page_id, purchased_at, amount, payment_method, revoked_at")
+        .select("id, user_id, landing_page_id, purchased_at, amount, payment_method, revoked_at, fulfillment_status")
         .order("purchased_at", { ascending: false })
         .order("id", { ascending: false })
         .range(from, to);
@@ -126,7 +145,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
 
   const cutoff30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
-  let revenueTotal = 0, revenue30 = 0, salesRevoked = 0, sales30 = 0;
+  let revenueTotal = 0, revenue30 = 0, salesRevoked = 0, sales30 = 0, openOrders = 0;
   const byProduct = new Map<string, SalesProductRow>();
   const buyers = new Set<string>();
 
@@ -137,6 +156,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
     revenueTotal += amount;
     if (recent) { revenue30 += amount; sales30 += 1; }
     if (p.revoked_at) salesRevoked += 1;
+    if (isOpenOrder(normalizeFulfillment(p.fulfillment_status))) openOrders += 1;
     if (p.user_id) buyers.add(p.user_id);
 
     const row = byProduct.get(p.landing_page_id) ?? {
@@ -178,6 +198,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
     sales30,
     productCount: products.length,
     buyerCount: global ? buyers.size : 0,
+    openOrders,
     products: [...byProduct.values()].sort((a, b) => b.revenue - a.revenue || b.sold - a.sold),
     recent: head.map((p) => ({
       id: p.id,
@@ -186,6 +207,8 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
       method: p.payment_method,
       revoked: !!p.revoked_at,
       productTitle: titleById.get(p.landing_page_id) ?? "(produk dihapus)",
+      productType: typeById.get(p.landing_page_id) ?? "digital",
+      fulfillment: normalizeFulfillment(p.fulfillment_status),
       buyerName: p.user_id ? (profileById.get(p.user_id)?.full_name ?? null) : null,
       buyerEmail: p.user_id ? (profileById.get(p.user_id)?.email ?? null) : null,
     })),

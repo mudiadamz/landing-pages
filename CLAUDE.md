@@ -354,15 +354,42 @@ POST /api/duitku/callback   (server-to-server, balas 200 "OK" cepat)
                  ↓ Duitku redirect
 /checkout/[slug]/done
   • cek record purchase di DB (callback mungkin masih in-flight → tampilkan "diproses")
-  • jika ada → tombol "Download ZIP" → /api/download/{slug}
+  • jika ada → tombol "Download ZIP" → /api/download/{slug} (produk digital saja;
+    jenis lain menampilkan catatan pemenuhan penjual — lihat "Jenis produk")
   • PurchaseTracker fires event `purchase` (GA4 + Meta Pixel), dedup via merchantOrderId
 GET /api/download/[slug]
-  • cek login + ada record di lp_purchases (RLS)
+  • cek login + ada record di lp_purchases (RLS) + product_type = digital
   • URL bertanda HMAC (lib/backend/storage.ts, 1 jam) → redirect
 ```
 
 ### Tabel `lp_purchases`
-`id, user_id (FK auth.users, **nullable** — NULL = akunnya sudah dihapus), landing_page_id (FK lp_landing_pages), purchased_at, amount, payment_method, invoice_number (UNIQUE), UNIQUE(user_id, landing_page_id)`.
+`id, user_id (FK auth.users, **nullable** — NULL = akunnya sudah dihapus), landing_page_id (FK lp_landing_pages), purchased_at, amount, payment_method, invoice_number (UNIQUE), fulfillment_status, fulfillment_note, fulfilled_at, UNIQUE(user_id, landing_page_id)`.
+
+## Jenis produk & siklus pesanan (Fase 6)
+
+Katalog ini **tidak lagi mengandaikan sebuah file**. `lp_landing_pages.product_type`
+= `digital | physical | service`, dan aturan turunannya ada di satu modul,
+`lib/product-type.ts` (`deliversFile`, `initialFulfillment`, transisi status) —
+bukan sebagai `=== "digital"` yang tersebar. Field per-jenis: `sku`/`stock`/`unit`
+(fisik; `stock` NULL = tidak dilacak, 0 = habis), `service_duration_minutes`/
+`service_mode` (jasa), `fulfillment_note` (tampil ke pembeli sesudah bayar).
+
+Pembelian punya siklus: `lp_purchases.fulfillment_status`
+`pending → processing → done`, atau `cancelled`. Produk digital lahir `done`
+(dibayar = diterima); selain itu lahir `pending` dan muncul sebagai pesanan di
+`/panel/sales`. **DUA invarian, keduanya gagal senyap:**
+
+1. **Status pemenuhan TIDAK menentukan akses.** Akses = ada baris `lp_purchases`
+   dengan `revoked_at` kosong — itu yang dibaca route download, reader, dan grant
+   bundle. Men-gate download pada status akan mematikan produk digital yang
+   statusnya tidak ter-set.
+2. **`revoked_at` ≠ `cancelled`.** Yang pertama keputusan akses, yang kedua
+   pernyataan tentang pesanan.
+
+Ketiga jalur insert pembelian (gratis `addPurchase`, callback Duitku, dan
+`grantBundleItems`) **wajib** menuliskan status dari `product_type` — bundle
+per-item, bukan per-bundle. Detail & yang sengaja belum dikerjakan (alamat kirim,
+stok berkurang, resi, slot jadwal) di `docs/plans/multi-business-saas.md` Fase 6.
 
 ## Tracking & analytics
 

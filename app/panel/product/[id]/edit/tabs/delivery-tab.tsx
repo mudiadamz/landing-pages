@@ -7,6 +7,27 @@ import { useT } from "@/lib/i18n/client";
 
 type RelatedOption = { id: string; title: string; slug: string };
 import type { DeliverableType } from "../deliverable-type";
+import { PRODUCT_TYPES, SERVICE_MODES, deliversFile, type ProductType, type ServiceMode } from "@/lib/product-type";
+import type { MessageKey } from "@/lib/i18n";
+
+const TYPE_LABEL: Record<ProductType, MessageKey> = {
+  digital: "product.typeDigital",
+  physical: "product.typePhysical",
+  service: "product.typeService",
+};
+const TYPE_HINT: Record<ProductType, MessageKey> = {
+  digital: "product.typeDigitalHint",
+  physical: "product.typePhysicalHint",
+  service: "product.typeServiceHint",
+};
+const MODE_LABEL: Record<ServiceMode, MessageKey> = {
+  onsite: "product.serviceOnsite",
+  remote: "product.serviceRemote",
+  both: "product.serviceBoth",
+};
+
+const FIELD =
+  "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
 
 /**
  * The Pengiriman tab: the file a buyer actually receives, and the bundle it can
@@ -19,6 +40,20 @@ import type { DeliverableType } from "../deliverable-type";
  */
 export function DeliveryTab({
   className,
+  productType,
+  setProductType,
+  sku,
+  setSku,
+  stock,
+  setStock,
+  unit,
+  setUnit,
+  serviceDuration,
+  setServiceDuration,
+  serviceMode,
+  setServiceMode,
+  fulfillmentNote,
+  setFulfillmentNote,
   deliverableType,
   setDeliverableType,
   zipUrl,
@@ -54,6 +89,20 @@ export function DeliveryTab({
   setBundleNote,
 }: {
   className: string;
+  productType: ProductType;
+  setProductType: (v: ProductType) => void;
+  sku: string;
+  setSku: (v: string) => void;
+  stock: string;
+  setStock: (v: string) => void;
+  unit: string;
+  setUnit: (v: string) => void;
+  serviceDuration: string;
+  setServiceDuration: (v: string) => void;
+  serviceMode: ServiceMode | "";
+  setServiceMode: (v: ServiceMode | "") => void;
+  fulfillmentNote: string;
+  setFulfillmentNote: (v: string) => void;
   deliverableType: DeliverableType;
   setDeliverableType: (v: DeliverableType) => void;
   zipUrl: string;
@@ -96,7 +145,138 @@ export function DeliveryTab({
             <p className="text-sm text-[var(--muted)]">{t("product.deliveryIntro")}</p>
           </div>
 
-          {/* Deliverable — buyer receives one file, either ZIP or PDF. */}
+          {/* What kind of thing this is. Everything below reads from it, so it
+              sits above them all rather than inside the file block it used to
+              be the unstated assumption of. */}
+          <div className="space-y-1.5">
+            <label htmlFor="product-type" className="block text-sm font-medium text-foreground">
+              {t("product.typeLabel")}
+            </label>
+            <select
+              id="product-type"
+              value={productType}
+              onChange={(e) => setProductType(e.target.value as ProductType)}
+              className={`${FIELD} sm:max-w-xs`}
+            >
+              {PRODUCT_TYPES.map((k) => (
+                <option key={k} value={k}>
+                  {t(TYPE_LABEL[k])}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-[var(--muted)]">{t(TYPE_HINT[productType])}</p>
+          </div>
+
+          {/* Physical goods: what the seller calls it, how many are left, and
+              what one of them is. Stock left blank means "not tracked" — the
+              column's documented NULL, not a zero. */}
+          {productType === "physical" && (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <label htmlFor="product-sku" className="block text-sm font-medium text-foreground">
+                  {t("product.sku")}
+                </label>
+                <input
+                  id="product-sku"
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
+                  maxLength={60}
+                  className={FIELD}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="product-stock" className="block text-sm font-medium text-foreground">
+                  {t("product.stock")}
+                </label>
+                <input
+                  id="product-stock"
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  className={FIELD}
+                />
+                <p className="text-xs text-[var(--muted)]">{t("product.stockHint")}</p>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="product-unit" className="block text-sm font-medium text-foreground">
+                  {t("product.unit")}
+                </label>
+                <input
+                  id="product-unit"
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  maxLength={20}
+                  placeholder={t("product.unitPlaceholder")}
+                  className={FIELD}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* A service has a length and a place, which is as much as this model
+              claims to know about one. Booking a specific slot is a calendar,
+              and a calendar is not a column. */}
+          {productType === "service" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label htmlFor="service-duration" className="block text-sm font-medium text-foreground">
+                  {t("product.serviceDuration")}
+                </label>
+                <input
+                  id="service-duration"
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={serviceDuration}
+                  onChange={(e) => setServiceDuration(e.target.value)}
+                  className={FIELD}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="service-mode" className="block text-sm font-medium text-foreground">
+                  {t("product.serviceMode")}
+                </label>
+                <select
+                  id="service-mode"
+                  value={serviceMode}
+                  onChange={(e) => setServiceMode(e.target.value as ServiceMode | "")}
+                  className={FIELD}
+                >
+                  <option value="">{t("product.serviceModeUnset")}</option>
+                  {SERVICE_MODES.map((m) => (
+                    <option key={m} value={m}>
+                      {t(MODE_LABEL[m])}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* What happens after payment, in the seller's own words. Only for the
+              kinds where something still has to happen. */}
+          {!deliversFile(productType) && (
+            <div className="space-y-1.5">
+              <label htmlFor="fulfillment-note" className="block text-sm font-medium text-foreground">
+                {t("product.fulfillmentNote")}
+              </label>
+              <input
+                id="fulfillment-note"
+                value={fulfillmentNote}
+                onChange={(e) => setFulfillmentNote(e.target.value)}
+                maxLength={160}
+                className={FIELD}
+              />
+              <p className="text-xs text-[var(--muted)]">{t("product.fulfillmentNoteHint")}</p>
+            </div>
+          )}
+
+          {/* Deliverable — buyer receives one file, either ZIP or PDF. Digital
+              products only: the upload slots are not merely useless for a haircut,
+              they are a file the download route would then hand out for one. */}
+          {deliversFile(productType) && (
           <div className="space-y-3">
             <div>
               <h3 className="text-sm font-semibold text-foreground">{t("product.deliveryFileHeading")}</h3>
@@ -191,6 +371,7 @@ export function DeliveryTab({
               </div>
             )}
           </div>
+          )}
 
 
           {/* Bundle — buying this product grants everything listed here. */}

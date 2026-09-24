@@ -12,8 +12,27 @@ import { isValidSlug } from "@/lib/slug";
 import { sanitizeRichText } from "@/lib/html-sanitize";
 import { currentSite, editingSite } from "@/lib/site-resolve";
 import { panelScope } from "@/lib/site-scope";
+import {
+  PRODUCT_TYPES,
+  SERVICE_MODES,
+  type ProductType,
+  type ServiceMode,
+} from "@/lib/product-type";
 
 export type PreviewType = "html" | "pdf" | "link" | "epub" | "deliverable" | "excerpt";
+
+/** Per-type product fields. Which of them mean anything is decided by `product_type`. */
+export type ProductKindFields = {
+  product_type?: ProductType;
+  sku?: string | null;
+  /** null = stock not tracked, 0 = sold out. Physical goods only. */
+  stock?: number | null;
+  unit?: string | null;
+  service_duration_minutes?: number | null;
+  service_mode?: ServiceMode | null;
+  /** Shown to the buyer after paying ("dikirim H+1"), not a product description. */
+  fulfillment_note?: string | null;
+};
 
 
 export type LandingPageCategory = {
@@ -52,7 +71,7 @@ export type LandingPageRow = {
   /** Optional overrides for the preview buy-now card (empty → derived default). */
   cta_label?: string | null;
   cta_note?: string | null;
-};
+} & ProductKindFields;
 
 export type LandingPagePublic = {
   id: string;
@@ -74,6 +93,7 @@ export type LandingPagePublic = {
   featured?: boolean;
   /** Scheduled release instant (ISO); in the future = "upcoming". */
   available_at?: string | null;
+  product_type?: ProductType;
 };
 
 export type LandingPageCheckout = {
@@ -112,7 +132,7 @@ export type LandingPageCheckout = {
   available_at?: string | null;
   /** Product owner — used to let the owner bypass the upcoming lock (preview). */
   user_id?: string;
-};
+} & ProductKindFields;
 
 /**
  * A storefront names ROOT categories; the products it carries are those plus everything
@@ -152,7 +172,7 @@ export async function getLandingPagesForUser() {
 
   let query = db
     .from("lp_landing_pages")
-    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, published, category_id, zip_url, view_count")
+    .select("id, title, slug, created_at, updated_at, price, price_discount, is_free, purchase_link, purchase_type, featured, published, category_id, zip_url, view_count, product_type, stock")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
   if (allowedCategories) query = query.in("category_id", allowedCategories);
@@ -531,7 +551,7 @@ async function queryListing({ categoryIds, sort, q, page, businessId }: ListingA
   let query = db
     .from("lp_landing_pages")
     .select(
-      "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
+      "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, product_type, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
       { count: "exact" },
     )
     .eq("published", true)
@@ -707,7 +727,7 @@ const getCachedHomepagePages = unstable_cache(
     let query = db
       .from("lp_landing_pages")
       .select(
-        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
+        "id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, thumbnail_landscape_url, sold_count, rating, long_description, featured, available_at, product_type, landing_page_categories:lp_landing_page_categories(id, name, slug, icon, parent_id)",
       )
       // Pinned (featured) products always first, then the chosen sort:
       // "popular" = most sold, "newest" = most recently created.
@@ -750,7 +770,7 @@ export async function getLandingPageForCheckout(slug: string) {
   const site = await currentSite();
   let q = db
     .from("lp_landing_pages")
-    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids, thumbnail_landscape_url, thumbnail_extra_urls")
+    .select("id, title, slug, price, price_discount, is_free, purchase_link, purchase_type, thumbnail_url, zip_url, story_pdf_url, story_epub_url, long_description, category_id, sold_count, rating, view_count, like_count, available_at, published, user_id, preview_label, cta_label, cta_note, cta_action, event_title, event_start, event_end, event_location, event_description, bundle_product_ids, bundle_note, related_product_ids, thumbnail_landscape_url, thumbnail_extra_urls, product_type, sku, stock, unit, service_duration_minutes, service_mode, fulfillment_note")
     .eq("slug", slug);
   if (site.business_id) q = q.eq("business_id", site.business_id);
   const { data, error } = await q.single();
@@ -950,7 +970,7 @@ export async function updateLandingPagePricing(
     bundle_product_ids?: string[] | null;
     bundle_note?: string | null;
     available_at?: string | null;
-  }
+  } & ProductKindFields
 ) {
   const db = await createClient();
   const {
@@ -963,6 +983,38 @@ export async function updateLandingPagePricing(
   if ("long_description" in payload) {
     const clean = sanitizeRichText(payload.long_description);
     payload.long_description = clean || null;
+  }
+
+  // The kind of thing this is, and the fields that only that kind has.
+  //
+  // Checked here rather than left to the CHECK constraints so a hand-edited
+  // form field fails with a sentence instead of a 23514 nobody reads — the
+  // same reason preview_cut_percent is clamped above. The per-kind fields are
+  // NOT cleared when the kind changes: a seller who switches a product to
+  // "jasa" and back should find their stock still there, and product_type
+  // already decides what is read (lib/product-type.ts).
+  if (payload.product_type !== undefined) {
+    if (!PRODUCT_TYPES.includes(payload.product_type as ProductType)) {
+      throw new Error("Jenis produk tidak dikenal.");
+    }
+  }
+  if (payload.service_mode !== undefined && payload.service_mode !== null) {
+    if (!SERVICE_MODES.includes(payload.service_mode as ServiceMode)) {
+      throw new Error("Cara layanan diberikan tidak dikenal.");
+    }
+  }
+  if (payload.stock !== undefined && payload.stock !== null) {
+    const stock = Math.round(Number(payload.stock));
+    if (!Number.isFinite(stock) || stock < 0) throw new Error("Stok tidak boleh negatif.");
+    payload.stock = stock;
+  }
+  if (payload.service_duration_minutes !== undefined && payload.service_duration_minutes !== null) {
+    const mins = Math.round(Number(payload.service_duration_minutes));
+    if (!Number.isFinite(mins) || mins <= 0) throw new Error("Durasi layanan harus lebih dari 0 menit.");
+    payload.service_duration_minutes = mins;
+  }
+  for (const f of ["sku", "unit", "fulfillment_note"] as const) {
+    if (payload[f] !== undefined) payload[f] = payload[f]?.trim() || null;
   }
 
   // Cross-product references are ids the BROWSER sent. The picker only offers the

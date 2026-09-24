@@ -7,6 +7,8 @@ import type { PurchaseWithPage, InvoiceRow } from "@/lib/actions/purchases";
 import type { UserReview } from "@/lib/actions/reviews";
 import { ReviewForm } from "./review-form";
 import { useT } from "@/lib/i18n/client";
+import { OrderStatusBadge, ProductTypeBadge } from "@/components/order-status-badge";
+import { deliversFile } from "@/lib/product-type";
 
 type Props = {
   purchases: PurchaseWithPage[];
@@ -162,12 +164,24 @@ function PurchasesTab({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-foreground truncate">{p.title}</p>
+                      {/* What this is, and — for anything the seller still has
+                          to do — where the order has got to. Both hidden for a
+                          digital purchase, which was finished on payment. */}
+                      {!deliversFile(p.product_type) && (
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <ProductTypeBadge type={p.product_type} />
+                          <OrderStatusBadge status={p.fulfillment_status} />
+                        </span>
+                      )}
                       {p.bundle_parent_title && (
                         <span className="mt-1 inline-block rounded bg-[var(--accent-subtle)] px-1.5 py-0.5 text-[0.6875rem] font-medium text-[var(--primary)]">
                           {t("panel.fromBundle", { title: p.bundle_parent_title })}
                         </span>
                       )}
                       <p className="mt-1 text-sm text-[var(--muted)]">{formatDate(p.purchased_at)}</p>
+                      {p.fulfillment_note && (
+                        <p className="mt-1 text-sm text-[var(--muted)]">{p.fulfillment_note}</p>
+                      )}
                     </div>
                     {review && <StarDisplay rating={review.rating} />}
                   </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/db/server";
 import { getSignedDownloadUrl } from "@/lib/actions/downloads";
+import { deliversFile, normalizeProductType } from "@/lib/product-type";
 
 export async function GET(
   req: NextRequest,
@@ -18,9 +19,19 @@ export async function GET(
 
     const { data: page } = await db
       .from("lp_landing_pages")
-      .select("id, zip_url, title")
+      .select("id, zip_url, title, product_type")
       .eq("slug", slug)
       .single();
+
+    // Asked of the PRODUCT's kind, never of the order's status: a physical
+    // order marked done still has no file, and a digital purchase has one
+    // while its status says pending (20260924000000).
+    if (page && !deliversFile(normalizeProductType(page.product_type))) {
+      return NextResponse.json(
+        { error: "Produk ini tidak dikirim sebagai file." },
+        { status: 404 },
+      );
+    }
 
     if (!page?.zip_url) {
       return NextResponse.json({ error: "File tidak tersedia" }, { status: 404 });

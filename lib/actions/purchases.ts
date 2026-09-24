@@ -9,6 +9,13 @@ import { generateInvoiceNumber } from "@/lib/invoice";
 import { isFreeProduct, isUpcoming } from "@/lib/product-status";
 import { grantBundleItems } from "@/lib/bundle";
 import { currentSiteId } from "@/lib/site-resolve";
+import {
+  initialFulfillment,
+  normalizeFulfillment,
+  normalizeProductType,
+  type FulfillmentStatus,
+  type ProductType,
+} from "@/lib/product-type";
 
 export type PurchaseWithPage = {
   id: string;
@@ -23,6 +30,14 @@ export type PurchaseWithPage = {
   /** Set when this item came from a bundle rather than a direct purchase. */
   bundle_parent_id?: string | null;
   bundle_parent_title?: string | null;
+  /** What was bought. Decides whether there is a file to hand over at all. */
+  product_type: ProductType;
+  /**
+   * How far the seller has got with the order. Bookkeeping, NOT access — a
+   * 'pending' row still belongs to the buyer (see the 20260924000000 migration).
+   */
+  fulfillment_status: FulfillmentStatus;
+  fulfillment_note?: string | null;
 };
 
 export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
@@ -39,19 +54,23 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       landing_page_id,
       purchased_at,
       bundle_parent_id,
-      landing_pages:lp_landing_pages!purchases_landing_page_id_fkey (title, slug, zip_url, story_pdf_url, story_epub_url, thumbnail_url)
+      fulfillment_status,
+      fulfillment_note,
+      landing_pages:lp_landing_pages!purchases_landing_page_id_fkey (title, slug, zip_url, story_pdf_url, story_epub_url, thumbnail_url, product_type)
     `)
     .eq("user_id", user.id)
     .order("purchased_at", { ascending: false });
 
   if (error) return [];
 
-  type LP = { title: string; slug: string; zip_url?: string | null; story_pdf_url?: string | null; story_epub_url?: string | null; thumbnail_url?: string | null };
+  type LP = { title: string; slug: string; zip_url?: string | null; story_pdf_url?: string | null; story_epub_url?: string | null; thumbnail_url?: string | null; product_type?: string | null };
   type Row = {
     id: string;
     landing_page_id: string;
     purchased_at: string;
     bundle_parent_id: string | null;
+    fulfillment_status: string | null;
+    fulfillment_note: string | null;
     landing_pages: LP | LP[] | null;
   };
 
@@ -85,6 +104,9 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       thumbnail_url: lp?.thumbnail_url ?? null,
       bundle_parent_id: p.bundle_parent_id ?? null,
       bundle_parent_title: p.bundle_parent_id ? parentTitles.get(p.bundle_parent_id) ?? null : null,
+      product_type: normalizeProductType(lp?.product_type),
+      fulfillment_status: normalizeFulfillment(p.fulfillment_status),
+      fulfillment_note: p.fulfillment_note ?? null,
     };
   });
 }
@@ -100,7 +122,7 @@ export async function addPurchase(landingPageId: string) {
   // (defense in depth — the UI already hides the button for non-owners).
   const { data: gate } = await db
     .from("lp_landing_pages")
-    .select("available_at, user_id, is_free, price, price_discount")
+    .select("available_at, user_id, is_free, price, price_discount, product_type")
     .eq("id", landingPageId)
     .single();
   if (!gate) throw new Error("Produk tidak ditemukan.");
@@ -116,6 +138,10 @@ export async function addPurchase(landingPageId: string) {
     throw new Error("Produk ini berbayar — selesaikan pembayaran di halaman checkout.");
   }
 
+  // A free digital product is delivered by the click; a free sample of a
+  // physical good, or a free consultation, is still work somebody has to do.
+  const status = initialFulfillment(normalizeProductType(gate.product_type));
+
   const { error } = await db.from("lp_purchases").insert({
     user_id: user.id,
     landing_page_id: landingPageId,
@@ -124,6 +150,8 @@ export async function addPurchase(landingPageId: string) {
     invoice_number: generateInvoiceNumber(),
     // Runs as a Server Action from the storefront, so the host is the right answer here.
     site_id: (await currentSiteId()) || null,
+    fulfillment_status: status,
+    fulfilled_at: status === "done" ? new Date().toISOString() : null,
   });
 
   // A free bundle still hands over everything inside it.

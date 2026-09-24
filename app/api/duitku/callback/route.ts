@@ -9,6 +9,7 @@ import { getSignedDownloadUrl } from "@/lib/actions/downloads";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { sendMetaPurchaseEvent } from "@/lib/meta-capi";
 import { effectivePlan } from "@/lib/plans";
+import { deliversFile, initialFulfillment, normalizeProductType } from "@/lib/product-type";
 
 export async function POST(req: NextRequest) {
   try {
@@ -99,6 +100,18 @@ export async function POST(req: NextRequest) {
     try {
       const db = createAdminClient();
       const paymentMethod = (formData.get("paymentCode") as string) ?? "duitku";
+
+      // What was bought decides whether the money finishes the transaction. A
+      // digital product is handed over by the same event that confirms payment;
+      // a physical good or a service leaves the seller with work to do, and
+      // that work needs a row somebody can see (20260924000000).
+      const { data: product } = await db
+        .from("lp_landing_pages")
+        .select("product_type")
+        .eq("id", landingPageId)
+        .maybeSingle();
+      const status = initialFulfillment(normalizeProductType(product?.product_type));
+
       const { error } = await db.from("lp_purchases").insert({
         user_id: userId,
         landing_page_id: landingPageId,
@@ -106,6 +119,8 @@ export async function POST(req: NextRequest) {
         payment_method: paymentMethod,
         invoice_number: generateInvoiceNumber(),
         site_id: siteId,
+        fulfillment_status: status,
+        fulfilled_at: status === "done" ? new Date().toISOString() : null,
       });
 
       // Pembeli jadi orang situs tempat dia membeli (fase 5). Ditulis di sini,
@@ -166,14 +181,18 @@ export async function POST(req: NextRequest) {
         await grantBundleItems(userId, landingPageId);
         const { data: page } = await db
           .from("lp_landing_pages")
-          .select("title, slug, zip_url")
+          .select("title, slug, zip_url, product_type, fulfillment_note")
           .eq("id", landingPageId)
           .single();
 
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
         if (email) {
-          let downloadUrl = `${baseUrl}/panel`;
+          // Non-digital orders have nothing to download; the link in their
+          // email is where the order's status lives instead.
+          let downloadUrl = deliversFile(normalizeProductType(page?.product_type))
+            ? `${baseUrl}/panel`
+            : `${baseUrl}/panel/purchases`;
           if (page?.zip_url && page?.slug) {
             const signedUrl = await getSignedDownloadUrl(page.zip_url);
             if (signedUrl) {
@@ -184,6 +203,8 @@ export async function POST(req: NextRequest) {
             to: email,
             title: page?.title ?? "Landing Page",
             downloadUrl,
+            productType: normalizeProductType(page?.product_type),
+            fulfillmentNote: page?.fulfillment_note ?? null,
           });
         }
 

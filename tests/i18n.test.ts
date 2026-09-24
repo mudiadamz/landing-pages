@@ -191,6 +191,9 @@ describe("dictionary integrity", () => {
     // the sales screen before anything has sold. Each gets its own hint line
     // beside it, so they are reworded independently.
     "Belum ada produk.": ["panel.noProducts", "sales.noProducts"],
+    // An event's end time vs an order that has been fulfilled. English already
+    // splits them ("End" / "Completed"); in Indonesian they collide by accident.
+    Selesai: ["product.eventEnd", "order.statusDone"],
   };
 
   it("has no UNDECLARED duplicate values", () => {
