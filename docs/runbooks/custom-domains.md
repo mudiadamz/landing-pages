@@ -107,8 +107,48 @@ sertifikat seluruh server — dan yang gagal memperbarui adalah domain yang sah.
    Sesudah itu `active` tidak pernah disentuh lagi oleh pemeriksaan: tombol itu
    ditekan pemilik domain, dan ia tidak boleh membatalkan keputusan admin yang
    mematikan sebuah storefront.
-6. Permintaan pertama ke `shop.mereksendiri.com` memicu Caddy meminta
-   sertifikat; `/api/tls-check` menjawab 200; situsnya hidup.
+6. Sertifikatnya diterbitkan **sekarang, bukan saat pengunjung datang**.
+   Tekan **Terbitkan sertifikat**, atau biarkan sapuan cron yang melakukannya.
+
+## Penerbitan sertifikat: siapa yang memicunya
+
+On-demand TLS menerbitkan sertifikat pada handshake HTTPS **pertama** untuk
+sebuah host. Itu yang membuat seluruh mekanisme ini bekerja tanpa mengedit
+konfigurasi — tapi kalau dibiarkan apa adanya, yang membayar harganya adalah
+pengunjung pertama: permintaannya menggantung 10–30 detik, dan kalau gagal dia
+yang melihat errornya, bukan pemilik toko.
+
+Jadi handshake pertama itu **kita** yang melakukan:
+
+- **Tombol** di `/panel/domains` (`warmCustomDomain`) — untuk pemilik yang
+  sedang menunggu di depan layar.
+- **Cron** `scripts/warm-domains.mjs` — untuk yang memasang record lalu tidur.
+  Setiap 15 menit: `0,15,30,45 * * * *`.
+- Pemeriksaan DNS juga memicunya sendiri begitu TXT dan CNAME dua-duanya hijau.
+
+**Yang menentukan "siap" adalah header, bukan sertifikat.** Versi pertama
+pemeriksa ini cuma menanyakan "apakah ada sertifikat sah untuk host ini", dan
+melaporkan `techgalery.com` SIAP padahal DNS-nya masih ke Blogger — Google
+menyajikan sertifikat yang sempurna sah untuk domain itu, begitu juga Cloudflare
+untuk `mbahgpt.com`. Sertifikat yang sah membuktikan ada yang melayani domain
+itu, bukan bahwa KITA yang melayaninya. Karena itu edge menstempel setiap
+responsnya dengan `X-Adm-Edge`, dan itulah satu-satunya hal yang benar-benar
+menjawab pertanyaannya.
+
+Statusnya ada empat, dan `elsewhere` bukan kegagalan — itu keadaan normal domain
+yang sudah terverifikasi tapi DNS-nya belum dipindahkan:
+
+| status | artinya |
+|---|---|
+| `ready` | edge kita yang menjawab, HTTPS jalan |
+| `issuing` | handshake timeout — biasanya Caddy sedang bicara dengan Let's Encrypt |
+| `elsewhere` | HTTPS jalan, tapi yang menjawab bukan kita |
+| `failed` | tidak bisa terhubung; alasannya disimpan di `cert_error` |
+
+**Backoff 5 menit per domain.** Let's Encrypt membatasi 5 validasi GAGAL per
+hostname per jam. Tombol yang bisa ditekan berkali-kali tanpa jeda adalah cara
+tercepat mengunci diri sendiri dari domain sendiri selama sejam — dan itu akan
+terlihat seperti bug kita, bukan seperti ketidaksabaran penekannya.
 
 **Verifikasi adalah kait satu arah.** Sekali terbukti, pemeriksaan berikutnya
 yang gagal — DNS provider sedang buruk, resolver timeout — tidak mencabutnya.

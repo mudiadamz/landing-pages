@@ -15,6 +15,13 @@ import {
   verificationValue,
   type DomainState,
 } from "@/lib/custom-domain";
+import {
+  isIssuingError,
+  mayRetry,
+  retryAfterSeconds,
+  verdictFromResponse,
+  type DomainVerdict,
+} from "@/lib/cert-check";
 
 /**
  * A business bringing its own domain, without anyone editing a config file.
@@ -65,6 +72,9 @@ export type DomainRow = {
   dnsTarget: string;
   lastCheckAt: string | null;
   lastCheckError: string | null;
+  certReadyAt: string | null;
+  certCheckedAt: string | null;
+  certError: string | null;
 };
 
 export type DomainCheck = {
@@ -131,7 +141,9 @@ export async function listMyDomains(): Promise<DomainRow[]> {
   const admin = createAdminClient();
   let q = admin
     .from("lp_sites")
-    .select("id, host, name, active, verified_at, verification_token, dns_target, last_check_at, last_check_error")
+    .select(
+      "id, host, name, active, verified_at, verification_token, dns_target, last_check_at, last_check_error, cert_ready_at, cert_checked_at, cert_error",
+    )
     .order("created_at", { ascending: true });
   if (!profile.is_platform) q = q.eq("business_id", businessId);
   const { data } = await q;
@@ -147,6 +159,9 @@ export async function listMyDomains(): Promise<DomainRow[]> {
     dns_target: string | null;
     last_check_at: string | null;
     last_check_error: string | null;
+    cert_ready_at: string | null;
+    cert_checked_at: string | null;
+    cert_error: string | null;
   };
   return ((data ?? []) as Row[]).map((r) => ({
     id: r.id,
@@ -159,6 +174,9 @@ export async function listMyDomains(): Promise<DomainRow[]> {
     dnsTarget: r.dns_target ?? target,
     lastCheckAt: r.last_check_at,
     lastCheckError: r.last_check_error,
+    certReadyAt: r.cert_ready_at,
+    certCheckedAt: r.cert_checked_at,
+    certError: r.cert_error,
   }));
 }
 
@@ -289,6 +307,19 @@ export async function checkCustomDomain(siteId: string): Promise<DomainCheck> {
 
   bustSiteCaches();
 
+  /**
+   * Both records in place is exactly the moment a certificate can be had, so
+   * take it — the owner is standing right here, and the alternative is that the
+   * first person to visit the shop waits for Let's Encrypt instead.
+   *
+   * Failures here are deliberately not surfaced: this is opportunistic, the
+   * backoff inside warmCustomDomain still applies, and the panel has its own
+   * button that reports properly.
+   */
+  if (verifiedAt && cnameOk) {
+    await warmCustomDomain(siteId).catch(() => undefined);
+  }
+
   return {
     ok: true,
     state: domainState({ verifiedAt, cnameOk }),
@@ -296,6 +327,117 @@ export async function checkCustomDomain(siteId: string): Promise<DomainCheck> {
     cnameOk,
     error: txtError ?? undefined,
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Certificate readiness                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Make one HTTPS request to the domain and see who answers.
+ *
+ * This IS the issuance trigger. On-demand TLS mints a certificate on the first
+ * handshake for a host, and nothing requires that handshake to come from a
+ * customer — so we make it, from a button or from cron, and the first real
+ * visitor arrives to a certificate that already exists.
+ *
+ * Certificate validation stays ON (fetch's default). A handshake that only
+ * succeeds because we stopped checking is not evidence of anything; the whole
+ * question is whether a *browser* would accept this.
+ *
+ * HEAD, not GET: the storefront's HTML is irrelevant here, and a blog homepage
+ * is not a cheap thing to fetch every fifteen minutes for every domain.
+ */
+async function probeDomain(host: string, timeoutMs = 30_000): Promise<DomainVerdict> {
+  try {
+    const res = await fetch(`https://${host}/`, {
+      method: "HEAD",
+      redirect: "manual",
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { "user-agent": "adm-domain-check/1" },
+    });
+    return verdictFromResponse(res.headers);
+  } catch (e) {
+    const err = e as { name?: string; cause?: { code?: string }; message?: string };
+    if (err.name === "TimeoutError" || err.name === "AbortError") return { state: "issuing" };
+    const code = err.cause?.code;
+    if (isIssuingError(code)) return { state: "issuing" };
+    return { state: "failed", reason: code || err.message || "gagal terhubung" };
+  }
+}
+
+export type WarmResult = {
+  ok: boolean;
+  state: DomainVerdict["state"] | "blocked";
+  message?: string;
+  retryAfter?: number;
+};
+
+/**
+ * Get a certificate for this domain now, rather than when someone visits.
+ *
+ * Refuses unless ownership is proven: the edge would refuse too (/api/tls-check
+ * reads the same column), and burning a Let's Encrypt attempt to be told that
+ * by a third party is worse than being told here.
+ */
+export async function warmCustomDomain(siteId: string): Promise<WarmResult> {
+  if (!(await mayManage(siteId))) return { ok: false, state: "blocked", message: "Tidak diizinkan." };
+
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("lp_sites")
+    .select("host, verified_at, cert_checked_at")
+    .eq("id", siteId)
+    .maybeSingle();
+  const row = data as { host: string; verified_at: string | null; cert_checked_at: string | null } | null;
+  if (!row) return { ok: false, state: "blocked", message: "Domain tidak ditemukan." };
+  if (!row.verified_at) {
+    return { ok: false, state: "blocked", message: "Verifikasi kepemilikan domain dulu." };
+  }
+
+  if (!mayRetry(row.cert_checked_at)) {
+    const retryAfter = retryAfterSeconds(row.cert_checked_at);
+    return {
+      ok: false,
+      state: "blocked",
+      retryAfter,
+      message: `Tunggu ${retryAfter} detik sebelum mencoba lagi.`,
+    };
+  }
+
+  const verdict = await probeDomain(row.host);
+  const now = new Date().toISOString();
+
+  await admin
+    .from("lp_sites")
+    .update({
+      cert_checked_at: now,
+      // Only OUR edge answering writes readiness. "issuing" leaves the previous
+      // value alone: a domain that was ready yesterday and is slow today has
+      // not stopped being ready.
+      ...(verdict.state === "ready" ? { cert_ready_at: now, cert_error: null } : {}),
+      ...(verdict.state === "failed" ? { cert_error: verdict.reason } : {}),
+      ...(verdict.state === "elsewhere" ? { cert_error: null } : {}),
+      ...(verdict.state === "issuing" ? { cert_error: null } : {}),
+    })
+    .eq("id", siteId);
+
+  bustSiteCaches();
+
+  if (verdict.state === "ready") return { ok: true, state: "ready" };
+  if (verdict.state === "issuing") {
+    return { ok: true, state: "issuing", message: "Sertifikat sedang diterbitkan. Cek lagi sebentar." };
+  }
+  if (verdict.state === "elsewhere") {
+    // Not a failure: this is the normal state of a domain that is verified but
+    // whose DNS still points at its old host.
+    return {
+      ok: true,
+      state: "elsewhere",
+      message: "Domain ini masih dilayani pihak lain — arahkan DNS-nya ke sini dulu.",
+    };
+  }
+  return { ok: false, state: "failed", message: verdict.reason };
 }
 
 /** Remove a domain this business registered. */

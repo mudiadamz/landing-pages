@@ -78,6 +78,15 @@ https:// {
 
 	encode zstd gzip
 
+	# Stamps every response this edge serves.
+	#
+	# It is how the app answers "is this domain being served BY US yet", which a
+	# certificate check alone cannot: a domain still pointed at its old host
+	# presents a perfectly valid certificate from whoever runs that host. Without
+	# this header the readiness check reports success for a domain we have never
+	# served (lib/cert-check.ts).
+	header X-Adm-Edge "1"
+
 	reverse_proxy https://${ORIGIN} {
 		# DUA header, dan menukarnya adalah kegagalan yang paling mudah terjadi:
 		#
