@@ -6,7 +6,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { generateInvoiceNumber } from "@/lib/invoice";
-import { isFreeProduct, isUpcoming } from "@/lib/product-status";
+import { isFreeProduct, isSoldOut, isUpcoming } from "@/lib/product-status";
+import {
+  normalizeShipping,
+  shippingColumns,
+  shippingProblems,
+} from "@/lib/shipping";
 import { grantBundleItems } from "@/lib/bundle";
 import { currentSiteId } from "@/lib/site-resolve";
 import {
@@ -38,6 +43,14 @@ export type PurchaseWithPage = {
    */
   fulfillment_status: FulfillmentStatus;
   fulfillment_note?: string | null;
+  /** Snapshot of where it was sent. Null for anything that ships nowhere. */
+  shipping_name?: string | null;
+  shipping_phone?: string | null;
+  shipping_address?: string | null;
+  shipping_city?: string | null;
+  shipping_province?: string | null;
+  shipping_postal_code?: string | null;
+  shipping_note?: string | null;
 };
 
 export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
@@ -56,6 +69,13 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       bundle_parent_id,
       fulfillment_status,
       fulfillment_note,
+      shipping_name,
+      shipping_phone,
+      shipping_address,
+      shipping_city,
+      shipping_province,
+      shipping_postal_code,
+      shipping_note,
       landing_pages:lp_landing_pages!purchases_landing_page_id_fkey (title, slug, zip_url, story_pdf_url, story_epub_url, thumbnail_url, product_type)
     `)
     .eq("user_id", user.id)
@@ -71,6 +91,13 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
     bundle_parent_id: string | null;
     fulfillment_status: string | null;
     fulfillment_note: string | null;
+    shipping_name: string | null;
+    shipping_phone: string | null;
+    shipping_address: string | null;
+    shipping_city: string | null;
+    shipping_province: string | null;
+    shipping_postal_code: string | null;
+    shipping_note: string | null;
     landing_pages: LP | LP[] | null;
   };
 
@@ -107,11 +134,18 @@ export async function getPurchasesForUser(): Promise<PurchaseWithPage[]> {
       product_type: normalizeProductType(lp?.product_type),
       fulfillment_status: normalizeFulfillment(p.fulfillment_status),
       fulfillment_note: p.fulfillment_note ?? null,
+      shipping_name: p.shipping_name,
+      shipping_phone: p.shipping_phone,
+      shipping_address: p.shipping_address,
+      shipping_city: p.shipping_city,
+      shipping_province: p.shipping_province,
+      shipping_postal_code: p.shipping_postal_code,
+      shipping_note: p.shipping_note,
     };
   });
 }
 
-export async function addPurchase(landingPageId: string) {
+export async function addPurchase(landingPageId: string, shippingInput?: unknown) {
   const db = await createClient();
   const {
     data: { user },
@@ -122,7 +156,7 @@ export async function addPurchase(landingPageId: string) {
   // (defense in depth — the UI already hides the button for non-owners).
   const { data: gate } = await db
     .from("lp_landing_pages")
-    .select("available_at, user_id, is_free, price, price_discount, product_type")
+    .select("available_at, user_id, is_free, price, price_discount, product_type, stock")
     .eq("id", landingPageId)
     .single();
   if (!gate) throw new Error("Produk tidak ditemukan.");
@@ -136,6 +170,21 @@ export async function addPurchase(landingPageId: string) {
   // error in front of it.
   if (!isFreeProduct(gate)) {
     throw new Error("Produk ini berbayar — selesaikan pembayaran di halaman checkout.");
+  }
+  // Nothing has been paid on this path, so refusing here costs the buyer a
+  // click rather than their money — which is why the check belongs in front of
+  // the insert and not in the trigger behind it.
+  if (isSoldOut(gate)) {
+    throw new Error("Stok produk ini sudah habis.");
+  }
+
+  // A physical product cannot be claimed without somewhere to send it. Checked
+  // against the SAME function the form uses, so the two cannot disagree about
+  // what "filled in" means.
+  const shipping = normalizeShipping(shippingInput);
+  const needsAddress = normalizeProductType(gate.product_type) === "physical";
+  if (needsAddress && shippingProblems(shipping).length > 0) {
+    throw new Error("Alamat pengiriman belum lengkap.");
   }
 
   // A free digital product is delivered by the click; a free sample of a
@@ -152,6 +201,7 @@ export async function addPurchase(landingPageId: string) {
     site_id: (await currentSiteId()) || null,
     fulfillment_status: status,
     fulfilled_at: status === "done" ? new Date().toISOString() : null,
+    ...(needsAddress && shipping ? shippingColumns(shipping) : {}),
   });
 
   // A free bundle still hands over everything inside it.
@@ -175,7 +225,19 @@ export async function addPurchase(landingPageId: string) {
 
 export async function addPurchaseAction(formData: FormData) {
   const id = formData.get("landing_page_id") as string;
-  if (id) await addPurchase(id);
+  if (!id) return;
+  // The address fields ride along on the same form when the product is
+  // physical, and are simply absent otherwise — normalizeShipping reads that
+  // absence as null rather than as an empty address.
+  await addPurchase(id, {
+    name: formData.get("shipping_name"),
+    phone: formData.get("shipping_phone"),
+    address: formData.get("shipping_address"),
+    city: formData.get("shipping_city"),
+    province: formData.get("shipping_province"),
+    postalCode: formData.get("shipping_postal_code"),
+    note: formData.get("shipping_note"),
+  });
 }
 
 export type InvoiceRow = {

@@ -11,6 +11,7 @@ import {
   type FulfillmentStatus,
   type ProductType,
 } from "@/lib/product-type";
+import { normalizeShipping, type ShippingAddress } from "@/lib/shipping";
 
 /**
  * Everything /panel/sales needs, in one role-scoped read.
@@ -47,6 +48,12 @@ export type RecentSale = {
   productType: ProductType;
   /** Where the seller has got to with this order. Never an access statement. */
   fulfillment: FulfillmentStatus;
+  /**
+   * Where to send it, as captured at order time. Null for anything that ships
+   * nowhere — and for physical orders placed before the column existed, which
+   * is a gap the seller has to close by asking, not a bug.
+   */
+  shipping: ShippingAddress | null;
   buyerName: string | null;
   buyerEmail: string | null;
 };
@@ -128,11 +135,18 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
     payment_method: string | null;
     revoked_at: string | null;
     fulfillment_status: string | null;
+    shipping_name: string | null;
+    shipping_phone: string | null;
+    shipping_address: string | null;
+    shipping_city: string | null;
+    shipping_province: string | null;
+    shipping_postal_code: string | null;
+    shipping_note: string | null;
   }>(
     (from, to) => {
       let q = db
         .from("lp_purchases")
-        .select("id, user_id, landing_page_id, purchased_at, amount, payment_method, revoked_at, fulfillment_status")
+        .select("id, user_id, landing_page_id, purchased_at, amount, payment_method, revoked_at, fulfillment_status, shipping_name, shipping_phone, shipping_address, shipping_city, shipping_province, shipping_postal_code, shipping_note")
         .order("purchased_at", { ascending: false })
         .order("id", { ascending: false })
         .range(from, to);
@@ -209,6 +223,7 @@ export async function getSalesOverview(): Promise<SalesOverview | null> {
       productTitle: titleById.get(p.landing_page_id) ?? "(produk dihapus)",
       productType: typeById.get(p.landing_page_id) ?? "digital",
       fulfillment: normalizeFulfillment(p.fulfillment_status),
+      shipping: normalizeShipping(p),
       buyerName: p.user_id ? (profileById.get(p.user_id)?.full_name ?? null) : null,
       buyerEmail: p.user_id ? (profileById.get(p.user_id)?.email ?? null) : null,
     })),

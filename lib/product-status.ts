@@ -37,3 +37,26 @@ export function isUpcoming(
   if (!availableAt || viewerIsOwner) return false;
   return new Date(availableAt).getTime() > Date.now();
 }
+
+/**
+ * Out of stock — the one definition, asked of the row rather than of a count.
+ *
+ * Three states, and only the middle one is a refusal: `stock` NULL means the
+ * seller is not tracking inventory (a made-to-order cake, a print-on-demand
+ * shirt) and must never read as "none left"; 0 means none left; anything above
+ * means available. Non-physical products are never sold out — a service does
+ * not run out, it runs out of TIME, which this model does not claim to know.
+ *
+ * Checked at checkout, BEFORE money moves. The database trigger that decrements
+ * stock deliberately clamps at zero instead of failing the insert, because
+ * refusing the purchase row after Duitku has taken the payment would mean a
+ * buyer who paid and received nothing (20260924010000).
+ */
+export function isSoldOut(p: {
+  product_type?: string | null;
+  stock?: number | string | null;
+}): boolean {
+  if (p.product_type !== "physical") return false;
+  if (p.stock === null || p.stock === undefined || p.stock === "") return false;
+  return Number(p.stock) <= 0;
+}

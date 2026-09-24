@@ -26,6 +26,7 @@ import { RelatedProducts } from "@/components/related-products";
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductTypeBadge } from "@/components/order-status-badge";
 import { deliversFile, normalizeProductType } from "@/lib/product-type";
+import { isSoldOut } from "@/lib/product-status";
 import { getMyLike } from "@/lib/actions/likes";
 import { ProductActionsMenu } from "@/components/product-actions";
 import { ViewTracker } from "@/components/view-tracker";
@@ -165,6 +166,16 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
 
   // Publisher-configurable preview-button label + the CTA note shown above the buy button.
   const previewButtonLabel = previewLabelText(page.preview_label);
+  const soldOut = isSoldOut(page);
+  // Shown only when it is genuinely scarce. A tracked stock of 40 is not news,
+  // and an untracked one (null) is not a number at all.
+  const stockLeft =
+    normalizeProductType(page.product_type) === "physical" &&
+    page.stock != null &&
+    page.stock > 0 &&
+    page.stock <= 10
+      ? page.stock
+      : null;
   const ctaNote = page.cta_note?.trim() || null;
 
   const canonicalUrl = `${SITE_URL}/checkout/${page.slug}`;
@@ -406,18 +417,38 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
               {ctaNote && (
                 <p className="text-center text-sm text-[var(--muted)]">{ctaNote}</p>
               )}
-              <CheckoutForm
-                page={page}
-                isLoggedIn={!!user}
-                showAsFree={showAsFree}
-                purchaseLink={page.purchase_link?.trim() || null}
-                calendarHref={
-                  page.cta_action === "calendar" && page.event_start?.trim()
-                    ? `/api/calendar/${page.slug}`
-                    : null
-                }
-                ctaLabel={page.cta_label?.trim() || null}
-              />
+              {/* Sold out replaces the buy control rather than disabling it: a
+                  greyed-out button invites a retry, and the checkout API would
+                  refuse that retry anyway. Stock is only ever a thing for
+                  physical goods that the seller chose to track. */}
+              {soldOut ? (
+                <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)]/50 px-4 py-5 text-center">
+                  <p className="font-medium text-foreground">{t("product.soldOut", undefined, locale)}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    {t("product.soldOutNote", undefined, locale)}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {stockLeft !== null && (
+                    <p className="text-center text-sm text-[var(--muted)]">
+                      {t("product.stockLeft", { count: stockLeft }, locale)}
+                    </p>
+                  )}
+                  <CheckoutForm
+                    page={page}
+                    isLoggedIn={!!user}
+                    showAsFree={showAsFree}
+                    purchaseLink={page.purchase_link?.trim() || null}
+                    calendarHref={
+                      page.cta_action === "calendar" && page.event_start?.trim()
+                        ? `/api/calendar/${page.slug}`
+                        : null
+                    }
+                    ctaLabel={page.cta_label?.trim() || null}
+                  />
+                </>
+              )}
               {!showAsFree && <PaymentMethodsRow className="pt-1" />}
             </div>
 

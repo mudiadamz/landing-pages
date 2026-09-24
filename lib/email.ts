@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { deliversFile, type ProductType } from "@/lib/product-type";
+import { formatShipping, type ShippingAddress } from "@/lib/shipping";
 
 /**
  * The receipt, which is also the delivery for anything digital.
@@ -16,6 +17,8 @@ export async function sendPurchaseConfirmationEmail(opts: {
   productType?: ProductType;
   /** The seller's "what happens next" line, if they wrote one. */
   fulfillmentNote?: string | null;
+  /** Read back to the buyer so a typo surfaces while it is still fixable. */
+  shipping?: ShippingAddress | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -26,6 +29,15 @@ export async function sendPurchaseConfirmationEmail(opts: {
   const from = process.env.RESEND_FROM ?? "onboarding@resend.dev";
 
   const note = opts.fulfillmentNote?.trim();
+  // The address read back to the buyer, because the moment they can still fix a
+  // typo is now — before the seller prints a label from it.
+  const ship = opts.shipping;
+  const shipBlock = ship
+    ? `
+        <p style="margin-top:16px"><strong>Dikirim ke</strong><br>
+        ${escapeHtml(ship.name)} · ${escapeHtml(ship.phone)}<br>
+        ${escapeHtml(formatShipping(ship))}${ship.note ? `<br>${escapeHtml(ship.note)}` : ""}</p>`
+    : "";
   const body = deliversFile(opts.productType ?? "digital")
     ? `
         <p>Download file di link berikut:</p>
@@ -33,7 +45,7 @@ export async function sendPurchaseConfirmationEmail(opts: {
         <p>Atau masuk ke panel untuk mendownload kapan saja.</p>`
     : `
         <p>Pesanan Anda sudah kami terima dan sedang diproses penjual.</p>
-        ${note ? `<p>${note}</p>` : ""}
+        ${note ? `<p>${note}</p>` : ""}${shipBlock}
         <p>Status pesanan bisa Anda pantau di <a href="${opts.downloadUrl}">halaman Pembelian saya</a>.</p>`;
 
   try {
@@ -126,7 +138,7 @@ export async function sendBusinessDecisionEmail(opts: {
   }
 }
 
-/** The business name is user-supplied and lands inside HTML. */
+/** User-supplied text that lands inside HTML: a business name, a buyer's address. */
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

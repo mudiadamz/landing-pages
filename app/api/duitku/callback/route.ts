@@ -10,6 +10,7 @@ import { generateInvoiceNumber } from "@/lib/invoice";
 import { sendMetaPurchaseEvent } from "@/lib/meta-capi";
 import { effectivePlan } from "@/lib/plans";
 import { deliversFile, initialFulfillment, normalizeProductType } from "@/lib/product-type";
+import { normalizeShipping } from "@/lib/shipping";
 
 export async function POST(req: NextRequest) {
   try {
@@ -110,7 +111,24 @@ export async function POST(req: NextRequest) {
         .select("product_type")
         .eq("id", landingPageId)
         .maybeSingle();
-      const status = initialFulfillment(normalizeProductType(product?.product_type));
+      const productType = normalizeProductType(product?.product_type);
+      const status = initialFulfillment(productType);
+
+      // The address the buyer typed before being sent to the gateway, parked by
+      // create-invoice because this request has no form and no session. Copied
+      // onto the order as a SNAPSHOT — the buyer moving house later must not
+      // rewrite where a parcel was actually sent (20260924010000).
+      const { data: parked } =
+        productType === "physical"
+          ? await db
+              .from("lp_pending_shipping")
+              .select(
+                "shipping_name, shipping_phone, shipping_address, shipping_city, shipping_province, shipping_postal_code, shipping_note",
+              )
+              .eq("user_id", userId)
+              .eq("landing_page_id", landingPageId)
+              .maybeSingle()
+          : { data: null };
 
       const { error } = await db.from("lp_purchases").insert({
         user_id: userId,
@@ -121,6 +139,7 @@ export async function POST(req: NextRequest) {
         site_id: siteId,
         fulfillment_status: status,
         fulfilled_at: status === "done" ? new Date().toISOString() : null,
+        ...(parked ?? {}),
       });
 
       // Pembeli jadi orang situs tempat dia membeli (fase 5). Ditulis di sini,
@@ -177,6 +196,18 @@ export async function POST(req: NextRequest) {
         }
         console.error("Duitku callback purchase insert error:", error);
       } else {
+        // The parked address has done its job. Dropped only on a genuinely new
+        // purchase, so a retried callback that hit the duplicate branch above
+        // still finds it — deleting it on every callback would mean a retry
+        // arriving first leaves the real insert with no address at all.
+        if (parked) {
+          await db
+            .from("lp_pending_shipping")
+            .delete()
+            .eq("user_id", userId)
+            .eq("landing_page_id", landingPageId);
+        }
+
         // A bundle also hands over everything inside it.
         await grantBundleItems(userId, landingPageId);
         const { data: page } = await db
@@ -205,6 +236,7 @@ export async function POST(req: NextRequest) {
             downloadUrl,
             productType: normalizeProductType(page?.product_type),
             fulfillmentNote: page?.fulfillment_note ?? null,
+            shipping: normalizeShipping(parked),
           });
         }
 

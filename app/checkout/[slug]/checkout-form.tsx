@@ -9,6 +9,9 @@ import { GoogleSignInButton } from "@/components/google-signin-button";
 import { trackEvent } from "@/lib/analytics";
 import { trackCta } from "@/lib/track";
 import type { LandingPageCheckout } from "@/lib/actions/landing-pages";
+import { normalizeProductType } from "@/lib/product-type";
+import { shippingProblems, type ShippingAddress, type ShippingField } from "@/lib/shipping";
+import { EMPTY_SHIPPING, ShippingFields } from "./shipping-fields";
 
 type Props = {
   page: LandingPageCheckout;
@@ -33,6 +36,29 @@ export function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+
+  // A physical product needs somewhere to go. Asked here rather than after
+  // payment, because "we'll email you for your address" is how parcels go
+  // missing — and because Duitku's own form wants the real one too.
+  const needsAddress = normalizeProductType(page.product_type) === "physical";
+  const [shipping, setShipping] = useState<ShippingAddress>(EMPTY_SHIPPING);
+  const [shipProblems, setShipProblems] = useState<ShippingField[]>([]);
+
+  /**
+   * Validate before doing anything irreversible, using the same function the
+   * server checks with. The server checks again regardless: this only decides
+   * whether the buyer is told now or after a round trip.
+   */
+  const addressReady = useCallback(() => {
+    if (!needsAddress) return true;
+    const problems = shippingProblems(shipping);
+    setShipProblems(problems);
+    if (problems.length > 0) {
+      setError(t("shipping.incompleteShort"));
+      return false;
+    }
+    return true;
+  }, [needsAddress, shipping, t]);
 
   const displayValue = showAsFree
     ? 0
@@ -74,6 +100,7 @@ export function CheckoutForm({
 
   const startDuitku = useCallback(async () => {
     setError(null);
+    if (!addressReady()) return;
     setLoading(true);
     fireBeginCheckout();
     trackCta(page.slug, "checkout", "buy");
@@ -81,7 +108,7 @@ export function CheckoutForm({
       const res = await fetch("/api/duitku/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: page.slug }),
+        body: JSON.stringify({ slug: page.slug, shipping: needsAddress ? shipping : undefined }),
       });
       const data = await res.json();
 
@@ -99,7 +126,7 @@ export function CheckoutForm({
       setLoading(false);
       setAutoContinuing(false);
     }
-  }, [fireBeginCheckout, page.slug, t]);
+  }, [fireBeginCheckout, page.slug, t, addressReady, needsAddress, shipping]);
 
   async function handleDuitku(e: React.FormEvent) {
     e.preventDefault();
@@ -115,6 +142,9 @@ export function CheckoutForm({
   useEffect(() => {
     if (autoPaidRef.current) return;
     if (!isLoggedIn || purchaseLink || calendarHref) return;
+    // Continuing by itself would skip the address form entirely and land the
+    // buyer on an error they never saw the cause of.
+    if (needsAddress) return;
     if (new URLSearchParams(window.location.search).get("pay") !== "1") return;
     autoPaidRef.current = true;
     setAutoContinuing(true);
@@ -203,12 +233,26 @@ export function CheckoutForm({
         <form ref={freeFormRef} action={addPurchaseAction} className="space-y-3" data-checkout-form>
           {overlay}
           <input type="hidden" name="landing_page_id" value={page.id} />
+          {needsAddress && (
+            <ShippingFields
+              value={shipping}
+              onChange={setShipping}
+              problems={shipProblems}
+            />
+          )}
+          {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
           <Button
             type="submit"
             size="lg"
             fullWidth
             shine
-            onClick={() => {
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+              // preventDefault on the click is what stops the submit: a form
+              // with a Server Action in `action` has no onSubmit to cancel.
+              if (!addressReady()) {
+                e.preventDefault();
+                return;
+              }
               fireBeginCheckout();
               trackCta(page.slug, "checkout", "buy_free");
             }}
@@ -288,6 +332,14 @@ export function CheckoutForm({
   return (
     <form onSubmit={handleDuitku} className="space-y-4" data-checkout-form>
       {overlay}
+      {needsAddress && (
+        <ShippingFields
+          value={shipping}
+          onChange={setShipping}
+          problems={shipProblems}
+          disabled={loading}
+        />
+      )}
       {error && (
         <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
       )}

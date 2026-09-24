@@ -9,6 +9,8 @@ import { ReviewForm } from "./review-form";
 import { useT } from "@/lib/i18n/client";
 import { OrderStatusBadge, ProductTypeBadge } from "@/components/order-status-badge";
 import { deliversFile } from "@/lib/product-type";
+import { ShipTo } from "@/components/ship-to";
+import { normalizeShipping } from "@/lib/shipping";
 
 type Props = {
   purchases: PurchaseWithPage[];
@@ -181,6 +183,14 @@ function PurchasesTab({
                       <p className="mt-1 text-sm text-[var(--muted)]">{formatDate(p.purchased_at)}</p>
                       {p.fulfillment_note && (
                         <p className="mt-1 text-sm text-[var(--muted)]">{p.fulfillment_note}</p>
+                      )}
+                      {/* Their own address back, so a typo is caught by the
+                          person who can still fix it. Only where one exists —
+                          `null` here means this order ships nowhere. */}
+                      {p.product_type === "physical" && (
+                        <div className="mt-1.5">
+                          <ShipTo address={normalizeShipping(p)} />
+                        </div>
                       )}
                     </div>
                     {review && <StarDisplay rating={review.rating} />}

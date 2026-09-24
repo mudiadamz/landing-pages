@@ -170,6 +170,57 @@ lp_business_ledger(id, business_id, kind, amount_cents, status 'pending'|'availa
 | 4 | Panel Platform (overview + saldo ledger) ✅ · signup business (approval-gated) + onboarding + provisioning domain saat approve ✅ · **notifikasi email approve/reject** ✅ | ✅ |
 | 5 | Matriks peran per-business (`lp_businesses.role_permissions`, kolom Admin/Staff di `/panel/roles`); **`lp_profiles.account_type` dihapus** — kedudukan = `is_platform` + `lp_business_members.role`. | ✅ |
 | 6 | **Katalog untuk segala jenis bisnis**: `lp_landing_pages.product_type` (digital/physical/service) + field per-jenis, dan siklus pemenuhan pesanan di `lp_purchases.fulfillment_status`. | ✅ |
+| 6b | **Alamat kirim di checkout** (snapshot di pesanan, lewat tabel singgah `lp_pending_shipping`) + **stok berkurang sendiri** lewat trigger, dengan gerbang "stok habis" di checkout. | ✅ |
+
+---
+
+## Fase 6b — alamat kirim & stok (2026-09-24)
+
+Dua hal yang sengaja ditinggal Fase 6, karena masing-masing butuh keputusan
+sendiri. Keduanya sekarang ada, dan bentuknya ditentukan tiga pilihan berikut.
+
+**1. Alamat menempel di PESANAN, bukan di profil pembeli.**
+Alamat di `lp_profiles` akan terbaca setiap business tempat orang itu pernah
+belanja — alamat rumah yang diberikan ke toko A bocor ke toko B. Di
+`lp_purchases` ia hanya ikut pesanan milik penjual itu. Efek sampingnya justru
+yang benar: alamat jadi **snapshot** saat memesan, jadi pembeli yang pindah
+rumah tidak menulis ulang riwayat pengirimannya. Harganya: pembeli mengetik
+ulang tiap pesan. Itu ditukar dengan sadar.
+
+**2. Ada tabel singgah, karena baris pembelian berbayar ditulis callback.**
+`lp_pending_shipping(user_id, landing_page_id, …)` diisi `create-invoice`, dibaca
+dan dihapus callback Duitku. Alamatnya **tidak** dititipkan lewat
+`additionalParam`: field itu pergi ke Duitku, dan alamat rumah pembeli bukan
+milik mereka untuk disimpan. Policy-nya sempit — pembeli mengurus barisnya
+sendiri, **penjual tidak diberi akses sama sekali**; alamat baru jadi urusan
+penjual setelah pembayaran berhasil, yaitu di pesanan. Baris yang ditinggal
+(batal bayar) disapu `create-invoice` untuk pemanggilnya sendiri, >30 hari.
+
+**3. Stok bergerak di TRIGGER, dan trigger itu tidak pernah menolak insert.**
+Ada tiga jalur insert pembelian dan tidak ada satu titik di TypeScript yang
+dilewati ketiganya; trigger juga atomik dengan insert-nya, jadi dua pembeli yang
+menekan tombol bersamaan tidak bisa mengambil unit yang sama. Yang paling
+penting: saat stok 0 trigger **membiarkan** pembelian masuk (`stock > 0` di
+WHERE-nya), karena di jalur callback uangnya sudah diterima — menolak baris di
+situ berarti pembeli membayar dan tidak mendapat apa-apa. Gerbang "stok habis"
+ada di checkout, **sebelum** uang berpindah (`isSoldOut`, dipakai
+`create-invoice` dan `addPurchase`). Kelebihan jual muncul sebagai pesanan yang
+harus diselesaikan penjual — untuk itulah antrian pesanan ada.
+
+`lp_purchases.stock_held` mencatat apakah pesanan itu benar-benar mengambil satu
+unit. Tanpa kolom itu, membatalkan pesanan yang dulu masuk saat rak sudah kosong
+akan **menciptakan** stok yang tidak pernah ada. Stok kembali saat perpindahan ke
+`cancelled` dan saat baris dihapus — sekali, karena `stock_held` dilepas.
+
+Arti `stock`: **NULL = tidak dilacak** (kue pesanan, sablon satuan), 0 = habis.
+NULL tidak boleh pernah terbaca sebagai "habis".
+
+Dijaga `tests/db/stock.test.ts` (11 kasus, termasuk kelebihan-jual dan isolasi
+tabel singgah) dan `tests/shipping.test.ts`.
+
+**Masih belum dikerjakan:** pilihan kurir & ongkir, nomor resi sebagai field
+sendiri (sementara masuk ke `fulfillment_note`), dan pemilihan slot jadwal untuk
+jasa.
 
 ---
 
@@ -220,10 +271,9 @@ pernah menawarkan perubahan yang akan ditolak. `tests/product-type.test.ts`
 mengikat kosakata itu ke CHECK constraint di file migration-nya, karena tidak ada
 apa pun yang menghubungkan keduanya saat compile.
 
-**Yang SENGAJA belum dikerjakan** (butuh keputusan sendiri, bukan kelanjutan
-otomatis): alamat kirim di checkout, stok yang berkurang saat pembelian, nomor
-resi/kurir, dan pemilihan slot jadwal untuk jasa. Model ini menyimpan *jenis* dan
-*progres*; ia belum mengklaim tahu cara mengirim barang.
+**Yang saat itu sengaja belum dikerjakan:** alamat kirim di checkout, stok yang
+berkurang saat pembelian, nomor resi/kurir, dan pemilihan slot jadwal untuk jasa.
+Dua yang pertama **sudah** — lihat Fase 6b di atas; dua sisanya masih terbuka.
 
 ---
 

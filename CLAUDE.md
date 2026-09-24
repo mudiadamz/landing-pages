@@ -388,8 +388,30 @@ Pembelian punya siklus: `lp_purchases.fulfillment_status`
 
 Ketiga jalur insert pembelian (gratis `addPurchase`, callback Duitku, dan
 `grantBundleItems`) **wajib** menuliskan status dari `product_type` — bundle
-per-item, bukan per-bundle. Detail & yang sengaja belum dikerjakan (alamat kirim,
-stok berkurang, resi, slot jadwal) di `docs/plans/multi-business-saas.md` Fase 6.
+per-item, bukan per-bundle.
+
+### Alamat kirim & stok (Fase 6b)
+
+- **Alamat = snapshot di `lp_purchases`** (`shipping_*`), bukan di profil: alamat
+  di `lp_profiles` akan terbaca setiap business tempat orang itu pernah belanja.
+- **`lp_pending_shipping`** menampung alamat antara "klik bayar" dan "callback
+  datang", karena baris pembelian berbayar ditulis server-to-server tanpa form.
+  Diisi `create-invoice`, dibaca + dihapus callback. **Penjual tidak punya akses
+  ke tabel ini** — alamat baru jadi urusannya setelah pembayaran berhasil.
+  Sengaja TIDAK lewat `additionalParam`: field itu pergi ke Duitku.
+- **Stok bergerak di trigger `lp_sync_product_stock`**, dan trigger itu **tidak
+  pernah menolak insert**: saat stok 0 pembelian tetap masuk, karena di jalur
+  callback uangnya sudah diterima. Gerbang "stok habis" ada di checkout
+  (`isSoldOut`, dipakai `create-invoice` + `addPurchase`), **sebelum** uang
+  berpindah. Kelebihan jual = pesanan yang harus diselesaikan penjual.
+- **`lp_purchases.stock_held`** mencatat apakah pesanan itu benar-benar mengambil
+  satu unit; tanpa itu, membatalkan pesanan kelebihan-jual akan **menciptakan**
+  stok. Stok kembali saat batal dan saat baris dihapus.
+- **`stock` NULL = tidak dilacak**, 0 = habis. NULL tidak boleh pernah terbaca
+  sebagai habis.
+
+Yang masih terbuka (kurir/ongkir, nomor resi sebagai field sendiri, slot jadwal
+jasa) di `docs/plans/multi-business-saas.md` Fase 6 & 6b.
 
 ## Tracking & analytics
 

@@ -27,6 +27,10 @@ exports[`permukaan keamanan > fungsi SECURITY DEFINER milik lp_ 1`] = `
     "name": "lp_sync_like_count",
   },
   {
+    "args": "",
+    "name": "lp_sync_product_stock",
+  },
+  {
     "args": "p_session_id text, p_visitor_id text, p_user_id uuid, p_ip text, p_country text, p_region text, p_city text, p_isp text, p_referrer text, p_referrer_host text, p_landing_path text, p_entry_product_id uuid, p_utm_source text, p_utm_medium text, p_utm_campaign text, p_utm_term text, p_utm_content text, p_device text, p_browser text, p_os text, p_dwell_ms bigint, p_site_id uuid",
     "name": "lp_track_session",
   },
@@ -341,6 +345,22 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ 1`] = `
     "roles": "public",
     "tablename": "lp_pages",
     "using": "(published = true)",
+  },
+  {
+    "check": "true",
+    "cmd": "ALL",
+    "policyname": "Service role manages lp_pending_shipping",
+    "roles": "service_role",
+    "tablename": "lp_pending_shipping",
+    "using": "true",
+  },
+  {
+    "check": "(auth.uid() = user_id)",
+    "cmd": "ALL",
+    "policyname": "Users manage their own pending shipping",
+    "roles": "authenticated",
+    "tablename": "lp_pending_shipping",
+    "using": "(auth.uid() = user_id)",
   },
   {
     "check": "",

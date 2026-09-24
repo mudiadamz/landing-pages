@@ -9,6 +9,7 @@ import { SiteScopeCoverage } from "@/components/site-scope-coverage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { OrderStatusControl } from "./order-status-control";
 import { ProductTypeBadge } from "@/components/order-status-badge";
+import { ShipTo } from "@/components/ship-to";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 
@@ -183,8 +184,11 @@ async function RecentSales({ rows }: { rows: RecentSale[] }) {
                   {r.revoked && <RevokedTag />}
                 </p>
                 {r.productType !== "digital" && (
-                  <div className="mt-2">
+                  <div className="mt-2 space-y-2">
                     <OrderStatusControl purchaseId={r.id} status={r.fulfillment} />
+                    {r.productType === "physical" && (
+                      <ShipTo address={r.shipping} />
+                    )}
                   </div>
                 )}
               </li>
@@ -224,7 +228,12 @@ async function RecentSales({ rows }: { rows: RecentSale[] }) {
                   {r.productType === "digital" ? (
                     <span className="text-[var(--muted)]">—</span>
                   ) : (
-                    <OrderStatusControl purchaseId={r.id} status={r.fulfillment} />
+                    <div className="space-y-1.5">
+                      <OrderStatusControl purchaseId={r.id} status={r.fulfillment} />
+                      {r.productType === "physical" && (
+                        <ShipTo address={r.shipping} />
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right text-sm font-medium text-foreground">

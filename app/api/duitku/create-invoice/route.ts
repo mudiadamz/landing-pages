@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/db/server";
 import { createDuitkuInvoice } from "@/lib/duitku";
 import { getLandingPageForCheckout } from "@/lib/actions/landing-pages";
-import { isUpcoming } from "@/lib/product-status";
+import { isSoldOut, isUpcoming } from "@/lib/product-status";
+import { normalizeProductType } from "@/lib/product-type";
+import { normalizeShipping, shippingColumns, shippingProblems } from "@/lib/shipping";
 import { canonicalOrigin, currentOrigin, currentSiteId } from "@/lib/site-resolve";
 
 export async function POST(req: NextRequest) {
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { slug } = body as { slug: string };
+    const { slug, shipping: shippingInput } = body as { slug: string; shipping?: unknown };
 
     if (!slug) {
       return NextResponse.json(
@@ -46,6 +48,52 @@ export async function POST(req: NextRequest) {
         { error: "Produk ini belum tersedia untuk dibeli." },
         { status: 403 }
       );
+    }
+
+    // Sold out is refused HERE, before an invoice exists. The trigger behind
+    // the purchase insert clamps at zero instead of refusing, on purpose: by
+    // the time the callback runs the money has already moved, and a refusal
+    // there would mean a buyer who paid for nothing (20260924010000).
+    if (isSoldOut(page)) {
+      return NextResponse.json({ error: "Stok produk ini sudah habis." }, { status: 409 });
+    }
+
+    /**
+     * The address, parked until the callback can attach it to a purchase row.
+     *
+     * The row that records a PAID purchase is written server-to-server by
+     * Duitku's callback, which has no form and no session — so the address the
+     * buyer just typed has to wait somewhere it can be found by (user,
+     * product). Deliberately not inside additionalParam: that field goes to
+     * Duitku, and a home address is not theirs to hold.
+     */
+    const needsAddress = normalizeProductType(page.product_type) === "physical";
+    const shipping = normalizeShipping(shippingInput);
+    if (needsAddress) {
+      const missing = shippingProblems(shipping);
+      if (missing.length > 0) {
+        return NextResponse.json(
+          { error: "Alamat pengiriman belum lengkap.", missing },
+          { status: 400 },
+        );
+      }
+      await db.from("lp_pending_shipping").upsert(
+        {
+          user_id: user.id,
+          landing_page_id: page.id,
+          ...shippingColumns(shipping!),
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,landing_page_id" },
+      );
+      // Sweep this buyer's own abandoned checkouts while we are here — a
+      // cleanup that rides an existing path cannot silently stop running the
+      // way a forgotten cron does.
+      await db
+        .from("lp_pending_shipping")
+        .delete()
+        .eq("user_id", user.id)
+        .lt("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
     }
 
     const isFree = page.is_free === true;
@@ -95,7 +143,16 @@ export async function POST(req: NextRequest) {
     const fullName = user.user_metadata?.full_name ?? user.email ?? "Customer";
     const firstName = fullName.split(" ")[0] || "Customer";
     const lastName = fullName.split(" ").slice(1).join(" ") || "";
-    const address = "Indonesia";
+    // Duitku's customerDetail is required and used to fill its own forms, so it
+    // has always been sent a placeholder. Now that a physical order carries a
+    // real address, send that instead — but only the one the buyer gave FOR
+    // this delivery, and only when there is one. Nothing else gains an address
+    // it did not have.
+    const ship = needsAddress ? shipping : null;
+    const address = ship?.address || "Indonesia";
+    const city = ship?.city || "Jakarta";
+    const postalCode = ship?.postalCode || "00000";
+    const shipPhone = ship?.phone || phoneNumber || "";
 
     const result = await createDuitkuInvoice({
       paymentAmount,
@@ -120,18 +177,18 @@ export async function POST(req: NextRequest) {
           firstName,
           lastName,
           address,
-          city: "Jakarta",
-          postalCode: "00000",
-          phone: phoneNumber ?? "",
+          city,
+          postalCode,
+          phone: shipPhone,
           countryCode: "ID",
         },
         shippingAddress: {
-          firstName,
-          lastName,
+          firstName: ship?.name?.split(" ")[0] || firstName,
+          lastName: ship?.name?.split(" ").slice(1).join(" ") || lastName,
           address,
-          city: "Jakarta",
-          postalCode: "00000",
-          phone: phoneNumber ?? "",
+          city,
+          postalCode,
+          phone: shipPhone,
           countryCode: "ID",
         },
       },
