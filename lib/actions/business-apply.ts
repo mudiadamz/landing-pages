@@ -107,7 +107,7 @@ export async function applyForBusiness(
 
   const { error: memberErr } = await admin
     .from("lp_business_members")
-    .insert({ business_id: biz.id, user_id: user.id, role: "owner" });
+    .insert({ business_id: biz.id, user_id: user.id, role: "business" });
   if (memberErr) {
     // Roll back the orphan: a business with no owner is unreachable and would
     // just clog the Platform queue.

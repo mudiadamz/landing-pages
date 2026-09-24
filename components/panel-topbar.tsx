@@ -86,8 +86,8 @@ export function PanelTopbar({
   // menang atas peran business, dan orang tanpa keduanya adalah pembeli.
   const roleLabel = isPlatform
     ? t("panel.rolePlatform")
-    : businessRole === "owner"
-      ? t("panel.roleOwner")
+    : businessRole === "business"
+      ? t("panel.roleBusiness")
       : businessRole === "staff"
         ? t("panel.roleStaff")
         : t("panel.roleCustomer");

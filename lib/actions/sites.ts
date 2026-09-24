@@ -8,7 +8,7 @@ import {
   PANEL_SITE_COOKIE_MAX_AGE,
   PANEL_SITE_COOKIE_PATH,
 } from "@/lib/panel-site";
-import { requireAdmin } from "./profiles";
+import { canSellOnCurrentSite, requireAdmin } from "./profiles";
 import { normalizeHost, listSites, type Site } from "@/lib/site-resolve";
 import { resolveTemplate } from "@/lib/templates/registry";
 import { paletteFromKey } from "@/lib/palette";
@@ -146,7 +146,9 @@ export async function selectPanelSite(siteId: string): Promise<{ ok: boolean; er
 export async function uploadSiteBrandImage(
   form: FormData,
 ): Promise<{ ok: boolean; url?: string; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  // Same gate as the branding screen this uploads for. A logo picker that the
+  // people who may edit the shop name cannot use is half a screen.
+  if (!(await canSellOnCurrentSite())) return { ok: false, error: "Akses ditolak." };
 
   const kind = form.get("kind") === "icon" ? "icon" : "logo";
   const file = form.get("file");
@@ -335,7 +337,16 @@ export async function updateSiteProfile(
   id: string,
   input: SiteProfileInput,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!(await requireAdmin())) return { ok: false, error: "Akses ditolak." };
+  /**
+   * The SAME gate as the screen that calls it (/panel/branding), asked of the
+   * site being written rather than the one being viewed.
+   *
+   * It was `requireAdmin()` while the page was `requireSiteAdmin()` — so a
+   * business could open the screen, fill it in, press save and be refused. That
+   * is the failure docs/architecture.md warns about: a screen whose gate is
+   * looser than its action fails for exactly the people it was built for.
+   */
+  if (!(await canSellOnCurrentSite(id))) return { ok: false, error: "Akses ditolak." };
   if (!input.name.trim()) return { ok: false, error: "Nama situs tidak boleh kosong." };
 
   const db = await createClient();

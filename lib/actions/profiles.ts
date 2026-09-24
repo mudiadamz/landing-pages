@@ -282,7 +282,7 @@ async function accessibleFeatures(): Promise<FeatureKey[]> {
   if (profile.is_platform) return [...ALL_FEATURE_KEYS];
 
   const standing = await currentSiteStanding();
-  if (standing?.businessRole === "owner") return [...ALL_FEATURE_KEYS];
+  if (standing?.businessRole === "business") return [...ALL_FEATURE_KEYS];
 
   const granted = new Set<FeatureKey>();
 

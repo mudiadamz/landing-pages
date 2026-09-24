@@ -12,6 +12,10 @@ exports[`permukaan keamanan > fungsi SECURITY DEFINER milik lp_ 1`] = `
   },
   {
     "args": "",
+    "name": "lp_guard_site_identity",
+  },
+  {
+    "args": "",
     "name": "lp_handle_new_user",
   },
   {
@@ -41,6 +45,10 @@ exports[`permukaan keamanan > fungsi SECURITY DEFINER milik lp_ 1`] = `
   {
     "args": "",
     "name": "lp_update_landing_page_sold_count",
+  },
+  {
+    "args": "p_site_id uuid",
+    "name": "lp_works_in_site_business",
   },
 ]
 `;
@@ -607,6 +615,14 @@ exports[`permukaan keamanan > setiap policy di tabel lp_ 1`] = `
     "roles": "public",
     "tablename": "lp_sites",
     "using": "(lp_get_my_profile_role() = 'company'::text)",
+  },
+  {
+    "check": "lp_works_in_site_business(id)",
+    "cmd": "UPDATE",
+    "policyname": "Business people update their own site",
+    "roles": "authenticated",
+    "tablename": "lp_sites",
+    "using": "lp_works_in_site_business(id)",
   },
   {
     "check": "",

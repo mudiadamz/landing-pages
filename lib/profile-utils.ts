@@ -28,7 +28,7 @@
  * ledger, dan payout sendiri.
  */
 
-export type BusinessRole = "owner" | "staff";
+export type BusinessRole = "business" | "staff";
 
 /** Kedudukan platform-wide seseorang. Dua fakta, bukan satu nilai yang diringkas. */
 export type Standing = {
@@ -38,7 +38,7 @@ export type Standing = {
   businessRole: BusinessRole | null;
 };
 
-const ROLES = new Set<string>(["owner", "staff"]);
+const ROLES = new Set<string>(["business", "staff"]);
 
 /**
  * Peran business yang dikenali, atau null.
@@ -54,20 +54,24 @@ const ROLES = new Set<string>(["owner", "staff"]);
 export function normalizeBusinessRole(value: unknown): BusinessRole | null {
   const s = String(value ?? "").trim().toLowerCase();
   if (ROLES.has(s)) return s as BusinessRole;
-  if (s === "company") return "owner";
+  // `owner` adalah nama lama untuk `business` (migration 20260924050000). Tetap
+  // dibaca: nilai ini pernah dikirim lewat API dan tersimpan di tempat lain, dan
+  // yang tidak dikenali jatuh jadi bukan-siapa-siapa — kehilangan izin diam-diam
+  // adalah kegagalan yang paling sulit dilacak orang berikutnya.
+  if (s === "owner" || s === "company") return "business";
   if (s === "agent" || s === "admin") return "staff";
   return null;
 }
 
-/** Boleh mengurus business-nya: owner saja. Staff bekerja di dalamnya, tidak mengaturnya. */
+/** Boleh mengurus business-nya: peran `business` saja. Staff bekerja di dalamnya, tidak mengaturnya. */
 export function managesBusiness(role: BusinessRole | null): boolean {
-  return role === "owner";
+  return role === "business";
 }
 
 /** Nama yang ditampilkan untuk sebuah kedudukan. */
 export function standingLabel(s: Standing): string {
   if (s.isPlatform) return "Platform";
-  if (s.businessRole === "owner") return "Owner";
+  if (s.businessRole === "business") return "Business";
   if (s.businessRole === "staff") return "Staff";
   return "Customer";
 }

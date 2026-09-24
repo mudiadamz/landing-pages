@@ -49,6 +49,15 @@ type NavItem = {
   applyOnly?: boolean;
   /** Shown only to a Business owner/admin (Fase 3 money page). */
   businessManagerOnly?: boolean;
+  /**
+   * The business itself — role `business`, not its staff.
+   *
+   * Distinct from `adminOnly` (Platform) and from `sellerOnly` (anyone who
+   * works in a business, staff included). These are the screens that configure
+   * a storefront the business owns: its domains, its look, its scripts. Staff
+   * sell inside it; they do not decide what it is.
+   */
+  businessOnly?: boolean;
   /** Match the path exactly — for /panel, which is a prefix of every other route. */
   exact?: boolean;
   /** Opens a popup instead of navigating. */
@@ -123,12 +132,12 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       { href: "/panel/sites", labelKey: "panel.navDomains", icon: GlobeIcon, adminOnly: true },
       // Business-facing twin of the Platform screen above: a business owner
       // brings their own domain here, and never sees anyone else's.
-      { href: "/panel/domains", labelKey: "domains.heading", icon: GlobeIcon, sellerOnly: true },
+      { href: "/panel/domains", labelKey: "domains.heading", icon: GlobeIcon, businessOnly: true },
       // Directly after Domain: same object, opposite half. Domain is the plumbing
       // (hostname, DNS, on/off), this is the content (name, logo, template, niche).
-      { href: "/panel/branding", labelKey: "panel.navBranding", icon: BadgeIcon, adminOnly: true },
+      { href: "/panel/branding", labelKey: "panel.navBranding", icon: BadgeIcon, sellerOnly: true },
       { href: "/panel/categories", labelKey: "panel.navCategories", icon: TagIcon, feature: "categories" },
-      { href: "/panel/links", labelKey: "panel.navLinks", icon: ChainIcon, adminOnly: true },
+      { href: "/panel/links", labelKey: "panel.navLinks", icon: ChainIcon, businessOnly: true },
     ],
   },
   {
@@ -144,18 +153,23 @@ const navGroups: { labelKey: MessageKey; items: NavItem[] }[] = [
       { href: "/panel/hiring", labelKey: "panel.navHiring", icon: BadgeIcon, feature: "hiring" },
       // Other places the owner exists, not other storefronts this app serves —
       // those are "Domain" above.
-      { href: "/panel/pages", labelKey: "panel.navPages", icon: PageIcon, adminOnly: true },
+      { href: "/panel/pages", labelKey: "panel.navPages", icon: PageIcon, businessOnly: true },
     ],
   },
   {
     // Measurement and plumbing — rarely opened, so it sits last.
     labelKey: "panel.navGroupSystem",
     items: [
+      // Platform only, and NOT a site setting despite sitting next to them:
+      // this is the PANEL's palette/skin, stored once on the canonical site and
+      // shared by every business (lib/site-resolve.ts, canonicalSiteId). One
+      // business restyling every other business's admin is not a thing to allow.
+      // A storefront's own look lives in /panel/branding.
       { href: "/panel/appearance", labelKey: "panel.navAppearance", icon: PaletteIcon, adminOnly: true },
       { href: "/panel/analytics", labelKey: "panel.navAnalytics", icon: PulseIcon, adminOnly: true },
-      { href: "/panel/tracking", labelKey: "panel.navTracking", icon: TargetIcon, adminOnly: true },
+      { href: "/panel/tracking", labelKey: "panel.navTracking", icon: TargetIcon, businessOnly: true },
       { href: "/panel/custom-js", labelKey: "panel.navCustomJs", icon: CodeIcon, feature: "custom-js" },
-      { href: "/panel/popup", labelKey: "panel.navPopup", icon: PopupIcon, adminOnly: true },
+      { href: "/panel/popup", labelKey: "panel.navPopup", icon: PopupIcon, businessOnly: true },
       { href: "/panel/storage", labelKey: "panel.navStorage", icon: DatabaseIcon, platformOnly: true },
     ],
   },
@@ -401,6 +415,9 @@ function NavContent({
     // actions (create/delete a site, ban, delete an account), and the old
     // "Company" that guarded them IS the Platform now.
     if (item.adminOnly) return !!isPlatform;
+    // Platform too: it operates every storefront, and locking the operator out
+    // of the screens it provisioned is a good way to lose access to a new site.
+    if (item.businessOnly) return !!isPlatform || managesBusiness(businessRole);
     if (item.sellerOnly) return !!canSell;
     if (item.feature)
       return features.includes(item.feature) || (!!item.publisherToo && managesBusiness(businessRole));

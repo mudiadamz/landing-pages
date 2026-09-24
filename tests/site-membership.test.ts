@@ -27,7 +27,7 @@ describe("canManageSite", () => {
   });
 
   it("owner business pemilik situs boleh; staff TIDAK", () => {
-    expect(canManageSite(at({ businessRole: "owner" }))).toBe(true);
+    expect(canManageSite(at({ businessRole: "business" }))).toBe(true);
     // Staff bekerja DI DALAM business, bukan mengaturnya. Kalau staff ikut
     // lolos di sini, "sub-akun" jadi sinonim "pemilik".
     expect(canManageSite(at({ businessRole: "staff" }))).toBe(false);
@@ -54,7 +54,7 @@ describe("canSellOnSite", () => {
 
   it("Platform dan owner selalu boleh", () => {
     expect(canSellOnSite(at({ isPlatform: true }))).toBe(true);
-    expect(canSellOnSite(at({ businessRole: "owner" }))).toBe(true);
+    expect(canSellOnSite(at({ businessRole: "business" }))).toBe(true);
   });
 
   it("pembeli tidak, meski dia anggota situs", () => {
@@ -77,14 +77,14 @@ describe("belongsToSite", () => {
   it("pembeli, staff, owner, dan Platform punya urusan di sini", () => {
     expect(belongsToSite(at({ isMember: true }))).toBe(true);
     expect(belongsToSite(at({ businessRole: "staff" }))).toBe(true);
-    expect(belongsToSite(at({ businessRole: "owner" }))).toBe(true);
+    expect(belongsToSite(at({ businessRole: "business" }))).toBe(true);
     expect(belongsToSite(at({ isPlatform: true }))).toBe(true);
   });
 });
 
 describe("normalizeBusinessRole", () => {
   it("dua peran yang ada, case-insensitive", () => {
-    expect(normalizeBusinessRole("OWNER")).toBe("owner");
+    expect(normalizeBusinessRole("OWNER")).toBe("business");
     expect(normalizeBusinessRole(" staff ")).toBe("staff");
   });
 
@@ -92,7 +92,7 @@ describe("normalizeBusinessRole", () => {
     // Menggabungkan peran dengan menebak ke ATAS memberi orang izin yang tidak
     // pernah diputuskan siapa pun; menebak ke bawah paling banter bikin dia
     // minta dinaikkan.
-    expect(normalizeBusinessRole("company")).toBe("owner");
+    expect(normalizeBusinessRole("company")).toBe("business");
     expect(normalizeBusinessRole("admin")).toBe("staff");
     expect(normalizeBusinessRole("agent")).toBe("staff");
   });
@@ -109,7 +109,7 @@ describe("normalizeBusinessRole", () => {
 describe("managesBusiness & standingLabel", () => {
   it("owner mengelola; staff dan bukan-anggota tidak", () => {
     expect([
-      managesBusiness("owner"),
+      managesBusiness("business"),
       managesBusiness("staff"),
       managesBusiness(null),
     ]).toEqual([true, false, false]);
@@ -117,7 +117,7 @@ describe("managesBusiness & standingLabel", () => {
 
   it("Platform menang atas peran business apa pun", () => {
     expect(standingLabel({ isPlatform: true, businessRole: "staff" })).toBe("Platform");
-    expect(standingLabel({ isPlatform: false, businessRole: "owner" })).toBe("Owner");
+    expect(standingLabel({ isPlatform: false, businessRole: "business" })).toBe("Business");
     expect(standingLabel({ isPlatform: false, businessRole: "staff" })).toBe("Staff");
     expect(standingLabel({ isPlatform: false, businessRole: null })).toBe("Customer");
   });
@@ -126,11 +126,11 @@ describe("managesBusiness & standingLabel", () => {
     const labels = new Set(
       [
         { isPlatform: true, businessRole: null },
-        { isPlatform: false, businessRole: "owner" as const },
+        { isPlatform: false, businessRole: "business" as const },
         { isPlatform: false, businessRole: "staff" as const },
         { isPlatform: false, businessRole: null },
       ].map(standingLabel),
     );
-    expect([...labels].sort()).toEqual(["Customer", "Owner", "Platform", "Staff"]);
+    expect([...labels].sort()).toEqual(["Business", "Customer", "Platform", "Staff"]);
   });
 });

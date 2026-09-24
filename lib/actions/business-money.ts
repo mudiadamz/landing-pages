@@ -200,7 +200,7 @@ export async function getMyBusinessMoney(): Promise<BusinessMoneyView | null> {
     .from("lp_business_members")
     .select("business_id, role")
     .eq("user_id", user.id)
-    .in("role", ["owner", "admin"])
+    .in("role", ["business", "owner", "admin"])
     .limit(1);
   const businessId = membership?.[0]?.business_id as string | undefined;
   if (!businessId) return null;
@@ -477,7 +477,7 @@ export async function submitBusinessKyc(input: KycInput): Promise<{ ok: boolean;
     .from("lp_business_members")
     .select("business_id, role")
     .eq("user_id", user.id)
-    .in("role", ["owner", "admin"])
+    .in("role", ["business", "owner", "admin"])
     .limit(1);
   const businessId = membership?.[0]?.business_id as string | undefined;
   if (!businessId) return { ok: false, error: "Kamu bukan pengelola business mana pun." };

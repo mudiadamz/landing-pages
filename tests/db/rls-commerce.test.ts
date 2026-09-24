@@ -147,7 +147,7 @@ describe("lp_landing_pages — siapa boleh membuat produk", () => {
     await denied(async () => insertOwn(await makeUser()));
   });
 
-  it.each(["platform", "owner", "staff"] as const)(
+  it.each(["platform", "business", "staff"] as const)(
     "%s boleh membuat produknya sendiri",
     async (standing) => {
       // Staff included on purpose: selling is the job. Managing the business is

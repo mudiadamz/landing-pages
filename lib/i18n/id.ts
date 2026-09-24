@@ -133,7 +133,7 @@ export const id = {
      "Agent" bertahan karena lp_site_agents masih ada — itu delegasi
      per-situs di dalam sebuah business, bukan jenis akun. */
   "panel.rolePlatform": "Platform",
-  "panel.roleOwner": "Owner",
+  "panel.roleBusiness": "Business",
   "panel.roleBizAdmin": "Admin",
   "panel.roleStaff": "Staff",
 

@@ -219,7 +219,7 @@ describe("lp_get_my_profile_role — diturunkan, bukan dibaca", () => {
   });
 
   it("owner sebuah business → 'agent'", async () => {
-    expect(await roleOf(await makeUser({ standing: "owner" }))).toBe("agent");
+    expect(await roleOf(await makeUser({ standing: "business" }))).toBe("agent");
   });
 
   it("staff → 'customer': dia bekerja di business, tidak mengelolanya", async () => {

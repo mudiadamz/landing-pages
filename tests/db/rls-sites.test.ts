@@ -36,8 +36,8 @@ const ownerOf = async (siteId: string) => {
     await sql("update public.lp_sites set business_id = $2 where id = $1", [siteId, biz]);
   }
   await sql(
-    `insert into public.lp_business_members (business_id, user_id, role) values ($1, $2, 'owner')
-     on conflict (business_id, user_id) do update set role = 'owner'`,
+    `insert into public.lp_business_members (business_id, user_id, role) values ($1, $2, 'business')
+     on conflict (business_id, user_id) do update set role = 'business'`,
     [biz, uid],
   );
   return uid;
@@ -124,13 +124,49 @@ describe("lp_sites — domain & branding hanya Company", () => {
     expect([ins.rowCount, upd.rowCount, del.rowCount]).toEqual([1, 1, 1]);
   });
 
-  it("Agent situs itu pun TIDAK bisa mengubah host / is_canonical / branding", async () => {
+  /**
+   * Sejak 20260924060000 orang business boleh mengubah TAMPILAN situsnya
+   * sendiri — itu memang tokonya. Yang tidak boleh adalah identitas dan izin.
+   */
+  it("orang business boleh mengubah branding situsnya sendiri", async () => {
     const site = await makeSite();
-    const agent = await ownerOf(site);
-    for (const set of ["host = 'evil.test'", "is_canonical = true", "name = 'Dibajak'", "active = false"]) {
-      const r = await as({ uid: agent }, () => sql(`update lp_sites set ${set} where id = $1`, [site]));
-      expect(r.rowCount, set).toBe(0);
+    const person = await ownerOf(site);
+    for (const set of ["name = 'Toko Baru'", "tagline = 'apa saja'", "palette = 'ink'", "locale = 'en'"]) {
+      const r = await as({ uid: person }, () => sql(`update lp_sites set ${set} where id = $1`, [site]));
+      expect(r.rowCount, set).toBe(1);
     }
+  });
+
+  /**
+   * `host` unik secara global, jadi menulisnya adalah cara merebut domain orang
+   * lain; `verified_at` adalah satu-satunya hal yang menentukan apakah sebuah
+   * sertifikat boleh diterbitkan. Keduanya ditolak trigger, bukan policy — RLS
+   * tidak bisa membandingkan baris lama dengan yang baru.
+   */
+  it("tapi TIDAK bisa menyentuh identitas & izin situs itu", async () => {
+    const site = await makeSite();
+    const person = await ownerOf(site);
+    for (const set of [
+      "host = 'evil.test'",
+      "is_canonical = true",
+      "active = false",
+      "verified_at = now()",
+      "business_id = null",
+    ]) {
+      await expect(
+        as({ uid: person }, () => sql(`update lp_sites set ${set} where id = $1`, [site])),
+        set,
+      ).rejects.toThrow();
+    }
+  });
+
+  it("orang dari business LAIN tidak bisa menyentuh situs ini sama sekali", async () => {
+    const site = await makeSite();
+    const outsider = await makeUser({ standing: "business" });
+    const r = await as({ uid: outsider }, () =>
+      sql("update lp_sites set name = 'Dibajak' where id = $1", [site]),
+    );
+    expect(r.rowCount).toBe(0);
   });
 
   it("customer/anon tidak bisa membuat situs; semua orang bisa membaca", async () => {
@@ -205,7 +241,7 @@ describe("lp_site_members — keanggotaan", () => {
     );
     await denied(() =>
       as({ uid: me }, () =>
-        sql("insert into public.lp_business_members (business_id, user_id, role) values ($1, $2, 'owner')", [
+        sql("insert into public.lp_business_members (business_id, user_id, role) values ($1, $2, 'business')", [
           rows[0].id,
           me,
         ]),

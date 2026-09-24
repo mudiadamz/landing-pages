@@ -144,7 +144,7 @@ export const en: Record<keyof typeof id, string> = {
      "Agent" stays because lp_site_agents still exists — a per-site
      delegation inside a business, not an account type. */
   "panel.rolePlatform": "Platform",
-  "panel.roleOwner": "Owner",
+  "panel.roleBusiness": "Business",
   "panel.roleBizAdmin": "Admin",
   "panel.roleStaff": "Staff",
 

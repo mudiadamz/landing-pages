@@ -123,7 +123,7 @@ export const uniq = () => randomUUID().slice(0, 8);
  * are rows in `lp_business_members` against the default business the Fase 0
  * backfill created. "customer" is the absence of both.
  */
-export type Standing = "platform" | "owner" | "staff" | "customer";
+export type Standing = "platform" | "business" | "staff" | "customer";
 
 /** The one business every migrated database has. Tests attach memberships to it. */
 export async function defaultBusiness(): Promise<string> {

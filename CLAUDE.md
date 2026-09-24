@@ -207,7 +207,7 @@ Ringkasan yang paling sering dilanggar:
   | kedudukan | di database |
   |---|---|
   | **Platform** | `lp_profiles.is_platform` |
-  | **Business owner** | `lp_business_members.role = 'owner'` |
+  | **Business** | `lp_business_members.role = 'business'` — orang yang MERUPAKAN business itu |
   | **Staff** | `lp_business_members.role = 'staff'` — sub-akun business itu |
   | **Customer** | bukan keduanya |
   - **`lp_site_members`** = pembeli sebuah situs. Tidak menyimpan role dan tidak
@@ -218,7 +218,9 @@ Ringkasan yang paling sering dilanggar:
     mengurus di situs ini") lewat tabel sendiri-sendiri, dan sejak ada
     pendaftaran Business (Fase 4) pertanyaan itu punya satu jawaban: daftarkan
     business-nya, lalu ajak orangnya sebagai staff. Peran `admin` ikut pergi —
-    yang tersisa owner (mengatur) dan staff (bekerja).
+    yang tersisa **business** (mengatur) dan staff (bekerja). Peran itu bernama
+    `owner` sampai 2026-09-24; diganti karena "owner" tidak mengatakan pemilik
+    dari apa (migration `20260924050000`).
   - Konsekuensi yang disengaja: perorangan **tidak lagi "dinaikkan jadi penjual"**
     di satu storefront. Dia mendaftarkan Business, yang memang sudah punya KYC,
     ledger, dan payout sendiri. Bucket `publisher-kyc` ikut pensiun.
@@ -229,21 +231,35 @@ Ringkasan yang paling sering dilanggar:
     storefront orang lain.
   - Di database, `lp_get_my_profile_role()` masih mengembalikan
     `company | agent | customer` — sebelas policy memanggilnya — tapi nilainya
-    **diturunkan**: `is_platform` → company, owner → agent, sisanya customer.
+    **diturunkan**: `is_platform` → company, business → agent, sisanya customer.
     `lp_manages_site()` dan `lp_can_sell()` ditulis ulang ke model baru.
 - **Empat gate, jangan tertukar** (`lib/actions/profiles.ts`):
   - `requireAdmin()` / `requirePlatform()` — Platform. Aksi yang **tidak boleh
     didelegasikan**: buat/hapus situs, hapus akun, ban, angkat operator Platform.
-  - `requireSiteAdmin(siteId?)` — Platform atau **owner** business pemilik situs
+  - `requireSiteAdmin(siteId?)` — Platform atau peran **business** pemilik situs
     itu. **Wajib menerima `siteId` yang dikirim klien**, bukan situs yang
     kebetulan sedang dilihat.
   - `canSellProducts()` — Platform & anggota business mana pun (**staff ikut**:
     menjual memang pekerjaannya). `canSellOnCurrentSite(siteId)` versi
     per-situsnya, dan ia menanyakan business PEMILIK situs itu.
   - `requireFeature(key)` — **gabungan** dari tiap jalan masuk yang dia punya,
-    bukan yang pertama cocok: Platform & owner selalu lolos, staff lewat matriks
+    bukan yang pertama cocok: Platform & business selalu lolos, staff lewat matriks
     business, sisanya lewat matriks situs. Ambil yang pertama cocok dan menambah
     peran bisa MENGURANGI izin. Nav panel digambar dari `getAccessibleFeatures()`.
+- **Siapa boleh mengubah setelan situs** (diubah 2026-09-24):
+  | layar | siapa |
+  |---|---|
+  | **Identitas situs** (`/panel/branding`) | siapa pun yang bekerja di business pemilik situs — **staff ikut**. Menamai toko & memilih logo itu pekerjaan menjalankannya. |
+  | Domain sendiri (`/panel/domains`), Links, Tracking, Popup, Halaman | peran **business** saja (`businessOnly` di sidebar, `requireSiteAdmin` di halaman) |
+  | Tampilan panel (`/panel/appearance`), Situs & domain lintas-business (`/panel/sites`) | **Platform saja**. `/panel/appearance` bukan setelan situs meski terlihat begitu: itu palet PANEL, satu baris di situs kanonik, dipakai semua business. |
+  - **Policy-nya ikut dibuka, bukan cuma gerbang aplikasinya.** `lp_sites` dulu
+    hanya punya policy UPDATE untuk Platform; membuka layarnya tanpa itu berarti
+    layar yang bisa dibuka dan tombol Simpan yang menolak. Sekarang ada policy
+    `lp_works_in_site_business(id)` + trigger `lp_sites_identity_guard` yang
+    tetap menolak `host`, `is_canonical`, `business_id`, `active`, dan seluruh
+    kolom verifikasi/sertifikat — RLS tidak bisa membandingkan baris lama dengan
+    yang baru, trigger bisa. Penjaga itu hanya berlaku saat ada `auth.uid()`,
+    supaya migration & service_role tidak ikut tertahan.
 - **Dua shell panel, satu set route.** `/panel` melayani dua audiens yang nyaris
   tidak beririsan: business menjangkau 26 layar, customer menjangkau empat. Jadi
   yang bercabang **shell-nya**, bukan route-nya — halaman yang sama dirender di
@@ -294,8 +310,8 @@ Ringkasan yang paling sering dilanggar:
     yang belum pernah mengaturnya tidak kehilangan delegasi.
   - **per BUSINESS** — `staff`, di kolom `lp_businesses.role_permissions`,
     dibaca lewat `getBusinessRolePermissions()`. Owner tidak ada di matriksnya:
-    owner yang bisa dikunci dari business-nya sendiri itu tiket support, bukan
-    fitur. Default (belum pernah diatur) = staff kosong: owner yang memutuskan
+    business yang bisa dikunci dari business-nya sendiri itu tiket support, bukan
+    fitur. Default (belum pernah diatur) = staff kosong: business yang memutuskan
     apa yang bisa dicapai orang yang baru dia ajak.
 - **Staff hanya melihat penjualannya sendiri**: pemisahan ada di
   `lib/actions/sales.ts` (satu read yang sudah di-scope), **bukan** di halaman —

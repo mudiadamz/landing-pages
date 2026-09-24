@@ -395,7 +395,7 @@ export function UsersTable({
         >
           <option value="all">{t("panel.allRoles")}</option>
           <option value="platform">{t("panel.rolePlatform")}</option>
-          <option value="owner">{t("panel.roleOwner")}</option>
+          <option value="business">{t("panel.roleBusiness")}</option>
           <option value="staff">{t("panel.roleStaff")}</option>
           <option value="">{t("panel.roleCustomer")}</option>
         </select>
@@ -686,7 +686,7 @@ function RoleControl({
       <option value="">{t("panel.roleCustomer")}</option>
       <option value="staff">{t("panel.roleStaff")}</option>
       <option value="admin">{t("panel.roleBizAdmin")}</option>
-      <option value="owner">{t("panel.roleOwner")}</option>
+      <option value="business">{t("panel.roleBusiness")}</option>
       <option value="platform">{t("panel.rolePlatform")}</option>
     </select>
   );
@@ -770,7 +770,7 @@ function RoleBadge({ value }: { value: StandingValue }) {
   const cls =
     value === "platform"
       ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-      : value === "owner"
+      : value === "business"
         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
         : value === "staff"
           ? "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300"
@@ -778,8 +778,8 @@ function RoleBadge({ value }: { value: StandingValue }) {
   const label =
     value === "platform"
       ? t("panel.rolePlatform")
-      : value === "owner"
-        ? t("panel.roleOwner")
+      : value === "business"
+        ? t("panel.roleBusiness")
         : value === "staff"
           ? t("panel.roleStaff")
           : t("panel.roleCustomer");

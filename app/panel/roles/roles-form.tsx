@@ -76,7 +76,7 @@ function FixedNo() {
   return <span className="text-[var(--muted)]/50" aria-hidden>—</span>;
 }
 
-type Col = "platform" | "owner" | BusinessConfigurableRole | ConfigurableRole;
+type Col = "platform" | "business" | BusinessConfigurableRole | ConfigurableRole;
 
 const BUSINESS_COLS: Col[] = ["staff"];
 const isBusinessCol = (c: Col): c is BusinessConfigurableRole =>
@@ -145,7 +145,7 @@ export function RolesForm({
       case "company":
         return col === "platform" ? <FixedYes /> : <FixedNo />;
       case "delegatable":
-        if (col === "platform" || col === "owner") return <FixedYes />;
+        if (col === "platform" || col === "business") return <FixedYes />;
         return (
           <input
             type="checkbox"
@@ -169,7 +169,7 @@ export function RolesForm({
 
   const cols: { key: Col; label: string }[] = [
     { key: "platform", label: t("panel.rolePlatform") },
-    { key: "owner", label: t("panel.roleOwner") },
+    { key: "business", label: t("panel.roleBusiness") },
     { key: "staff", label: t("panel.roleStaff") },
     { key: "customer", label: t("panel.roleCustomer") },
   ];

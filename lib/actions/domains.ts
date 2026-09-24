@@ -100,7 +100,7 @@ async function ownedBusinessId(): Promise<string | null> {
     .from("lp_business_members")
     .select("business_id, role")
     .eq("user_id", profile.id)
-    .eq("role", "owner")
+    .eq("role", "business")
     .limit(1)
     .maybeSingle();
   return (data as { business_id: string } | null)?.business_id ?? null;

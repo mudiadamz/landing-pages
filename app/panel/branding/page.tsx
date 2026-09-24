@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import Link from "next/link";
-import { requireSiteAdmin } from "@/lib/actions/profiles";
+import { canSellOnCurrentSite } from "@/lib/actions/profiles";
 import { getCategories } from "@/lib/actions/landing-pages";
 import { editingSite, isCanonicalRequest, canonicalOrigin } from "@/lib/site-resolve";
 import { templatePickerOptions } from "@/lib/templates/registry";
@@ -27,7 +27,12 @@ export async function generateMetadata() {
  */
 export default async function BrandingPage() {
   const t = translator(await requestLocale());
-  if (!(await requireSiteAdmin())) redirect("/panel");
+  // Anyone who works in the business that owns this storefront, staff included.
+  // Naming the shop, writing its tagline and picking its logo is the work of
+  // running it, not a decision about who the business is — and a staff member
+  // who has to ask an owner to fix a typo in the shop name is a staff member
+  // who stops fixing typos.
+  if (!(await canSellOnCurrentSite())) redirect("/panel");
 
   // Same belt-and-braces guard as /panel/sites: this screen rewrites a site row, and
   // app/panel/layout.tsx already keeps admin routes on the canonical origin.
