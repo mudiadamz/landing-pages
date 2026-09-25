@@ -1503,6 +1503,9 @@ export const en: Record<keyof typeof id, string> = {
     "A storefront for products and services from every kind of business. Browse, preview, buy.",
 
   "legal.lastUpdated": "Last updated: {date}",
+  "legal.notWritten": "not written yet",
+  "legal.savesAllLangs": "Saving writes all three pages, for the languages you have filled in.",
+  "legal.fallbackNotice": "This document is not available in the language you chose yet, so the {language} version is shown.",
 
   "hiring.backToAd": "← Back to the job ad",
 
@@ -1551,7 +1554,6 @@ export const en: Record<keyof typeof id, string> = {
   "legal.metaDescription": "Meta description",
   "legal.metaHint": "Used in search results and link previews. Leave empty to use the first sentence of the page.",
   "legal.viewPage": "View {route} ↗",
-  "legal.savesAll": "Saving writes all three pages at once.",
 
   /* ---- product statistics ---- */
   "stats.ctaBuy": "Buy / checkout",

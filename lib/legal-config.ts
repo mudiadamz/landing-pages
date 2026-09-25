@@ -17,6 +17,8 @@
  * imported by client and server components alike.
  */
 
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "@/lib/i18n";
+
 /** Bodies are HTML, sanitised on write with lib/page-html and rendered inside
  *  `.page-prose` — the same pipeline the editorial pages use. */
 export type LegalPageContent = {
@@ -28,7 +30,14 @@ export type LegalPageContent = {
 
 export type LegalKey = "privacy" | "terms" | "refund";
 
-export type LegalContent = Record<LegalKey, LegalPageContent> & {
+/**
+ * The three documents, in ONE language.
+ *
+ * Was `LegalContent` until the copy went multilingual. It kept that shape
+ * exactly, so every reader of a resolved document — the pages, the sitemap —
+ * carried on unchanged; what moved is one level up (`LegalContent` below).
+ */
+export type LegalDocument = Record<LegalKey, LegalPageContent> & {
   /**
    * ISO timestamp of the last save, shown as "Terakhir diperbarui".
    *
@@ -49,7 +58,7 @@ export const LEGAL_ROUTES: Record<LegalKey, string> = {
   refund: "/refund",
 };
 
-export const DEFAULT_LEGAL: LegalContent = {
+export const DEFAULT_LEGAL: LegalDocument = {
   updatedAt: null,
 
   privacy: {
@@ -123,30 +132,115 @@ export const DEFAULT_LEGAL: LegalContent = {
 };
 
 /** Merge a stored value onto the defaults so a missing field never blanks a page. */
-export function normalizeLegal(raw: unknown): LegalContent {
-  if (!raw || typeof raw !== "object") return DEFAULT_LEGAL;
-  const v = raw as Partial<LegalContent>;
+/**
+ * The three documents in EVERY language this storefront publishes them in.
+ *
+ * A privacy policy is not chrome — it is the document a reader is being asked
+ * to agree to — so a storefront that serves two languages and one policy is
+ * asking half its readers to agree to something they cannot read. The locale
+ * switcher in the footer already existed; this is the copy catching up with it.
+ *
+ * Stored per locale rather than as a flat object with translated fields,
+ * because the unit that gets written, reviewed and dated is a whole document.
+ * A per-field shape would let a policy be half translated and still look
+ * finished.
+ */
+export type LegalContent = {
+  /** Keyed by locale. A locale absent here has not been written yet. */
+  locales: Partial<Record<Locale, LegalDocument>>;
+};
 
-  const page = (key: LegalKey): LegalPageContent => {
-    const d = DEFAULT_LEGAL[key];
-    const p = (v[key] ?? {}) as Partial<LegalPageContent>;
+function emptyDocument(): LegalDocument {
+  return { ...DEFAULT_LEGAL, updatedAt: null };
+}
+
+/**
+ * Read the stored blob, whatever generation it is from.
+ *
+ * Two shapes exist in the wild: the original flat `{privacy, terms, refund,
+ * updatedAt}` and the current `{locales: {...}}`. The flat one is not migrated
+ * by a database migration because it is JSON inside a settings row and the
+ * safe moment to convert it is when it is read — so a site that has never
+ * saved since keeps working, and the first save writes the new shape.
+ *
+ * `fallbackLocale` is the site's own language, and it is where legacy copy
+ * lands: it was written in that language, whatever the shape said.
+ */
+export function normalizeLegal(raw: unknown, fallbackLocale: Locale = DEFAULT_LOCALE): LegalContent {
+  if (!raw || typeof raw !== "object") {
+    return { locales: { [fallbackLocale]: emptyDocument() } };
+  }
+  const v = raw as { locales?: unknown } & Partial<LegalDocument>;
+
+  const document = (source: unknown): LegalDocument => {
+    const src = (source ?? {}) as Partial<LegalDocument>;
+    const page = (key: LegalKey): LegalPageContent => {
+      const d = DEFAULT_LEGAL[key];
+      const p = (src[key] ?? {}) as Partial<LegalPageContent>;
+      return {
+        // An empty title would render a page with no heading, so blanks fall
+        // back rather than being stored as an override.
+        title: p.title?.trim() || d.title,
+        description: typeof p.description === "string" ? p.description : d.description,
+        body: p.body?.trim() || d.body,
+      };
+    };
     return {
-      // An empty title would render a page with no heading, so blanks fall back
-      // rather than being stored as an override.
-      title: p.title?.trim() || d.title,
-      description: typeof p.description === "string" ? p.description : d.description,
-      body: p.body?.trim() || d.body,
+      privacy: page("privacy"),
+      terms: page("terms"),
+      refund: page("refund"),
+      updatedAt:
+        typeof src.updatedAt === "string" && src.updatedAt.trim() ? src.updatedAt : null,
     };
   };
 
-  const stamp = typeof v.updatedAt === "string" && v.updatedAt.trim() ? v.updatedAt : null;
+  if (v.locales && typeof v.locales === "object") {
+    const out: Partial<Record<Locale, LegalDocument>> = {};
+    for (const loc of LOCALES) {
+      const stored = (v.locales as Record<string, unknown>)[loc];
+      if (stored && typeof stored === "object") out[loc] = document(stored);
+    }
+    // A `locales` object that turned out to hold nothing recognisable is not a
+    // storefront with no policies — it is a broken read, and answering with the
+    // shipped defaults is better than answering with nothing.
+    if (Object.keys(out).length === 0) out[fallbackLocale] = emptyDocument();
+    return { locales: out };
+  }
 
-  return {
-    privacy: page("privacy"),
-    terms: page("terms"),
-    refund: page("refund"),
-    updatedAt: stamp,
-  };
+  // The original flat shape.
+  return { locales: { [fallbackLocale]: document(v) } };
+}
+
+/**
+ * The document to actually show, and which language it turned out to be in.
+ *
+ * Falls back rather than blanking: an English reader on a storefront whose
+ * policy exists only in Indonesian is better served by the Indonesian text than
+ * by an empty page, and the panel is where the missing translation gets
+ * flagged. `usedLocale` is returned so a caller can say which language it got —
+ * a reader agreeing to terms deserves to know they are reading a fallback.
+ */
+export function resolveLegal(
+  content: LegalContent,
+  wanted: Locale,
+  siteLocale: Locale = DEFAULT_LOCALE,
+): { doc: LegalDocument; usedLocale: Locale; isFallback: boolean } {
+  const exact = content.locales[wanted];
+  if (exact) return { doc: exact, usedLocale: wanted, isFallback: false };
+
+  const site = content.locales[siteLocale];
+  if (site) return { doc: site, usedLocale: siteLocale, isFallback: true };
+
+  for (const loc of LOCALES) {
+    const any = content.locales[loc];
+    if (any) return { doc: any, usedLocale: loc, isFallback: true };
+  }
+  return { doc: emptyDocument(), usedLocale: siteLocale, isFallback: false };
+}
+
+/** Languages this storefront has actually written its policies in. */
+export function writtenLocales(content: LegalContent): Locale[] {
+  return LOCALES.filter((l) => !!content.locales[l]);
 }
 
 /**

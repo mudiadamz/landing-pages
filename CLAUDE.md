@@ -470,6 +470,24 @@ jasa) di `docs/plans/multi-business-saas.md` Fase 6 & 6b.
   (`lib/legal-config.ts`), diedit di `/panel/legal`. Body HTML, disanitasi saat simpan
   (`lib/page-html.ts`), dirender di `.page-prose`. URL-nya tetap — beda dari halaman
   editorial `lp_pages` yang slug-nya dibuat orang.
+  - **Per BAHASA sejak 2026-09-25.** Bentuk tersimpannya `{ locales: { id: {...},
+    en: {...} } }`; yang dirender adalah bahasa yang sedang **dibaca**
+    (`requestLocale()`), bukan `lp_sites.locale`. Storefront yang melayani dua
+    bahasa dengan satu kebijakan meminta separuh pembacanya menyetujui sesuatu
+    yang tidak bisa mereka baca.
+  - **Bentuk lama dikonversi saat DIBACA**, bukan lewat migration database —
+    isinya JSON di dalam satu baris setelan, jadi `normalizeLegal(raw,
+    siteLocale)` yang memindahkannya, dan situs yang tidak pernah menyimpan lagi
+    tetap jalan selamanya. `siteLocale` adalah **argumen** (bagian dari cache
+    key), bukan dibaca di dalam fungsi ter-cache.
+  - **Fallback-nya dikatakan, bukan didiamkan.** Bahasa yang belum ditulis jatuh
+    ke bahasa situs, dan halamannya menampilkan pemberitahuan — ini dokumen yang
+    diminta untuk **disetujui**, satu-satunya tempat fallback diam-diam tidak
+    cukup baik. `updatedAt` per bahasa, dan hanya bahasa yang benar-benar
+    berubah yang di-stempel ulang.
+  - Bahasa yang tidak disentuh **tidak ditulis** saat simpan: kalau tidak,
+    membuka layarnya sekali akan menerbitkan satu set kebijakan copy-bawaan di
+    setiap bahasa, masing-masing terlihat seperti dokumen yang sengaja ditulis.
 - **Inbound email** (`/api/webhooks/resend/inbound`): Resend kirim event `email.received` (verifikasi svix). Disimpan ke `lp_received_emails`, dibaca di panel Inbox. Butuh `RESEND_WEBHOOK_SECRET`.
 - **MbahGPT** (template `mbahgpt`): storefront yang halaman depannya adalah chatbox
   ke model OpenRouter. Tabel `lp_chat_*`, inti di `lib/mbahgpt/`, streaming lewat

@@ -1493,6 +1493,9 @@ export const id = {
     "Etalase produk dan layanan dari berbagai jenis bisnis. Jelajahi, preview, beli.",
 
   "legal.lastUpdated": "Terakhir diperbarui: {date}",
+  "legal.notWritten": "belum ditulis",
+  "legal.savesAllLangs": "Menyimpan menyimpan ketiga halaman, untuk bahasa yang sudah kamu isi.",
+  "legal.fallbackNotice": "Dokumen ini belum tersedia dalam bahasa yang kamu pilih, jadi yang ditampilkan versi {language}.",
 
   "hiring.backToAd": "← Kembali ke halaman hiring",
 
@@ -1541,7 +1544,6 @@ export const id = {
   "legal.metaDescription": "Deskripsi meta",
   "legal.metaHint": "Dipakai di hasil pencarian dan preview link. Kosongkan untuk memakai kalimat pertama isi halaman.",
   "legal.viewPage": "Lihat {route} ↗",
-  "legal.savesAll": "Simpan menyimpan ketiga halaman sekaligus.",
 
   /* ---- statistik produk ---- */
   "stats.ctaBuy": "Beli / checkout",

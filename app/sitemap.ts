@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getLegalContent, getHiringContent } from "@/lib/actions/site-settings";
+import { getLegalDocument, getHiringContent } from "@/lib/actions/site-settings";
 import { getCategories, getLandingPagesForHomepage } from "@/lib/actions/landing-pages";
 import { currentOrigin, currentSite } from "@/lib/site-resolve";
 import { getBlogPaths } from "@/lib/actions/blog";
@@ -17,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = await currentSite();
   const now = new Date();
 
-  const [legal, hiring] = await Promise.all([getLegalContent(), getHiringContent()]);
+  const [{ doc: legal }, hiring] = await Promise.all([getLegalDocument(), getHiringContent()]);
   // The legal pages know when they were actually last edited now that their copy
   // lives in the database, so they stop claiming to have changed on every crawl.
   const legalChanged = legal.updatedAt ? new Date(legal.updatedAt) : now;

@@ -14,7 +14,12 @@ import {
   type CustomJsRecord,
 } from "@/lib/custom-js";
 import { DEFAULT_CONTENT, normalizeContent, type SiteContent } from "@/lib/content-config";
-import { DEFAULT_LEGAL, normalizeLegal, type LegalContent } from "@/lib/legal-config";
+import {
+  normalizeLegal,
+  resolveLegal,
+  type LegalContent,
+  type LegalDocument,
+} from "@/lib/legal-config";
 import { DEFAULT_HIRING, normalizeHiring, type HiringContent } from "@/lib/hiring-config";
 import {
   normalizeTracking,
@@ -45,7 +50,8 @@ import {
 } from "@/lib/popup-config";
 import { POPUP_MAX_BYTES, readWebpHeader } from "@/lib/webp";
 import { DEFAULT_SKIN, normalizeSkin } from "@/lib/skin";
-import { canonicalSiteId, currentSiteId, editingSite } from "@/lib/site-resolve";
+import { canonicalSiteId, currentSite, currentSiteId, editingSite } from "@/lib/site-resolve";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { sanitizePageHtml } from "@/lib/page-html";
 
 const CUSTOM_JS_KEY = "custom_js";
@@ -230,7 +236,7 @@ export async function updateSiteContent(
  */
 
 const readLegalContent = unstable_cache(
-  async (siteId: string): Promise<LegalContent> => {
+  async (siteId: string, siteLocale: Locale): Promise<LegalContent> => {
     try {
       const db = createAnonClient();
       const { data } = await db
@@ -239,18 +245,49 @@ const readLegalContent = unstable_cache(
         .eq("site_id", siteId)
         .eq("key", LEGAL_KEY)
         .maybeSingle();
-      if (!data?.value) return DEFAULT_LEGAL;
-      return normalizeLegal(JSON.parse(data.value as string));
+      // `siteLocale` is an ARGUMENT, not read in here: it is where legacy flat
+      // copy lands when normalizeLegal migrates it, and a cached function
+      // cannot resolve the request (docs/architecture.md, I1). It is also part
+      // of the cache key, which is what stops one storefront's migration
+      // deciding another's language.
+      if (!data?.value) return normalizeLegal(null, siteLocale);
+      return normalizeLegal(JSON.parse(data.value as string), siteLocale);
     } catch {
-      return DEFAULT_LEGAL;
+      return normalizeLegal(null, siteLocale);
     }
   },
   ["legal-content"],
   { revalidate: 120, tags: ["legal-content"] },
 );
 
-export async function getLegalContent(siteId?: string): Promise<LegalContent> {
-  return readLegalContent(siteId ?? (await currentSiteId()));
+/**
+ * Every language this storefront has written its policies in. For the panel.
+ *
+ * The site's own language is resolved here, outside the cache, and passed down
+ * — it decides where legacy flat copy lands when normalizeLegal migrates it.
+ * For a call about some OTHER site (the panel scope switcher) the current row
+ * cannot answer, so it falls back to the app default rather than guessing.
+ */
+export async function getLegalContentAll(siteId?: string): Promise<LegalContent> {
+  const site = await currentSite();
+  const id = siteId ?? site.id;
+  return readLegalContent(id, id === site.id ? site.locale : DEFAULT_LOCALE);
+}
+
+/**
+ * The legal document to SHOW, in the language being read.
+ *
+ * Returns which language it turned out to be, because a storefront that has not
+ * translated its policy yet still has to show something — and a reader agreeing
+ * to terms deserves to know when what they are reading is a fallback.
+ */
+export async function getLegalDocument(
+  locale?: Locale,
+  siteId?: string,
+): Promise<{ doc: LegalDocument; usedLocale: Locale; isFallback: boolean }> {
+  const site = await currentSite();
+  const content = await readLegalContent(siteId ?? site.id, site.locale);
+  return resolveLegal(content, locale ?? site.locale, site.locale);
 }
 
 export async function updateLegalContent(
@@ -260,18 +297,43 @@ export async function updateLegalContent(
   const allowed = await requireFeature("legal");
   if (!allowed) return { ok: false, error: "Akses ditolak." };
 
-  // Sanitised here rather than in the form: the action is the only way in, and
-  // an admin pasting a tracking pixel into a privacy policy is exactly the
-  // stored mistake lib/page-html exists to catch.
-  const clean = normalizeLegal({
-    ...content,
-    privacy: { ...content.privacy, body: sanitizePageHtml(content.privacy?.body ?? "") },
-    terms: { ...content.terms, body: sanitizePageHtml(content.terms?.body ?? "") },
-    refund: { ...content.refund, body: sanitizePageHtml(content.refund?.body ?? "") },
-    // Stamped on write, so "Terakhir diperbarui" is the date of the last edit
-    // rather than the date the reader happens to be looking.
-    updatedAt: new Date().toISOString(),
-  });
+  const site = await currentSite();
+  const now = new Date().toISOString();
+
+  /**
+   * Sanitised here rather than in the form: the action is the only way in, and
+   * an admin pasting a tracking pixel into a privacy policy is exactly the
+   * stored mistake lib/page-html exists to catch.
+   *
+   * The timestamp is PER LANGUAGE, and only the languages that changed are
+   * restamped. One date across all of them would have an untouched Indonesian
+   * policy claim it was revised on the day someone fixed a typo in the English
+   * one — and "Terakhir diperbarui" is the line a reader uses to decide whether
+   * the terms they agreed to are the ones on screen.
+   */
+  const previous = await readLegalContent(siteId ?? site.id, site.locale);
+  const locales: LegalContent["locales"] = {};
+  for (const [loc, doc] of Object.entries(content.locales ?? {})) {
+    if (!doc) continue;
+    const key = loc as Locale;
+    const cleaned = {
+      ...doc,
+      privacy: { ...doc.privacy, body: sanitizePageHtml(doc.privacy?.body ?? "") },
+      terms: { ...doc.terms, body: sanitizePageHtml(doc.terms?.body ?? "") },
+      refund: { ...doc.refund, body: sanitizePageHtml(doc.refund?.body ?? "") },
+    };
+    const before = previous.locales[key];
+    const changed =
+      !before ||
+      (["privacy", "terms", "refund"] as const).some(
+        (k) =>
+          before[k].title !== cleaned[k].title ||
+          before[k].description !== cleaned[k].description ||
+          before[k].body !== cleaned[k].body,
+      );
+    locales[key] = { ...cleaned, updatedAt: changed ? now : before?.updatedAt ?? null };
+  }
+  const clean = normalizeLegal({ locales }, site.locale);
 
   const db = await createClient();
   const { error } = await db.from("lp_site_settings").upsert(

@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/db/server";
 import { getCategories } from "@/lib/actions/landing-pages";
-import { getLegalContent } from "@/lib/actions/site-settings";
+import { getLegalDocument } from "@/lib/actions/site-settings";
 import { TemplateHeader, TemplateFooter } from "@/lib/templates/chrome";
 import { translator } from "@/lib/i18n";
 import { requestLocale } from "@/lib/i18n/request";
 import { currentSite } from "@/lib/site-resolve";
 import { applySiteName, type LegalKey } from "@/lib/legal-config";
+import { LOCALE_OPTIONS } from "@/lib/i18n/locales";
 
 /**
  * The body of /privacy, /terms and /refund.
@@ -22,21 +23,23 @@ import { applySiteName, type LegalKey } from "@/lib/legal-config";
 export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
   const db = await createClient();
   const site = await currentSite();
+  const locale = await requestLocale();
   const [
     {
       data: { user },
     },
     categories,
     legal,
-    locale,
   ] = await Promise.all([
     db.auth.getUser(),
     getCategories(site.business_id),
-    getLegalContent(),
-    requestLocale(),
+    // The language being READ, not the site's stored default: a visitor who
+    // switched the footer to English is asking to read the terms in English,
+    // and until now got the Indonesian ones with no sign that was happening.
+    getLegalDocument(locale),
   ]);
   const t = translator(locale);
-  const raw = legal[pageKey];
+  const raw = legal.doc[pageKey];
   const page = {
     ...raw,
     title: applySiteName(raw.title, site.name),
@@ -55,10 +58,23 @@ export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
             {/* Only shown once there has been an edit. Before that the honest
                 answer is "we don't know", and printing today's date — which is
                 what these pages did — is worse than printing nothing. */}
-            {legal.updatedAt && (
+            {/* Say so when the document on screen is not in the language the
+                reader chose. These are the pages someone is being asked to
+                AGREE to; silently serving another language is the one place a
+                quiet fallback is not good enough. */}
+            {legal.isFallback && (
+              <p className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--muted)]">
+                {t("legal.fallbackNotice", {
+                  language:
+                    LOCALE_OPTIONS.find((o) => o.key === legal.usedLocale)?.native ??
+                    legal.usedLocale,
+                })}
+              </p>
+            )}
+            {legal.doc.updatedAt && (
               <p className="text-sm text-[var(--muted)]">
                 {t("legal.lastUpdated", {
-                  date: new Date(legal.updatedAt).toLocaleDateString(
+                  date: new Date(legal.doc.updatedAt).toLocaleDateString(
                     locale === "en" ? "en-GB" : "id-ID",
                     { year: "numeric", month: "long", day: "numeric" },
                   ),
@@ -79,8 +95,9 @@ export async function LegalPageView({ pageKey }: { pageKey: LegalKey }) {
 
 /** Metadata for a legal route, from the same stored copy. */
 export async function legalMetadata(pageKey: LegalKey) {
-  const [legal, site] = await Promise.all([getLegalContent(), currentSite()]);
-  const page = legal[pageKey];
+  const locale = await requestLocale();
+  const [legal, site] = await Promise.all([getLegalDocument(locale), currentSite()]);
+  const page = legal.doc[pageKey];
   const body = applySiteName(page.body, site.name);
   const fallback = body
     .replace(/<[^>]*>/g, " ")

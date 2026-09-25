@@ -27,6 +27,15 @@ export type Locale = keyof typeof DICTIONARIES;
 export const DEFAULT_LOCALE: Locale = "id";
 
 /**
+ * Every language this app has a dictionary for, in display order.
+ *
+ * Derived from DICTIONARIES rather than written out again: a third language
+ * added there and forgotten here would be a language the legal editor never
+ * offers, with nothing on screen to say why.
+ */
+export const LOCALES = Object.keys(DICTIONARIES) as Locale[];
+
+/**
  * Look up a message, with optional `{name}` substitution.
  *
  * A missing key returns the key itself rather than an empty string: an

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { deniedPath } from "@/lib/panel-view";
 import { requireFeature } from "@/lib/actions/profiles";
-import { getLegalContent } from "@/lib/actions/site-settings";
-import { applySiteName, LEGAL_KEYS } from "@/lib/legal-config";
+import { getLegalContentAll } from "@/lib/actions/site-settings";
+import { applySiteName, LEGAL_KEYS, type LegalContent } from "@/lib/legal-config";
 import { editingSite } from "@/lib/site-resolve";
 import { PanelSiteFilter } from "@/components/panel-site-filter";
 import { PanelPageHeader } from "@/components/panel-page-header";
@@ -20,17 +20,24 @@ export default async function LegalSettingsPage() {
   if (!ok) redirect(deniedPath("legal"));
 
   const site = await editingSite();
-  const stored = await getLegalContent(site.id);
+  const stored = await getLegalContentAll(site.id);
   // Show the resolved site name in the editor, not the raw {{site}} token the
   // default copy carries — the admin edits real text from here.
-  const legal = { ...stored };
-  for (const key of LEGAL_KEYS) {
-    legal[key] = {
-      ...stored[key],
-      title: applySiteName(stored[key].title, site.name),
-      description: applySiteName(stored[key].description, site.name),
-      body: applySiteName(stored[key].body, site.name),
-    };
+  // Every language, not just the one being shown: the token is in the SHIPPED
+  // defaults, so it appears in whichever language has not been rewritten yet.
+  const legal: LegalContent = { locales: {} };
+  for (const [loc, doc] of Object.entries(stored.locales)) {
+    if (!doc) continue;
+    const resolved = { ...doc };
+    for (const key of LEGAL_KEYS) {
+      resolved[key] = {
+        ...doc[key],
+        title: applySiteName(doc[key].title, site.name),
+        description: applySiteName(doc[key].description, site.name),
+        body: applySiteName(doc[key].body, site.name),
+      };
+    }
+    legal.locales[loc as keyof typeof legal.locales] = resolved;
   }
 
   return (
@@ -44,7 +51,7 @@ export default async function LegalSettingsPage() {
       {/* key={site.id}: switching the panel scope must reload the editors with
           the other domain's text, and RichEditor only reads its initial HTML on
           mount. */}
-      <LegalForm key={site.id} initial={legal} siteId={site.id} />
+      <LegalForm key={site.id} initial={legal} siteId={site.id} siteLocale={site.locale} />
     </div>
   );
 }
