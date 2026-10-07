@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { SiteLogo } from "@/components/site-logo";
 import { BrandMark } from "@/components/brand-mark";
@@ -12,6 +12,7 @@ import type { FeatureKey } from "@/lib/features";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
 import { managesBusiness, type BusinessRole } from "@/lib/profile-utils";
+import { groupsCookie, isGroupOpen, pinsCookie, type GroupOverrides } from "@/lib/panel-chrome";
 
 type Props = {
   isPlatform?: boolean;
@@ -31,7 +32,20 @@ type Props = {
    * It said Storefront everywhere, which on a niche storefront is a stranger's brand.
    */
   brand: SiteBrand;
+  /** Pinned menu hrefs and the person's own open/closed groups, from cookies read server-side. */
+  pins?: string[];
+  groupOverrides?: GroupOverrides;
 };
+
+/* Outside the components: writing document.cookie mutates something React does
+   not own, which the compiler's immutability rule rejects in component scope
+   (same as components/panel-chrome.tsx). */
+function rememberPins(pins: string[]) {
+  document.cookie = pinsCookie(pins);
+}
+function rememberGroups(overrides: GroupOverrides) {
+  document.cookie = groupsCookie(overrides);
+}
 
 type NavItem = {
   href: string;
@@ -336,6 +350,14 @@ function UsersIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+/* A pushpin, outlined when free and filled when it holds the row on top. */
+function PinIcon({ className, filled }: { className?: string; filled?: boolean }) {
+  return (
+    <svg className={className} fill={filled ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7" />
+    </svg>
+  );
+}
 function ImageIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -355,6 +377,8 @@ function NavContent({
   collapsed = false,
   onItemClick,
   onOpenAssets,
+  initialPins = [],
+  initialGroupOverrides = {},
 }: {
   isPlatform?: boolean;
   businessRole?: BusinessRole | null;
@@ -367,35 +391,37 @@ function NavContent({
   collapsed?: boolean;
   onItemClick?: () => void;
   onOpenAssets?: () => void;
+  initialPins?: string[];
+  initialGroupOverrides?: GroupOverrides;
 }) {
   const t = useT();
   const pathname = usePathname();
 
-  // Collapsible groups (audit: 26 items, ~14 fit before scrolling). State is
-  // persisted so a rarely-opened group stays folded across visits. Only applies
-  // in the expanded sidebar — the icon rail has no group headings to fold.
-  const [foldedGroups, setFoldedGroups] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("panel-folded-groups");
-      if (raw) setFoldedGroups(new Set(JSON.parse(raw) as string[]));
-    } catch {
-      /* ignore */
-    }
-  }, []);
-  const toggleGroup = (key: string) => {
-    setFoldedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      try {
-        localStorage.setItem("panel-folded-groups", JSON.stringify([...next]));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
+  // Every group starts folded and the menus that matter are pinned above them
+  // (lib/panel-chrome.ts). A group the person never touched stays folded unless
+  // it holds the page on screen; one they opened or closed stays that way. Only
+  // the expanded sidebar folds — the icon rail has no headings to fold under.
+  const [groupOverrides, setGroupOverrides] = useState<GroupOverrides>(initialGroupOverrides);
+  const [pins, setPins] = useState<string[]>(initialPins);
+
+  const toggleGroup = (key: string, open: boolean) => {
+    const next = { ...groupOverrides, [key]: !open };
+    setGroupOverrides(next);
+    rememberGroups(next);
   };
+
+  const togglePin = (href: string) => {
+    const next = pins.includes(href) ? pins.filter((p) => p !== href) : [...pins, href];
+    setPins(next);
+    rememberPins(next);
+  };
+
+  // Exact for /panel — as a prefix it would light up on every page. Elsewhere
+  // the trailing slash keeps /panel/product off /panel/products.
+  const isActive = (item: NavItem) =>
+    !item.action &&
+    !item.external &&
+    (item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`));
 
   const isVisible = (item: NavItem) => {
     if (item.platformOnly) return !!isPlatform;
@@ -423,9 +449,118 @@ function NavContent({
       .map((item) => ({ label: t(item.labelKey), href: item.href, group: t(group.labelKey) })),
   );
 
+  // In pin order. A pin only renders when it is still a menu this person can
+  // reach — a cookie naming a screen they lost access to just stays quiet.
+  const allItems = navGroups.flatMap((g) => g.items);
+  const pinnedItems = pins
+    .map((href) => allItems.find((item) => item.href === href))
+    .filter((item): item is NavItem => !!item && isVisible(item));
+
+  const renderItem = (item: NavItem, where: "pinned" | "group") => {
+    const active = isActive(item);
+    const pinned = pins.includes(item.href);
+    const Icon = item.icon;
+    // Roomier rows on touch, where the drawer has space to spare and
+    // a thumb is a blunter instrument than a cursor. Right padding leaves room
+    // for the pin button, which sits over the row rather than inside the link.
+    const linkClass = `flex flex-1 items-center gap-3 rounded-lg py-3 pl-3 text-[0.9375rem] transition-colors md:py-2.5 md:text-sm ${
+      collapsed ? "pr-10 md:justify-center md:px-0" : "pr-10"
+    } ${
+      active
+        ? "bg-[var(--accent-subtle)] font-medium text-[var(--primary)]"
+        : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
+    }`;
+    const badgeCount = item.href === "/panel/users" ? pendingActions : 0;
+    const label = t(item.labelKey);
+    const content = (
+      <>
+        <span className="relative flex shrink-0 items-center">
+          <Icon className="h-5 w-5 shrink-0" />
+          {/* In the rail the count has nowhere to sit, so it becomes a
+              dot on the icon — still "something needs you", which is
+              the whole job of the badge at a glance. */}
+          {badgeCount > 0 && collapsed && (
+            <span
+              className="absolute -right-1 -top-1 hidden h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)] md:block"
+              aria-hidden
+            />
+          )}
+        </span>
+        <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>{label}</span>
+        {badgeCount > 0 && (
+          <span
+            className={`ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white ${
+              collapsed ? "md:hidden" : ""
+            }`}
+            title={t("panel.pendingActions", { count: badgeCount })}
+          >
+            {badgeCount}
+          </span>
+        )}
+      </>
+    );
+    // The label survives as a tooltip, which is the only thing left
+    // naming the row once the text is hidden.
+    const rowTitle = collapsed ? label : undefined;
+
+    const link =
+      item.action === "assets" ? (
+        <button
+          type="button"
+          onClick={() => {
+            onOpenAssets?.();
+            onItemClick?.();
+          }}
+          title={rowTitle}
+          className={linkClass}
+        >
+          {content}
+        </button>
+      ) : item.external ? (
+        <a href={item.href} target="_blank" rel="noopener noreferrer" onClick={onItemClick} title={rowTitle} className={linkClass}>
+          {content}
+        </a>
+      ) : (
+        <Link
+          href={item.href}
+          onClick={onItemClick}
+          aria-current={active ? "page" : undefined}
+          title={rowTitle}
+          className={linkClass}
+        >
+          {content}
+        </Link>
+      );
+
+    // A sibling of the link, not inside it: a button nested in an <a> is
+    // invalid and the click would navigate too. Always visible on touch (no
+    // hover to reveal it); on desktop it appears on hover/focus, and stays lit
+    // on rows that are pinned. Gone in the icon rail — there is no room.
+    const pinLabel = pinned ? t("panel.unpinMenu", { menu: label }) : t("panel.pinMenu", { menu: label });
+    return (
+      <div key={`${where}:${item.href}`} className="group/row relative flex items-center">
+        {link}
+        <button
+          type="button"
+          onClick={() => togglePin(item.href)}
+          aria-pressed={pinned}
+          aria-label={pinLabel}
+          title={pinLabel}
+          className={`absolute right-1 rounded-md p-1.5 transition-opacity hover:bg-[var(--background)] focus-visible:opacity-100 ${
+            pinned
+              ? "text-[var(--primary)]"
+              : "text-[var(--muted)] opacity-60 md:opacity-0 md:group-hover/row:opacity-100"
+          } ${collapsed ? "md:hidden" : ""}`}
+        >
+          <PinIcon className="h-4 w-4" filled={pinned} />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <>
-      <nav aria-label={t("panel.menu")} className="flex flex-col gap-5 py-3">
+      <nav aria-label={t("panel.menu")} className="flex flex-col gap-3 py-3">
         {/* Menu search — hidden in the icon rail, where there is no room for it. */}
         <div className={collapsed ? "md:hidden" : ""}>
           <MenuSearch
@@ -434,11 +569,25 @@ function NavContent({
             placeholder={t("panel.searchMenuPlaceholder")}
           />
         </div>
+        {/* Pinned shortcuts, above everything — the person's own short menu. */}
+        {pinnedItems.length > 0 && (
+          <div>
+            <p
+              className={`mb-1 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70 ${
+                collapsed ? "md:hidden" : ""
+              }`}
+            >
+              {t("panel.navGroupPinned")}
+            </p>
+            <div className="flex flex-col gap-0.5">{pinnedItems.map((item) => renderItem(item, "pinned"))}</div>
+          </div>
+        )}
+
         {navGroups.map((group) => {
           const visibleItems = group.items.filter(isVisible);
           if (visibleItems.length === 0) return null;
 
-          const folded = !collapsed && foldedGroups.has(group.labelKey);
+          const open = collapsed || isGroupOpen(group.labelKey, groupOverrides, visibleItems.some(isActive));
           return (
             <div key={group.labelKey}>
               {/* A group heading in a 64px rail is a truncated word, so it goes.
@@ -446,15 +595,15 @@ function NavContent({
                   between groups still carries the grouping in the rail. */}
               <button
                 type="button"
-                onClick={() => toggleGroup(group.labelKey)}
-                aria-expanded={!folded}
-                className={`mb-1 flex w-full items-center justify-between gap-2 px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70 transition-colors hover:text-[var(--muted)] ${
+                onClick={() => toggleGroup(group.labelKey, open)}
+                aria-expanded={open}
+                className={`mb-1 flex w-full items-center justify-between gap-2 px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-[var(--muted)]/70 transition-colors hover:text-[var(--muted)] ${
                   collapsed ? "md:hidden" : ""
                 }`}
               >
                 <span className="truncate">{t(group.labelKey)}</span>
                 <svg
-                  className={`h-3 w-3 shrink-0 transition-transform ${folded ? "-rotate-90" : ""}`}
+                  className={`h-3 w-3 shrink-0 transition-transform ${open ? "" : "-rotate-90"}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -463,101 +612,8 @@ function NavContent({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className={`flex flex-col gap-0.5 ${folded ? "hidden" : ""}`}>
-                {visibleItems.map((item) => {
-                  // Exact for /panel — as a prefix it would light up on every page.
-                  // Elsewhere the trailing slash keeps /panel/product off /panel/products.
-                  const active =
-                    !item.action &&
-                    !item.external &&
-                    (item.exact
-                      ? pathname === item.href
-                      : pathname === item.href || pathname.startsWith(`${item.href}/`));
-                  const Icon = item.icon;
-                  // Roomier rows on touch, where the drawer has space to spare and
-                  // a thumb is a blunter instrument than a cursor.
-                  const linkClass = `flex items-center gap-3 rounded-lg px-3 py-3 text-[0.9375rem] transition-colors md:py-2.5 md:text-sm ${
-                    collapsed ? "md:justify-center md:px-0" : ""
-                  } ${
-                    active
-                      ? "bg-[var(--accent-subtle)] font-medium text-[var(--primary)]"
-                      : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-foreground"
-                  }`;
-                  const badgeCount = item.href === "/panel/users" ? pendingActions : 0;
-                  const label = t(item.labelKey);
-                  const content = (
-                    <>
-                      <span className="relative flex shrink-0 items-center">
-                        <Icon className="h-5 w-5 shrink-0" />
-                        {/* In the rail the count has nowhere to sit, so it becomes a
-                            dot on the icon — still "something needs you", which is
-                            the whole job of the badge at a glance. */}
-                        {badgeCount > 0 && collapsed && (
-                          <span
-                            className="absolute -right-1 -top-1 hidden h-2 w-2 rounded-full bg-amber-500 ring-2 ring-[var(--card)] md:block"
-                            aria-hidden
-                          />
-                        )}
-                      </span>
-                      <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>{label}</span>
-                      {badgeCount > 0 && (
-                        <span
-                          className={`ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white ${
-                            collapsed ? "md:hidden" : ""
-                          }`}
-                          title={t("panel.pendingActions", { count: badgeCount })}
-                        >
-                          {badgeCount}
-                        </span>
-                      )}
-                    </>
-                  );
-                  // The label survives as a tooltip, which is the only thing left
-                  // naming the row once the text is hidden.
-                  const rowTitle = collapsed ? label : undefined;
-
-                  if (item.action === "assets") {
-                    return (
-                      <button
-                        key={item.href}
-                        type="button"
-                        onClick={() => {
-                          onOpenAssets?.();
-                          onItemClick?.();
-                        }}
-                        title={rowTitle}
-                        className={linkClass}
-                      >
-                        {content}
-                      </button>
-                    );
-                  }
-
-                  return item.external ? (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={onItemClick}
-                      title={rowTitle}
-                      className={linkClass}
-                    >
-                      {content}
-                    </a>
-                  ) : (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onItemClick}
-                      aria-current={active ? "page" : undefined}
-                      title={rowTitle}
-                      className={linkClass}
-                    >
-                      {content}
-                    </Link>
-                  );
-                })}
+              <div className={`flex flex-col gap-0.5 ${open ? "" : "hidden"}`}>
+                {visibleItems.map((item) => renderItem(item, "group"))}
               </div>
             </div>
           );
@@ -593,6 +649,8 @@ export function PanelSidebar({
   pendingActions,
   features,
   brand,
+  pins,
+  groupOverrides,
 }: Props) {
   const t = useT();
   const { collapsed, mobileOpen, closeMobile, openAssets } = usePanelChrome();
@@ -684,6 +742,8 @@ export function PanelSidebar({
             collapsed={collapsed}
             onItemClick={close}
             onOpenAssets={openAssets}
+            initialPins={pins}
+            initialGroupOverrides={groupOverrides}
           />
         </div>
       </aside>

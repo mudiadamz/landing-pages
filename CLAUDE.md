@@ -276,6 +276,12 @@ Ringkasan yang paling sering dilanggar:
     dan dashboard `/panel` tidak mengambil maupun menampilkan pembelian,
     favorit, atau ajakan "jelajahi toko". Operator menjalankan platform, bukan
     berbelanja di sana. Route pelanggan tetap bisa dibuka lewat URL.
+- **Sidebar: semua grup terlipat, menu penting di-SEMATKAN** (2026-10-08).
+  Tiap baris punya tombol pin; yang disematkan muncul di bagian "Disematkan"
+  paling atas, urut waktu disematkan. Grup yang belum pernah disentuh terlipat,
+  kecuali grup yang memuat halaman yang sedang dibuka. Keduanya disimpan di
+  cookie (`panel_pins`, `panel_groups`, `lib/panel-chrome.ts`) dan dibaca layout
+  — supaya paint pertama sudah benar — jadi **per browser, bukan per akun**.
 - **Menu yang ditolak WAJIB mengatakannya.** Semua layar ber-gate dulu menjawab
   gagal dengan `redirect("/panel")` telanjang: menunya hilang saat diklik dan
   dashboard muncul tanpa penjelasan — tidak bisa dibedakan dari salah klik, dan

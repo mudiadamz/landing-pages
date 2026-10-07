@@ -14,7 +14,14 @@ import { PanelChrome } from "@/components/panel-chrome";
 import { AccountShell } from "@/components/account-shell";
 import { isCustomerOnly } from "@/lib/panel-shell";
 import { PANEL_VIEW_COOKIE, canSwitchPanelView, resolvePanelView } from "@/lib/panel-view";
-import { PANEL_SIDEBAR_COOKIE, isSidebarCollapsed } from "@/lib/panel-chrome";
+import {
+  PANEL_GROUPS_COOKIE,
+  PANEL_PINS_COOKIE,
+  PANEL_SIDEBAR_COOKIE,
+  isSidebarCollapsed,
+  parseGroupOverrides,
+  parsePins,
+} from "@/lib/panel-chrome";
 import { EmailConfirmBanner } from "@/components/email-confirm-banner";
 import { EmailVerifyNotice } from "@/components/email-verify-notice";
 import { LocaleProvider } from "@/lib/i18n/client";
@@ -114,7 +121,11 @@ export default async function PanelLayout({
   const locale = await requestLocale();
   // Read here, not on the client: the sidebar width has to be right in the FIRST
   // paint, or every panel page opens 256px wide and snaps to 64px on hydration.
-  const collapsed = isSidebarCollapsed((await cookies()).get(PANEL_SIDEBAR_COOKIE)?.value);
+  const jar = await cookies();
+  const collapsed = isSidebarCollapsed(jar.get(PANEL_SIDEBAR_COOKIE)?.value);
+  // Same first-paint reason: pins on top and groups folded from the start.
+  const pins = parsePins(jar.get(PANEL_PINS_COOKIE)?.value);
+  const groupOverrides = parseGroupOverrides(jar.get(PANEL_GROUPS_COOKIE)?.value);
   const brand = siteBrand(await currentSite(), locale);
 
   // Which shell? Two questions, and they are not the same one.
@@ -196,6 +207,8 @@ export default async function PanelLayout({
         pendingActions={pendingActions}
         features={features}
         brand={brand}
+        pins={pins}
+        groupOverrides={groupOverrides}
       />
       <div className="flex flex-1 flex-col min-w-0">
         {/* In the content pane, not across the window: the sidebar keeps its own
