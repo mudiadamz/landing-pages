@@ -1,6 +1,6 @@
 {
   "name": "landing_pages",
-  "version": "0.1.51",
+  "version": "0.1.52",
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "scripts": {

@@ -460,10 +460,10 @@ function NavContent({
     const active = isActive(item);
     const pinned = pins.includes(item.href);
     const Icon = item.icon;
-    // Roomier rows on touch, where the drawer has space to spare and
-    // a thumb is a blunter instrument than a cursor. Right padding leaves room
-    // for the pin button, which sits over the row rather than inside the link.
-    const linkClass = `flex flex-1 items-center gap-3 rounded-lg py-3 pl-3 text-[0.9375rem] transition-colors md:py-2.5 md:text-sm ${
+    // One size on every screen (Adam, 2026-10-08: the phone drawer used to get
+    // taller rows and bigger text). Right padding leaves room for the pin
+    // button, which sits over the row rather than inside the link.
+    const linkClass = `flex flex-1 items-center gap-3 rounded-lg py-2.5 pl-3 text-sm transition-colors ${
       collapsed ? "pr-10 md:justify-center md:px-0" : "pr-10"
     } ${
       active
@@ -628,7 +628,7 @@ function NavContent({
           href="/"
           onClick={onItemClick}
           title={collapsed ? t("panel.viewSite") : undefined}
-          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-[0.9375rem] text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground md:py-2.5 md:text-sm ${
+          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[var(--muted)] transition-colors hover:bg-[var(--background)] hover:text-foreground ${
             collapsed ? "md:justify-center md:px-0" : ""
           }`}
         >

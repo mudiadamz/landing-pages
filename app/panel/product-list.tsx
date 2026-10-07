@@ -211,7 +211,7 @@ export function ProductList({
               setPage(1);
             }}
             placeholder={t("panel.searchProducts")}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
         </div>
 
@@ -223,7 +223,7 @@ export function ProductList({
               setPage(1);
             }}
             aria-label={t("home.filterLabel")}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:w-56"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:w-56"
           >
             <option value="">{t("panel.allCategories")}</option>
             {categories
@@ -261,7 +261,7 @@ export function ProductList({
             setPage(1);
           }}
           aria-label={t("panel.sortBy")}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:hidden"
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:hidden"
         >
           <option value="updated:desc">{t("panel.sortUpdatedDesc")}</option>
           <option value="updated:asc">{t("panel.sortUpdatedAsc")}</option>

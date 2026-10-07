@@ -76,7 +76,7 @@ export function PanelSiteSwitcher({
         disabled={pending}
         title={current ? t("scope.appliesTo", { host: current.host }) : undefined}
         onChange={(e) => pick(e.target.value)}
-        className="max-w-[14rem] truncate rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1.5 text-base sm:text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 disabled:opacity-50"
+        className="max-w-[14rem] truncate rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 disabled:opacity-50"
       >
         {sites.map((s) => (
           <option key={s.id} value={s.id}>
@@ -104,7 +104,7 @@ export function PanelSiteSwitcher({
         // domain are not the same string.
         title={current ? t("scope.appliesTo", { host: current.host }) : undefined}
         onChange={(e) => pick(e.target.value)}
-        className="w-full truncate rounded-lg border border-[var(--border)] bg-[var(--background)] px-2.5 py-2 text-base sm:text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 disabled:opacity-50"
+        className="w-full truncate rounded-lg border border-[var(--border)] bg-[var(--background)] px-2.5 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 disabled:opacity-50"
       >
         {sites.map((s) => (
           <option key={s.id} value={s.id}>

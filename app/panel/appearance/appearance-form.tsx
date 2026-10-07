@@ -149,7 +149,7 @@ export function AppearanceForm({
                   type="text"
                   value={tokens[f.key]}
                   onChange={(e) => editToken(f.key, e.target.value)}
-                  className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 font-mono text-base sm:text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+                  className="w-full rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                 />
               </div>
             </div>

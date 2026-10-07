@@ -41,7 +41,7 @@ export function NewPageButton() {
         onKeyDown={(e) => e.key === "Enter" && title.trim() && create()}
         placeholder={t("panel.pageTitlePlaceholder")}
         maxLength={120}
-        className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+        className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
       />
       <Button type="button" size="sm" onClick={create} disabled={busy || !title.trim()}>
         {busy ? t("panel.creating") : t("panel.create")}

@@ -96,7 +96,7 @@ export function UploadForm() {
           name="slug"
           type="text"
           placeholder={t("product.slugPlaceholder")}
-          className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground font-mono text-base sm:text-sm focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
+          className="w-full px-4 py-2.5 border border-[var(--border)] rounded-lg bg-background text-foreground font-mono text-sm focus:ring-2 focus:ring-[var(--ring)] focus:border-transparent"
         />
         <p className="mt-1 text-xs text-[var(--muted)]">
           {t("panel.slugHintUpload")}

@@ -78,7 +78,7 @@ export function TrackingForm({
           placeholder="GTM-XXXXXXX"
           autoComplete="off"
           spellCheck={false}
-          className="w-full max-w-xs rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          className="w-full max-w-xs rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
         />
         <p className="mt-1 text-xs text-[var(--muted)]">{t("panel.gtmEmptyHint")}</p>
       </div>
@@ -99,7 +99,7 @@ export function TrackingForm({
               placeholder="https://embed.tawk.to/…"
               autoComplete="off"
               spellCheck={false}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
           </div>
           <div className="sm:w-48">
@@ -114,7 +114,7 @@ export function TrackingForm({
               placeholder="Contoh: 1a2b3c4d5"
               autoComplete="off"
               spellCheck={false}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-2.5 font-mono text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
             />
           </div>
         </div>

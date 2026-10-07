@@ -112,7 +112,7 @@ export function PriceTab({
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder="300.000"
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
           </div>
         </div>
@@ -129,7 +129,7 @@ export function PriceTab({
               value={priceDiscount}
               onChange={(e) => setPriceDiscount(e.target.value)}
               placeholder="50.000"
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-20 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-12 pr-20 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
             {discountPct != null && (
               <span className="absolute inset-y-0 right-2 my-auto flex h-6 items-center rounded-md bg-[var(--primary)]/10 px-2 text-xs font-semibold text-[var(--primary)]">
@@ -160,7 +160,7 @@ export function PriceTab({
           id="cta-action"
           value={actionType}
           onChange={(e) => setActionType(e.target.value as "checkout" | "link" | "calendar")}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
         >
           <option value="checkout">{t("product.ctaActionCheckout")}</option>
           <option value="link">{t("product.ctaActionLink")}</option>
@@ -186,7 +186,7 @@ export function PriceTab({
             value={purchaseLink}
             onChange={(e) => setPurchaseLink(e.target.value)}
             placeholder="https://contoh.com/beli"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
           />
         </div>
       )}
@@ -207,7 +207,7 @@ export function PriceTab({
               maxLength={200}
               onChange={(e) => setEventTitle(e.target.value)}
               placeholder={title || t("product.eventTitle")}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
             <p className="text-xs text-[var(--muted)]">{t("product.eventTitleHint")}</p>
           </div>
@@ -221,7 +221,7 @@ export function PriceTab({
                 type="datetime-local"
                 value={eventStart}
                 onChange={(e) => setEventStart(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
             </div>
             <div className="space-y-1.5">
@@ -233,7 +233,7 @@ export function PriceTab({
                 type="datetime-local"
                 value={eventEnd}
                 onChange={(e) => setEventEnd(e.target.value)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
               />
               <p className="text-xs text-[var(--muted)]">{t("product.eventEndHint")}</p>
             </div>
@@ -249,7 +249,7 @@ export function PriceTab({
               maxLength={300}
               onChange={(e) => setEventLocation(e.target.value)}
               placeholder={t("product.eventLocationPlaceholder")}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
           </div>
           <div className="space-y-1.5">
@@ -263,7 +263,7 @@ export function PriceTab({
               rows={3}
               onChange={(e) => setEventDescription(e.target.value)}
               placeholder={t("product.eventDescPlaceholder")}
-              className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+              className="w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
             />
           </div>
         </div>

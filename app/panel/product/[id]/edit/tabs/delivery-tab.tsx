@@ -27,7 +27,7 @@ const MODE_LABEL: Record<ServiceMode, MessageKey> = {
 };
 
 const FIELD =
-  "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
+  "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40";
 
 /**
  * The Pengiriman tab: the file a buyer actually receives, and the bundle it can
@@ -291,7 +291,7 @@ export function DeliveryTab({
                 id="deliverable-type"
                 value={deliverableType}
                 onChange={(e) => setDeliverableType(e.target.value as DeliverableType)}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 sm:max-w-xs"
               >
                 <option value="zip">{t("product.deliveryZip")}</option>
                 <option value="pdf">{t("product.deliveryPdf")}</option>
@@ -395,7 +395,7 @@ export function DeliveryTab({
                     value={bundleSearch}
                     onChange={(e) => setBundleSearch(e.target.value)}
                     placeholder={t("product.relatedSearch")}
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40"
                   />
                   <span className="shrink-0 text-xs text-[var(--muted)]">{t("product.relatedSelected", { count: bundleIds.length })}</span>
                 </div>

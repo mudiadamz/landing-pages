@@ -109,7 +109,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
           id="quick-category"
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
         >
           <option value="">{t("panel.noCategory")}</option>
           {categories.map((c) => (
@@ -136,7 +136,7 @@ export function EpubQuickForm({ categories }: { categories: LandingPageCategory[
               disabled={isFree}
               onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
               placeholder="0"
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-10 pr-3 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-50"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] py-2.5 pl-10 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-50"
             />
           </div>
           <label className="flex min-h-11 shrink-0 items-center gap-2 text-sm text-foreground">

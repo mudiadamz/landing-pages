@@ -58,7 +58,7 @@ export function SocialForm({ initial, siteId }: { initial: SocialUrls; siteId: s
             placeholder={`https://…  (kosongkan untuk sembunyikan ${name})`}
             inputMode="url"
             maxLength={500}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
           />
         </div>
       ))}

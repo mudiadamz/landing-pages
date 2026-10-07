@@ -52,7 +52,7 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
   }
 
   const input =
-    "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]";
+    "w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]";
   const label = "mb-1.5 block text-sm font-medium text-foreground";
 
   return (
@@ -89,7 +89,7 @@ export function PageEditForm({ page }: { page: EditorialPage }) {
         <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
           {t("panel.order")}
           <input inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}
-                 className="w-16 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-2 text-base sm:text-sm text-foreground" />
+                 className="w-16 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-2 text-sm text-foreground" />
         </label>
       </div>
 

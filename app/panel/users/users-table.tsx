@@ -355,7 +355,7 @@ export function UsersTable({
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder={t("panel.addMemberEmail")}
                 autoComplete="off"
-                className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+                className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
               />
               <button
                 type="submit"
@@ -384,13 +384,13 @@ export function UsersTable({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("panel.searchUsers")}
-            className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-base sm:text-sm placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+            className="w-full pl-9 pr-3 py-2 border border-[var(--border)] rounded-lg bg-background text-foreground text-sm placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           aria-label={t("panel.filterRole")}
         >
           <option value="all">{t("panel.allRoles")}</option>
@@ -402,7 +402,7 @@ export function UsersTable({
         <select
           value={verifyFilter}
           onChange={(e) => setVerifyFilter(e.target.value as VerifyFilter)}
-          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+          className="rounded-lg border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
           aria-label={t("panel.filterVerified")}
         >
           <option value="all">{t("panel.allEmails")}</option>
@@ -643,7 +643,7 @@ function PlanControl({
         value={current}
         disabled={disabled}
         onChange={(e) => onChange(user, e.target.value)}
-        className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+        className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
         aria-label={t("plan.colPlan")}
       >
         {PLAN_LIST.map((p) => (
@@ -680,7 +680,7 @@ function RoleControl({
       value={standingOf(user)}
       disabled={disabled}
       onChange={(e) => onChange(user, e.target.value as StandingValue)}
-      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-base sm:text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
+      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 disabled:opacity-50"
       aria-label={t("panel.changeRole")}
     >
       <option value="">{t("panel.roleCustomer")}</option>
