@@ -271,6 +271,11 @@ Ringkasan yang paling sering dilanggar:
     Keduanya layar pelanggan; di rail yang dibangun untuk mengurus toko mereka
     terbaca seperti menu orang lain. Sekarang dicapai lewat tombol ganti
     tampilan, bukan dengan menempelkannya ke back office.
+  - **Platform tidak punya sisi pelanggan** (2026-10-08, permintaan Adam):
+    selalu shell bisnis, tanpa tombol ganti tampilan (cookie lama diabaikan),
+    dan dashboard `/panel` tidak mengambil maupun menampilkan pembelian,
+    favorit, atau ajakan "jelajahi toko". Operator menjalankan platform, bukan
+    berbelanja di sana. Route pelanggan tetap bisa dibuka lewat URL.
 - **Menu yang ditolak WAJIB mengatakannya.** Semua layar ber-gate dulu menjawab
   gagal dengan `redirect("/panel")` telanjang: menunya hilang saat diklik dan
   dashboard muncul tanpa penjelasan — tidak bisa dibedakan dari salah klik, dan

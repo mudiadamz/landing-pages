@@ -45,6 +45,17 @@ describe("resolvePanelView", () => {
     expect(canSwitchPanelView(false)).toBe(true);
     expect(canSwitchPanelView(true)).toBe(false);
   });
+
+  /**
+   * The Platform runs the platform and does not shop on it, so it gets no
+   * customer shell — and a cookie set before that rule must not leave it in
+   * one with the switch back already gone.
+   */
+  it("pins the Platform to the business shell, without a switch", () => {
+    expect(resolvePanelView("customer", false, true)).toBe("business");
+    expect(resolvePanelView(null, false, true)).toBe("business");
+    expect(canSwitchPanelView(false, true)).toBe(false);
+  });
 });
 
 describe("denied access", () => {

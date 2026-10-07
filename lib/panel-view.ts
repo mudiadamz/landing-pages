@@ -10,6 +10,9 @@
  * So the shell becomes a choice, not a verdict:
  *
  *   customer-only person  → account shell, always. There is nothing to switch to.
+ *   Platform operator     → business shell, always. The operator runs the
+ *                           platform; it does not shop on it, and a "my
+ *                           purchases" door in its menu is a feature for nobody.
  *   everybody else        → their stored preference, business by default.
  *
  * Pure and framework-free so the layout, the toggle and the tests all agree on
@@ -32,16 +35,19 @@ export function normalizePanelView(value: unknown): PanelView | null {
  * `customerOnly` WINS over the cookie, in that direction only. Someone with no
  * business capabilities has no business shell to be shown — a stale or
  * hand-edited cookie must not hand them a rail full of menus that all refuse
- * them. The other direction is a free choice, so it is honoured.
+ * them. The Platform is pinned the other way, so a cookie left over from before
+ * the switch was taken away cannot strand it in the account shell with no way
+ * back. Everyone in between has a free choice, and it is honoured.
  */
-export function resolvePanelView(cookie: unknown, customerOnly: boolean): PanelView {
+export function resolvePanelView(cookie: unknown, customerOnly: boolean, isPlatform = false): PanelView {
   if (customerOnly) return "customer";
+  if (isPlatform) return "business";
   return normalizePanelView(cookie) ?? "business";
 }
 
-/** Can this person switch at all? Only if they have somewhere to switch from. */
-export function canSwitchPanelView(customerOnly: boolean): boolean {
-  return !customerOnly;
+/** Can this person switch at all? Only if there are two shells that are both theirs. */
+export function canSwitchPanelView(customerOnly: boolean, isPlatform = false): boolean {
+  return !customerOnly && !isPlatform;
 }
 
 /* -------------------------------------------------------------------------- */

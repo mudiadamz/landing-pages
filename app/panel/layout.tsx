@@ -129,8 +129,9 @@ export default async function PanelLayout({
     canSell: !!canSell,
     featureCount: features.length,
   });
-  const view = resolvePanelView((await cookies()).get(PANEL_VIEW_COOKIE)?.value, customerOnly);
-  const maySwitch = canSwitchPanelView(customerOnly);
+  const isPlatform = !!profile?.is_platform;
+  const view = resolvePanelView((await cookies()).get(PANEL_VIEW_COOKIE)?.value, customerOnly, isPlatform);
+  const maySwitch = canSwitchPanelView(customerOnly, isPlatform);
 
   const banners = (
     <>

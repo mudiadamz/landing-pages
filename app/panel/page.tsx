@@ -59,16 +59,22 @@ export default async function PanelPage({
   const wantsGlobal =
     (await requireFeature("stats")) && standing?.businessRole !== "staff";
 
+  // The Platform operator runs the platform rather than shopping on it, so the
+  // buyer half of this page (purchases, favourites, "browse the store") is not
+  // fetched or drawn for it — the same rule that takes away its customer shell
+  // (lib/panel-view.ts).
+  const shopper = !profile?.is_platform;
+
   const [purchases, favorites, sellerStats, globalStats] = await Promise.all([
-    getPurchasesForUser(),
-    getMyFavorites(),
+    shopper ? getPurchasesForUser() : Promise.resolve([]),
+    shopper ? getMyFavorites() : Promise.resolve([]),
     seller ? getMyProductStats() : Promise.resolve(null),
     wantsGlobal ? getStats() : Promise.resolve(null),
   ]);
 
   const firstName = (profile?.full_name ?? "").trim().split(/\s+/)[0];
   const nothingYet =
-    purchases.length === 0 && favorites.length === 0 && !sellerStats && !globalStats;
+    shopper && purchases.length === 0 && favorites.length === 0 && !sellerStats && !globalStats;
 
   return (
     <div className="space-y-6">
@@ -92,29 +98,31 @@ export default async function PanelPage({
         </p>
       </div>
 
-      {/* ---- Everyone ---- */}
-      <section className="grid gap-4 sm:grid-cols-2">
-        <ShortcutCard
-          href="/panel/purchases"
-          label={t("panel.dashMyEbooks")}
-          detail={purchases.length > 0 ? `${nf(purchases.length)} judul` : t("panel.noPurchasesYet")}
-          icon={
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          }
-        />
-        <ShortcutCard
-          href="/panel/favorites"
-          label={t("panel.navFavorites")}
-          detail={favorites.length > 0 ? t("panel.productCount", { count: nf(favorites.length) }) : t("panel.noFavoritesYet")}
-          icon={
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          }
-        />
-      </section>
+      {/* ---- Buyer (everyone but the Platform) ---- */}
+      {shopper && (
+        <section className="grid gap-4 sm:grid-cols-2">
+          <ShortcutCard
+            href="/panel/purchases"
+            label={t("panel.dashMyEbooks")}
+            detail={purchases.length > 0 ? `${nf(purchases.length)} judul` : t("panel.noPurchasesYet")}
+            icon={
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            }
+          />
+          <ShortcutCard
+            href="/panel/favorites"
+            label={t("panel.navFavorites")}
+            detail={favorites.length > 0 ? t("panel.productCount", { count: nf(favorites.length) }) : t("panel.noFavoritesYet")}
+            icon={
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            }
+          />
+        </section>
+      )}
 
       {purchases.length > 0 && (
         <section className="space-y-3">
