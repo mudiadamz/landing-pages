@@ -57,7 +57,7 @@ export default async function MyBusinessPage() {
         {money.entries.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">Belum ada transaksi.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
+          <div className="stack-table overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
             <table className="w-full min-w-[480px] text-sm">
               <thead>
                 <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
@@ -70,10 +70,10 @@ export default async function MyBusinessPage() {
               <tbody>
                 {money.entries.map((e) => (
                   <tr key={e.id} className="border-b border-[var(--border)] last:border-0">
-                    <td className="px-4 py-2.5 text-[var(--muted)]">{new Date(e.created_at).toLocaleString("id-ID")}</td>
-                    <td className="px-3 py-2.5">{e.kind}</td>
-                    <td className="px-3 py-2.5 text-[var(--muted)]">{e.status}</td>
-                    <td className={`px-3 py-2.5 text-right font-medium ${e.amount_cents < 0 ? "text-red-600" : "text-foreground"}`}>
+                    <td data-label="Waktu" className="px-4 py-2.5 text-[var(--muted)]">{new Date(e.created_at).toLocaleString("id-ID")}</td>
+                    <td data-label="Jenis" className="px-3 py-2.5">{e.kind}</td>
+                    <td data-label="Status" className="px-3 py-2.5 text-[var(--muted)]">{e.status}</td>
+                    <td data-label="Jumlah" className={`px-3 py-2.5 text-right font-medium ${e.amount_cents < 0 ? "text-red-600" : "text-foreground"}`}>
                       {rupiah(e.amount_cents)}
                     </td>
                   </tr>

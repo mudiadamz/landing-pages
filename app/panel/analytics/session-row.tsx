@@ -73,24 +73,24 @@ export function SessionRow({
             </span>
           </div>
         </td>
-        <td className="px-3 py-2">
+        <td data-label={t("analytics.visitor")} className="px-3 py-2">
           {s.email || s.name || <span className="text-[var(--muted)]">Anonim</span>}
         </td>
-        <td className="px-3 py-2 text-right tabular-nums">{fmtDuration(s.durationMs)}</td>
-        <td className="px-3 py-2">
+        <td data-label={t("analytics.duration")} className="px-3 py-2 text-right tabular-nums">{fmtDuration(s.durationMs)}</td>
+        <td data-label={t("analytics.location")} className="px-3 py-2">
           <span className="text-xs">
             {[s.city, s.country].filter(Boolean).join(", ") || "—"}
             {s.ip && <span className="ml-1 font-mono text-[var(--muted)]">{s.ip}</span>}
           </span>
         </td>
-        <td className="px-3 py-2 text-xs">
+        <td data-label={t("analytics.source")} className="px-3 py-2 text-xs">
           {s.campaign || s.source || s.referrerHost || "Langsung"}
         </td>
-        <td className="px-3 py-2 text-xs">{s.entryTitle || s.landingPath || "—"}</td>
-        <td className="px-3 py-2 text-xs">
+        <td data-label={t("analytics.enteredVia")} className="px-3 py-2 text-xs">{s.entryTitle || s.landingPath || "—"}</td>
+        <td data-label={t("analytics.device")} className="px-3 py-2 text-xs">
           {[s.device, s.browser].filter(Boolean).join(" · ") || "—"}
         </td>
-        <td className="px-3 py-2 text-right tabular-nums">{s.pageviews}</td>
+        <td data-label={t("analytics.pagesShort")} className="px-3 py-2 text-right tabular-nums">{s.pageviews}</td>
       </tr>
       {open && (
         <tr className="border-b border-[var(--border)] last:border-0 bg-[var(--background)]">

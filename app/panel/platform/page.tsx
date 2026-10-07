@@ -61,7 +61,7 @@ export default async function PlatformPage() {
       {businesses.length === 0 ? (
         <EmptyState title="Belum ada business" description="Business akan muncul di sini setelah dibuat." />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <div className="stack-table overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
@@ -85,10 +85,10 @@ export default async function PlatformPage() {
                     </Link>
                     <span className="ml-2 font-mono text-xs text-[var(--muted)]">{b.slug}</span>
                   </td>
-                  <td className="px-3 py-2.5 text-[var(--muted)]">
+                  <td data-label="Tipe" className="px-3 py-2.5 text-[var(--muted)]">
                     {b.business_type === "company" ? "Perusahaan" : "Perorangan"}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td data-label="Status" className="px-3 py-2.5">
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs ${
                         b.status === "active"
@@ -99,12 +99,12 @@ export default async function PlatformPage() {
                       {b.status}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-[var(--muted)]">{b.plan}</td>
-                  <td className="px-3 py-2.5 text-right text-[var(--muted)]">{b.commission_pct}%</td>
-                  <td className="px-3 py-2.5 text-right text-[var(--muted)]">{b.members}</td>
-                  <td className="px-3 py-2.5 text-right font-medium text-foreground">{rupiah(b.balance)}</td>
-                  <td className="px-3 py-2.5 text-right text-[var(--muted)]">{rupiah(b.pending)}</td>
-                  <td className="px-3 py-2.5 text-[var(--muted)]">{b.kyc_status}</td>
+                  <td data-label="Paket" className="px-3 py-2.5 text-[var(--muted)]">{b.plan}</td>
+                  <td data-label="Komisi" className="px-3 py-2.5 text-right text-[var(--muted)]">{b.commission_pct}%</td>
+                  <td data-label="Anggota" className="px-3 py-2.5 text-right text-[var(--muted)]">{b.members}</td>
+                  <td data-label="Saldo" className="px-3 py-2.5 text-right font-medium text-foreground">{rupiah(b.balance)}</td>
+                  <td data-label="Pending (hold)" className="px-3 py-2.5 text-right text-[var(--muted)]">{rupiah(b.pending)}</td>
+                  <td data-label="KYC" className="px-3 py-2.5 text-[var(--muted)]">{b.kyc_status}</td>
                 </tr>
               ))}
             </tbody>

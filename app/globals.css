@@ -1115,3 +1115,53 @@ a:hover .cat-tile .cat-icon { transform: scale(1.15) rotate(-7deg); }
   content: "Tulis isi halaman di sini…";
   color: var(--muted);
 }
+
+/* Panel tables on phones: `.stack-table` on the table's wrapper turns every row
+   into a card below `sm`, each cell a "label … value" line. The label comes from
+   the cell's `data-label`; a cell without one is the card's title, full width.
+   One rule instead of a second card markup per table — most panel tables are
+   too wide for 375px, and horizontal scroll hides the columns that matter.
+   Unlayered, so it beats the Tailwind utilities on the same elements (the
+   table's min-w-[…], the cells' padding/alignment) without !important. */
+@media (max-width: 639.98px) {
+  .stack-table {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .stack-table table,
+  .stack-table tbody { display: block; min-width: 0; }
+  .stack-table thead { display: none; }
+  .stack-table tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+  }
+  .stack-table tr:last-child { margin-bottom: 0; }
+  .stack-table td {
+    display: flow-root;
+    padding: 0.2rem 0;
+    text-align: right;
+  }
+  .stack-table td[data-label]::before {
+    content: attr(data-label);
+    float: left;
+    margin-right: 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.5rem;
+    color: var(--muted);
+  }
+  .stack-table td:not([data-label]) { padding-bottom: 0.4rem; text-align: left; }
+
+  /* Checkbox matrix (roles, four role columns): the labelled cells sit side by side under the
+     title, label above its control, instead of one line each. */
+  .stack-table--matrix tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .stack-table--matrix td:not([data-label]) { grid-column: 1 / -1; }
+  .stack-table--matrix td[data-label] { text-align: center; }
+  .stack-table--matrix td[data-label]::before { display: block; float: none; margin: 0 0 0.25rem; }
+}

@@ -181,7 +181,7 @@ export function RolesForm({
         {!hasBusiness && <span className="block mt-1">{t("panel.roleNoBusiness")}</span>}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
+      <div className="stack-table stack-table--matrix overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
@@ -199,7 +199,7 @@ export function RolesForm({
               return (
                 <tr key={row.labelKey} className="border-b border-[var(--border)] last:border-0">
                   <td className="px-4 py-2.5">
-                    <span className="flex items-center gap-1.5 text-foreground">
+                    <span className="flex flex-wrap items-center gap-1.5 text-foreground">
                       {r?.locked && (
                         <svg className="h-3.5 w-3.5 shrink-0 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -214,7 +214,7 @@ export function RolesForm({
                     </span>
                   </td>
                   {cols.map((c) => (
-                    <td key={c.key} className="px-3 py-2.5 text-center">
+                    <td key={c.key} data-label={c.label} className="px-3 py-2.5 text-center">
                       <span className="inline-flex justify-center">{cell(row, c.key)}</span>
                     </td>
                   ))}

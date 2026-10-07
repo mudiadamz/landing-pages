@@ -72,7 +72,7 @@ export default async function BusinessMoneyPage({ params }: Props) {
         {money.payouts.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">Belum ada payout.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
+          <div className="stack-table overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
@@ -87,13 +87,13 @@ export default async function BusinessMoneyPage({ params }: Props) {
               <tbody>
                 {money.payouts.map((p) => (
                   <tr key={p.id} className="border-b border-[var(--border)] last:border-0 align-top">
-                    <td className="px-4 py-2.5 text-[var(--muted)]">{new Date(p.created_at).toLocaleString("id-ID")}</td>
-                    <td className="px-3 py-2.5">{p.method}</td>
-                    <td className="px-3 py-2.5">
+                    <td data-label="Waktu" className="px-4 py-2.5 text-[var(--muted)]">{new Date(p.created_at).toLocaleString("id-ID")}</td>
+                    <td data-label="Cara" className="px-3 py-2.5">{p.method}</td>
+                    <td data-label="Status" className="px-3 py-2.5">
                       <span className={`rounded px-1.5 py-0.5 text-xs ${payoutTone(p.status)}`}>{p.status}</span>
                       {p.error && <div className="mt-1 max-w-[280px] text-xs text-[var(--muted)]">{p.error}</div>}
                     </td>
-                    <td className="px-3 py-2.5 text-[var(--muted)]">
+                    <td data-label="Tujuan" className="px-3 py-2.5 text-[var(--muted)]">
                       {p.bank_account ? (
                         <>
                           {bankByCode(p.bank_code)?.name ?? p.bank_code ?? "—"} · {p.bank_account}
@@ -103,8 +103,8 @@ export default async function BusinessMoneyPage({ params }: Props) {
                         "—"
                       )}
                     </td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-[var(--muted)]">{p.provider_ref ?? p.ledger_ref}</td>
-                    <td className="px-3 py-2.5 text-right font-medium text-foreground">{rupiah(p.amount)}</td>
+                    <td data-label="Ref" className="break-all px-3 py-2.5 font-mono text-xs text-[var(--muted)]">{p.provider_ref ?? p.ledger_ref}</td>
+                    <td data-label="Jumlah" className="px-3 py-2.5 text-right font-medium text-foreground">{rupiah(p.amount)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -123,7 +123,7 @@ export default async function BusinessMoneyPage({ params }: Props) {
         {money.entries.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">Belum ada transaksi.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
+          <div className="stack-table overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--muted)]">
@@ -137,11 +137,11 @@ export default async function BusinessMoneyPage({ params }: Props) {
               <tbody>
                 {money.entries.map((e) => (
                   <tr key={e.id} className="border-b border-[var(--border)] last:border-0">
-                    <td className="px-4 py-2.5 text-[var(--muted)]">{new Date(e.created_at).toLocaleString("id-ID")}</td>
-                    <td className="px-3 py-2.5">{e.kind}</td>
-                    <td className="px-3 py-2.5 text-[var(--muted)]">{e.status}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-[var(--muted)]">{e.order_ref ?? "—"}</td>
-                    <td className={`px-3 py-2.5 text-right font-medium ${e.amount_cents < 0 ? "text-red-600" : "text-foreground"}`}>
+                    <td data-label="Waktu" className="px-4 py-2.5 text-[var(--muted)]">{new Date(e.created_at).toLocaleString("id-ID")}</td>
+                    <td data-label="Jenis" className="px-3 py-2.5">{e.kind}</td>
+                    <td data-label="Status" className="px-3 py-2.5 text-[var(--muted)]">{e.status}</td>
+                    <td data-label="Order" className="break-all px-3 py-2.5 font-mono text-xs text-[var(--muted)]">{e.order_ref ?? "—"}</td>
+                    <td data-label="Jumlah" className={`px-3 py-2.5 text-right font-medium ${e.amount_cents < 0 ? "text-red-600" : "text-foreground"}`}>
                       {rupiah(e.amount_cents)}
                     </td>
                   </tr>

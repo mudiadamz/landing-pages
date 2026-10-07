@@ -91,9 +91,10 @@ function SortTh({
   );
 }
 
-function Td({ children, right, mono }: { children: React.ReactNode; right?: boolean; mono?: boolean }) {
+/** `label` is the column name shown beside the value on phones (`.stack-table`); omit it for the card's title cell. */
+function Td({ children, right, mono, label }: { children: React.ReactNode; right?: boolean; mono?: boolean; label?: string }) {
   return (
-    <td className={`px-3 py-2 ${right ? "text-right tabular-nums" : ""} ${mono ? "font-mono text-xs" : ""}`}>
+    <td data-label={label} className={`px-3 py-2 ${right ? "text-right tabular-nums" : ""} ${mono ? "font-mono text-xs" : ""}`}>
       {children}
     </td>
   );
@@ -101,7 +102,7 @@ function Td({ children, right, mono }: { children: React.ReactNode; right?: bool
 
 function TableShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
+    <div className="stack-table overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
       <table className="w-full min-w-[560px] text-sm">{children}</table>
     </div>
   );
@@ -115,7 +116,7 @@ function EngagementBar({ read, curious, left }: { read: number; curious: number;
   const t = useT();
   const total = read + curious + left || 1;
   return (
-    <div className="flex h-2.5 w-28 overflow-hidden rounded-full bg-[var(--background)]" title={t("analytics.engagementTitle", { read, curious, left })}>
+    <div className="ml-auto flex h-2.5 w-28 overflow-hidden sm:ml-0 rounded-full bg-[var(--background)]" title={t("analytics.engagementTitle", { read, curious, left })}>
       <div className="bg-emerald-500" style={{ width: `${(read / total) * 100}%` }} />
       <div className="bg-amber-400" style={{ width: `${(curious / total) * 100}%` }} />
       <div className="bg-rose-400" style={{ width: `${(left / total) * 100}%` }} />
@@ -262,12 +263,12 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                   {campaigns.map((c) => (
                     <tr key={c.key} className="border-b border-[var(--border)] last:border-0">
                       <Td>{c.campaign || "—"}</Td>
-                      <Td>{c.source || "—"}</Td>
-                      <Td>{c.medium || "—"}</Td>
-                      <Td right>{c.sessions}</Td>
-                      <Td right>{c.previews}</Td>
-                      <Td right>{c.checkouts}</Td>
-                      <Td right>{(c.convRate * 100).toFixed(0)}%</Td>
+                      <Td label="Source">{c.source || "—"}</Td>
+                      <Td label="Medium">{c.medium || "—"}</Td>
+                      <Td right label={t("analytics.sessions")}>{c.sessions}</Td>
+                      <Td right label={t("analytics.previews")}>{c.previews}</Td>
+                      <Td right label="Checkout">{c.checkouts}</Td>
+                      <Td right label={t("analytics.conversion")}>{(c.convRate * 100).toFixed(0)}%</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -291,8 +292,8 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                   {referrers.map((r) => (
                     <tr key={r.host} className="border-b border-[var(--border)] last:border-0">
                       <Td mono>{r.host}</Td>
-                      <Td right>{r.sessions}</Td>
-                      <Td right>{r.checkouts}</Td>
+                      <Td right label={t("analytics.sessions")}>{r.sessions}</Td>
+                      <Td right label="Checkout">{r.checkouts}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -332,15 +333,15 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                 {engagement.map((e) => (
                   <tr key={e.slug} className="border-b border-[var(--border)] last:border-0">
                     <Td>{e.title || e.slug}</Td>
-                    <Td>
+                    <Td label={t("analytics.spread")}>
                       <EngagementBar read={e.read} curious={e.curious} left={e.left} />
                     </Td>
-                    <Td right>{e.read}</Td>
-                    <Td right>{e.curious}</Td>
-                    <Td right>{e.left}</Td>
-                    <Td right>{e.total}</Td>
-                    <Td right>{fmtDuration(e.avgDwellMs)}</Td>
-                    <Td right>{e.avgScroll}%</Td>
+                    <Td right label={t("analytics.read")}>{e.read}</Td>
+                    <Td right label={t("analytics.curious")}>{e.curious}</Td>
+                    <Td right label={t("analytics.left")}>{e.left}</Td>
+                    <Td right label="Total">{e.total}</Td>
+                    <Td right label={t("analytics.avgRead")}>{fmtDuration(e.avgDwellMs)}</Td>
+                    <Td right label={t("analytics.avgScroll")}>{e.avgScroll}%</Td>
                   </tr>
                 ))}
               </tbody>
@@ -366,8 +367,8 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                 {entryPoints.map((e) => (
                   <tr key={e.path} className="border-b border-[var(--border)] last:border-0">
                     <Td mono>{e.path}</Td>
-                    <Td>{e.title || "—"}</Td>
-                    <Td right>{e.sessions}</Td>
+                    <Td label={t("analytics.product")}>{e.title || "—"}</Td>
+                    <Td right label={t("analytics.sessions")}>{e.sessions}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -393,8 +394,8 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
                 {geography.map((g) => (
                   <tr key={`${g.country}|${g.city}`} className="border-b border-[var(--border)] last:border-0">
                     <Td>{g.country}</Td>
-                    <Td>{g.city || "—"}</Td>
-                    <Td right>{g.sessions}</Td>
+                    <Td label={t("analytics.city")}>{g.city || "—"}</Td>
+                    <Td right label={t("analytics.sessions")}>{g.sessions}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -415,7 +416,7 @@ export function AnalyticsDashboard({ data, products }: { data: Analytics; produc
           {filteredSessions.length === 0 ? (
             <Empty>{t("analytics.noSessions")}</Empty>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <div className="stack-table overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)]">
